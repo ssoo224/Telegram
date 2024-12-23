@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>علوش - فحص توكن البوت وإيدي الحساب</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #3498db;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        textarea {
+            resize: vertical;
+        }
+        button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .welcome-message {
+            background-color: #dff0d8;
+            border: 1px solid #d0e9c6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #3c763d;
+            font-size: 18px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+<script defer data-domain="zaid-web.tiiny.site" src="https://analytics.tiiny.site/js/plausible.js"></script><script type="text/javascript" src="https://tiiny.host/ad-script.js"></script></head>
+<body>
+    <div class="container">
+        <div class="welcome-message">
+            أهلاً بكم في موقع علوش لفحص توكن بوتك وإيدي حسابك!
+        </div>
+        <h1>إرسال رسالة عبر بوت تيليجرام</h1>
+        <form id="messageForm">
+            <label for="token">: توكن البوت</label>
+            <input type="text" id="token" name="token" required>
+            <label for="chatId">: أيدي حسابك</label>
+            <input type="text" id="chatId" name="chatId" required>
+            <label for="message">: الرسالة</label>
+            <textarea id="message" name="message" rows="4" required></textarea>
+            <button type="submit">إرسال الرسالة</button>
+        </form>
+        <div class="footer">
+            <p>تابع القناة الخاصة بالمبرمج على <a href="https://t.me/Scorpion_scorp" target="_blank">تيليجرام</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('messageForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const token = document.getElementById('token').value;
+            const chatId = document.getElementById('chatId').value;
+            const message = document.getElementById('message').value;
+
+            const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    alert('تم إرسال الرسالة بنجاح!');
+                } else {
+                    alert('فشل إرسال الرسالة.');
+                }
+            })
+            .catch(error => {
+                console.error('خطأ:', error);
+                alert('فشل إرسال الرسالة.');
+            });
+        });
+    </script>
+</body>
+</html>
