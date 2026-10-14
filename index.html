@@ -407,34 +407,47 @@ body {
   z-index: 1;
 }
 
-/* 💬 تصميم فقاعات الرسائل مثل التليجرام 💬 */
+/* 💬 فقاعات الرسائل بتصميم تليجرام وبد بدون أي تداخل 💬 */
 .msg-bubble {
   width: fit-content;
   max-width: 82%;
-  padding: 7px 12px 6px 12px;
+  padding: 6px 10px 6px 10px;
   font-size: 14.5px;
-  line-height: 1.35;
+  line-height: 1.4;
   background: var(--bubble-other);
   align-self: flex-start;
   color: #ffffff;
-  border-radius: 14px 14px 14px 3px;
+  border-radius: 12px 12px 12px 4px;
   position: relative;
   cursor: pointer;
   word-break: break-word;
   box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
 }
 
 .msg-bubble.mine {
   align-self: flex-end;
   background: var(--bubble-mine);
-  border-radius: 14px 14px 3px 14px;
+  border-radius: 12px 12px 4px 12px;
+}
+
+.msg-content-row {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.msg-text {
+  padding-left: 45px; /* مساحة فارغة لكي لا يتقاطع النص مع الوقت نهائياً */
 }
 
 .reply-quote {
   background: rgba(0, 0, 0, 0.25);
   border-right: 3px solid var(--babylon-gold);
   padding: 3px 8px;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   border-radius: 4px;
   font-size: 12px;
   color: var(--babylon-gold);
@@ -442,18 +455,19 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  width: 100%;
 }
 
 .msg-meta {
   display: inline-flex;
   align-items: center;
-  float: left;
-  gap: 4px;
-  margin-right: -4px;
-  margin-top: 4px;
-  margin-bottom: -2px;
-  font-size: 10px;
+  gap: 3px;
+  font-size: 10.5px;
   color: rgba(255, 255, 255, 0.6);
+  position: absolute;
+  bottom: 4px;
+  left: 8px;
+  user-select: none;
 }
 
 .check-mark {
@@ -483,7 +497,7 @@ body {
   align-items: center;
   gap: 8px;
   width: 210px;
-  padding: 2px 0;
+  padding: 2px 50px 2px 0;
 }
 .audio-player audio {
   width: 100%;
@@ -721,11 +735,11 @@ body {
       </div>
     </div>
 
-    <!-- 🏛 غرفة المحادثة الهيكلية الخالصة بدون أي شريط زائد 🏛 -->
+    <!-- 🏛 غرفة المحادثة الخالصة بتصميم تليجرام 🏛 -->
     <div id="chatView" class="chat-room hidden">
       <div class="chat-bg-pattern"></div>
 
-      <!-- هيدر الشات الخاص بتليجرام ففط -->
+      <!-- هيدر الشات الخاص بتليجرام فقط -->
       <header class="telegram-chat-header">
         <button class="icon-btn" onclick="goHome()">‹</button>
         
@@ -1005,7 +1019,6 @@ function showView(viewId) {
   document.getElementById(viewId).classList.remove("hidden");
   document.getElementById("menu").classList.add("hidden");
 
-  // التحكم بإظهار وإخفاء الهيدر الرئيسي فقط عند فتح المحادثة
   const mainHeader = document.getElementById("mainHeader");
   if (viewId === "chatView") {
     mainHeader.classList.add("hidden");
@@ -1198,6 +1211,13 @@ function openChatRoom(otherUserId) {
           }
         }
 
+        // تنسيق الوقت بدون أصفار بادئة (مثال: 5:22 م بدلاً من 05:22 م)
+        let rawTimeStr = new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+        // استبدال أو تنظيف الصفر البادئ إن وجد (مثل 05:22 -> 5:22)
+        if (rawTimeStr.startsWith('0')) {
+          rawTimeStr = rawTimeStr.substring(1);
+        }
+
         const b = document.createElement("div");
         b.className = "msg-bubble" + (isMine ? " mine" : "");
         
@@ -1209,7 +1229,7 @@ function openChatRoom(otherUserId) {
         if (m.audioUrl) {
           htmlContent += `<div class="audio-player"><audio controls src="${m.audioUrl}"></audio></div>`;
         } else {
-          htmlContent += `<span>${m.text}</span>`;
+          htmlContent += `<div class="msg-text">${m.text}</div>`;
         }
 
         if (m.reactions && Object.keys(m.reactions).length > 0) {
@@ -1220,7 +1240,7 @@ function openChatRoom(otherUserId) {
           htmlContent += `</div>`;
         }
 
-        htmlContent += `<div class="msg-meta"><span>${new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span> ${checkHtml}</div>`;
+        htmlContent += `<div class="msg-meta"><span>${rawTimeStr}</span> ${checkHtml}</div>`;
         b.innerHTML = htmlContent;
 
         let pressTimer = null;
