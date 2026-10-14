@@ -1,0 +1,16 @@
+{
+  "name": "Babylon Chat",
+  "short_name": "Babylon",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#17212b",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/color/512/babylon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
