@@ -722,7 +722,7 @@ body {
         </div>
 
         <form id="textInputBar" class="chat-input-bar" onsubmit="sendMessage(event)">
-          <input id="messageInput" placeholder="اكتب رسالتك البابلية..." autocomplete="off" oninput="handleTyping()">
+          <input id="messageInput" placeholder="اكتب رسالتك البابلية..." autocomplete="off">
           <button type="button" class="icon-btn" style="color:var(--babylon-gold)" onclick="startRecording()">🎙</button>
           <button class="icon-btn" style="color:var(--babylon-gold)" type="submit">➤</button>
         </form>
@@ -767,7 +767,6 @@ const db = firebase.firestore();
 let currentUser = null;
 let currentUserData = null;
 let activeChatId = null;
-let typingTimeout = null;
 let messagesUnsubscribe = null;
 let userUnsubscribe = null;
 let chatsListUnsubscribe = null;
@@ -972,8 +971,8 @@ function showView(viewId) {
 }
 
 function goHome() {
-  if (messagesUnsubscribe) messagesUnsubscribe();
-  if (userUnsubscribe) userUnsubscribe();
+  if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
+  if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
   activeChatId = null;
   cancelReply();
   document.getElementById("searchInput").value = "";
@@ -988,8 +987,8 @@ function openSearch() {
 }
 
 function openProfile() {
-  if (messagesUnsubscribe) messagesUnsubscribe();
-  if (userUnsubscribe) userUnsubscribe();
+  if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
+  if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
   activeChatId = null;
   showView("profileView");
   if (currentUserData) {
@@ -1101,11 +1100,11 @@ function startChat(u) {
 }
 
 function openChatRoom(otherUserId) {
-  if (messagesUnsubscribe) messagesUnsubscribe();
-  if (userUnsubscribe) userUnsubscribe();
+  if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
+  if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
+  
   showView("chatView");
 
-  // 1. استماع حالة اتصال الشخص الآخر حصرياً
   userUnsubscribe = db.collection("users").doc(otherUserId).onSnapshot(doc => {
     if (doc.exists) {
       const u = doc.data();
@@ -1122,7 +1121,6 @@ function openChatRoom(otherUserId) {
     }
   });
 
-  // تحديث قراءة الرسائل الواردة فوراً مرة واحدة عند فتح الشات
   db.collection("chats").doc(activeChatId).collection("messages")
     .where("senderId", "==", otherUserId)
     .where("read", "==", false)
@@ -1130,12 +1128,13 @@ function openChatRoom(otherUserId) {
       snap.forEach(d => d.ref.update({ read: true }));
     });
 
-  // 2. استماع مستقل للرسائل فقط لضمان بقاء الطرفين داخل المحادثة بسلاسة تامة
+  // الاستماع المستقر والثابت للرسائل حصرياً دون أي إعادة توجيه
   messagesUnsubscribe = db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "asc")
     .onSnapshot(snap => {
       const box = document.getElementById("messagesArea");
       box.innerHTML = "";
+      
       snap.forEach(doc => {
         const m = doc.data();
         const isMine = m.senderId === currentUser.uid;
@@ -1181,7 +1180,6 @@ function openChatRoom(otherUserId) {
         b.ontouchstart = (e) => {
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
-
           pressTimer = setTimeout(() => {
             openMsgModal(doc.id, m.text || "بصمة صوتية", m.senderId, m.reactions || {});
           }, 450);
@@ -1356,10 +1354,6 @@ function stopAndSendRecording() {
   mediaRecorder.stop();
 }
 
-function handleTyping() {
-  // تم إيقاف حالة الكتابة المؤقتة لتجنب أي تعارض نهائياً
-}
-
 function sendMessage(e) {
   e.preventDefault();
   const input = document.getElementById("messageInput");
@@ -1396,7 +1390,7 @@ function sendMessage(e) {
 function loadChats() {
   const container = document.getElementById("chatList");
   
-  if (chatsListUnsubscribe) chatsListUnsubscribe();
+  if (chatsListUnsubscribe) { chatsListUnsubscribe(); chatsListUnsubscribe = null; }
   if (!currentUser) return;
 
   chatsListUnsubscribe = db.collection("chats")
