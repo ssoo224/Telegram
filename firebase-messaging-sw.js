@@ -13,10 +13,10 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const notificationTitle = payload.notification.title || "رسالة جديدة";
+  const notificationTitle = payload.notification.title || "Babylon Chat";
   const notificationOptions = {
-    body: payload.notification.body || "وصلتك رسالة جديدة في Babylon Chat",
-    icon: payload.notification.icon || "/favicon.ico"
+    body: payload.notification.body || "لديك رسالة جديدة في بابل",
+    icon: "/icon-512.png"
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
