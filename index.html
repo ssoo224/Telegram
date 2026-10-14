@@ -5,14 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Babylon Chat - تليجرام البابلي</title>
 
-<link rel="manifest" href="data:application/manifest+json;charset=utf-8,{
-  'name': 'Babylon Chat',
-  'short_name': 'Babylon',
-  'start_url': './',
-  'display': 'standalone',
-  'background_color': '#090d16',
-  'theme_color': '#17212b'
-}">
+<!-- ربط ملف الـ Manifest الخارجي ليتوافق مع أداة بناء الـ APK -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#17212b">
 
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -1630,7 +1625,6 @@ function sendMessage(e) {
 
       const otherUserId = activeChatId.split('__').find(id => id !== currentUser.uid);
       if (otherUserId) {
-        // الاتصال بالـ API الصحيح المعرف في vercel.json
         fetch('/api/index', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
