@@ -22,8 +22,8 @@
   --text-main: #f3f4f6;
   --text-muted: #94a3b8;
   --error-color: #f87171;
-  --bubble-mine: #1b4d8e;    /* الأزرق لرسائلك */
-  --bubble-other: #263345;   /* الرصاصي لرسائل الطرف الآخر */
+  --bubble-mine: #1b4d8e;
+  --bubble-other: #263345;
 }
 
 * {
@@ -374,32 +374,61 @@ body {
   font-size: 14px;
   line-height: 1.4;
   border-radius: 12px 12px 12px 4px;
-  background: var(--bubble-other); /* رصاصي للطرف الآخر */
+  background: var(--bubble-other);
   align-self: flex-start;
   color: white;
   border: 1px solid var(--babylon-border);
   position: relative;
   cursor: pointer;
+  transition: transform 0.2s;
 }
 .msg-bubble.mine {
   align-self: flex-end;
-  background: var(--bubble-mine); /* أزرق لرسائلك */
+  background: var(--bubble-mine);
   border-radius: 12px 12px 4px 12px;
   border-color: rgba(27, 77, 142, 0.5);
 }
+
+/* اقتباس الرسالة عند الرد */
+.reply-quote {
+  background: rgba(0, 0, 0, 0.25);
+  border-right: 3px solid var(--babylon-gold);
+  padding: 4px 8px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .msg-time {
   font-size: 10px;
   color: var(--text-muted);
   margin-top: 3px;
   text-align: left;
 }
+
+/* شريط الكتابة وصندوق الرد المعلق */
+.chat-input-container {
+  background: var(--babylon-surface);
+  border-top: 1px solid var(--babylon-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.reply-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px 0 14px;
+  font-size: 12px;
+  color: var(--babylon-gold);
+}
+
 .chat-input-bar {
   padding: 10px 14px;
-  background: var(--babylon-surface);
   display: flex;
   align-items: center;
   gap: 10px;
-  border-top: 1px solid var(--babylon-border);
 }
 .chat-input-bar input {
   flex: 1;
@@ -411,6 +440,41 @@ body {
   outline: none;
   font-size: 14px;
 }
+
+/* نافذة خيارات الرسالة (نسخ، تعديل، حذف، رد) */
+.msg-actions-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.msg-actions-card {
+  width: 260px;
+  background: var(--babylon-surface);
+  border: 1px solid var(--babylon-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+}
+.msg-actions-card button {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 14px;
+  text-align: right;
+  border-bottom: 1px solid var(--babylon-border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.msg-actions-card button:hover { background: var(--babylon-surface-hover); }
+.msg-actions-card button.danger { color: var(--error-color); }
 
 .toast {
   position: fixed;
@@ -502,7 +566,7 @@ body {
       <div id="chatList" style="flex:1; display:flex; flex-direction:column;"></div>
     </div>
 
-    <!-- واجهة البحث باليوزر (مع زر العودة) -->
+    <!-- واجهة البحث باليوزر -->
     <div id="searchView" class="hidden" style="flex:1; display:flex; flex-direction:column;">
       <div style="padding:12px; background:var(--babylon-surface); border-bottom:1px solid var(--babylon-border); display:flex; align-items:center; gap:10px;">
         <button class="icon-btn" onclick="goHome()" title="الرجوع">‹</button>
@@ -568,13 +632,30 @@ body {
 
       <div id="messagesArea" class="messages-area"></div>
 
-      <form class="chat-input-bar" onsubmit="sendMessage(event)">
-        <input id="messageInput" placeholder="اكتب رسالتك البابلية..." autocomplete="off" oninput="handleTyping()">
-        <button class="icon-btn" style="color:var(--babylon-gold)" type="submit">➤</button>
-      </form>
+      <!-- صندوق الرد المعلق وشريط الكتابة -->
+      <div class="chat-input-container">
+        <div id="replyPreviewBar" class="reply-preview-bar hidden">
+          <div id="replyPreviewText">الرد على: ...</div>
+          <button class="icon-btn" style="width:24px;height:24px;font-size:14px;" onclick="cancelReply()">✕</button>
+        </div>
+        <form class="chat-input-bar" onsubmit="sendMessage(event)">
+          <input id="messageInput" placeholder="اكتب رسالتك البابلية..." autocomplete="off" oninput="handleTyping()">
+          <button class="icon-btn" style="color:var(--babylon-gold)" type="submit">➤</button>
+        </form>
+      </div>
     </div>
   </section>
 
+</div>
+
+<!-- نافذة خيارات الرسالة (نسخ، تعديل، حذف، رد) -->
+<div id="msgModal" class="msg-actions-modal hidden" onclick="closeMsgModal(event)">
+  <div class="msg-actions-card">
+    <button onclick="actionReply()">↩ الرد على الرسالة</button>
+    <button onclick="actionCopy()">📋 نسخ النص</button>
+    <button id="btnEditMsg" class="hidden" onclick="actionEdit()">✏ تعديل الرسالة</button>
+    <button id="btnDeleteMsg" class="danger hidden" onclick="actionDelete()">🗑 حذف الرسالة</button>
+  </div>
 </div>
 
 <div id="toast" class="toast hidden"></div>
@@ -597,6 +678,14 @@ let currentUser = null;
 let currentUserData = null;
 let activeChatId = null;
 let typingTimeout = null;
+let chatUnsubscribe = null;
+let userUnsubscribe = null;
+
+let selectedMsgId = null;
+let selectedMsgText = null;
+let selectedMsgSender = null;
+let replyingToText = null;
+let editingMsgId = null;
 
 function clearErrors() {
   document.querySelectorAll('.field-error').forEach(el => {
@@ -638,10 +727,8 @@ function switchTab(type) {
 auth.onAuthStateChanged(user => {
   if (user) {
     currentUser = user;
-    // تحديث حالة الاتصال كـ متصل
     db.collection("users").doc(user.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
     
-    // عند إغلاق التطبيق أو تسجيل الخروج يتم تعيينه كغير متصل
     window.addEventListener('beforeunload', () => {
       db.collection("users").doc(user.uid).set({ online: false, lastSeen: Date.now() }, { merge: true });
     });
@@ -798,6 +885,9 @@ function showView(viewId) {
 }
 
 function goHome() {
+  if (chatUnsubscribe) chatUnsubscribe();
+  if (userUnsubscribe) userUnsubscribe();
+  cancelReply();
   document.getElementById("searchInput").value = "";
   document.getElementById("searchResults").innerHTML = "";
   showView("homeView");
@@ -810,6 +900,8 @@ function openSearch() {
 }
 
 function openProfile() {
+  if (chatUnsubscribe) chatUnsubscribe();
+  if (userUnsubscribe) userUnsubscribe();
   showView("profileView");
   if (currentUserData) {
     updateProfileUI(currentUserData);
@@ -946,26 +1038,42 @@ function startChat(u) {
 }
 
 function openChatRoom(otherUserId) {
+  if (chatUnsubscribe) chatUnsubscribe();
+  if (userUnsubscribe) userUnsubscribe();
   showView("chatView");
 
-  // عرض حالة الطرف الآخر الحية (متصل الآن أو آخر ظهور)
-  db.collection("users").doc(otherUserId).onSnapshot(doc => {
+  userUnsubscribe = db.collection("users").doc(otherUserId).onSnapshot(doc => {
     if (doc.exists) {
       const u = doc.data();
       document.getElementById("chatTitle").textContent = u.displayName || "مستخدم";
-      
-      const sub = document.getElementById("chatSub");
-      if (u.online) {
-        sub.textContent = "متصل الآن";
-        sub.style.color = "#4ade80"; // أخضر عند الاتصال
-      } else {
-        sub.textContent = "آخر ظهور قبل قليل";
-        sub.style.color = "var(--text-muted)";
-      }
     }
   });
 
-  // الاستماع للرسائل مع التمرير التلقائي الفوري وتفعيل إمكانية الحذف عند الضغط عليها
+  chatUnsubscribe = db.collection("chats").doc(activeChatId).onSnapshot(chatDoc => {
+    if (chatDoc.exists) {
+      const data = chatDoc.data();
+      const typingMap = data.typing || {};
+      const isOtherTyping = typingMap[otherUserId];
+      
+      db.collection("users").doc(otherUserId).get().then(userDoc => {
+        if (!userDoc.exists) return;
+        const u = userDoc.data();
+        const sub = document.getElementById("chatSub");
+
+        if (isOtherTyping) {
+          sub.textContent = "جاري الكتابة...";
+          sub.style.color = "var(--babylon-gold)";
+        } else if (u.online) {
+          sub.textContent = "متصل الآن";
+          sub.style.color = "#4ade80";
+        } else {
+          sub.textContent = "آخر ظهور قبل قليل";
+          sub.style.color = "var(--text-muted)";
+        }
+      });
+    }
+  });
+
   db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "asc")
     .onSnapshot(snap => {
@@ -975,26 +1083,92 @@ function openChatRoom(otherUserId) {
         const m = doc.data();
         const b = document.createElement("div");
         b.className = "msg-bubble" + (m.senderId === currentUser.uid ? " mine" : "");
-        b.innerHTML = `<div>${m.text}</div><div class="msg-time">${new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>`;
         
-        // إمكانية حذف رسالتك عند الضغط عليها
-        if (m.senderId === currentUser.uid) {
-          b.title = "اضغط لحذف الرسالة";
-          b.onclick = () => {
-            if (confirm("هل تريد حذف هذه الرسالة؟")) {
-              db.collection("chats").doc(activeChatId).collection("messages").doc(doc.id).delete();
-            }
-          };
+        let htmlContent = "";
+        if (m.replyTo) {
+          htmlContent += `<div class="reply-quote">${m.replyTo}</div>`;
         }
+        htmlContent += `<div>${m.text}</div><div class="msg-time">${new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>`;
+        b.innerHTML = htmlContent;
+
+        // الضغط المطول لإظهار خيارات الرسالة (نسخ، تعديل، حذف، رد)
+        let pressTimer;
+        b.onmousedown = b.ontouchstart = (e) => {
+          pressTimer = setTimeout(() => {
+            openMsgModal(doc.id, m.text, m.senderId);
+          }, 600); // 600 ميلي ثانية ضغط مطول
+        };
+        b.onmouseup = b.onmouseleave = b.ontouchend = () => {
+          clearTimeout(pressTimer);
+        };
 
         box.appendChild(b);
       });
-      // التمرير التلقائي لأسفل الشات
       box.scrollTop = box.scrollHeight;
     });
 }
 
-// مؤشر جاري الكتابة
+// نافذة خيارات الرسالة
+function openMsgModal(msgId, text, senderId) {
+  selectedMsgId = msgId;
+  selectedMsgText = text;
+  selectedMsgSender = senderId;
+
+  const btnEdit = document.getElementById("btnEditMsg");
+  const btnDelete = document.getElementById("btnDeleteMsg");
+
+  if (senderId === currentUser.uid) {
+    btnEdit.classList.remove("hidden");
+    btnDelete.classList.remove("hidden");
+  } else {
+    btnEdit.classList.add("hidden");
+    btnDelete.classList.add("hidden");
+  }
+
+  document.getElementById("msgModal").classList.remove("hidden");
+}
+
+function closeMsgModal(e) {
+  if (e.target.id === "msgModal") {
+    document.getElementById("msgModal").classList.add("hidden");
+  }
+}
+
+function actionCopy() {
+  navigator.clipboard.writeText(selectedMsgText);
+  showToast("تم نسخ النص!");
+  document.getElementById("msgModal").classList.add("hidden");
+}
+
+function actionReply() {
+  replyingToText = selectedMsgText;
+  document.getElementById("replyPreviewText").textContent = "الرد على: " + replyingToText;
+  document.getElementById("replyPreviewBar").classList.remove("hidden");
+  document.getElementById("messageInput").focus();
+  document.getElementById("msgModal").classList.add("hidden");
+}
+
+function cancelReply() {
+  replyingToText = null;
+  document.getElementById("replyPreviewBar").classList.add("hidden");
+}
+
+function actionEdit() {
+  editingMsgId = selectedMsgId;
+  document.getElementById("messageInput").value = selectedMsgText;
+  document.getElementById("messageInput").focus();
+  document.getElementById("msgModal").classList.add("hidden");
+  showToast("أدخل التعديل ثم اضغط إرسال");
+}
+
+function actionDelete() {
+  if (confirm("هل تريد حذف هذه الرسالة؟")) {
+    db.collection("chats").doc(activeChatId).collection("messages").doc(selectedMsgId).delete()
+      .then(() => showToast("تم حذف الرسالة"));
+  }
+  document.getElementById("msgModal").classList.add("hidden");
+}
+
 function handleTyping() {
   if (!activeChatId || !currentUser) return;
   db.collection("chats").doc(activeChatId).set({
@@ -1006,7 +1180,7 @@ function handleTyping() {
     db.collection("chats").doc(activeChatId).set({
       typing: { [currentUser.uid]: false }
     }, { merge: true });
-  }, 1500);
+  }, 1200);
 }
 
 function sendMessage(e) {
@@ -1015,14 +1189,37 @@ function sendMessage(e) {
   const text = input.value.trim();
   if (!text || !activeChatId) return;
 
-  db.collection("chats").doc(activeChatId).collection("messages").add({
-    senderId: currentUser.uid,
-    text: text,
-    createdAt: Date.now()
-  });
+  db.collection("chats").doc(activeChatId).set({
+    typing: { [currentUser.uid]: false }
+  }, { merge: true });
 
-  db.collection("chats").doc(activeChatId).update({ updatedAt: Date.now() });
-  input.value = "";
+  if (editingMsgId) {
+    // تعديل الرسالة القائمة
+    db.collection("chats").doc(activeChatId).collection("messages").doc(editingMsgId).update({
+      text: text
+    }).then(() => {
+      editingMsgId = null;
+      input.value = "";
+      showToast("تم تعديل الرسالة بنجاح");
+    });
+  } else {
+    // إرسال رسالة جديدة (مع دعم الرد إذا وجد)
+    const msgData = {
+      senderId: currentUser.uid,
+      text: text,
+      createdAt: Date.now()
+    };
+
+    if (replyingToText) {
+      msgData.replyTo = replyingToText;
+    }
+
+    db.collection("chats").doc(activeChatId).collection("messages").add(msgData);
+    db.collection("chats").doc(activeChatId).update({ updatedAt: Date.now() });
+    
+    input.value = "";
+    cancelReply();
+  }
 }
 
 function loadChats() {
