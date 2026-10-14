@@ -790,25 +790,53 @@ function openProfile() {
   }
 }
 
+// دالة ذكية لضغط وتصغير الصورة لكي تتخزن بسلاسة في قاعدة البيانات
 function uploadAvatar(e) {
   const file = e.target.files[0];
   if (!file || !currentUser) return;
 
-  showToast("جاري رفع الصورة...");
+  showToast("جاري معالجة ورفع الصورة...");
 
   const reader = new FileReader();
   reader.onload = function(evt) {
-    const imgData = evt.target.result;
-    
-    db.collection("users").doc(currentUser.uid).set({
-      avatarUrl: imgData
-    }, { merge: true }).then(() => {
-      showToast("تم تحديث صورة البروفايل بنجاح!");
-      openProfile();
-    }).catch(err => {
-      console.error(err);
-      showToast("حدث خطأ في حفظ الصورة");
-    });
+    const img = new Image();
+    img.src = evt.target.result;
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 200;
+      const MAX_HEIGHT = 200;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+      db.collection("users").doc(currentUser.uid).set({
+        avatarUrl: compressedDataUrl
+      }, { merge: true }).then(() => {
+        showToast("تم تحديث صورة البروفايل وحفظها بنجاح!");
+        openProfile();
+      }).catch(err => {
+        console.error(err);
+        showToast("حدث خطأ في حفظ الصورة");
+      });
+    };
   };
   reader.readAsDataURL(file);
 }
@@ -895,7 +923,6 @@ function startChat(u) {
 function openChatRoom(otherUserId) {
   showView("chatView");
 
-  // جلب معلومات الطرف الآخر مباشرة بشكل حي ومحدث من قاعدة بياناته
   db.collection("users").doc(otherUserId).onSnapshot(doc => {
     if (doc.exists) {
       const u = doc.data();
@@ -959,7 +986,6 @@ function loadChats() {
         const otherId = participants.find(id => id !== currentUser.uid);
         if (!otherId) return;
 
-        // جلب بيانات الطرف الآخر الحية (الاسم، اليوزر، الصورة) مباشرة في قائمة المحادثات
         db.collection("users").doc(otherId).get().then(userDoc => {
           if (!userDoc.exists) return;
           const u = userDoc.data();
