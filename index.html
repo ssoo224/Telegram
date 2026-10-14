@@ -648,7 +648,6 @@ function loadUserDataAndEnter(uid) {
       updateProfileUI(currentUserData);
       enterApp();
     } else {
-      // فقط إذا لم تكن الوثيقة موجودة نهائياً ننشئها بالقيم الافتراضية
       const defaultData = {
         id: uid,
         displayName: currentUser.email.split('@')[0],
@@ -725,36 +724,42 @@ function registerUser() {
   if (!email) return showFieldError("regEmailError", "الرجاء إدخال البريد الإلكتروني");
   if (!password || password.length < 6) return showFieldError("regPassError", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
 
-  auth.createUserWithEmailAndPassword(email, password)
-    .then(cred => {
-      const userData = {
-        id: cred.user.uid,
-        displayName: name,
-        username: username,
-        email: email,
-        avatarUrl: "",
-        createdAt: Date.now()
-      };
-      db.collection("users").doc(cred.user.uid).set(userData).then(() => {
-        currentUserData = userData;
-        updateProfileUI(userData);
-        showToast("مرحباً بك في Babylon Chat!");
-        enterApp();
+  // التحقق من تكرار اليوزر أولاً
+  db.collection("users").where("username", "==", username).get().then(snap => {
+    if (!snap.empty) {
+      showFieldError("regUserError", "اسم المستخدم هذا مستخدم بالفعل، اختر غيره!");
+      return;
+    }
+
+    auth.createUserWithEmailAndPassword(email, password)
+      .then(cred => {
+        const userData = {
+          id: cred.user.uid,
+          displayName: name,
+          username: username,
+          email: email,
+          avatarUrl: "",
+          createdAt: Date.now()
+        };
+        db.collection("users").doc(cred.user.uid).set(userData).then(() => {
+          currentUserData = userData;
+          updateProfileUI(userData);
+          showToast("مرحباً بك في Babylon Chat!");
+          enterApp();
+        });
+      })
+      .catch(err => {
+        if (err.code === "auth/email-already-in-use") {
+          showFieldError("regEmailError", "هذا البريد الإلكتروني مستخدم بالفعل! جاري التحويل لتسجيل الدخول...");
+          setTimeout(() => {
+            document.getElementById("loginEmail").value = email;
+            switchTab('login');
+          }, 2000);
+        } else {
+          showFieldError("regEmailError", "حدث خطأ أثناء إنشاء الحساب");
+        }
       });
-    })
-    .catch(err => {
-      if (err.code === "auth/email-already-in-use") {
-        showFieldError("regEmailError", "هذا البريد الإلكتروني مستخدم بالفعل! جاري التحويل لتسجيل الدخول...");
-        setTimeout(() => {
-          document.getElementById("loginEmail").value = email;
-          switchTab('login');
-        }, 2000);
-      } else if (err.code === "auth/invalid-email") {
-        showFieldError("regEmailError", "صيغة البريد الإلكتروني غير صالحة");
-      } else {
-        showFieldError("regEmailError", "حدث خطأ أثناء إنشاء الحساب");
-      }
-    });
+  });
 }
 
 function enterApp() {
@@ -817,21 +822,34 @@ function saveProfile() {
   if (newUsername.length < 5) return showToast("اسم المستخدم يجب أن يكون 5 أحرف على الأقل!");
   if (!currentUser) return;
 
-  showToast("جاري حفظ التغييرات...");
+  // فحص إذا كان اليوزر مأخوذ من قبل شخص آخر
+  db.collection("users").where("username", "==", newUsername).get().then(snap => {
+    let taken = false;
+    snap.forEach(doc => {
+      if (doc.id !== currentUser.uid) taken = true; // مأخوذ من قبل حساب غير حسابي
+    });
 
-  db.collection("users").doc(currentUser.uid).set({
-    displayName: newName,
-    username: newUsername
-  }, { merge: true }).then(() => {
-    if (!currentUserData) currentUserData = {};
-    currentUserData.displayName = newName;
-    currentUserData.username = newUsername;
-    updateProfileUI(currentUserData);
-    showToast("تم حفظ التغييرات بنجاح!");
-    openProfile();
-  }).catch(err => {
-    console.error(err);
-    showToast("حدث خطأ أثناء الحفظ");
+    if (taken) {
+      showToast("عذراً، اسم المستخدم هذا مستخدم بالفعل من قبل شخص آخر!");
+      return;
+    }
+
+    showToast("جاري حفظ التغييرات...");
+
+    db.collection("users").doc(currentUser.uid).set({
+      displayName: newName,
+      username: newUsername
+    }, { merge: true }).then(() => {
+      if (!currentUserData) currentUserData = {};
+      currentUserData.displayName = newName;
+      currentUserData.username = newUsername;
+      updateProfileUI(currentUserData);
+      showToast("تم حفظ التغييرات بنجاح!");
+      openProfile();
+    }).catch(err => {
+      console.error(err);
+      showToast("حدث خطأ أثناء الحفظ");
+    });
   });
 }
 
@@ -943,7 +961,7 @@ function loadChats() {
             <div class="chat-item-sub">@${other.username || ""}</div>
           </div>`;
         div.onclick = () => {
-          activeChatId = doc.id;
+          activeId = doc.id;
           openChatRoom(other.displayName, other.username);
         };
         container.appendChild(div);
