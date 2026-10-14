@@ -1630,6 +1630,7 @@ function sendMessage(e) {
 
       const otherUserId = activeChatId.split('__').find(id => id !== currentUser.uid);
       if (otherUserId) {
+        // الاتصال بالـ API الصحيح المعرف في vercel.json
         fetch('/api/index', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
