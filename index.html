@@ -253,7 +253,6 @@ body {
   color: var(--babylon-gold);
 }
 
-/* تنسيق قائمة المحادثات مثل تليجرام بالضبط */
 .chat-item {
   display: flex;
   align-items: center;
@@ -294,7 +293,6 @@ body {
 .chat-item-sub { font-size: 13.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 .unread-badge { background: #2b5278; color: white; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-right: 6px; }
 
-/* بروفايل تليجرام البابلي وضبط أبعاد الصورة بدقة */
 .profile-view {
   flex: 1;
   overflow-y: auto;
@@ -716,7 +714,7 @@ body {
       <div id="searchResults" class="chat-list"></div>
     </div>
 
-    <!-- شاشة الملف الشخصي والإعدادات مع ضبط أبعاد الصورة وقواعد اليوزر -->
+    <!-- شاشة الملف الشخصي والإعدادات -->
     <div id="profileView" class="profile-view hidden">
       <div class="babylon-profile-header">
         <button class="icon-btn" style="position:absolute; right:12px; top:12px;" onclick="goHome()">‹</button>
@@ -873,7 +871,6 @@ let recordInterval = null;
 let recordSeconds = 0;
 let updateTimer = null;
 
-// قاعدة فحص اسم المستخدم (يبدأ بحرف، ثم حروف/أرقام/شرطة سفلية/نقطة)
 function isValidUsername(username) {
   const regex = /^[a-zA-Z][a-zA-Z0-9_\.]{4,}$/;
   return regex.test(username);
@@ -881,7 +878,6 @@ function isValidUsername(username) {
 
 function validateUsernameInput(inputElement) {
   let val = inputElement.value.trim();
-  // إزالة أي رموز غير مسموحة فوراً
   val = val.replace(/[^a-zA-Z0-9_\.]/g, '');
   inputElement.value = val;
 }
@@ -1497,6 +1493,10 @@ function stopAndSendRecording() {
         audioUrl: base64Audio,
         read: false,
         createdAt: Date.now()
+      }).then(() => {
+        db.collection("chats").doc(activeChatId).set({
+          updatedAt: Date.now()
+        }, { merge: true });
       });
 
       cancelRecording();
@@ -1534,14 +1534,18 @@ function sendMessage(e) {
       msgData.replyTo = replyingToText;
     }
 
-    db.collection("chats").doc(activeChatId).collection("messages").add(msgData);
+    db.collection("chats").doc(activeChatId).collection("messages").add(msgData).then(() => {
+      db.collection("chats").doc(activeChatId).set({
+        updatedAt: Date.now()
+      }, { merge: true });
+    });
     
     input.value = "";
     cancelReply();
   }
 }
 
-// دالة تحميل المحادثات مع عرض اسم المستخدم، آخر رسالة، الوقت، وعداد الرسائل غير المقروءة مثل تليجرام
+// دالة تحميل قائمة المحادثات المصححة (عرض أحدث رسالة مطلقاً وعدد غير المقروءة)
 function loadChats() {
   const container = document.getElementById("chatList");
   
@@ -1576,33 +1580,42 @@ function loadChats() {
           if (!userDoc.exists) return;
           const u = userDoc.data();
 
-          // جلب آخر رسالة وحساب غير المقروءة
+          // الاستعلام المصحح: جلب آخر رسالة حقيقية مضافة في المحادثة بغض النظر عن من أرسلها
           db.collection("chats").doc(chatDoc.id).collection("messages")
             .orderBy("createdAt", "desc")
             .limit(1)
-            .get().then(msgSnap => {
+            .onSnapshot(msgSnap => {
               let lastMsgText = "لا توجد رسائل بعد";
               let lastMsgTime = "";
-              let unreadCount = 0;
 
               if (!msgSnap.empty) {
                 const m = msgSnap.docs[0].data();
-                lastMsgText = m.audioUrl ? "🎤 بصمة صوتية" : (m.text || "");
+                const isMine = (m.senderId === currentUser.uid);
+                const prefix = isMine ? "أنت: " : "";
+                
+                lastMsgText = prefix + (m.audioUrl ? "🎤 بصمة صوتية" : (m.text || ""));
                 
                 let tStr = new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
                 if (tStr.startsWith('0')) tStr = tStr.substring(1);
                 lastMsgTime = tStr;
               }
 
+              // جلب عدد الرسائل التي أرسلها الطرف الآخر فقط ولم تُقرأ بعد
               db.collection("chats").doc(chatDoc.id).collection("messages")
                 .where("senderId", "==", otherId)
                 .where("read", "==", false)
-                .get().then(unReadSnap => {
-                  unreadCount = unReadSnap.size;
+                .onSnapshot(unReadSnap => {
+                  let unreadCount = unReadSnap.size;
 
-                  const div = document.createElement("div");
-                  div.className = "chat-item";
-                  div.innerHTML = `
+                  let existingItem = document.getElementById("chat_item_" + chatDoc.id);
+                  if (!existingItem) {
+                    existingItem = document.createElement("div");
+                    existingItem.id = "chat_item_" + chatDoc.id;
+                    existingItem.className = "chat-item";
+                    container.appendChild(existingItem);
+                  }
+
+                  existingItem.innerHTML = `
                     <div class="avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}">` : (u.displayName||"?").charAt(0).toUpperCase()}</div>
                     <div class="chat-item-info">
                       <div class="chat-item-header-row">
@@ -1614,11 +1627,11 @@ function loadChats() {
                         ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
                       </div>
                     </div>`;
-                  div.onclick = () => {
+
+                  existingItem.onclick = () => {
                     activeChatId = chatDoc.id;
                     openChatRoom(otherId);
                   };
-                  container.appendChild(div);
                 });
             });
         });
