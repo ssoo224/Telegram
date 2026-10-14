@@ -32,7 +32,7 @@
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   user-select: none;
-  -webkit-touch-callout: none; /* منع قائمة المتصفح الافتراضية في الأيفون */
+  -webkit-touch-callout: none;
 }
 
 body {
@@ -375,9 +375,11 @@ body {
   z-index: 1;
 }
 
+/* الحجم المتناسق التلقائي بحسب حجم الكلمة بالضبط (fit-content) */
 .msg-bubble {
+  width: fit-content;
   max-width: 78%;
-  padding: 9px 13px;
+  padding: 8px 12px;
   font-size: 14px;
   line-height: 1.4;
   border-radius: 12px 12px 12px 4px;
@@ -388,6 +390,7 @@ body {
   position: relative;
   cursor: pointer;
   transition: transform 0.15s ease;
+  word-break: break-word;
 }
 .msg-bubble.mine {
   align-self: flex-end;
@@ -396,12 +399,11 @@ body {
   border-color: rgba(27, 77, 142, 0.6);
 }
 
-/* اقتباس الرد */
 .reply-quote {
   background: rgba(0, 0, 0, 0.35);
   border-right: 3px solid var(--babylon-gold);
   border-left: none;
-  padding: 5px 10px;
+  padding: 4px 8px;
   margin-bottom: 6px;
   border-radius: 4px;
   font-size: 12px;
@@ -412,7 +414,6 @@ body {
   text-overflow: ellipsis;
 }
 
-/* تفاصيل وقت الرسالة وعلامات القراءة (Double Check) */
 .msg-meta {
   display: flex;
   align-items: center;
@@ -425,13 +426,13 @@ body {
 
 .check-mark {
   font-size: 12px;
-  color: #94a3b8; /* رمادي للإرسال */
+  color: #94a3b8;
 }
 .check-mark.read {
-  color: var(--babylon-gold); /* ذهبي عند القراءة */
+  color: var(--babylon-gold); /* الصحين بالذهبي عند القراءة */
+  font-weight: bold;
 }
 
-/* شريط التفاعلات بالإيموجي أسفل الرسالة */
 .reactions-row {
   display: flex;
   gap: 4px;
@@ -446,12 +447,11 @@ body {
   font-size: 12px;
 }
 
-/* مشغل الصوت للبصمات */
 .audio-player {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 180px;
+  width: 200px;
   padding: 4px 0;
 }
 .audio-player audio {
@@ -506,7 +506,7 @@ body {
 }
 @keyframes pulse { from { opacity: 0.5; } to { opacity: 1; } }
 
-/* نافذة خيارات الرسالة والتفاعلات */
+/* نافذة خيارات الرسالة والتفاعلات بالإيموجي */
 .msg-actions-modal {
   position: fixed;
   inset: 0;
@@ -783,10 +783,12 @@ let activeChatId = null;
 let typingTimeout = null;
 let chatUnsubscribe = null;
 let userUnsubscribe = null;
+let heartbeatInterval = null;
 
 let selectedMsgId = null;
 let selectedMsgText = null;
 let selectedMsgSender = null;
+let selectedMsgReactions = {};
 let replyingToText = null;
 let editingMsgId = null;
 
@@ -836,8 +838,15 @@ function switchTab(type) {
 auth.onAuthStateChanged(user => {
   if (user) {
     currentUser = user;
+    
+    // إرسال نبضة اتصال مستمرة (Heartbeat) لتأكيد أن الحساب متصل فعلياً الآن
     db.collection("users").doc(user.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
     
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = setInterval(() => {
+      db.collection("users").doc(user.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
+    }, 10000);
+
     window.addEventListener('beforeunload', () => {
       db.collection("users").doc(user.uid).set({ online: false, lastSeen: Date.now() }, { merge: true });
     });
@@ -977,6 +986,7 @@ function enterApp() {
 
 function logout() { 
   if (currentUser) {
+    clearInterval(heartbeatInterval);
     db.collection("users").doc(currentUser.uid).set({ online: false, lastSeen: Date.now() }, { merge: true }).then(() => {
       auth.signOut().then(() => location.reload());
     });
@@ -1151,7 +1161,25 @@ function openChatRoom(otherUserId) {
   if (userUnsubscribe) userUnsubscribe();
   showView("chatView");
 
-  // تحديث حالة قراءة الرسائل (Double Check Marks)
+  // الاستماع المباشر والدقيق لـ حالة الاتصال بـ "متصل الآن"
+  userUnsubscribe = db.collection("users").doc(otherUserId).onSnapshot(doc => {
+    if (doc.exists) {
+      const u = doc.data();
+      document.getElementById("chatTitle").textContent = u.displayName || "مستخدم";
+      const sub = document.getElementById("chatSub");
+
+      // يعتبر متصلاً إذا كُتِبَت حالته online وتم إرسال نبضة قبل أقل من 25 ثانية
+      if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
+        sub.textContent = "متصل الآن";
+        sub.style.color = "#4ade80";
+      } else {
+        sub.textContent = "غير متصل";
+        sub.style.color = "var(--text-muted)";
+      }
+    }
+  });
+
+  // تحديث حالة القراءة للرسائل التي تم استلامها فور فتح الشات
   db.collection("chats").doc(activeChatId).collection("messages")
     .where("senderId", "==", otherUserId)
     .where("read", "==", false)
@@ -1163,30 +1191,15 @@ function openChatRoom(otherUserId) {
     if (chatDoc.exists) {
       const data = chatDoc.data();
       const typingMap = data.typing || {};
-      const isOtherTyping = typingMap[otherUserId];
-      
-      db.collection("users").doc(otherUserId).get().then(userDoc => {
-        if (!userDoc.exists) return;
-        const u = userDoc.data();
-        document.getElementById("chatTitle").textContent = u.displayName || "مستخدم";
-        
+      if (typingMap[otherUserId]) {
         const sub = document.getElementById("chatSub");
-
-        if (isOtherTyping) {
-          sub.textContent = "جاري الكتابة...";
-          sub.style.color = "var(--babylon-gold)";
-        } else if (u.online && (Date.now() - (u.lastSeen || 0) < 35000)) {
-          sub.textContent = "متصل الآن";
-          sub.style.color = "#4ade80";
-        } else {
-          sub.textContent = "غير متصل";
-          sub.style.color = "var(--text-muted)";
-        }
-      });
+        sub.textContent = "جاري الكتابة...";
+        sub.style.color = "var(--babylon-gold)";
+      }
     }
   });
 
-  // الاستماع المباشر للرسائل والتفاعلات واللمس بالموبايل
+  // الاستماع المباشر للرسائل وعرض العلامات المزدوجة (✓✓) والـ Reactions وحجم الحاوية التلقائي
   db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "asc")
     .onSnapshot(snap => {
@@ -1196,7 +1209,7 @@ function openChatRoom(otherUserId) {
         const m = doc.data();
         const isMine = m.senderId === currentUser.uid;
         
-        // علم القراءة إذا كانت رسالتي
+        // تحويل الرسالة المقروءة إلى صحين بالذهبي (✓✓)
         let checkHtml = "";
         if (isMine) {
           if (m.read) {
@@ -1220,7 +1233,6 @@ function openChatRoom(otherUserId) {
           htmlContent += `<div>${m.text}</div>`;
         }
 
-        // عرض تفاعلات الإيموجي إن وجدت
         if (m.reactions && Object.keys(m.reactions).length > 0) {
           htmlContent += `<div class="reactions-row">`;
           for (let r in m.reactions) {
@@ -1232,7 +1244,6 @@ function openChatRoom(otherUserId) {
         htmlContent += `<div class="msg-meta"><span>${new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span> ${checkHtml}</div>`;
         b.innerHTML = htmlContent;
 
-        /* البرمجة الدقيقة لأحداث اللمس للموبايل (سحب + ضغط مطول بدون مشاكل) */
         let pressTimer = null;
         let touchStartX = 0;
         let touchStartY = 0;
@@ -1242,14 +1253,13 @@ function openChatRoom(otherUserId) {
           touchStartY = e.touches[0].clientY;
 
           pressTimer = setTimeout(() => {
-            openMsgModal(doc.id, m.text || "بصمة صوتية", m.senderId);
-          }, 500); // ضغط مطول 0.5 ثانية للموبايل
+            openMsgModal(doc.id, m.text || "بصمة صوتية", m.senderId, m.reactions || {});
+          }, 450);
         };
 
         b.ontouchmove = (e) => {
           let moveX = e.touches[0].clientX;
           let moveY = e.touches[0].clientY;
-          // إذا تم تحريك الإصبع يتم إلغاء الضغط المطول لمنع الفتح العشوائي
           if (Math.abs(moveX - touchStartX) > 10 || Math.abs(moveY - touchStartY) > 10) {
             clearTimeout(pressTimer);
           }
@@ -1258,17 +1268,15 @@ function openChatRoom(otherUserId) {
         b.ontouchend = (e) => {
           clearTimeout(pressTimer);
           let endX = e.changedTouches[0].clientX;
-          // سحب لليسار للرد
           if (touchStartX - endX > 50) {
             triggerSwipeReply(m.text || "بصمة صوتية");
           }
         };
 
-        // للكمبيوتر والفأرة
         b.onmousedown = () => {
           pressTimer = setTimeout(() => {
-            openMsgModal(doc.id, m.text || "بصمة صوتية", m.senderId);
-          }, 500);
+            openMsgModal(doc.id, m.text || "بصمة صوتية", m.senderId, m.reactions || {});
+          }, 450);
         };
         b.onmouseup = b.onmouseleave = () => clearTimeout(pressTimer);
 
@@ -1286,10 +1294,11 @@ function triggerSwipeReply(text) {
   showToast("تم تفعيل الرد على الرسالة");
 }
 
-function openMsgModal(msgId, text, senderId) {
+function openMsgModal(msgId, text, senderId, reactions) {
   selectedMsgId = msgId;
   selectedMsgText = text;
   selectedMsgSender = senderId;
+  selectedMsgReactions = reactions || {};
 
   const btnEdit = document.getElementById("btnEditMsg");
   const btnDelete = document.getElementById("btnDeleteMsg");
@@ -1311,14 +1320,22 @@ function closeMsgModal(e) {
   }
 }
 
-// التفاعل بالإيموجي
+// ميزة التفاعل بـ Toggle (إضافة التفاعل أو حذفه إذا كان موجوداً سابقاً)
 function addReaction(emoji) {
   if (!activeChatId || !selectedMsgId) return;
-  db.collection("chats").doc(activeChatId).collection("messages").doc(selectedMsgId).set({
-    reactions: { [emoji]: true }
-  }, { merge: true }).then(() => {
+
+  let newReactions = { ...selectedMsgReactions };
+
+  if (newReactions[emoji]) {
+    delete newReactions[emoji]; // حذف التفاعل إذا كان محدد سبقاً
+  } else {
+    newReactions[emoji] = true; // إضافة التفاعل
+  }
+
+  db.collection("chats").doc(activeChatId).collection("messages").doc(selectedMsgId).update({
+    reactions: newReactions
+  }).then(() => {
     document.getElementById("msgModal").classList.add("hidden");
-    showToast("تم إضافة التفاعل " + emoji);
   });
 }
 
@@ -1349,7 +1366,7 @@ function actionDelete() {
   document.getElementById("msgModal").classList.add("hidden");
 }
 
-/* دوال البصمة الصوتية وتغيير الواجهة أثناء التسجيل */
+/* تسجيل وإرسال البصمة الصوتية */
 function startRecording() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     return showToast("المتصفح لا يدعم تسجيل الصوت");
