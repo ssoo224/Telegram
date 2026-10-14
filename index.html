@@ -375,7 +375,6 @@ body {
   z-index: 1;
 }
 
-/* الحجم المتناسق التلقائي بحسب حجم الكلمة بالضبط (fit-content) */
 .msg-bubble {
   width: fit-content;
   max-width: 78%;
@@ -429,7 +428,7 @@ body {
   color: #94a3b8;
 }
 .check-mark.read {
-  color: var(--babylon-gold); /* الصحين بالذهبي عند القراءة */
+  color: var(--babylon-gold);
   font-weight: bold;
 }
 
@@ -460,7 +459,6 @@ body {
   filter: invert(0.9) hue-rotate(180deg);
 }
 
-/* صندوق الرد المعلق وشريط الكتابة والتسجيل */
 .chat-input-container {
   background: var(--babylon-surface);
   border-top: 1px solid var(--babylon-border);
@@ -506,7 +504,6 @@ body {
 }
 @keyframes pulse { from { opacity: 0.5; } to { opacity: 1; } }
 
-/* نافذة خيارات الرسالة والتفاعلات بالإيموجي */
 .msg-actions-modal {
   position: fixed;
   inset: 0;
@@ -782,7 +779,9 @@ let currentUserData = null;
 let activeChatId = null;
 let typingTimeout = null;
 let chatUnsubscribe = null;
+let messagesUnsubscribe = null;
 let userUnsubscribe = null;
+let chatsListUnsubscribe = null;
 let heartbeatInterval = null;
 
 let selectedMsgId = null;
@@ -839,7 +838,6 @@ auth.onAuthStateChanged(user => {
   if (user) {
     currentUser = user;
     
-    // إرسال نبضة اتصال مستمرة (Heartbeat) لتأكيد أن الحساب متصل فعلياً الآن
     db.collection("users").doc(user.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
     
     clearInterval(heartbeatInterval);
@@ -1005,7 +1003,9 @@ function showView(viewId) {
 
 function goHome() {
   if (chatUnsubscribe) chatUnsubscribe();
+  if (messagesUnsubscribe) messagesUnsubscribe();
   if (userUnsubscribe) userUnsubscribe();
+  activeChatId = null;
   cancelReply();
   document.getElementById("searchInput").value = "";
   document.getElementById("searchResults").innerHTML = "";
@@ -1020,7 +1020,9 @@ function openSearch() {
 
 function openProfile() {
   if (chatUnsubscribe) chatUnsubscribe();
+  if (messagesUnsubscribe) messagesUnsubscribe();
   if (userUnsubscribe) userUnsubscribe();
+  activeChatId = null;
   showView("profileView");
   if (currentUserData) {
     updateProfileUI(currentUserData);
@@ -1158,17 +1160,17 @@ function startChat(u) {
 
 function openChatRoom(otherUserId) {
   if (chatUnsubscribe) chatUnsubscribe();
+  if (messagesUnsubscribe) messagesUnsubscribe();
   if (userUnsubscribe) userUnsubscribe();
   showView("chatView");
 
-  // الاستماع المباشر والدقيق لـ حالة الاتصال بـ "متصل الآن"
+  // استماع مستقل للطرف الآخر لحالة الاتصال لتجنب الخروج التلقائي
   userUnsubscribe = db.collection("users").doc(otherUserId).onSnapshot(doc => {
     if (doc.exists) {
       const u = doc.data();
       document.getElementById("chatTitle").textContent = u.displayName || "مستخدم";
       const sub = document.getElementById("chatSub");
 
-      // يعتبر متصلاً إذا كُتِبَت حالته online وتم إرسال نبضة قبل أقل من 25 ثانية
       if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
         sub.textContent = "متصل الآن";
         sub.style.color = "#4ade80";
@@ -1179,7 +1181,7 @@ function openChatRoom(otherUserId) {
     }
   });
 
-  // تحديث حالة القراءة للرسائل التي تم استلامها فور فتح الشات
+  // تحديث القراءة فوراً
   db.collection("chats").doc(activeChatId).collection("messages")
     .where("senderId", "==", otherUserId)
     .where("read", "==", false)
@@ -1199,8 +1201,8 @@ function openChatRoom(otherUserId) {
     }
   });
 
-  // الاستماع المباشر للرسائل وعرض العلامات المزدوجة (✓✓) والـ Reactions وحجم الحاوية التلقائي
-  db.collection("chats").doc(activeChatId).collection("messages")
+  // استماع للرسائل ثابت لا ينقطع
+  messagesUnsubscribe = db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "asc")
     .onSnapshot(snap => {
       const box = document.getElementById("messagesArea");
@@ -1209,7 +1211,6 @@ function openChatRoom(otherUserId) {
         const m = doc.data();
         const isMine = m.senderId === currentUser.uid;
         
-        // تحويل الرسالة المقروءة إلى صحين بالذهبي (✓✓)
         let checkHtml = "";
         if (isMine) {
           if (m.read) {
@@ -1320,16 +1321,15 @@ function closeMsgModal(e) {
   }
 }
 
-// ميزة التفاعل بـ Toggle (إضافة التفاعل أو حذفه إذا كان موجوداً سابقاً)
 function addReaction(emoji) {
   if (!activeChatId || !selectedMsgId) return;
 
   let newReactions = { ...selectedMsgReactions };
 
   if (newReactions[emoji]) {
-    delete newReactions[emoji]; // حذف التفاعل إذا كان محدد سبقاً
+    delete newReactions[emoji];
   } else {
-    newReactions[emoji] = true; // إضافة التفاعل
+    newReactions[emoji] = true;
   }
 
   db.collection("chats").doc(activeChatId).collection("messages").doc(selectedMsgId).update({
@@ -1366,7 +1366,6 @@ function actionDelete() {
   document.getElementById("msgModal").classList.add("hidden");
 }
 
-/* تسجيل وإرسال البصمة الصوتية */
 function startRecording() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     return showToast("المتصفح لا يدعم تسجيل الصوت");
@@ -1482,28 +1481,38 @@ function sendMessage(e) {
   }
 }
 
+// تحميل قائمة المحادثات بدون تكرار
 function loadChats() {
   const container = document.getElementById("chatList");
   
-  container.innerHTML = `
-    <div class="empty-chats">
-      <div class="empty-chats-icon">🏛</div>
-      <div style="font-weight: 600; font-size:16px; margin-bottom: 6px; color: var(--babylon-gold);">لا توجد محادثات في بابل بعد</div>
-      <div style="font-size: 13px; color: var(--text-muted);">اضغط على أيقونة البحث (⌕) وابحث عن مستخدم بيوزر لا يقل عن 5 أحرف</div>
-    </div>`;
+  if (chatsListUnsubscribe) chatsListUnsubscribe();
 
   if (!currentUser) return;
 
-  db.collection("chats").where("participants", "array-contains", currentUser.uid)
+  chatsListUnsubscribe = db.collection("chats")
+    .where("participants", "array-contains", currentUser.uid)
     .onSnapshot(snap => {
-      if (snap.empty) return;
+      if (snap.empty) {
+        container.innerHTML = `
+          <div class="empty-chats">
+            <div class="empty-chats-icon">🏛</div>
+            <div style="font-weight: 600; font-size:16px; margin-bottom: 6px; color: var(--babylon-gold);">لا توجد محادثات في بابل بعد</div>
+            <div style="font-size: 13px; color: var(--text-muted);">اضغط على أيقونة البحث (⌕) وابحث عن مستخدم بيوزر لا يقل عن 5 أحرف</div>
+          </div>`;
+        return;
+      }
 
       container.innerHTML = "";
+      const processedUsers = new Set();
+
       snap.forEach(chatDoc => {
         const chatData = chatDoc.data();
         const participants = chatData.participants || [];
         const otherId = participants.find(id => id !== currentUser.uid);
-        if (!otherId) return;
+        
+        // تنقية القائمة لمنع تكرار نفس الحساب نهائياً
+        if (!otherId || processedUsers.has(otherId)) return;
+        processedUsers.add(otherId);
 
         db.collection("users").doc(otherId).get().then(userDoc => {
           if (!userDoc.exists) return;
