@@ -353,36 +353,46 @@ body {
 }
 .profile-row:last-child { border: none; }
 
-/* غرفة المحادثة مع خلفية بابلية تراثية ساحرة */
+/* غرفة المحادثة بتصميم الخلفية التراثية البابلية الموزعة بشكل مذهل */
 .chat-room {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: #0b1320;
-  background-image: 
-    radial-gradient(circle at 20% 30%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 80% 70%, rgba(27, 42, 74, 0.25) 0%, transparent 50%),
-    linear-gradient(135deg, rgba(11, 19, 32, 0.95), rgba(19, 29, 46, 0.95));
+  background-color: #0d1626;
   position: relative;
+  overflow: hidden;
 }
 
-/* رموز أثرية بابلية خفيفة في الخلفية */
-.chat-room::before {
-  content: "🏛 𓍝 𓎛 𓏤 𓋹 𒀭 🏺 🏛 𓍝";
+/* النقوش والرموز البابلية التراثية العشوائية الموزعة بكافة الأركان */
+.chat-bg-pattern {
   position: absolute;
   inset: 0;
-  font-size: 24px;
-  color: rgba(212, 175, 55, 0.03);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 40px;
-  padding: 30px;
-  align-content: space-around;
-  justify-content: space-around;
   pointer-events: none;
-  overflow: hidden;
+  opacity: 0.05;
+  background-image: 
+    radial-gradient(#d4af37 1px, transparent 1px),
+    radial-gradient(#d4af37 1px, #0d1626 1px);
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
   z-index: 0;
 }
+
+.chat-bg-symbols {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  color: var(--babylon-gold);
+  font-size: 28px;
+  opacity: 0.08;
+}
+.symbol-1 { position: absolute; top: 8%; right: 10%; }
+.symbol-2 { position: absolute; top: 18%; left: 12%; font-size: 36px; }
+.symbol-3 { position: absolute; top: 35%; right: 15%; font-size: 32px; }
+.symbol-4 { position: absolute; top: 50%; left: 8%; font-size: 30px; }
+.symbol-5 { position: absolute; top: 68%; right: 12%; font-size: 38px; }
+.symbol-6 { position: absolute; top: 82%; left: 15%; font-size: 34px; }
+.symbol-7 { position: absolute; top: 42%; left: 45%; font-size: 35px; }
 
 .messages-area {
   flex: 1;
@@ -416,14 +426,20 @@ body {
   border-color: rgba(27, 77, 142, 0.6);
 }
 
+/* اقتباس الرد مع شريط ذهبي على اليمين خصيصاً للغة العربية */
 .reply-quote {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.35);
   border-right: 3px solid var(--babylon-gold);
-  padding: 4px 8px;
+  border-left: none;
+  padding: 5px 10px;
   margin-bottom: 6px;
   border-radius: 4px;
   font-size: 12px;
   color: var(--babylon-gold);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .msg-time {
@@ -468,7 +484,7 @@ body {
   font-size: 14px;
 }
 
-/* نافذة خيارات الرسالة (نسخ، تعديل، حذف) */
+/* نافذة خيارات الرسالة */
 .msg-actions-modal {
   position: fixed;
   inset: 0;
@@ -649,11 +665,22 @@ body {
 
     <!-- غرفة المحادثة -->
     <div id="chatView" class="chat-room hidden">
+      <div class="chat-bg-pattern"></div>
+      <div class="chat-bg-symbols">
+        <span class="symbol-1">🏛</span>
+        <span class="symbol-2">🏺</span>
+        <span class="symbol-3">𓍝</span>
+        <span class="symbol-4">🕌</span>
+        <span class="symbol-5">𒀭</span>
+        <span class="symbol-6">𓋹</span>
+        <span class="symbol-7">🏛</span>
+      </div>
+
       <header class="babylon-header">
         <button class="icon-btn" onclick="goHome()">‹</button>
         <div style="flex:1; text-align:right; margin-right:12px;">
           <div id="chatTitle" style="font-weight:600; font-size:15px; color:var(--babylon-gold);">المحادثة</div>
-          <div id="chatSub" style="font-size:11px; color:var(--text-muted);">جاري التحميل...</div>
+          <div id="chatSub" style="font-size:11px; color:var(--text-muted);">غير متصل</div>
         </div>
       </header>
 
@@ -675,7 +702,7 @@ body {
 
 </div>
 
-<!-- نافذة خيارات الرسالة (نسخ، تعديل، حذف) -->
+<!-- نافذة خيارات الرسالة -->
 <div id="msgModal" class="msg-actions-modal hidden" onclick="closeMsgModal(event)">
   <div class="msg-actions-card">
     <button onclick="actionCopy()">📋 نسخ النص</button>
@@ -1068,18 +1095,6 @@ function openChatRoom(otherUserId) {
   if (userUnsubscribe) userUnsubscribe();
   showView("chatView");
 
-  // دالة دقيقة لحساب وقت آخر ظهور
-  function formatLastSeen(timestamp) {
-    if (!timestamp) return "غير متصل";
-    const diff = Date.now() - timestamp;
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 2) return "متصل الآن";
-    if (minutes < 60) return `آخر ظهور قبل ${minutes} دقيقة`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `آخر ظهور قبل ${hours} ساعة`;
-    return "آخر ظهور قبل أيام";
-  }
-
   chatUnsubscribe = db.collection("chats").doc(activeChatId).onSnapshot(chatDoc => {
     if (chatDoc.exists) {
       const data = chatDoc.data();
@@ -1096,11 +1111,13 @@ function openChatRoom(otherUserId) {
         if (isOtherTyping) {
           sub.textContent = "جاري الكتابة...";
           sub.style.color = "var(--babylon-gold)";
-        } else if (u.online && (Date.now() - (u.lastSeen || 0) < 30000)) {
+        } else if (u.online && (Date.now() - (u.lastSeen || 0) < 35000)) {
+          // متصل فقط إذا كان متواجداً فعلياً
           sub.textContent = "متصل الآن";
           sub.style.color = "#4ade80";
         } else {
-          sub.textContent = formatLastSeen(u.lastSeen);
+          // حالة مبسطة فقط: غير متصل
+          sub.textContent = "غير متصل";
           sub.style.color = "var(--text-muted)";
         }
       });
@@ -1131,12 +1148,12 @@ function openChatRoom(otherUserId) {
         });
         b.addEventListener('touchend', (e) => {
           let endX = e.changedTouches[0].clientX;
-          if (startX - endX > 50) { // سحب لليسار بأكثر من 50 بكسل
+          if (startX - endX > 50) {
             triggerSwipeReply(m.text);
           }
         });
 
-        // للكمبيوتر (سحب بالفأرة أو ضغط مطول للنسخ والحذف)
+        // للكمبيوتر (ضغط مطول للخيارات)
         let pressTimer;
         b.onmousedown = (e) => {
           pressTimer = setTimeout(() => {
