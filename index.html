@@ -17,11 +17,11 @@
 
 <div class="app-container">
 
-  <!-- صفحة الدخول والتسجيل -->
+  <!-- شاشة الدخول والتسجيل -->
   <section id="authPage" class="auth-page">
-    <div class="tg-logo-animated">✈</div>
+    <div class="tg-logo">✈</div>
     <h1 class="auth-title">AJ Chat</h1>
-    <p class="auth-subtitle">تطبيق المحادثات الفوري المطور</p>
+    <p class="auth-subtitle">تطبيق المحادثات السحابي</p>
 
     <div class="tg-tabs">
       <button id="tabLogin" class="tg-tab active" onclick="switchTab('login')">تسجيل الدخول</button>
@@ -44,12 +44,12 @@
     <!-- نموذج التسجيل -->
     <div id="formRegister" class="hidden" style="width:100%;">
       <div class="tg-input-group">
-        <label>اسم العرض (الاسم الكامل)</label>
-        <input id="regName" class="tg-input" type="text" placeholder="علي الدليمي">
+        <label>اسم العرض</label>
+        <input id="regName" class="tg-input" type="text" placeholder="اسمك الكامل">
       </div>
       <div class="tg-input-group">
-        <label>اسم المستخدم (اليوزر)</label>
-        <input id="regUsername" class="tg-input" type="text" placeholder="ali_deli">
+        <label>اسم المستخدم (يوزر)</label>
+        <input id="regUsername" class="tg-input" type="text" placeholder="username">
       </div>
       <div class="tg-input-group">
         <label>البريد الإلكتروني</label>
@@ -59,14 +59,14 @@
         <label>كلمة المرور</label>
         <input id="regPassword" class="tg-input" type="password" placeholder="6 أحرف على الأقل">
       </div>
-      <button class="tg-btn" onclick="registerUser()">إنشاء حساب جديد</button>
+      <button class="tg-btn" onclick="registerUser()">إنشاء الحساب</button>
     </div>
   </section>
 
-  <!-- الصفحة الرئيسية والتطبيق -->
+  <!-- الصفحة الرئيسية -->
   <section id="mainPage" class="hidden" style="height:100%; display:flex; flex-direction:column;">
     <header class="tg-header">
-      <button class="icon-btn" onclick="toggleMenu()">⋮</button>
+      <button class="icon-btn" onclick="toggleMenu()">☰</button>
       <div class="tg-header-title">AJ Chat</div>
       <button class="icon-btn" onclick="openSearch()">⌕</button>
 
@@ -76,66 +76,71 @@
       </div>
     </header>
 
-    <!-- قائمة القنوات والمحادثات -->
+    <!-- قائمة المحادثات -->
     <div id="homeView" class="chat-list">
-      <div id="chatList"></div>
+      <div id="chatList" style="flex:1; display:flex; flex-direction:column;"></div>
     </div>
 
     <!-- واجهة البحث -->
-    <div id="searchView" class="hidden" style="flex:1;">
-      <div style="padding:12px; background:var(--tg-surface);">
-        <input id="searchInput" class="tg-input" placeholder="ابحث باسم المستخدم..." oninput="searchUsers()">
+    <div id="searchView" class="hidden" style="flex:1; display:flex; flex-direction:column;">
+      <div style="padding:12px; background:var(--tg-surface); border-bottom:1px solid var(--tg-border);">
+        <input id="searchInput" class="tg-input" placeholder="ابحث باسم المستخدم (مثال: ali)..." oninput="searchUsers()">
       </div>
       <div id="searchResults" class="chat-list"></div>
     </div>
 
-    <!-- واجهة البروفايل مثل تليجرام -->
+    <!-- واجهة البروفايل الرسمية كإعدادات تليجرام -->
     <div id="profileView" class="profile-view hidden">
-      <div class="profile-banner">
+      <div class="telegram-profile-header">
         <button class="icon-btn" style="position:absolute; right:12px; top:12px;" onclick="goHome()">‹</button>
         
-        <div class="profile-avatar-container">
-          <div id="pAvatarText" class="profile-avatar-main">؟</div>
-          <img id="pAvatarImg" class="profile-avatar-main hidden" src="" alt="Avatar">
-          <label for="avatarInput" class="profile-upload-btn">📷</label>
+        <div class="profile-avatar-box">
+          <div id="pAvatarText" class="profile-avatar-img">؟</div>
+          <img id="pAvatarImg" class="profile-avatar-img hidden" src="" alt="Avatar">
+          <label for="avatarInput" class="camera-badge">📷</label>
           <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="uploadAvatar(event)">
         </div>
 
-        <h2 id="pHeaderName">اسم المستخدم</h2>
-        <div id="pHeaderUser" style="font-size:14px; color:var(--tg-text-muted);">@username</div>
+        <h2 id="pHeaderName" style="font-size:18px; font-weight:600;">الاسم</h2>
+        <div id="pHeaderUser" style="font-size:13px; color:var(--tg-text-muted); margin-top:2px;">@username</div>
       </div>
 
-      <div class="profile-section-title">إعدادات الحساب</div>
-      <div class="profile-card">
-        <div class="profile-field-item">
-          <div class="tg-input-group">
+      <div class="profile-section-label">الحساب</div>
+      <div class="profile-settings-card">
+        <div class="profile-row">
+          <div style="font-size:11px; color:var(--tg-text-muted); margin-bottom:3px;">البريد الإلكتروني (ثابت)</div>
+          <div id="pEmailDisplay" style="font-size:15px; color:#aab8c2;">email@domain.com</div>
+        </div>
+      </div>
+
+      <div class="profile-section-label">معلومات المستخدم</div>
+      <div class="profile-settings-card">
+        <div class="profile-row">
+          <div class="tg-input-group" style="margin-bottom:0;">
             <label>اسم العرض</label>
             <input id="pNameInput" class="tg-input">
           </div>
         </div>
-        <div class="profile-field-item">
-          <div class="tg-input-group">
+        <div class="profile-row">
+          <div class="tg-input-group" style="margin-bottom:0;">
             <label>اسم المستخدم</label>
             <input id="pUsernameInput" class="tg-input">
           </div>
         </div>
-        <div class="profile-field-item">
-          <div class="tg-input-group">
-            <label>البريد الإلكتروني</label>
-            <input id="pEmailInput" class="tg-input" readonly style="opacity:0.6;">
-          </div>
-        </div>
-        <button class="tg-btn" style="margin:16px 0;" onclick="saveProfile()">حفظ التغييرات</button>
+      </div>
+
+      <div style="padding:16px;">
+        <button class="tg-btn" onclick="saveProfile()">حفظ التغييرات</button>
       </div>
     </div>
 
-    <!-- غرفة المحادثات -->
+    <!-- غرفة المحادثة -->
     <div id="chatView" class="chat-room hidden">
       <header class="tg-header">
         <button class="icon-btn" onclick="goHome()">‹</button>
         <div style="flex:1; text-align:right; margin-right:12px;">
-          <div id="chatTitle" style="font-weight:700; font-size:16px;">المحادثة</div>
-          <div id="chatSub" style="font-size:12px; color:var(--tg-text-muted);"></div>
+          <div id="chatTitle" style="font-weight:600; font-size:15px;">المحادثة</div>
+          <div id="chatSub" style="font-size:11px; color:var(--tg-text-muted);"></div>
         </div>
       </header>
 
