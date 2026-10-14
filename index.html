@@ -223,7 +223,7 @@ body {
 .babylon-menu button:hover { background: var(--babylon-surface-hover); }
 .babylon-menu button.danger { color: #f87171; border: none; }
 
-/* قائمة المحادثات والفراغ */
+/* قائمة المحادثات */
 .chat-list {
   flex: 1;
   overflow-y: auto;
@@ -656,13 +656,16 @@ function loadUserDataAndEnter(uid) {
         avatarUrl: "",
         createdAt: Date.now()
       };
-      db.collection("users").doc(uid).set(defaultData).then(() => {
+      db.collection("users").doc(uid).set(defaultData, { merge: true }).then(() => {
         currentUserData = defaultData;
         updateProfileUI(currentUserData);
         enterApp();
       });
     }
-  }).catch(() => enterApp());
+  }).catch((err) => {
+    console.error(err);
+    enterApp();
+  });
 }
 
 function updateProfileUI(u) {
@@ -777,7 +780,16 @@ function openSearch() { showView("searchView"); }
 
 function openProfile() {
   showView("profileView");
-  if (currentUserData) updateProfileUI(currentUserData);
+  if (currentUserData) {
+    updateProfileUI(currentUserData);
+  } else if (currentUser) {
+    db.collection("users").doc(currentUser.uid).get().then(doc => {
+      if (doc.exists) {
+        currentUserData = doc.data();
+        updateProfileUI(currentUserData);
+      }
+    });
+  }
 }
 
 function uploadAvatar(e) {
@@ -787,12 +799,18 @@ function uploadAvatar(e) {
   const reader = new FileReader();
   reader.onload = function(evt) {
     const imgData = evt.target.result;
-    db.collection("users").doc(currentUser.uid).update({ avatarUrl: imgData })
-      .then(() => {
-        currentUserData.avatarUrl = imgData;
-        updateProfileUI(currentUserData);
-        showToast("تم تحديث صورة البروفايل بنجاح");
-      });
+    if (!currentUser) return;
+    
+    db.collection("users").doc(currentUser.uid).set({
+      avatarUrl: imgData
+    }, { merge: true }).then(() => {
+      if (!currentUserData) currentUserData = {};
+      currentUserData.avatarUrl = imgData;
+      updateProfileUI(currentUserData);
+      showToast("تم تحديث صورة البروفايل بنجاح!");
+    }).catch(err => {
+      showToast("خطأ في حفظ الصورة: تأكد من تفعيل قواعد Firestore");
+    });
   };
   reader.readAsDataURL(file);
 }
@@ -808,10 +826,13 @@ function saveProfile() {
     displayName: newName,
     username: newUsername
   }).then(() => {
+    if (!currentUserData) currentUserData = {};
     currentUserData.displayName = newName;
     currentUserData.username = newUsername;
     updateProfileUI(currentUserData);
-    showToast("تم حفظ التغييرات بنجاح");
+    showToast("تم حفظ التغييرات بنجاح!");
+  }).catch(err => {
+    showToast("خطأ في الحفظ: تأكد من تفعيل قواعد Firestore");
   });
 }
 
