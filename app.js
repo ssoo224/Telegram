@@ -12,6 +12,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 let currentUser = null;
+let currentUserData = null;
 let activeChatId = null;
 
 function showToast(msg) {
@@ -35,12 +36,68 @@ function switchTab(type) {
   }
 }
 
+// مراقبة الجلسة وجلب البيانات فوراً
 auth.onAuthStateChanged(user => {
   if (user) {
     currentUser = user;
-    enterApp();
+    loadUserDataAndEnter(user.uid);
+  } else {
+    document.getElementById("authPage").classList.remove("hidden");
+    document.getElementById("mainPage").classList.add("hidden");
   }
 });
+
+function loadUserDataAndEnter(uid) {
+  db.collection("users").doc(uid).get().then(doc => {
+    if (doc.exists) {
+      currentUserData = doc.data();
+      updateProfileUI(currentUserData);
+      enterApp();
+    } else {
+      // إذا لم تكن البيانات موجودة، يتم إنشاؤها فوراً
+      const defaultData = {
+        id: uid,
+        displayName: currentUser.email.split('@')[0],
+        username: currentUser.email.split('@')[0],
+        email: currentUser.email,
+        avatarUrl: "",
+        createdAt: Date.now()
+      };
+      db.collection("users").doc(uid).set(defaultData).then(() => {
+        currentUserData = defaultData;
+        updateProfileUI(currentUserData);
+        enterApp();
+      });
+    }
+  }).catch(err => {
+    console.error(err);
+    enterApp();
+  });
+}
+
+function updateProfileUI(u) {
+  if (!u) return;
+  const displayName = u.displayName || "مستخدم";
+  const username = u.username || "username";
+  const email = u.email || (currentUser ? currentUser.email : "");
+
+  document.getElementById("pNameInput").value = displayName;
+  document.getElementById("pUsernameInput").value = username;
+  document.getElementById("pEmailDisplay").textContent = email;
+
+  document.getElementById("pHeaderName").textContent = displayName;
+  document.getElementById("pHeaderUser").textContent = "@" + username;
+
+  if (u.avatarUrl) {
+    document.getElementById("pAvatarImg").src = u.avatarUrl;
+    document.getElementById("pAvatarImg").classList.remove("hidden");
+    document.getElementById("pAvatarText").classList.add("hidden");
+  } else {
+    document.getElementById("pAvatarText").textContent = displayName.charAt(0).toUpperCase();
+    document.getElementById("pAvatarText").classList.remove("hidden");
+    document.getElementById("pAvatarImg").classList.add("hidden");
+  }
+}
 
 function loginUser() {
   const email = document.getElementById("loginEmail").value.trim();
@@ -62,14 +119,17 @@ function registerUser() {
   auth.createUserWithEmailAndPassword(email, password)
     .then(cred => {
       cred.user.sendEmailVerification();
-      db.collection("users").doc(cred.user.uid).set({
+      const userData = {
         id: cred.user.uid,
         displayName: name,
         username: username,
         email: email,
         avatarUrl: "",
         createdAt: Date.now()
-      }).then(() => {
+      };
+      db.collection("users").doc(cred.user.uid).set(userData).then(() => {
+        currentUserData = userData;
+        updateProfileUI(userData);
         showToast("تم إنشاء الحساب بنجاح!");
         enterApp();
       });
@@ -83,8 +143,13 @@ function enterApp() {
   goHome();
 }
 
-function logout() { auth.signOut().then(() => location.reload()); }
-function toggleMenu() { document.getElementById("menu").classList.toggle("hidden"); }
+function logout() { 
+  auth.signOut().then(() => location.reload()); 
+}
+
+function toggleMenu() { 
+  document.getElementById("menu").classList.toggle("hidden"); 
+}
 
 function showView(viewId) {
   ["homeView", "searchView", "profileView", "chatView"].forEach(v => document.getElementById(v).classList.add("hidden"));
@@ -97,31 +162,17 @@ function goHome() {
   loadChats();
 }
 
-function openSearch() { showView("searchView"); }
+function openSearch() { 
+  showView("searchView"); 
+}
 
 function openProfile() {
   showView("profileView");
-  db.collection("users").doc(currentUser.uid).get().then(doc => {
-    if (doc.exists) {
-      const u = doc.data();
-      document.getElementById("pNameInput").value = u.displayName || "";
-      document.getElementById("pUsernameInput").value = u.username || "";
-      document.getElementById("pEmailDisplay").textContent = u.email || currentUser.email;
-
-      document.getElementById("pHeaderName").textContent = u.displayName || "مستخدم";
-      document.getElementById("pHeaderUser").textContent = "@" + (u.username || "username");
-
-      if (u.avatarUrl) {
-        document.getElementById("pAvatarImg").src = u.avatarUrl;
-        document.getElementById("pAvatarImg").classList.remove("hidden");
-        document.getElementById("pAvatarText").classList.add("hidden");
-      } else {
-        document.getElementById("pAvatarText").textContent = (u.displayName || "؟").charAt(0);
-        document.getElementById("pAvatarText").classList.remove("hidden");
-        document.getElementById("pAvatarImg").classList.add("hidden");
-      }
-    }
-  });
+  if (currentUserData) {
+    updateProfileUI(currentUserData);
+  } else if (currentUser) {
+    loadUserDataAndEnter(currentUser.uid);
+  }
 }
 
 function uploadAvatar(e) {
@@ -133,20 +184,28 @@ function uploadAvatar(e) {
     const imgData = evt.target.result;
     db.collection("users").doc(currentUser.uid).update({ avatarUrl: imgData })
       .then(() => {
+        currentUserData.avatarUrl = imgData;
+        updateProfileUI(currentUserData);
         showToast("تم تحديث صورة البروفايل!");
-        openProfile();
       });
   };
   reader.readAsDataURL(file);
 }
 
 function saveProfile() {
+  const newName = document.getElementById("pNameInput").value.trim();
+  const newUsername = document.getElementById("pUsernameInput").value.trim().toLowerCase();
+
+  if (!newName || !newUsername) return showToast("الرجاء عدم ترك الحقول فارغة");
+
   db.collection("users").doc(currentUser.uid).update({
-    displayName: document.getElementById("pNameInput").value.trim(),
-    username: document.getElementById("pUsernameInput").value.trim().toLowerCase()
+    displayName: newName,
+    username: newUsername
   }).then(() => {
+    currentUserData.displayName = newName;
+    currentUserData.username = newUsername;
+    updateProfileUI(currentUserData);
     showToast("تم حفظ التغييرات بنجاح!");
-    openProfile();
   });
 }
 
@@ -165,7 +224,7 @@ function searchUsers() {
         const div = document.createElement("div");
         div.className = "chat-item";
         div.innerHTML = `
-          <div class="avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%;height:100%;border-radius:50%">` : (u.displayName||"?").charAt(0)}</div>
+          <div class="avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%;height:100%;border-radius:50%">` : (u.displayName||"?").charAt(0).toUpperCase()}</div>
           <div class="chat-item-info">
             <div class="chat-item-name">${u.displayName}</div>
             <div class="chat-item-sub">@${u.username}</div>
@@ -231,26 +290,29 @@ function sendMessage(e) {
 
 function loadChats() {
   const container = document.getElementById("chatList");
+  
+  // عرض شاشة الفراغ فوراً قبل استجابة السيرفر لكي لا تظهر شاشة معلقة سوداء
+  container.innerHTML = `
+    <div class="empty-chats">
+      <div class="empty-chats-icon">💬</div>
+      <div style="font-weight: 600; font-size:16px; margin-bottom: 6px; color: white;">لا توجد محادثات حتى الآن</div>
+      <div style="font-size: 13px; color: var(--tg-text-muted);">اضغط على أيقونة البحث (⌕) وابدأ محادثة جديدة</div>
+    </div>`;
+
+  if (!currentUser) return;
+
   db.collection("chats").where("participants", "array-contains", currentUser.uid)
     .onSnapshot(snap => {
-      container.innerHTML = "";
-      if (snap.empty) {
-        container.innerHTML = `
-          <div class="empty-chats">
-            <div class="empty-chats-icon">💬</div>
-            <div style="font-weight: 600; margin-bottom: 4px; color: white;">لا توجد محادثات</div>
-            <div style="font-size: 13px;">اضغط على أيقونة البحث بالأعلى وابدأ محادثتك الأولى</div>
-          </div>`;
-        return;
-      }
+      if (snap.empty) return; // تبقى واجهة الفراغ ظاهرة بكفاءة
 
+      container.innerHTML = "";
       snap.forEach(doc => {
         const c = doc.data();
         const other = c.otherUser || {};
         const div = document.createElement("div");
         div.className = "chat-item";
         div.innerHTML = `
-          <div class="avatar">${(other.displayName||"?").charAt(0)}</div>
+          <div class="avatar">${(other.displayName||"?").charAt(0).toUpperCase()}</div>
           <div class="chat-item-info">
             <div class="chat-item-name">${other.displayName || "مستخدم"}</div>
             <div class="chat-item-sub">@${other.username || ""}</div>
