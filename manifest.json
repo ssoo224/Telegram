@@ -1,7 +1,9 @@
 {
   "name": "Babylon Chat",
   "short_name": "Babylon",
+  "description": "تطبيق محادثة بابلية متطور مع إشعارات فورية",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#090d16",
   "theme_color": "#17212b",
