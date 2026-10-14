@@ -96,7 +96,6 @@ button { cursor: pointer; }
 .field label { display: block; margin-bottom: 9px; font-weight: bold; font-size: 14px; }
 .field input { width: 100%; border: 1px solid #dce2e7; background: white; border-radius: 10px; padding: 14px; outline: none; }
 .field input:focus { border-color: var(--primary); }
-.help { color: var(--muted); font-size: 12px; line-height: 1.7; margin-top: 7px; }
 
 .result-row, .chat-row { width: 100%; border: none; border-bottom: 1px solid var(--border); background: white; display: flex; gap: 13px; align-items: center; padding: 14px; text-align: right; }
 .small-avatar { width: 50px; height: 50px; flex-shrink: 0; border-radius: 50%; background: #dcebf5; color: var(--primary-dark); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; }
@@ -124,7 +123,7 @@ button { cursor: pointer; }
 <body>
 
 <div class="app">
-  <!-- تسجيل الدخول -->
+  <!-- تسجيل الدخول / إنشاء حساب -->
   <section id="loginPage" class="login-wrap">
     <div class="login-logo">
       <div class="logo-circle">AJ</div>
@@ -132,26 +131,19 @@ button { cursor: pointer; }
       <p>تطبيق محادثات سحابي متطور</p>
     </div>
 
-    <div id="phoneStep">
+    <div>
       <div class="field">
-        <label for="phoneInput">رقم الهاتف (مع رمز الدولة)</label>
-        <input id="phoneInput" type="tel" placeholder="+9647xxxxxxxxx" autocomplete="tel">
-        <div class="help">أدخل رقم هاتفك الحقيقي مع رمز الدولة (مثال: +964...)</div>
+        <label for="emailInput">البريد الإلكتروني</label>
+        <input id="emailInput" type="email" placeholder="example@gmail.com" autocomplete="email">
       </div>
-      <button class="primary-btn" onclick="sendAuthCode()">إرسال رمز التحقق</button>
-    </div>
-
-    <div id="codeStep" class="hidden">
       <div class="field">
-        <label for="codeInput">رمز التحقق المرسل عبر SMS</label>
-        <input id="codeInput" type="text" inputmode="numeric" placeholder="أدخل الرمز المكون من 6 أرقام">
+        <label for="passwordInput">كلمة المرور</label>
+        <input id="passwordInput" type="password" placeholder="أدخل كلمة المرور (6 أحرف على الأقل)">
       </div>
-      <button class="primary-btn" onclick="verifyAuthCode()">تأكيد الرمز ودخول التطبيق</button>
-      <button class="secondary-btn" onclick="backToPhone()">تغيير رقم الهاتف</button>
+      
+      <button class="primary-btn" onclick="handleAuth(false)">تسجيل الدخول</button>
+      <button class="secondary-btn" onclick="handleAuth(true)">إنشاء حساب جديد</button>
     </div>
-    
-    <!-- عنصر حماية التحقق البشري Recaptcha -->
-    <div id="recaptcha-container" style="margin-top: 15px; display:flex; justify-content:center;"></div>
   </section>
 
   <!-- واجهة التطبيق الرئيسية -->
@@ -255,7 +247,6 @@ const db = firebase.firestore();
 
 let currentUser = null;
 let activeChatId = null;
-let confirmationResultGlobal = null;
 
 function showToast(msg) {
   const t = document.getElementById("toast");
@@ -264,60 +255,54 @@ function showToast(msg) {
   setTimeout(() => t.classList.add("hidden"), 3000);
 }
 
-// إعداد التحقق البشري Recaptcha
-window.onload = function() {
-  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-    'size': 'normal',
-    'callback': (response) => {}
-  });
-  window.recaptchaVerifier.render();
-};
+// التحقق التلقائي إذا كان المستخدم مسجلاً قبلاً
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    enterApp();
+  }
+});
 
-function sendAuthCode() {
-  const phone = document.getElementById("phoneInput").value.trim();
-  if(!phone.startsWith("+")) {
-    showToast("تأكد من كتابة الرقم مع رمز الدولة (مثال: +964...)");
+function handleAuth(isSignUp) {
+  const email = document.getElementById("emailInput").value.trim();
+  const password = document.getElementById("passwordInput").value.trim();
+
+  if(!email || !password) {
+    showToast("يرجى إدخال البريد الإلكتروني وكلمة المرور.");
     return;
   }
-  
-  const appVerifier = window.recaptchaVerifier;
-  auth.signInWithPhoneNumber(phone, appVerifier)
-    .then((confirmationResult) => {
-      confirmationResultGlobal = confirmationResult;
-      document.getElementById("phoneStep").classList.add("hidden");
-      document.getElementById("codeStep").classList.remove("hidden");
-      showToast("تم إرسال رمز التحقق إلى رقم هاتفك!");
-    }).catch((error) => {
-      console.error(error);
-      showToast("خطأ في إرسال الرمز: " + error.message);
-    });
+
+  if (isSignUp) {
+    // إنشاء حساب جديد
+    auth.createUserWithEmailAndPassword(email, password)
+      .then((userCredential) => {
+        currentUser = userCredential.user;
+        checkUserDoc(currentUser.uid, currentUser.email);
+      })
+      .catch((error) => {
+        showToast("خطأ: " + error.message);
+      });
+  } else {
+    // تسجيل الدخول
+    auth.signInWithEmailAndPassword(email, password)
+      .then((userCredential) => {
+        currentUser = userCredential.user;
+        enterApp();
+      })
+      .catch((error) => {
+        showToast("خطأ في بيانات الدخول!");
+      });
+  }
 }
 
-function verifyAuthCode() {
-  const code = document.getElementById("codeInput").value.trim();
-  if(!code) return;
-
-  confirmationResultGlobal.confirm(code).then((result) => {
-    currentUser = result.user;
-    checkUserDoc(currentUser.uid, currentUser.phoneNumber);
-  }).catch((error) => {
-    showToast("رمز التحقق غير صحيح!");
-  });
-}
-
-function backToPhone() {
-  document.getElementById("codeStep").classList.add("hidden");
-  document.getElementById("phoneStep").classList.remove("hidden");
-}
-
-function checkUserDoc(uid, phone) {
+function checkUserDoc(uid, email) {
   db.collection("users").doc(uid).get().then(doc => {
     if(!doc.exists) {
       db.collection("users").doc(uid).set({
         id: uid,
-        phone: phone,
-        displayName: "مستخدم جديد",
-        username: "",
+        email: email,
+        displayName: email.split('@')[0],
+        username: email.split('@')[0],
         createdAt: Date.now()
       }).then(() => enterApp());
     } else {
