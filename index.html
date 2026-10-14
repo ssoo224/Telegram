@@ -324,7 +324,7 @@ body {
 }
 .profile-row:last-child { border: none; }
 
-/* غرفة المحادثة بتصميم الخلفية التراثية البابلية */
+/* غرفة المحادثة */
 .chat-room {
   flex: 1;
   display: flex;
@@ -375,6 +375,7 @@ body {
   z-index: 1;
 }
 
+/* تنسيق فقاعات الرسائل ومحاذاتها الصحيحة تماماً */
 .msg-bubble {
   width: fit-content;
   max-width: 78%;
@@ -382,17 +383,16 @@ body {
   font-size: 14px;
   line-height: 1.4;
   border-radius: 12px 12px 12px 4px;
-  background: var(--bubble-other);
+  background: var(--bubble-other); /* رسائل الطرف الآخر على اليسار */
   align-self: flex-start;
   color: white;
   border: 1px solid var(--babylon-border);
   position: relative;
   cursor: pointer;
-  transition: transform 0.15s ease;
   word-break: break-word;
 }
 .msg-bubble.mine {
-  align-self: flex-end;
+  align-self: flex-end; /* رسائلك أنت على اليمين */
   background: var(--bubble-mine);
   border-radius: 12px 12px 4px 12px;
   border-color: rgba(27, 77, 142, 0.6);
@@ -1164,7 +1164,6 @@ function openChatRoom(otherUserId) {
   if (userUnsubscribe) userUnsubscribe();
   showView("chatView");
 
-  // استماع مستقل للطرف الآخر لحالة الاتصال لتجنب الخروج التلقائي
   userUnsubscribe = db.collection("users").doc(otherUserId).onSnapshot(doc => {
     if (doc.exists) {
       const u = doc.data();
@@ -1181,7 +1180,6 @@ function openChatRoom(otherUserId) {
     }
   });
 
-  // تحديث القراءة فوراً
   db.collection("chats").doc(activeChatId).collection("messages")
     .where("senderId", "==", otherUserId)
     .where("read", "==", false)
@@ -1201,7 +1199,6 @@ function openChatRoom(otherUserId) {
     }
   });
 
-  // استماع للرسائل ثابت لا ينقطع
   messagesUnsubscribe = db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "asc")
     .onSnapshot(snap => {
@@ -1221,6 +1218,7 @@ function openChatRoom(otherUserId) {
         }
 
         const b = document.createElement("div");
+        // ضبط الكلاس بدقة بحيث رسائلك تأخذ "mine" (يمين) ورسائل غيرك تبقى (يسار)
         b.className = "msg-bubble" + (isMine ? " mine" : "");
         
         let htmlContent = "";
@@ -1481,7 +1479,6 @@ function sendMessage(e) {
   }
 }
 
-// تحميل قائمة المحادثات بدون تكرار
 function loadChats() {
   const container = document.getElementById("chatList");
   
@@ -1510,7 +1507,6 @@ function loadChats() {
         const participants = chatData.participants || [];
         const otherId = participants.find(id => id !== currentUser.uid);
         
-        // تنقية القائمة لمنع تكرار نفس الحساب نهائياً
         if (!otherId || processedUsers.has(otherId)) return;
         processedUsers.add(otherId);
 
