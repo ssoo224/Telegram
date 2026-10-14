@@ -353,13 +353,37 @@ body {
 }
 .profile-row:last-child { border: none; }
 
-/* غرفة المحادثة */
+/* غرفة المحادثة مع خلفية بابلية تراثية ساحرة */
 .chat-room {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #080d14;
+  background-color: #0b1320;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(27, 42, 74, 0.25) 0%, transparent 50%),
+    linear-gradient(135deg, rgba(11, 19, 32, 0.95), rgba(19, 29, 46, 0.95));
+  position: relative;
 }
+
+/* رموز أثرية بابلية خفيفة في الخلفية */
+.chat-room::before {
+  content: "🏛 𓍝 𓎛 𓏤 𓋹 𒀭 🏺 🏛 𓍝";
+  position: absolute;
+  inset: 0;
+  font-size: 24px;
+  color: rgba(212, 175, 55, 0.03);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  padding: 30px;
+  align-content: space-around;
+  justify-content: space-around;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
 .messages-area {
   flex: 1;
   padding: 14px;
@@ -367,7 +391,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  position: relative;
+  z-index: 1;
 }
+
 .msg-bubble {
   max-width: 75%;
   padding: 9px 13px;
@@ -380,24 +407,23 @@ body {
   border: 1px solid var(--babylon-border);
   position: relative;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.2s ease;
 }
 .msg-bubble.mine {
   align-self: flex-end;
   background: var(--bubble-mine);
   border-radius: 12px 12px 4px 12px;
-  border-color: rgba(27, 77, 142, 0.5);
+  border-color: rgba(27, 77, 142, 0.6);
 }
 
-/* اقتباس الرسالة عند الرد */
 .reply-quote {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.3);
   border-right: 3px solid var(--babylon-gold);
   padding: 4px 8px;
   margin-bottom: 6px;
   border-radius: 4px;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--babylon-gold);
 }
 
 .msg-time {
@@ -407,12 +433,13 @@ body {
   text-align: left;
 }
 
-/* شريط الكتابة وصندوق الرد المعلق */
+/* صندوق الرد المعلق وشريط الكتابة */
 .chat-input-container {
   background: var(--babylon-surface);
   border-top: 1px solid var(--babylon-border);
   display: flex;
   flex-direction: column;
+  z-index: 2;
 }
 
 .reply-preview-bar {
@@ -441,7 +468,7 @@ body {
   font-size: 14px;
 }
 
-/* نافذة خيارات الرسالة (نسخ، تعديل، حذف، رد) */
+/* نافذة خيارات الرسالة (نسخ، تعديل، حذف) */
 .msg-actions-modal {
   position: fixed;
   inset: 0;
@@ -626,7 +653,7 @@ body {
         <button class="icon-btn" onclick="goHome()">‹</button>
         <div style="flex:1; text-align:right; margin-right:12px;">
           <div id="chatTitle" style="font-weight:600; font-size:15px; color:var(--babylon-gold);">المحادثة</div>
-          <div id="chatSub" style="font-size:11px; color:var(--text-muted);">متصل الآن</div>
+          <div id="chatSub" style="font-size:11px; color:var(--text-muted);">جاري التحميل...</div>
         </div>
       </header>
 
@@ -648,10 +675,9 @@ body {
 
 </div>
 
-<!-- نافذة خيارات الرسالة (نسخ، تعديل، حذف، رد) -->
+<!-- نافذة خيارات الرسالة (نسخ، تعديل، حذف) -->
 <div id="msgModal" class="msg-actions-modal hidden" onclick="closeMsgModal(event)">
   <div class="msg-actions-card">
-    <button onclick="actionReply()">↩ الرد على الرسالة</button>
     <button onclick="actionCopy()">📋 نسخ النص</button>
     <button id="btnEditMsg" class="hidden" onclick="actionEdit()">✏ تعديل الرسالة</button>
     <button id="btnDeleteMsg" class="danger hidden" onclick="actionDelete()">🗑 حذف الرسالة</button>
@@ -1042,12 +1068,17 @@ function openChatRoom(otherUserId) {
   if (userUnsubscribe) userUnsubscribe();
   showView("chatView");
 
-  userUnsubscribe = db.collection("users").doc(otherUserId).onSnapshot(doc => {
-    if (doc.exists) {
-      const u = doc.data();
-      document.getElementById("chatTitle").textContent = u.displayName || "مستخدم";
-    }
-  });
+  // دالة دقيقة لحساب وقت آخر ظهور
+  function formatLastSeen(timestamp) {
+    if (!timestamp) return "غير متصل";
+    const diff = Date.now() - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 2) return "متصل الآن";
+    if (minutes < 60) return `آخر ظهور قبل ${minutes} دقيقة`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `آخر ظهور قبل ${hours} ساعة`;
+    return "آخر ظهور قبل أيام";
+  }
 
   chatUnsubscribe = db.collection("chats").doc(activeChatId).onSnapshot(chatDoc => {
     if (chatDoc.exists) {
@@ -1058,16 +1089,18 @@ function openChatRoom(otherUserId) {
       db.collection("users").doc(otherUserId).get().then(userDoc => {
         if (!userDoc.exists) return;
         const u = userDoc.data();
+        document.getElementById("chatTitle").textContent = u.displayName || "مستخدم";
+        
         const sub = document.getElementById("chatSub");
 
         if (isOtherTyping) {
           sub.textContent = "جاري الكتابة...";
           sub.style.color = "var(--babylon-gold)";
-        } else if (u.online) {
+        } else if (u.online && (Date.now() - (u.lastSeen || 0) < 30000)) {
           sub.textContent = "متصل الآن";
           sub.style.color = "#4ade80";
         } else {
-          sub.textContent = "آخر ظهور قبل قليل";
+          sub.textContent = formatLastSeen(u.lastSeen);
           sub.style.color = "var(--text-muted)";
         }
       });
@@ -1091,16 +1124,26 @@ function openChatRoom(otherUserId) {
         htmlContent += `<div>${m.text}</div><div class="msg-time">${new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>`;
         b.innerHTML = htmlContent;
 
-        // الضغط المطول لإظهار خيارات الرسالة (نسخ، تعديل، حذف، رد)
+        // ميزة السحب لليسار للرد مثل تليجرام
+        let startX = 0;
+        b.addEventListener('touchstart', (e) => {
+          startX = e.touches[0].clientX;
+        });
+        b.addEventListener('touchend', (e) => {
+          let endX = e.changedTouches[0].clientX;
+          if (startX - endX > 50) { // سحب لليسار بأكثر من 50 بكسل
+            triggerSwipeReply(m.text);
+          }
+        });
+
+        // للكمبيوتر (سحب بالفأرة أو ضغط مطول للنسخ والحذف)
         let pressTimer;
-        b.onmousedown = b.ontouchstart = (e) => {
+        b.onmousedown = (e) => {
           pressTimer = setTimeout(() => {
             openMsgModal(doc.id, m.text, m.senderId);
-          }, 600); // 600 ميلي ثانية ضغط مطول
+          }, 600);
         };
-        b.onmouseup = b.onmouseleave = b.ontouchend = () => {
-          clearTimeout(pressTimer);
-        };
+        b.onmouseup = () => clearTimeout(pressTimer);
 
         box.appendChild(b);
       });
@@ -1108,7 +1151,14 @@ function openChatRoom(otherUserId) {
     });
 }
 
-// نافذة خيارات الرسالة
+function triggerSwipeReply(text) {
+  replyingToText = text;
+  document.getElementById("replyPreviewText").textContent = "الرد على: " + replyingToText;
+  document.getElementById("replyPreviewBar").classList.remove("hidden");
+  document.getElementById("messageInput").focus();
+  showToast("تم تفعيل الرد على الرسالة");
+}
+
 function openMsgModal(msgId, text, senderId) {
   selectedMsgId = msgId;
   selectedMsgText = text;
@@ -1137,14 +1187,6 @@ function closeMsgModal(e) {
 function actionCopy() {
   navigator.clipboard.writeText(selectedMsgText);
   showToast("تم نسخ النص!");
-  document.getElementById("msgModal").classList.add("hidden");
-}
-
-function actionReply() {
-  replyingToText = selectedMsgText;
-  document.getElementById("replyPreviewText").textContent = "الرد على: " + replyingToText;
-  document.getElementById("replyPreviewBar").classList.remove("hidden");
-  document.getElementById("messageInput").focus();
   document.getElementById("msgModal").classList.add("hidden");
 }
 
@@ -1194,7 +1236,6 @@ function sendMessage(e) {
   }, { merge: true });
 
   if (editingMsgId) {
-    // تعديل الرسالة القائمة
     db.collection("chats").doc(activeChatId).collection("messages").doc(editingMsgId).update({
       text: text
     }).then(() => {
@@ -1203,7 +1244,6 @@ function sendMessage(e) {
       showToast("تم تعديل الرسالة بنجاح");
     });
   } else {
-    // إرسال رسالة جديدة (مع دعم الرد إذا وجد)
     const msgData = {
       senderId: currentUser.uid,
       text: text,
