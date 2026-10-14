@@ -16,11 +16,11 @@
   --babylon-gold-hover: #c5a028;
   --babylon-blue: #1b2a4a;
   --babylon-dark: #0f172a;
-  --babylon-surface: #1e293b;
-  --babylon-surface-hover: #334155;
-  --babylon-border: #334155;
+  --babylon-surface: #17212b;
+  --babylon-surface-hover: #232e3c;
+  --babylon-border: #232e3c;
   --text-main: #f8fafc;
-  --text-muted: #94a3b8;
+  --text-muted: #8696a7;
   --error-color: #f87171;
   
   /* ألوان فقاعات تليجرام الاحترافية */
@@ -163,32 +163,67 @@ body {
   margin-top: 8px;
 }
 
-/* الهيدر الرئيسي للرئيسية فقط */
+/* هيدر تليجرام الرئيسي العلوي */
 .main-header {
   height: 56px;
   background: var(--babylon-surface);
-  border-bottom: 1px solid var(--babylon-border);
+  border-bottom: 1px solid rgba(0,0,0,0.2);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 14px;
+  padding: 0 16px;
   z-index: 10;
-  position: relative;
 }
-.main-header-title { font-size: 18px; font-weight: 700; color: var(--babylon-gold); }
+.main-header-title { font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: 0.3px; }
 
 .icon-btn {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.icon-btn:hover { background: var(--babylon-surface-hover); color: white; }
+
+/* شريط التنقل السفلي مثل تليجرام تماماً */
+.telegram-bottom-nav {
+  height: 60px;
+  background: var(--babylon-surface);
+  border-top: 1px solid rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 10;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  gap: 3px;
+  padding: 6px 0;
+  transition: color 0.2s;
+}
+
+.nav-item span.nav-icon {
+  font-size: 20px;
+}
+
+.nav-item.active {
+  color: #64b5f6;
 }
 
 /* قائمة المحادثات */
@@ -197,6 +232,7 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  background-color: #0e1621;
 }
 
 .empty-chats {
@@ -212,7 +248,7 @@ body {
 .empty-chats-icon {
   width: 80px;
   height: 80px;
-  background: var(--babylon-dark);
+  background: var(--babylon-surface);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -226,16 +262,16 @@ body {
 .chat-item {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
-  gap: 12px;
+  padding: 10px 16px;
+  gap: 14px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.02);
 }
 .chat-item:hover { background: var(--babylon-surface-hover); }
 
 .avatar {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--babylon-gold), var(--babylon-blue));
   color: var(--babylon-dark);
@@ -243,14 +279,14 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 20px;
   object-fit: cover;
   flex-shrink: 0;
 }
 
 .chat-item-info { flex: 1; min-width: 0; text-align: right; }
-.chat-item-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; color: white; }
-.chat-item-sub { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-item-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: white; }
+.chat-item-sub { font-size: 13.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* بروفايل تليجرام البابلي */
 .profile-view {
@@ -407,7 +443,7 @@ body {
   z-index: 1;
 }
 
-/* 💬 فقاعات الرسائل بتصميم تليجرام وبد بدون أي تداخل 💬 */
+/* 💬 فقاعات الرسائل بتصميم تليجرام بدون تداخل 💬 */
 .msg-bubble {
   width: fit-content;
   max-width: 82%;
@@ -432,15 +468,8 @@ body {
   border-radius: 12px 12px 4px 12px;
 }
 
-.msg-content-row {
-  display: flex;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 .msg-text {
-  padding-left: 45px; /* مساحة فارغة لكي لا يتقاطع النص مع الوقت نهائياً */
+  padding-left: 45px;
 }
 
 .reply-quote {
@@ -666,24 +695,18 @@ body {
   <!-- التطبيق والصفحة الرئيسية -->
   <section id="mainPage" class="hidden" style="height:100%; display:flex; flex-direction:column;">
     
-    <!-- الهيدر الرئيسي للرئيسية فقط (يختفي تماماً عند دخول الشات) -->
+    <!-- هيدر تليجرام العلوي -->
     <header id="mainHeader" class="main-header">
-      <button class="icon-btn" onclick="toggleMenu()">☰</button>
-      <div class="main-header-title">Babylon Chat</div>
-      <button class="icon-btn" onclick="openSearch()" title="بحث عن مستخدم باليوزر">⌕</button>
-
-      <div id="menu" class="babylon-menu hidden" style="position:absolute; top:50px; right:10px; background:var(--babylon-surface); border:1px solid var(--babylon-border); border-radius:10px; overflow:hidden; z-index:100;">
-        <button style="padding:12px 16px; background:transparent; border:none; color:white; width:100%; text-align:right; cursor:pointer;" onclick="openProfile()">👤 الملف الشخصي</button>
-        <button style="padding:12px 16px; background:transparent; border:none; color:var(--error-color); width:100%; text-align:right; cursor:pointer;" onclick="logout()">↪ تسجيل الخروج</button>
-      </div>
+      <div class="main-header-title">Telegram</div>
+      <button class="icon-btn" onclick="openSearch()" title="بحث عن مستخدم باليوزر">🔍</button>
     </header>
 
-    <div id="homeView" class="chat-list">
-      <div id="chatList" style="flex:1; display:flex; flex-direction:column;"></div>
+    <div id="homeView" class="chat-list" style="flex:1; overflow-y:auto;">
+      <div id="chatList" style="display:flex; flex-direction:column;"></div>
     </div>
 
-    <!-- البحث المقتصر فقط على الصفحة الرئيسية -->
-    <div id="searchView" class="hidden" style="flex:1; display:flex; flex-direction:column;">
+    <!-- البحث المقتصر على الصفحة الرئيسية -->
+    <div id="searchView" class="hidden" style="flex:1; display:flex; flex-direction:column; background:#0e1621;">
       <div style="padding:12px; background:var(--babylon-surface); border-bottom:1px solid var(--babylon-border); display:flex; align-items:center; gap:10px;">
         <button class="icon-btn" onclick="goHome()" title="الرجوع">‹</button>
         <input id="searchInput" class="babylon-input" placeholder="ابحث باسم المستخدم (5 أحرف فأكثر)..." oninput="searchUsers()">
@@ -691,6 +714,7 @@ body {
       <div id="searchResults" class="chat-list"></div>
     </div>
 
+    <!-- شاشة الملف الشخصي -->
     <div id="profileView" class="profile-view hidden">
       <div class="babylon-profile-header">
         <button class="icon-btn" style="position:absolute; right:12px; top:12px;" onclick="goHome()">‹</button>
@@ -732,6 +756,7 @@ body {
 
       <div style="padding:16px;">
         <button class="babylon-btn" onclick="saveProfile()">حفظ التغييرات</button>
+        <button class="babylon-btn" style="background:transparent; border:1px solid var(--error-color); color:var(--error-color); margin-top:12px;" onclick="logout()">تسجيل الخروج</button>
       </div>
     </div>
 
@@ -773,6 +798,22 @@ body {
         </form>
       </div>
     </div>
+
+    <!-- شريط التنقل السفلي الحديث (Bottom Nav Bar) -->
+    <nav id="bottomNav" class="telegram-bottom-nav">
+      <button class="nav-item active" onclick="goHome()">
+        <span class="nav-icon">💬</span>
+        <span>المحادثات</span>
+      </button>
+      <button class="nav-item" onclick="openProfile()">
+        <span class="nav-icon">👤</span>
+        <span>الملف الشخصي</span>
+      </button>
+      <button class="nav-item" onclick="openProfile()">
+        <span class="nav-icon">⚙️</span>
+        <span>الإعدادات</span>
+      </button>
+    </nav>
   </section>
 
 </div>
@@ -1012,18 +1053,19 @@ function logout() {
   }
 }
 
-function toggleMenu() { document.getElementById("menu").classList.toggle("hidden"); }
-
 function showView(viewId) {
   ["homeView", "searchView", "profileView", "chatView"].forEach(v => document.getElementById(v).classList.add("hidden"));
   document.getElementById(viewId).classList.remove("hidden");
-  document.getElementById("menu").classList.add("hidden");
 
   const mainHeader = document.getElementById("mainHeader");
+  const bottomNav = document.getElementById("bottomNav");
+
   if (viewId === "chatView") {
     mainHeader.classList.add("hidden");
+    bottomNav.classList.add("hidden");
   } else {
     mainHeader.classList.remove("hidden");
+    bottomNav.classList.remove("hidden");
   }
 }
 
@@ -1211,9 +1253,7 @@ function openChatRoom(otherUserId) {
           }
         }
 
-        // تنسيق الوقت بدون أصفار بادئة (مثال: 5:22 م بدلاً من 05:22 م)
         let rawTimeStr = new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
-        // استبدال أو تنظيف الصفر البادئ إن وجد (مثل 05:22 -> 5:22)
         if (rawTimeStr.startsWith('0')) {
           rawTimeStr = rawTimeStr.substring(1);
         }
@@ -1471,7 +1511,7 @@ function loadChats() {
           <div class="empty-chats">
             <div class="empty-chats-icon">🏛</div>
             <div style="font-weight: 600; font-size:16px; margin-bottom: 6px; color: var(--babylon-gold);">لا توجد محادثات في بابل بعد</div>
-            <div style="font-size: 13px; color: var(--text-muted);">اضغط على أيقونة البحث (⌕) وابحث عن مستخدم بيوزر لا يقل عن 5 أحرف</div>
+            <div style="font-size: 13px; color: var(--text-muted);">اضغط على أيقونة البحث (🔍) في الأعلى وابحث عن مستخدم بيوزر لا يقل عن 5 أحرف</div>
           </div>`;
         return;
       }
