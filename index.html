@@ -3,639 +3,155 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#4f46e5">
-<title>AJ Chat</title>
+<title>AJ Chat - Telegram Web</title>
 
-<!-- مكتبات Firebase CDN -->
+<link rel="stylesheet" href="style.css">
+
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-<style>
-:root {
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --bg: #0f172a;
-  --card-bg: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
-  --chat-bg: #f8fafc;
-  --bubble-mine: #4f46e5;
-  --bubble-other: #ffffff;
-}
-
-* { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-body { margin: 0; background: #0f172a; color: var(--text-main); }
-button, input { font: inherit; }
-button { cursor: pointer; border: none; outline: none; transition: all 0.2s; }
-.hidden { display: none !important; }
-
-.app {
-  max-width: 500px;
-  min-height: 100dvh;
-  margin: auto;
-  background: var(--card-bg);
-  position: relative;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-}
-
-/* شاشات التسجيل والدخول */
-.auth-container {
-  min-height: 100dvh;
-  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.auth-card {
-  width: 100%;
-  max-width: 420px;
-  background: rgba(255, 255, 255, 0.98);
-  border-radius: 24px;
-  padding: 32px 28px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-  text-align: center;
-}
-
-.brand-logo {
-  width: 75px;
-  height: 75px;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  color: white;
-  font-size: 30px;
-  font-weight: 800;
-  border-radius: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 16px;
-  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4);
-}
-
-.auth-card h1 { margin: 0 0 6px; font-size: 26px; color: #0f172a; }
-.auth-card p { margin: 0 0 24px; color: var(--text-muted); font-size: 14px; }
-
-.auth-tabs {
-  display: flex;
-  background: #f1f5f9;
-  border-radius: 14px;
-  padding: 4px;
-  margin-bottom: 24px;
-}
-
-.auth-tab {
-  flex: 1;
-  padding: 10px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--text-muted);
-  background: transparent;
-}
-
-.auth-tab.active {
-  background: white;
-  color: var(--primary);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-}
-
-.field { text-align: right; margin-bottom: 16px; }
-.field label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #334155; }
-.field input {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  background: #f8fafc;
-  outline: none;
-  font-size: 14px;
-}
-.field input:focus { border-color: var(--primary); background: white; }
-
-.btn-primary {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  color: white;
-  font-weight: 700;
-  border-radius: 12px;
-  font-size: 15px;
-  margin-top: 8px;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-}
-
-.topbar {
-  background: linear-gradient(135deg, #4f46e5, #4338ca);
-  color: white;
-  padding: 14px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.brand { font-size: 20px; font-weight: 700; }
-.icon-btn { background: transparent; color: white; font-size: 22px; padding: 6px; border-radius: 8px; }
-
-.page { flex: 1; display: flex; flex-direction: column; background: var(--card-bg); }
-.empty-state { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: 30px; color: var(--text-muted); }
-
-.fab {
-  position: fixed;
-  bottom: 24px;
-  left: max(calc((100vw - 460px) / 2), 20px);
-  width: 56px; height: 56px;
-  border-radius: 50%;
-  background: var(--primary); color: white;
-  font-size: 24px; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
-}
-
-.menu {
-  position: absolute; top: 56px; left: 12px; width: 200px;
-  background: white; border-radius: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-  z-index: 50; overflow: hidden; border: 1px solid var(--border);
-}
-.menu button { display: block; width: 100%; padding: 14px 16px; text-align: right; background: white; color: var(--text-main); border-bottom: 1px solid var(--border); }
-.menu button:last-child { color: #ef4444; border: none; }
-
-/* تصميم الملف الشخصي مثل تليجرام */
-.telegram-profile {
-  background: #f8fafc;
-  min-height: 100dvh;
-}
-.profile-header-bg {
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  padding: 30px 20px;
-  text-align: center;
-  color: white;
-  border-bottom-left-radius: 30px;
-  border-bottom-right-radius: 30px;
-  position: relative;
-}
-.profile-avatar-wrap {
-  position: relative;
-  width: 100px;
-  height: 100px;
-  margin: 0 auto 12px;
-}
-.profile-avatar-img {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: #e0e7ff;
-  color: var(--primary);
-  font-size: 38px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  object-fit: cover;
-  border: 4px solid white;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-}
-.avatar-edit-icon {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  background: var(--primary);
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid white;
-  font-size: 14px;
-  cursor: pointer;
-}
-.profile-info-card {
-  margin: 20px;
-  background: white;
-  border-radius: 18px;
-  padding: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-.chat-messages { flex: 1; background: var(--chat-bg); overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-.message { max-width: 78%; padding: 10px 14px; background: var(--bubble-other); border-radius: 16px 16px 16px 4px; align-self: flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: 14px; color: var(--text-main); }
-.message.mine { align-self: flex-end; background: var(--bubble-mine); color: white; border-radius: 16px 16px 4px 16px; }
-.message time { display: block; font-size: 10px; opacity: 0.7; margin-top: 4px; text-align: left; }
-
-.chat-compose { display: flex; gap: 8px; padding: 12px; background: white; border-top: 1px solid var(--border); }
-.chat-compose input { flex: 1; border: 1.5px solid var(--border); border-radius: 24px; padding: 10px 16px; outline: none; }
-.send-btn { width: 42px; height: 42px; border-radius: 50%; background: var(--primary); color: white; font-size: 18px; }
-
-.toast { position: fixed; z-index: 100; bottom: 20px; left: 50%; transform: translateX(-50%); background: #0f172a; color: white; padding: 12px 20px; border-radius: 30px; font-size: 13px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-</style>
 </head>
 
 <body>
 
-<div class="app">
-  <!-- واجهة الدخول وإنشاء الحساب -->
-  <section id="loginPage" class="auth-container">
-    <div class="auth-card">
-      <div class="brand-logo">AJ</div>
-      <h1>AJ Chat</h1>
-      <p>مرحباً بك! تواصل بحرية وأمان</p>
+<div class="app-container">
 
-      <div class="auth-tabs">
-        <button id="tabLogin" class="auth-tab active" onclick="switchTab('login')">تسجيل الدخول</button>
-        <button id="tabRegister" class="auth-tab" onclick="switchTab('register')">حساب جديد</button>
-      </div>
+  <!-- صفحة الدخول والتسجيل -->
+  <section id="authPage" class="auth-page">
+    <div class="tg-logo-animated">✈</div>
+    <h1 class="auth-title">AJ Chat</h1>
+    <p class="auth-subtitle">تطبيق المحادثات الفوري المطور</p>
 
-      <!-- نموذج تسجيل الدخول -->
-      <div id="formLogin">
-        <div class="field">
-          <label>البريد الإلكتروني</label>
-          <input id="loginEmail" type="email" placeholder="name@example.com">
-        </div>
-        <div class="field">
-          <label>كلمة المرور</label>
-          <input id="loginPassword" type="password" placeholder="••••••••">
-        </div>
-        <button class="btn-primary" onclick="loginUser()">تسجيل الدخول</button>
-      </div>
+    <div class="tg-tabs">
+      <button id="tabLogin" class="tg-tab active" onclick="switchTab('login')">تسجيل الدخول</button>
+      <button id="tabRegister" class="tg-tab" onclick="switchTab('register')">إنشاء حساب</button>
+    </div>
 
-      <!-- نموذج إنشاء حساب جديد -->
-      <div id="formRegister" class="hidden">
-        <div class="field">
-          <label>اسم العرض (الاسم الظاهر)</label>
-          <input id="regName" type="text" placeholder="مثلاً: علي">
-        </div>
-        <div class="field">
-          <label>اسم المستخدم (Username)</label>
-          <input id="regUsername" type="text" placeholder="مثلاً: ali_99">
-        </div>
-        <div class="field">
-          <label>البريد الإلكتروني</label>
-          <input id="regEmail" type="email" placeholder="name@example.com">
-        </div>
-        <div class="field">
-          <label>كلمة المرور</label>
-          <input id="regPassword" type="password" placeholder="6 أحرف على الأقل">
-        </div>
-        <button class="btn-primary" onclick="registerUser()">إنشاء حساب وترخيص الإيميل</button>
+    <!-- نموذج الدخول -->
+    <div id="formLogin" style="width:100%;">
+      <div class="tg-input-group">
+        <label>البريد الإلكتروني</label>
+        <input id="loginEmail" class="tg-input" type="email" placeholder="example@domain.com">
       </div>
+      <div class="tg-input-group">
+        <label>كلمة المرور</label>
+        <input id="loginPassword" class="tg-input" type="password" placeholder="••••••••">
+      </div>
+      <button class="tg-btn" onclick="loginUser()">تسجيل الدخول</button>
+    </div>
+
+    <!-- نموذج التسجيل -->
+    <div id="formRegister" class="hidden" style="width:100%;">
+      <div class="tg-input-group">
+        <label>اسم العرض (الاسم الكامل)</label>
+        <input id="regName" class="tg-input" type="text" placeholder="علي الدليمي">
+      </div>
+      <div class="tg-input-group">
+        <label>اسم المستخدم (اليوزر)</label>
+        <input id="regUsername" class="tg-input" type="text" placeholder="ali_deli">
+      </div>
+      <div class="tg-input-group">
+        <label>البريد الإلكتروني</label>
+        <input id="regEmail" class="tg-input" type="email" placeholder="example@domain.com">
+      </div>
+      <div class="tg-input-group">
+        <label>كلمة المرور</label>
+        <input id="regPassword" class="tg-input" type="password" placeholder="6 أحرف على الأقل">
+      </div>
+      <button class="tg-btn" onclick="registerUser()">إنشاء حساب جديد</button>
     </div>
   </section>
 
-  <!-- واجهة التطبيق الرئيسية -->
-  <section id="mainPage" class="hidden">
-    <header class="topbar">
-      <div class="brand">AJ Chat</div>
-      <div>
-        <button class="icon-btn" onclick="openSearch()">⌕</button>
-        <button class="icon-btn" onclick="toggleMenu()">⋮</button>
-      </div>
-      <div id="menu" class="menu hidden">
+  <!-- الصفحة الرئيسية والتطبيق -->
+  <section id="mainPage" class="hidden" style="height:100%; display:flex; flex-direction:column;">
+    <header class="tg-header">
+      <button class="icon-btn" onclick="toggleMenu()">⋮</button>
+      <div class="tg-header-title">AJ Chat</div>
+      <button class="icon-btn" onclick="openSearch()">⌕</button>
+
+      <div id="menu" class="tg-menu hidden">
         <button onclick="openProfile()">👤 الملف الشخصي</button>
-        <button onclick="logout()">↪ تسجيل الخروج</button>
+        <button class="danger" onclick="logout()">↪ تسجيل الخروج</button>
       </div>
     </header>
 
-    <div id="homePage" class="page">
-      <div class="empty-state" id="emptyState">
-        <div>
-          <div class="empty-icon" style="font-size:48px;">💬</div>
-          <h3>لا توجد محادثات</h3>
-          <p>ابدأ البحث عن أصدقائك وتحدث معهم الآن</p>
-        </div>
-      </div>
+    <!-- قائمة القنوات والمحادثات -->
+    <div id="homeView" class="chat-list">
       <div id="chatList"></div>
-      <button class="fab" onclick="openSearch()">✎</button>
     </div>
 
-    <!-- البحث -->
-    <div id="searchPage" class="hidden page">
-      <div class="topbar" style="background:#fff; color:#0f172a; border-bottom:1px solid var(--border)">
-        <button class="icon-btn" style="color:var(--primary)" onclick="goHome()">‹</button>
-        <input id="usernameSearch" style="flex:1; border:none; background:#f1f5f9; padding:8px 14px; border-radius:20px; outline:none;" placeholder="ابحث باسم المستخدم..." oninput="searchUsers()">
+    <!-- واجهة البحث -->
+    <div id="searchView" class="hidden" style="flex:1;">
+      <div style="padding:12px; background:var(--tg-surface);">
+        <input id="searchInput" class="tg-input" placeholder="ابحث باسم المستخدم..." oninput="searchUsers()">
       </div>
-      <div id="searchResults"></div>
+      <div id="searchResults" class="chat-list"></div>
     </div>
 
-    <!-- الملف الشخصي المميز مثل تليجرام -->
-    <div id="profilePage" class="hidden page telegram-profile">
-      <div class="profile-header-bg">
-        <button class="icon-btn" style="position:absolute; right:15px; top:15px;" onclick="goHome()">‹</button>
+    <!-- واجهة البروفايل مثل تليجرام -->
+    <div id="profileView" class="profile-view hidden">
+      <div class="profile-banner">
+        <button class="icon-btn" style="position:absolute; right:12px; top:12px;" onclick="goHome()">‹</button>
         
-        <div class="profile-avatar-wrap">
-          <div id="profileAvatarText" class="profile-avatar-img">؟</div>
-          <img id="profileAvatarImg" class="profile-avatar-img hidden" src="" alt="Avatar">
-          <label for="avatarInput" class="avatar-edit-icon">📷</label>
+        <div class="profile-avatar-container">
+          <div id="pAvatarText" class="profile-avatar-main">؟</div>
+          <img id="pAvatarImg" class="profile-avatar-main hidden" src="" alt="Avatar">
+          <label for="avatarInput" class="profile-upload-btn">📷</label>
           <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="uploadAvatar(event)">
         </div>
 
-        <h2 id="profileHeaderName" style="margin:5px 0 2px;">اسم المستخدم</h2>
-        <div id="profileHeaderUser" style="font-size:13px; opacity:0.8;">@username</div>
+        <h2 id="pHeaderName">اسم المستخدم</h2>
+        <div id="pHeaderUser" style="font-size:14px; color:var(--tg-text-muted);">@username</div>
       </div>
 
-      <div class="profile-info-card">
-        <div class="field">
-          <label>اسم العرض</label>
-          <input id="displayNameInput">
+      <div class="profile-section-title">إعدادات الحساب</div>
+      <div class="profile-card">
+        <div class="profile-field-item">
+          <div class="tg-input-group">
+            <label>اسم العرض</label>
+            <input id="pNameInput" class="tg-input">
+          </div>
         </div>
-        <div class="field">
-          <label>اسم المستخدم (Username)</label>
-          <input id="profileUsernameInput">
+        <div class="profile-field-item">
+          <div class="tg-input-group">
+            <label>اسم المستخدم</label>
+            <input id="pUsernameInput" class="tg-input">
+          </div>
         </div>
-        <div class="field">
-          <label>البريد الإلكتروني</label>
-          <input id="profileEmailInput" readonly style="background:#eee;">
+        <div class="profile-field-item">
+          <div class="tg-input-group">
+            <label>البريد الإلكتروني</label>
+            <input id="pEmailInput" class="tg-input" readonly style="opacity:0.6;">
+          </div>
         </div>
-        <button class="btn-primary" onclick="saveProfile()">حفظ التغييرات</button>
+        <button class="tg-btn" style="margin:16px 0;" onclick="saveProfile()">حفظ التغييرات</button>
       </div>
     </div>
 
-    <!-- المحادثة -->
-    <div id="chatPage" class="hidden page">
-      <header class="topbar">
+    <!-- غرفة المحادثات -->
+    <div id="chatView" class="chat-room hidden">
+      <header class="tg-header">
         <button class="icon-btn" onclick="goHome()">‹</button>
-        <div style="flex:1; margin-right:10px;">
-          <div id="chatTitle" style="font-weight:700;">المحادثة</div>
-          <div id="chatHandle" style="font-size:11px; opacity:0.8;"></div>
+        <div style="flex:1; text-align:right; margin-right:12px;">
+          <div id="chatTitle" style="font-weight:700; font-size:16px;">المحادثة</div>
+          <div id="chatSub" style="font-size:12px; color:var(--tg-text-muted);"></div>
         </div>
       </header>
-      <div id="chatMessages" class="chat-messages"></div>
-      <form class="chat-compose" onsubmit="sendMessage(event)">
-        <input id="messageInput" placeholder="اكتب رسالتك..." autocomplete="off">
-        <button class="send-btn" type="submit">➤</button>
+
+      <div id="messagesArea" class="messages-area"></div>
+
+      <form class="chat-input-bar" onsubmit="sendMessage(event)">
+        <input id="messageInput" placeholder="اكتب رسالة..." autocomplete="off">
+        <button class="icon-btn" style="color:var(--tg-primary)" type="submit">➤</button>
       </form>
     </div>
   </section>
+
 </div>
 
 <div id="toast" class="toast hidden"></div>
 
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDxQZCL4OawmPLKLRdQdbrQOHN7vl3p5EQ",
-  authDomain: "aj-chat-df534.firebaseapp.com",
-  projectId: "aj-chat-df534",
-  storageBucket: "aj-chat-df534.firebasestorage.app",
-  messagingSenderId: "1022301130899",
-  appId: "1:1022301130899:web:171184929244a979b6bd66"
-};
-
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-let currentUser = null;
-let activeChatId = null;
-
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.remove("hidden");
-  setTimeout(() => t.classList.add("hidden"), 3000);
-}
-
-function switchTab(type) {
-  if (type === 'login') {
-    document.getElementById("tabLogin").classList.add("active");
-    document.getElementById("tabRegister").classList.remove("active");
-    document.getElementById("formLogin").classList.remove("hidden");
-    document.getElementById("formRegister").classList.add("hidden");
-  } else {
-    document.getElementById("tabRegister").classList.add("active");
-    document.getElementById("tabLogin").classList.remove("active");
-    document.getElementById("formRegister").classList.remove("hidden");
-    document.getElementById("formLogin").classList.add("hidden");
-  }
-}
-
-auth.onAuthStateChanged(user => {
-  if (user) {
-    currentUser = user;
-    enterApp();
-  }
-});
-
-function loginUser() {
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value.trim();
-
-  if(!email || !password) return showToast("يرجى ملء جميع الحقول");
-
-  auth.signInWithEmailAndPassword(email, password)
-    .catch(err => showToast("بيانات الدخول غير صحيحة"));
-}
-
-function registerUser() {
-  const name = document.getElementById("regName").value.trim();
-  const username = document.getElementById("regUsername").value.trim().toLowerCase();
-  const email = document.getElementById("regEmail").value.trim();
-  const password = document.getElementById("regPassword").value.trim();
-
-  if(!name || !username || !email || !password) return showToast("يرجى ملء جميع الحقول");
-
-  auth.createUserWithEmailAndPassword(email, password)
-    .then(cred => {
-      // إرسال كود/رابط التحقق إلى الإيميل
-      cred.user.sendEmailVerification().then(() => {
-        showToast("تم إرسال رابط التحقق إلى إيميلك! يرجى تأكيده.");
-      });
-
-      db.collection("users").doc(cred.user.uid).set({
-        id: cred.user.uid,
-        displayName: name,
-        username: username,
-        email: email,
-        avatarUrl: "",
-        createdAt: Date.now()
-      }).then(() => enterApp());
-    })
-    .catch(err => showToast("خطأ: " + err.message));
-}
-
-function enterApp() {
-  document.getElementById("loginPage").classList.add("hidden");
-  document.getElementById("mainPage").classList.remove("hidden");
-  goHome();
-}
-
-function logout() {
-  auth.signOut().then(() => location.reload());
-}
-
-function toggleMenu() {
-  document.getElementById("menu").classList.toggle("hidden");
-}
-
-function showSubPage(id) {
-  ["homePage", "searchPage", "profilePage", "chatPage"].forEach(p => document.getElementById(p).classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
-  document.getElementById("menu").classList.add("hidden");
-}
-
-function goHome() {
-  showSubPage("homePage");
-  loadChats();
-}
-
-function openSearch() { showSubPage("searchPage"); }
-
-function openProfile() {
-  showSubPage("profilePage");
-  db.collection("users").doc(currentUser.uid).get().then(doc => {
-    if(doc.exists) {
-      const data = doc.data();
-      document.getElementById("displayNameInput").value = data.displayName || "";
-      document.getElementById("profileUsernameInput").value = data.username || "";
-      document.getElementById("profileEmailInput").value = data.email || currentUser.email;
-
-      document.getElementById("profileHeaderName").textContent = data.displayName || "مستخدم جديد";
-      document.getElementById("profileHeaderUser").textContent = "@" + (data.username || "username");
-
-      if (data.avatarUrl) {
-        document.getElementById("profileAvatarImg").src = data.avatarUrl;
-        document.getElementById("profileAvatarImg").classList.remove("hidden");
-        document.getElementById("profileAvatarText").classList.add("hidden");
-      } else {
-        document.getElementById("profileAvatarText").textContent = (data.displayName || "؟").charAt(0);
-        document.getElementById("profileAvatarText").classList.remove("hidden");
-        document.getElementById("profileAvatarImg").classList.add("hidden");
-      }
-    }
-  });
-}
-
-function uploadAvatar(event) {
-  const file = event.target.files[0];
-  if(!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const base64Image = e.target.result;
-    db.collection("users").doc(currentUser.uid).update({
-      avatarUrl: base64Image
-    }).then(() => {
-      showToast("تم تحديث صورة البروفايل بنجاح!");
-      openProfile();
-    });
-  };
-  reader.readAsDataURL(file);
-}
-
-function saveProfile() {
-  const name = document.getElementById("displayNameInput").value.trim();
-  const username = document.getElementById("profileUsernameInput").value.trim().toLowerCase();
-
-  db.collection("users").doc(currentUser.uid).update({
-    displayName: name,
-    username: username
-  }).then(() => {
-    showToast("تم الحفظ بنجاح");
-    openProfile();
-  });
-}
-
-function searchUsers() {
-  const q = document.getElementById("usernameSearch").value.trim().toLowerCase();
-  const c = document.getElementById("searchResults");
-  c.innerHTML = "";
-  if(q.length < 2) return;
-
-  db.collection("users").where("username", ">=", q).where("username", "<=", q + "\uf8ff")
-    .get().then(snap => {
-      snap.forEach(doc => {
-        const u = doc.data();
-        if(u.id === currentUser.uid) return;
-
-        const btn = document.createElement("button");
-        btn.className = "result-row";
-        btn.innerHTML = `<div class="small-avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%;height:100%;border-radius:50%">` : (u.displayName||"?").charAt(0)}</div>
-                         <div class="row-info"><strong>${u.displayName}</strong><small>@${u.username}</small></div>`;
-        btn.onclick = () => startChat(u);
-        c.appendChild(btn);
-      });
-    });
-}
-
-function startChat(u) {
-  const id = [currentUser.uid, u.id].sort().join("__");
-  activeChatId = id;
-
-  db.collection("chats").doc(id).get().then(doc => {
-    if(!doc.exists) {
-      db.collection("chats").doc(id).set({
-        participants: [currentUser.uid, u.id],
-        otherUser: { id: u.id, displayName: u.displayName, username: u.username },
-        updatedAt: Date.now()
-      });
-    }
-    openChatRoom(u.displayName, u.username);
-  });
-}
-
-function openChatRoom(name, username) {
-  document.getElementById("chatTitle").textContent = name;
-  document.getElementById("chatHandle").textContent = "@" + username;
-  showSubPage("chatPage");
-  
-  db.collection("chats").doc(activeChatId).collection("messages")
-    .orderBy("createdAt", "asc")
-    .onSnapshot(snap => {
-      const box = document.getElementById("chatMessages");
-      box.innerHTML = "";
-      snap.forEach(doc => {
-        const m = doc.data();
-        const d = document.createElement("div");
-        d.className = "message" + (m.senderId === currentUser.uid ? " mine" : "");
-        d.innerHTML = `<div>${m.text}</div><time>${new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</time>`;
-        box.appendChild(d);
-      });
-      box.scrollTop = box.scrollHeight;
-    });
-}
-
-function sendMessage(e) {
-  e.preventDefault();
-  const input = document.getElementById("messageInput");
-  const text = input.value.trim();
-  if(!text || !activeChatId) return;
-
-  db.collection("chats").doc(activeChatId).collection("messages").add({
-    senderId: currentUser.uid,
-    text: text,
-    createdAt: Date.now()
-  });
-
-  db.collection("chats").doc(activeChatId).update({ updatedAt: Date.now() });
-  input.value = "";
-}
-
-function loadChats() {
-  const c = document.getElementById("chatList");
-  const empty = document.getElementById("emptyState");
-  
-  db.collection("chats").where("participants", "array-contains", currentUser.uid)
-    .onSnapshot(snap => {
-      c.innerHTML = "";
-      empty.classList.toggle("hidden", !snap.empty);
-
-      snap.forEach(doc => {
-        const chat = doc.data();
-        const other = chat.otherUser || {};
-        const btn = document.createElement("button");
-        btn.className = "chat-row";
-        btn.innerHTML = `<div class="small-avatar">${(other.displayName||"?").charAt(0)}</div>
-                         <div class="row-info"><strong>${other.displayName || "محادثة"}</strong><small>@${other.username || ""}</small></div>`;
-        btn.onclick = () => {
-          activeChatId = doc.id;
-          openChatRoom(other.displayName, other.username);
-        };
-        c.appendChild(btn);
-      });
-    });
-}
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>
