@@ -724,7 +724,6 @@ function registerUser() {
   if (!email) return showFieldError("regEmailError", "الرجاء إدخال البريد الإلكتروني");
   if (!password || password.length < 6) return showFieldError("regPassError", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
 
-  // التحقق من تكرار اليوزر أولاً
   db.collection("users").where("username", "==", username).get().then(snap => {
     if (!snap.empty) {
       showFieldError("regUserError", "اسم المستخدم هذا مستخدم بالفعل، اختر غيره!");
@@ -822,11 +821,10 @@ function saveProfile() {
   if (newUsername.length < 5) return showToast("اسم المستخدم يجب أن يكون 5 أحرف على الأقل!");
   if (!currentUser) return;
 
-  // فحص إذا كان اليوزر مأخوذ من قبل شخص آخر
   db.collection("users").where("username", "==", newUsername).get().then(snap => {
     let taken = false;
     snap.forEach(doc => {
-      if (doc.id !== currentUser.uid) taken = true; // مأخوذ من قبل حساب غير حسابي
+      if (doc.id !== currentUser.uid) taken = true;
     });
 
     if (taken) {
@@ -887,18 +885,24 @@ function startChat(u) {
     if (!doc.exists) {
       db.collection("chats").doc(chatId).set({
         participants: [currentUser.uid, u.id],
-        otherUser: { id: u.id, displayName: u.displayName, username: u.username },
         updatedAt: Date.now()
       });
     }
-    openChatRoom(u.displayName, u.username);
+    openChatRoom(u.id);
   });
 }
 
-function openChatRoom(name, username) {
-  document.getElementById("chatTitle").textContent = name;
-  document.getElementById("chatSub").textContent = "@" + username;
+function openChatRoom(otherUserId) {
   showView("chatView");
+
+  // جلب معلومات الطرف الآخر مباشرة بشكل حي ومحدث من قاعدة بياناته
+  db.collection("users").doc(otherUserId).onSnapshot(doc => {
+    if (doc.exists) {
+      const u = doc.data();
+      document.getElementById("chatTitle").textContent = u.displayName || "مستخدم";
+      document.getElementById("chatSub").textContent = "@" + (u.username || "");
+    }
+  });
 
   db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "asc")
@@ -949,22 +953,31 @@ function loadChats() {
       if (snap.empty) return;
 
       container.innerHTML = "";
-      snap.forEach(doc => {
-        const c = doc.data();
-        const other = c.otherUser || {};
-        const div = document.createElement("div");
-        div.className = "chat-item";
-        div.innerHTML = `
-          <div class="avatar">${(other.displayName||"?").charAt(0).toUpperCase()}</div>
-          <div class="chat-item-info">
-            <div class="chat-item-name">${other.displayName || "مستخدم"}</div>
-            <div class="chat-item-sub">@${other.username || ""}</div>
-          </div>`;
-        div.onclick = () => {
-          activeId = doc.id;
-          openChatRoom(other.displayName, other.username);
-        };
-        container.appendChild(div);
+      snap.forEach(chatDoc => {
+        const chatData = chatDoc.data();
+        const participants = chatData.participants || [];
+        const otherId = participants.find(id => id !== currentUser.uid);
+        if (!otherId) return;
+
+        // جلب بيانات الطرف الآخر الحية (الاسم، اليوزر، الصورة) مباشرة في قائمة المحادثات
+        db.collection("users").doc(otherId).get().then(userDoc => {
+          if (!userDoc.exists) return;
+          const u = userDoc.data();
+
+          const div = document.createElement("div");
+          div.className = "chat-item";
+          div.innerHTML = `
+            <div class="avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%;height:100%;border-radius:50%">` : (u.displayName||"?").charAt(0).toUpperCase()}</div>
+            <div class="chat-item-info">
+              <div class="chat-item-name">${u.displayName || "مستخدم"}</div>
+              <div class="chat-item-sub">@${u.username || ""}</div>
+            </div>`;
+          div.onclick = () => {
+            activeChatId = chatDoc.id;
+            openChatRoom(otherId);
+          };
+          container.appendChild(div);
+        });
       });
     });
 }
