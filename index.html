@@ -622,6 +622,7 @@ body {
 
 <div class="app-container">
 
+  <!-- شاشة الدخول والتسجيل -->
   <section id="authPage" class="auth-page">
     <div class="babylon-logo">🏛</div>
     <h1 class="auth-title">Babylon Chat</h1>
@@ -670,6 +671,7 @@ body {
     </div>
   </section>
 
+  <!-- الصفحة الرئيسية وتطبيق الدردشة -->
   <section id="mainPage" class="hidden" style="height:100%; display:flex; flex-direction:column;">
     
     <header id="mainHeader" class="main-header">
@@ -689,7 +691,7 @@ body {
       <div id="searchResults" class="chat-list"></div>
     </div>
 
-    <!-- شاشة الإعدادات والبروفايل المعدلة للتحديث التلقائي -->
+    <!-- شاشة الملف الشخصي والإعدادات للتحديث الفوري التلقائي -->
     <div id="profileView" class="profile-view hidden">
       <div class="babylon-profile-header">
         <button class="icon-btn" style="position:absolute; right:12px; top:12px;" onclick="goHome()">‹</button>
@@ -713,7 +715,7 @@ body {
         </div>
       </div>
 
-      <div class="profile-section-label">تعديل الملف الشخصي (تحديث تلقائي)</div>
+      <div class="profile-section-label">تعديل الملف الشخصي (تحديث تلقائي فوري)</div>
       <div class="profile-settings-card">
         <div class="profile-row">
           <div class="input-group" style="margin-bottom:0;">
@@ -735,6 +737,7 @@ body {
       </div>
     </div>
 
+    <!-- غرفة المحادثة -->
     <div id="chatView" class="chat-room hidden">
       <div class="chat-bg-pattern"></div>
 
@@ -772,7 +775,7 @@ body {
       </div>
     </div>
 
-    <!-- شريط التنقل السفلي المحدّث (المحادثات، الملف الشخصي، الإعدادات) -->
+    <!-- شريط التنقل السفلي -->
     <nav id="bottomNav" class="telegram-bottom-nav">
       <button id="navChats" class="nav-item active" onclick="goHome()">
         <span class="nav-icon">💬</span>
@@ -902,6 +905,8 @@ auth.onAuthStateChanged(user => {
     }
   } else {
     isAppInitialized = false;
+    currentUser = null;
+    currentUserData = null;
     document.getElementById("authPage").classList.remove("hidden");
     document.getElementById("mainPage").classList.add("hidden");
   }
@@ -1006,6 +1011,8 @@ function registerUser() {
           showToast("مرحباً بك في Babylon Chat!");
           enterApp();
         });
+      }).catch(err => {
+        showFieldError("regPassError", err.message);
       });
   });
 }
@@ -1073,7 +1080,6 @@ function openProfile() {
   }
 }
 
-// التحديث التلقائي الفوري للاسم بدون زر حفظ
 function liveUpdateName(e) {
   const newName = e.target.value.trim();
   if (!newName || !currentUser) return;
@@ -1087,7 +1093,6 @@ function liveUpdateName(e) {
   }, 400);
 }
 
-// التحديث التلقائي الفوري لاسم المستخدم مع فحص التوفر وطول الأحرف
 function liveUpdateUsername(e) {
   const newUsername = e.target.value.trim().toLowerCase();
   clearErrors();
@@ -1119,7 +1124,6 @@ function liveUpdateUsername(e) {
   }, 500);
 }
 
-// رفع وتحديث الصورة الشخصية تلقائياً
 function uploadAvatarLive(e) {
   const file = e.target.files[0];
   if (!file || !currentUser) return;
@@ -1541,6 +1545,7 @@ function loadChats() {
         });
       });
     });
+}
 </script>
 </body>
 </html>
