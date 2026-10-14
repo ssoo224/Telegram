@@ -138,6 +138,12 @@ body {
   color: white;
   outline: none;
   font-size: 14px;
+  direction: ltr;
+  text-align: left;
+}
+.babylon-input.rtl {
+  direction: rtl;
+  text-align: right;
 }
 
 .field-error {
@@ -247,6 +253,7 @@ body {
   color: var(--babylon-gold);
 }
 
+/* تنسيق قائمة المحادثات مثل تليجرام بالضبط */
 .chat-item {
   display: flex;
   align-items: center;
@@ -254,6 +261,7 @@ body {
   gap: 14px;
   cursor: pointer;
   border-bottom: 1px solid rgba(255,255,255,0.02);
+  position: relative;
 }
 .chat-item:hover { background: var(--babylon-surface-hover); }
 
@@ -268,14 +276,25 @@ body {
   justify-content: center;
   font-weight: 700;
   font-size: 20px;
-  object-fit: cover;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .chat-item-info { flex: 1; min-width: 0; text-align: right; }
-.chat-item-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: white; }
-.chat-item-sub { font-size: 13.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-item-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.chat-item-name { font-size: 16px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-item-time { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+.chat-item-sub-row { display: flex; justify-content: space-between; align-items: center; }
+.chat-item-sub { font-size: 13.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.unread-badge { background: #2b5278; color: white; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-right: 6px; }
 
+/* بروفايل تليجرام البابلي وضبط أبعاد الصورة بدقة */
 .profile-view {
   flex: 1;
   overflow-y: auto;
@@ -375,7 +394,13 @@ body {
   font-weight: bold;
   font-size: 17px;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.telegram-avatar img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  border-radius: 50%;
 }
 
 .telegram-user-details {
@@ -650,11 +675,11 @@ body {
     <div id="formRegister" class="hidden" style="width:100%;">
       <div class="input-group">
         <label>اسم العرض (الاسم الشخصي)</label>
-        <input id="regName" class="babylon-input" type="text" placeholder="اسمك الكريم">
+        <input id="regName" class="babylon-input rtl" type="text" placeholder="اسمك الكريم">
       </div>
       <div class="input-group">
-        <label>اسم المستخدم (5 أحرف على الأقل - Username)</label>
-        <input id="regUsername" class="babylon-input" type="text" placeholder="babylon_user">
+        <label>اسم المستخدم (يبدأ بحرف، و5 أحرف فأكثر)</label>
+        <input id="regUsername" class="babylon-input" type="text" placeholder="babylon_user" oninput="validateUsernameInput(this)">
         <span id="regUserError" class="field-error hidden"></span>
       </div>
       <div class="input-group">
@@ -691,7 +716,7 @@ body {
       <div id="searchResults" class="chat-list"></div>
     </div>
 
-    <!-- شاشة الملف الشخصي والإعدادات للتحديث الفوري التلقائي -->
+    <!-- شاشة الملف الشخصي والإعدادات مع ضبط أبعاد الصورة وقواعد اليوزر -->
     <div id="profileView" class="profile-view hidden">
       <div class="babylon-profile-header">
         <button class="icon-btn" style="position:absolute; right:12px; top:12px;" onclick="goHome()">‹</button>
@@ -720,12 +745,12 @@ body {
         <div class="profile-row">
           <div class="input-group" style="margin-bottom:0;">
             <label>اسم العرض</label>
-            <input id="pNameInput" class="babylon-input" oninput="liveUpdateName(event)">
+            <input id="pNameInput" class="babylon-input rtl" oninput="liveUpdateName(event)">
           </div>
         </div>
         <div class="profile-row">
           <div class="input-group" style="margin-bottom:0;">
-            <label>اسم المستخدم (يوزر - 5 أحرف فأكثر)</label>
+            <label>اسم المستخدم (يبدأ بحرف، 5 أحرف فأكثر)</label>
             <input id="pUsernameInput" class="babylon-input" oninput="liveUpdateUsername(event)">
             <span id="usernameLiveError" class="field-error hidden"></span>
           </div>
@@ -848,6 +873,19 @@ let recordInterval = null;
 let recordSeconds = 0;
 let updateTimer = null;
 
+// قاعدة فحص اسم المستخدم (يبدأ بحرف، ثم حروف/أرقام/شرطة سفلية/نقطة)
+function isValidUsername(username) {
+  const regex = /^[a-zA-Z][a-zA-Z0-9_\.]{4,}$/;
+  return regex.test(username);
+}
+
+function validateUsernameInput(inputElement) {
+  let val = inputElement.value.trim();
+  // إزالة أي رموز غير مسموحة فوراً
+  val = val.replace(/[^a-zA-Z0-9_\.]/g, '');
+  inputElement.value = val;
+}
+
 function clearErrors() {
   document.querySelectorAll('.field-error').forEach(el => {
     el.textContent = "";
@@ -922,7 +960,7 @@ function loadUserDataAndEnter(uid) {
       const defaultData = {
         id: uid,
         displayName: currentUser.email.split('@')[0],
-        username: "user_" + uid.substring(0, 5),
+        username: "user" + uid.substring(0, 5),
         email: currentUser.email,
         avatarUrl: "",
         createdAt: Date.now()
@@ -942,7 +980,7 @@ function loadUserDataAndEnter(uid) {
 function updateProfileUI(u) {
   if (!u) return;
   const displayName = u.displayName || currentUser.email.split('@')[0];
-  const username = u.username || "user_" + currentUser.uid.substring(0, 5);
+  const username = u.username || "user" + currentUser.uid.substring(0, 5);
   const email = u.email || currentUser.email;
 
   document.getElementById("pNameInput").value = displayName;
@@ -952,14 +990,17 @@ function updateProfileUI(u) {
   document.getElementById("pHeaderName").textContent = displayName;
   document.getElementById("pHeaderUser").textContent = "@" + username;
 
+  const avatarBox = document.getElementById("pAvatarImg");
+  const avatarText = document.getElementById("pAvatarText");
+
   if (u.avatarUrl) {
-    document.getElementById("pAvatarImg").src = u.avatarUrl;
-    document.getElementById("pAvatarImg").classList.remove("hidden");
-    document.getElementById("pAvatarText").classList.add("hidden");
+    avatarBox.src = u.avatarUrl;
+    avatarBox.classList.remove("hidden");
+    avatarText.classList.add("hidden");
   } else {
-    document.getElementById("pAvatarText").textContent = displayName.charAt(0).toUpperCase();
-    document.getElementById("pAvatarText").classList.remove("hidden");
-    document.getElementById("pAvatarImg").classList.add("hidden");
+    avatarText.textContent = displayName.charAt(0).toUpperCase();
+    avatarText.classList.remove("hidden");
+    avatarBox.classList.add("hidden");
   }
 }
 
@@ -985,7 +1026,11 @@ function registerUser() {
   const password = document.getElementById("regPassword").value.trim();
 
   if (!name) return showToast("الرجاء إدخال اسم العرض");
-  if (!username || username.length < 5) return showFieldError("regUserError", "اسم المستخدم يجب ألا يقل عن 5 أحرف!");
+  
+  if (!isValidUsername(username)) {
+    return showFieldError("regUserError", "اليوزر غير صالح! يجب أن يبدأ بحرف إنجليزي، ويحتوي على أحرف وأرقام ونقاط أو شرطة سفلى فقط (5 أحرف فأكثر)");
+  }
+
   if (!email) return showFieldError("regEmailError", "الرجاء إدخال البريد الإلكتروني");
   if (!password || password.length < 6) return showFieldError("regPassError", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
 
@@ -1094,11 +1139,12 @@ function liveUpdateName(e) {
 }
 
 function liveUpdateUsername(e) {
+  validateUsernameInput(e.target);
   const newUsername = e.target.value.trim().toLowerCase();
   clearErrors();
 
-  if (newUsername.length < 5) {
-    showFieldError("usernameLiveError", "اسم المستخدم يجب ألا يقل عن 5 أحرف!");
+  if (!isValidUsername(newUsername)) {
+    showFieldError("usernameLiveError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 5 أحرف فأكثر (أحرف، أرقام، _, .)");
     return;
   }
 
@@ -1141,7 +1187,7 @@ function uploadAvatarLive(e) {
       canvas.height = 150;
       ctx.drawImage(img, 0, 0, 150, 150);
 
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
 
       db.collection("users").doc(currentUser.uid).set({
         avatarUrl: compressedDataUrl
@@ -1170,7 +1216,7 @@ function searchUsers() {
         const div = document.createElement("div");
         div.className = "chat-item";
         div.innerHTML = `
-          <div class="avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%;height:100%;border-radius:50%">` : (u.displayName||"?").charAt(0).toUpperCase()}</div>
+          <div class="avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}">` : (u.displayName||"?").charAt(0).toUpperCase()}</div>
           <div class="chat-item-info">
             <div class="chat-item-name">${u.displayName}</div>
             <div class="chat-item-sub">@${u.username}</div>
@@ -1210,7 +1256,7 @@ function openChatRoom(otherUserId) {
       
       const avatarBox = document.getElementById("chatAvatar");
       if (u.avatarUrl) {
-        avatarBox.innerHTML = `<img src="${u.avatarUrl}" style="width:100%;height:100%;border-radius:50%">`;
+        avatarBox.innerHTML = `<img src="${u.avatarUrl}">`;
       } else {
         avatarBox.textContent = (u.displayName || "?").charAt(0).toUpperCase();
       }
@@ -1495,6 +1541,7 @@ function sendMessage(e) {
   }
 }
 
+// دالة تحميل المحادثات مع عرض اسم المستخدم، آخر رسالة، الوقت، وعداد الرسائل غير المقروءة مثل تليجرام
 function loadChats() {
   const container = document.getElementById("chatList");
   
@@ -1509,7 +1556,7 @@ function loadChats() {
           <div class="empty-chats">
             <div class="empty-chats-icon">🏛</div>
             <div style="font-weight: 600; font-size:16px; margin-bottom: 6px; color: var(--babylon-gold);">لا توجد محادثات في بابل بعد</div>
-            <div style="font-size: 13px; color: var(--text-muted);">اضغط على أيقونة البحث (🔍) في الأعلى وابحث عن مستخدم بيوزر لا يقل عن 5 أحرف</div>
+            <div style="font-size: 13px; color: var(--text-muted);">اضغط على أيقونة البحث (🔍) في الأعلى وابحث عن مستخدم بيوزر صالح</div>
           </div>`;
         return;
       }
@@ -1529,19 +1576,51 @@ function loadChats() {
           if (!userDoc.exists) return;
           const u = userDoc.data();
 
-          const div = document.createElement("div");
-          div.className = "chat-item";
-          div.innerHTML = `
-            <div class="avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%;height:100%;border-radius:50%">` : (u.displayName||"?").charAt(0).toUpperCase()}</div>
-            <div class="chat-item-info">
-              <div class="chat-item-name">${u.displayName || "مستخدم"}</div>
-              <div class="chat-item-sub">@${u.username || ""}</div>
-            </div>`;
-          div.onclick = () => {
-            activeChatId = chatDoc.id;
-            openChatRoom(otherId);
-          };
-          container.appendChild(div);
+          // جلب آخر رسالة وحساب غير المقروءة
+          db.collection("chats").doc(chatDoc.id).collection("messages")
+            .orderBy("createdAt", "desc")
+            .limit(1)
+            .get().then(msgSnap => {
+              let lastMsgText = "لا توجد رسائل بعد";
+              let lastMsgTime = "";
+              let unreadCount = 0;
+
+              if (!msgSnap.empty) {
+                const m = msgSnap.docs[0].data();
+                lastMsgText = m.audioUrl ? "🎤 بصمة صوتية" : (m.text || "");
+                
+                let tStr = new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+                if (tStr.startsWith('0')) tStr = tStr.substring(1);
+                lastMsgTime = tStr;
+              }
+
+              db.collection("chats").doc(chatDoc.id).collection("messages")
+                .where("senderId", "==", otherId)
+                .where("read", "==", false)
+                .get().then(unReadSnap => {
+                  unreadCount = unReadSnap.size;
+
+                  const div = document.createElement("div");
+                  div.className = "chat-item";
+                  div.innerHTML = `
+                    <div class="avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}">` : (u.displayName||"?").charAt(0).toUpperCase()}</div>
+                    <div class="chat-item-info">
+                      <div class="chat-item-header-row">
+                        <div class="chat-item-name">${u.displayName || "مستخدم"}</div>
+                        <div class="chat-item-time">${lastMsgTime}</div>
+                      </div>
+                      <div class="chat-item-sub-row">
+                        <div class="chat-item-sub">${lastMsgText}</div>
+                        ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                      </div>
+                    </div>`;
+                  div.onclick = () => {
+                    activeChatId = chatDoc.id;
+                    openChatRoom(otherId);
+                  };
+                  container.appendChild(div);
+                });
+            });
         });
       });
     });
