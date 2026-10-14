@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Babylon Chat - تليجرام البابلي</title>
 
+<!-- إعدادات تطبيق الويب (PWA) لدعم الإشعارات خارج المتصفح -->
+<link rel="manifest" href="data:application/manifest+json;charset=utf-8,{
+  'name': 'Babylon Chat',
+  'short_name': 'Babylon',
+  'start_url': './',
+  'display': 'standalone',
+  'background_color': '#090d16',
+  'theme_color': '#17212b'
+}">
+
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -293,7 +303,7 @@ body {
 .chat-item-sub { font-size: 13.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 .unread-badge { background: #2b5278; color: white; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-right: 6px; }
 
-/* شاشة الملف الشخصي مستقلة */
+/* شاشة الملف الشخصي المستقلة */
 .profile-view {
   flex: 1;
   overflow-y: auto;
@@ -722,7 +732,7 @@ body {
       <div id="searchResults" class="chat-list"></div>
     </div>
 
-    <!-- شاشة الملف الشخصي (مستقلة تماماً بدون إعدادات) -->
+    <!-- شاشة الملف الشخصي (مستقلة تماماً) -->
     <div id="profileView" class="profile-view hidden">
       <div class="babylon-profile-header">
         <button class="icon-btn" style="position:absolute; right:12px; top:12px;" onclick="goHome()">‹</button>
@@ -768,7 +778,7 @@ body {
       </div>
     </div>
 
-    <!-- شاشة الإعدادات العامة المستقلة (تحتوي على الإشعارات والتنبيهات فقط) -->
+    <!-- شاشة الإعدادات العامة المستقلة -->
     <div id="settingsView" class="settings-view hidden">
       <div class="babylon-profile-header" style="text-align:right; padding:18px 16px;">
         <button class="icon-btn" style="position:absolute; left:12px; top:12px;" onclick="goHome()">✕</button>
@@ -885,6 +895,8 @@ let chatsListUnsubscribe = null;
 let heartbeatInterval = null;
 let isAppInitialized = false;
 
+let sessionStartTime = Date.now(); // وقت بدء الدخول لتفادي إطلاق تنبيهات للرسائل القديمة
+
 let selectedMsgId = null;
 let selectedMsgText = null;
 let selectedMsgSender = null;
@@ -898,7 +910,6 @@ let recordInterval = null;
 let recordSeconds = 0;
 let updateTimer = null;
 
-// تفعيل إذن إشعارات المتصفح
 function requestNotificationPermission() {
   if (!("Notification" in window)) {
     return showToast("متصفحك لا يدعم الإشعارات");
@@ -912,7 +923,6 @@ function requestNotificationPermission() {
   });
 }
 
-// تشغيل صوت تنبيه قصير عند وصول رسالة
 function playNotificationSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1454,7 +1464,7 @@ function openMsgModal(msgId, text, senderId, reactions) {
     btnDelete.classList.add("hidden");
   }
 
-  document.getElementById("msgModal").classList.remove("hidden");
+  document.getElementById("msgModal").classList.add("hidden");
 }
 
 function closeMsgModal(e) {
@@ -1610,7 +1620,7 @@ function sendMessage(e) {
   }
 }
 
-// دالة تحميل المحادثات مع إرسال الإشعارات والأصوات بدقة
+// دالة تحميل المحادثات مع نظام تنبيهات فوري وصوت دقيق
 function loadChats() {
   const container = document.getElementById("chatList");
   
@@ -1663,11 +1673,11 @@ function loadChats() {
                 if (tStr.startsWith('0')) tStr = tStr.substring(1);
                 lastMsgTime = tStr;
 
-                // تفعيل التنبيه والصوت عند وصول رسالة جديدة من الطرف الآخر
-                if (!isMine && (Date.now() - m.createdAt < 6000)) {
+                // إطلاق التنبيه والصوت فقط للرسائل الجديدة التي تصل بعد فتح التطبيق
+                if (!isMine && m.createdAt > sessionStartTime) {
                   playNotificationSound();
 
-                  if (document.hidden && Notification.permission === "granted") {
+                  if (Notification.permission === "granted") {
                     new Notification(u.displayName || "رسالة جديدة", {
                       body: m.text || "أرسل لك بصمة صوتية",
                       icon: u.avatarUrl || ""
