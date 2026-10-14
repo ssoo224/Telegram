@@ -9,7 +9,7 @@
   "theme_color": "#17212b",
   "icons": [
     {
-      "src": "/icon-512.png",
+      "src": "https://img.icons8.com/color/512/chat.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
