@@ -70,7 +70,7 @@ function registerUser() {
         avatarUrl: "",
         createdAt: Date.now()
       }).then(() => {
-        showToast("تم إنشاء الحساب وإرسال رابط التأكيد لإيميلك!");
+        showToast("تم إنشاء الحساب بنجاح!");
         enterApp();
       });
     })
@@ -106,7 +106,7 @@ function openProfile() {
       const u = doc.data();
       document.getElementById("pNameInput").value = u.displayName || "";
       document.getElementById("pUsernameInput").value = u.username || "";
-      document.getElementById("pEmailInput").value = u.email || currentUser.email;
+      document.getElementById("pEmailDisplay").textContent = u.email || currentUser.email;
 
       document.getElementById("pHeaderName").textContent = u.displayName || "مستخدم";
       document.getElementById("pHeaderUser").textContent = "@" + (u.username || "username");
@@ -133,7 +133,7 @@ function uploadAvatar(e) {
     const imgData = evt.target.result;
     db.collection("users").doc(currentUser.uid).update({ avatarUrl: imgData })
       .then(() => {
-        showToast("تمت تحديث صورة البروفايل!");
+        showToast("تم تحديث صورة البروفايل!");
         openProfile();
       });
   };
@@ -145,7 +145,7 @@ function saveProfile() {
     displayName: document.getElementById("pNameInput").value.trim(),
     username: document.getElementById("pUsernameInput").value.trim().toLowerCase()
   }).then(() => {
-    showToast("تمت حفظ البيانات بنجاح!");
+    showToast("تم حفظ التغييرات بنجاح!");
     openProfile();
   });
 }
@@ -234,6 +234,16 @@ function loadChats() {
   db.collection("chats").where("participants", "array-contains", currentUser.uid)
     .onSnapshot(snap => {
       container.innerHTML = "";
+      if (snap.empty) {
+        container.innerHTML = `
+          <div class="empty-chats">
+            <div class="empty-chats-icon">💬</div>
+            <div style="font-weight: 600; margin-bottom: 4px; color: white;">لا توجد محادثات</div>
+            <div style="font-size: 13px;">اضغط على أيقونة البحث بالأعلى وابدأ محادثتك الأولى</div>
+          </div>`;
+        return;
+      }
+
       snap.forEach(doc => {
         const c = doc.data();
         const other = c.otherUser || {};
