@@ -913,7 +913,6 @@ let recordInterval = null;
 let recordSeconds = 0;
 let updateTimer = null;
 
-// تسجيل الـ Service Worker لتفعيل الإشعارات خارج التطبيق
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('firebase-messaging-sw.js')
     .then(reg => console.log('SW Registered', reg))
@@ -1628,6 +1627,19 @@ function sendMessage(e) {
       db.collection("chats").doc(activeChatId).set({
         updatedAt: Date.now()
       }, { merge: true });
+
+      const otherUserId = activeChatId.split('__').find(id => id !== currentUser.uid);
+      if (otherUserId) {
+        fetch('/api/send-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipientId: otherUserId,
+            senderName: currentUserData ? currentUserData.displayName : "رسالة جديدة",
+            messageText: text
+          })
+        }).catch(err => console.log('Notification fetch error:', err));
+      }
     });
     
     input.value = "";
@@ -1689,14 +1701,6 @@ function loadChats() {
 
                 if (!isMine && m.createdAt > sessionStartTime) {
                   playNotificationSound();
-
-                  if (Notification.permission === "granted" && navigator.serviceWorker.controller) {
-                    navigator.serviceWorker.controller.postMessage({
-                      title: u.displayName || "رسالة جديدة",
-                      body: m.text || "أرسل لك بصمة صوتية",
-                      icon: u.avatarUrl || ""
-                    });
-                  }
                 }
               }
 
