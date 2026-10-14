@@ -771,6 +771,7 @@ let messagesUnsubscribe = null;
 let userUnsubscribe = null;
 let chatsListUnsubscribe = null;
 let heartbeatInterval = null;
+let isAppInitialized = false;
 
 let selectedMsgId = null;
 let selectedMsgText = null;
@@ -821,6 +822,7 @@ function switchTab(type) {
   }
 }
 
+// منع حدوث الريفريش المتكرر عبر فحص تسجيل الدخول الأول فقط
 auth.onAuthStateChanged(user => {
   if (user) {
     currentUser = user;
@@ -835,15 +837,19 @@ auth.onAuthStateChanged(user => {
       db.collection("users").doc(user.uid).set({ online: false, lastSeen: Date.now() }, { merge: true });
     });
 
-    loadUserDataAndEnter(user.uid);
+    if (!isAppInitialized) {
+      isAppInitialized = true;
+      loadUserDataAndEnter(user.uid);
+    }
   } else {
+    isAppInitialized = false;
     document.getElementById("authPage").classList.remove("hidden");
     document.getElementById("mainPage").classList.add("hidden");
   }
 });
 
 function loadUserDataAndEnter(uid) {
-  db.collection("users").doc(uid).onSnapshot(doc => {
+  db.collection("users").doc(uid).get().then(doc => {
     if (doc.exists) {
       currentUserData = doc.data();
       updateProfileUI(currentUserData);
@@ -863,7 +869,7 @@ function loadUserDataAndEnter(uid) {
         enterApp();
       });
     }
-  }, err => {
+  }).catch(err => {
     console.error(err);
     enterApp();
   });
@@ -1128,7 +1134,6 @@ function openChatRoom(otherUserId) {
       snap.forEach(d => d.ref.update({ read: true }));
     });
 
-  // الاستماع المستقر والثابت للرسائل حصرياً دون أي إعادة توجيه
   messagesUnsubscribe = db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "asc")
     .onSnapshot(snap => {
