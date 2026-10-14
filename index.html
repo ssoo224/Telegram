@@ -642,7 +642,8 @@ auth.onAuthStateChanged(user => {
 });
 
 function loadUserDataAndEnter(uid) {
-  db.collection("users").doc(uid).get().then(doc => {
+  // الاستماع المباشر للتغييرات بجانب القراءة لضمان التحديث التلقائي
+  db.collection("users").doc(uid).onSnapshot(doc => {
     if (doc.exists) {
       currentUserData = doc.data();
       updateProfileUI(currentUserData);
@@ -662,7 +663,7 @@ function loadUserDataAndEnter(uid) {
         enterApp();
       });
     }
-  }).catch((err) => {
+  }, err => {
     console.error(err);
     enterApp();
   });
@@ -734,7 +735,7 @@ function registerUser() {
         avatarUrl: "",
         createdAt: Date.now()
       };
-      db.collection("users").doc(cred.user.uid).set(userData).then(() => {
+      db.collection("users").doc(cred.user.uid).set(userData, { merge: true }).then(() => {
         currentUserData = userData;
         updateProfileUI(userData);
         showToast("مرحباً بك في Babylon Chat!");
@@ -782,34 +783,29 @@ function openProfile() {
   showView("profileView");
   if (currentUserData) {
     updateProfileUI(currentUserData);
-  } else if (currentUser) {
-    db.collection("users").doc(currentUser.uid).get().then(doc => {
-      if (doc.exists) {
-        currentUserData = doc.data();
-        updateProfileUI(currentUserData);
-      }
-    });
   }
 }
 
 function uploadAvatar(e) {
   const file = e.target.files[0];
-  if (!file) return;
+  if (!file || !currentUser) return;
+
+  showToast("جاري رفع الصورة...");
 
   const reader = new FileReader();
   reader.onload = function(evt) {
     const imgData = evt.target.result;
-    if (!currentUser) return;
     
+    // استخدام set مع merge يضمن إنشاء الوثيقة فوراً إذا لم تكن موجودة
     db.collection("users").doc(currentUser.uid).set({
+      id: currentUser.uid,
+      email: currentUser.email,
       avatarUrl: imgData
     }, { merge: true }).then(() => {
-      if (!currentUserData) currentUserData = {};
-      currentUserData.avatarUrl = imgData;
-      updateProfileUI(currentUserData);
       showToast("تم تحديث صورة البروفايل بنجاح!");
     }).catch(err => {
-      showToast("خطأ في حفظ الصورة: تأكد من تفعيل قواعد Firestore");
+      console.error(err);
+      showToast("حدث خطأ في حفظ الصورة، تأكد من قواعد Firestore");
     });
   };
   reader.readAsDataURL(file);
@@ -821,18 +817,21 @@ function saveProfile() {
 
   if (!newName || !newUsername) return showToast("الرجاء عدم ترك الحقول فارغة");
   if (newUsername.length < 5) return showToast("اسم المستخدم يجب أن يكون 5 أحرف على الأقل!");
+  if (!currentUser) return;
 
-  db.collection("users").doc(currentUser.uid).update({
+  showToast("جاري حفظ التغييرات...");
+
+  // استخدام set مع merge لإنشاء الوثيقة أو تعديلها
+  db.collection("users").doc(currentUser.uid).set({
+    id: currentUser.uid,
+    email: currentUser.email,
     displayName: newName,
     username: newUsername
-  }).then(() => {
-    if (!currentUserData) currentUserData = {};
-    currentUserData.displayName = newName;
-    currentUserData.username = newUsername;
-    updateProfileUI(currentUserData);
+  }, { merge: true }).then(() => {
     showToast("تم حفظ التغييرات بنجاح!");
   }).catch(err => {
-    showToast("خطأ في الحفظ: تأكد من تفعيل قواعد Firestore");
+    console.error(err);
+    showToast("حدث خطأ أثناء الحفظ، تأكد من القواعد في Firebase");
   });
 }
 
