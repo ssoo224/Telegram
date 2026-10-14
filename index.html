@@ -642,7 +642,6 @@ auth.onAuthStateChanged(user => {
 });
 
 function loadUserDataAndEnter(uid) {
-  // الاستماع المباشر للتغييرات بجانب القراءة لضمان التحديث التلقائي
   db.collection("users").doc(uid).onSnapshot(doc => {
     if (doc.exists) {
       currentUserData = doc.data();
@@ -796,16 +795,16 @@ function uploadAvatar(e) {
   reader.onload = function(evt) {
     const imgData = evt.target.result;
     
-    // استخدام set مع merge يضمن إنشاء الوثيقة فوراً إذا لم تكن موجودة
     db.collection("users").doc(currentUser.uid).set({
       id: currentUser.uid,
       email: currentUser.email,
       avatarUrl: imgData
     }, { merge: true }).then(() => {
       showToast("تم تحديث صورة البروفايل بنجاح!");
+      openProfile(); // البقاء في واجهة البروفايل
     }).catch(err => {
       console.error(err);
-      showToast("حدث خطأ في حفظ الصورة، تأكد من قواعد Firestore");
+      showToast("حدث خطأ في حفظ الصورة");
     });
   };
   reader.readAsDataURL(file);
@@ -821,17 +820,21 @@ function saveProfile() {
 
   showToast("جاري حفظ التغييرات...");
 
-  // استخدام set مع merge لإنشاء الوثيقة أو تعديلها
   db.collection("users").doc(currentUser.uid).set({
     id: currentUser.uid,
     email: currentUser.email,
     displayName: newName,
     username: newUsername
   }, { merge: true }).then(() => {
+    if (!currentUserData) currentUserData = {};
+    currentUserData.displayName = newName;
+    currentUserData.username = newUsername;
+    updateProfileUI(currentUserData);
     showToast("تم حفظ التغييرات بنجاح!");
+    openProfile(); // البقاء في واجهة البروفايل وعدم الانتقال للخارج
   }).catch(err => {
     console.error(err);
-    showToast("حدث خطأ أثناء الحفظ، تأكد من القواعد في Firebase");
+    showToast("حدث خطأ أثناء الحفظ");
   });
 }
 
