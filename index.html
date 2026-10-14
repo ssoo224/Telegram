@@ -173,6 +173,7 @@ body {
   justify-content: space-between;
   padding: 0 14px;
   z-index: 10;
+  position: relative;
 }
 .main-header-title { font-size: 18px; font-weight: 700; color: var(--babylon-gold); }
 
@@ -319,7 +320,7 @@ body {
 }
 .profile-row:last-child { border: none; }
 
-/* 🏛 هيدر غرفة المحادثة بتصميم التليجرام الخاص 🏛 */
+/* 🏛 هيدر غرفة المحادثة الخالص بتصميم التليجرام 🏛 */
 .telegram-chat-header {
   height: 60px;
   background: #17212b;
@@ -376,7 +377,7 @@ body {
   color: var(--text-muted);
 }
 
-/* غرفة المحادثة بتصميم التليجرام الأصلي */
+/* غرفة المحادثة */
 .chat-room {
   flex: 1;
   display: flex;
@@ -406,7 +407,7 @@ body {
   z-index: 1;
 }
 
-/* 💬 تصميم فقاعات الرسائل مثل التليجرام تماماً 💬 */
+/* 💬 تصميم فقاعات الرسائل مثل التليجرام 💬 */
 .msg-bubble {
   width: fit-content;
   max-width: 82%;
@@ -648,9 +649,11 @@ body {
     </div>
   </section>
 
-  <!-- الصفحة الرئيسية -->
+  <!-- التطبيق والصفحة الرئيسية -->
   <section id="mainPage" class="hidden" style="height:100%; display:flex; flex-direction:column;">
-    <header class="main-header">
+    
+    <!-- الهيدر الرئيسي للرئيسية فقط (يختفي تماماً عند دخول الشات) -->
+    <header id="mainHeader" class="main-header">
       <button class="icon-btn" onclick="toggleMenu()">☰</button>
       <div class="main-header-title">Babylon Chat</div>
       <button class="icon-btn" onclick="openSearch()" title="بحث عن مستخدم باليوزر">⌕</button>
@@ -718,11 +721,11 @@ body {
       </div>
     </div>
 
-    <!-- 🏛 غرفة المحادثة الهيكلية بتصميم التليجرام الخالص 🏛 -->
+    <!-- 🏛 غرفة المحادثة الهيكلية الخالصة بدون أي شريط زائد 🏛 -->
     <div id="chatView" class="chat-room hidden">
       <div class="chat-bg-pattern"></div>
 
-      <!-- هيدر الشات الخاص بتليجرام (بدون أزرار البحث العامة) -->
+      <!-- هيدر الشات الخاص بتليجرام ففط -->
       <header class="telegram-chat-header">
         <button class="icon-btn" onclick="goHome()">‹</button>
         
@@ -733,8 +736,6 @@ body {
             <div id="chatSub" class="telegram-user-status">غير متصل</div>
           </div>
         </div>
-
-        <button class="icon-btn" style="font-size:18px;" title="خيار إضافي">⋮</button>
       </header>
 
       <div id="messagesArea" class="messages-area"></div>
@@ -1003,6 +1004,14 @@ function showView(viewId) {
   ["homeView", "searchView", "profileView", "chatView"].forEach(v => document.getElementById(v).classList.add("hidden"));
   document.getElementById(viewId).classList.remove("hidden");
   document.getElementById("menu").classList.add("hidden");
+
+  // التحكم بإظهار وإخفاء الهيدر الرئيسي فقط عند فتح المحادثة
+  const mainHeader = document.getElementById("mainHeader");
+  if (viewId === "chatView") {
+    mainHeader.classList.add("hidden");
+  } else {
+    mainHeader.classList.remove("hidden");
+  }
 }
 
 function goHome() {
