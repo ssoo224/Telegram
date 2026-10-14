@@ -21,6 +21,7 @@
   --babylon-border: #243654;
   --text-main: #f3f4f6;
   --text-muted: #94a3b8;
+  --error-color: #f87171;
   --bubble-mine: #27406b;
   --bubble-other: #131d2e;
 }
@@ -68,6 +69,7 @@ body {
   padding: 30px 24px;
   background: radial-gradient(circle at center, #1c2b44 0%, var(--babylon-dark) 100%);
   text-align: center;
+  overflow-y: auto;
 }
 
 .babylon-logo {
@@ -140,6 +142,14 @@ body {
   font-size: 14px;
 }
 .babylon-input:focus { border-color: var(--babylon-gold); }
+
+.field-error {
+  color: var(--error-color);
+  font-size: 12px;
+  margin-top: 5px;
+  text-align: right;
+  display: block;
+}
 
 .babylon-btn {
   width: 100%;
@@ -437,15 +447,17 @@ body {
       <div class="input-group">
         <label>البريد الإلكتروني</label>
         <input id="loginEmail" class="babylon-input" type="email" placeholder="name@domain.com">
+        <span id="loginEmailError" class="field-error hidden"></span>
       </div>
       <div class="input-group">
         <label>كلمة المرور</label>
         <input id="loginPassword" class="babylon-input" type="password" placeholder="••••••••">
+        <span id="loginPassError" class="field-error hidden"></span>
       </div>
       <button class="babylon-btn" onclick="loginUser()">دخول</button>
     </div>
 
-    <!-- نموذج التسجيل (يوزر لا يقل عن 5 أحرف) -->
+    <!-- نموذج التسجيل -->
     <div id="formRegister" class="hidden" style="width:100%;">
       <div class="input-group">
         <label>اسم العرض (الاسم الشخصي)</label>
@@ -454,14 +466,17 @@ body {
       <div class="input-group">
         <label>اسم المستخدم (5 أحرف على الأقل - Username)</label>
         <input id="regUsername" class="babylon-input" type="text" placeholder="babylon_user">
+        <span id="regUserError" class="field-error hidden"></span>
       </div>
       <div class="input-group">
         <label>البريد الإلكتروني</label>
         <input id="regEmail" class="babylon-input" type="email" placeholder="name@domain.com">
+        <span id="regEmailError" class="field-error hidden"></span>
       </div>
       <div class="input-group">
         <label>كلمة المرور</label>
         <input id="regPassword" class="babylon-input" type="password" placeholder="6 أحرف على الأقل">
+        <span id="regPassError" class="field-error hidden"></span>
       </div>
       <button class="babylon-btn" onclick="registerUser()">تسجيل حساب جديد</button>
     </div>
@@ -480,7 +495,7 @@ body {
       </div>
     </header>
 
-    <!-- قائمة المحادثات (مع أيقونة بابلية عند الفراغ) -->
+    <!-- قائمة المحادثات -->
     <div id="homeView" class="chat-list">
       <div id="chatList" style="flex:1; display:flex; flex-direction:column;"></div>
     </div>
@@ -579,6 +594,21 @@ let currentUser = null;
 let currentUserData = null;
 let activeChatId = null;
 
+function clearErrors() {
+  document.querySelectorAll('.field-error').forEach(el => {
+    el.textContent = "";
+    el.classList.add('hidden');
+  });
+}
+
+function showFieldError(elementId, msg) {
+  const el = document.getElementById(elementId);
+  if (el) {
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+}
+
 function showToast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
@@ -587,6 +617,7 @@ function showToast(msg) {
 }
 
 function switchTab(type) {
+  clearErrors();
   if (type === 'login') {
     document.getElementById("tabLogin").classList.add("active");
     document.getElementById("tabRegister").classList.remove("active");
@@ -620,7 +651,7 @@ function loadUserDataAndEnter(uid) {
       const defaultData = {
         id: uid,
         displayName: currentUser.email.split('@')[0],
-        username: "babylon_" + uid.substring(0, 5),
+        username: "user_" + uid.substring(0, 5),
         email: currentUser.email,
         avatarUrl: "",
         createdAt: Date.now()
@@ -659,22 +690,36 @@ function updateProfileUI(u) {
 }
 
 function loginUser() {
+  clearErrors();
   const email = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginPassword").value.trim();
-  if (!email || !password) return showToast("يرجى إدخال البريد وكلمة المرور");
+
+  if (!email) return showFieldError("loginEmailError", "الرجاء أدخل البريد الإلكتروني");
+  if (!password) return showFieldError("loginPassError", "الرجاء أدخل كلمة المرور");
 
   auth.signInWithEmailAndPassword(email, password)
-    .catch(() => showToast("خطأ في بيانات الدخول"));
+    .catch(err => {
+      if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        showFieldError("loginPassError", "البريد الإلكتروني أو كلمة المرور غير صحيحة");
+      } else if (err.code === "auth/invalid-email") {
+        showFieldError("loginEmailError", "صيغة البريد الإلكتروني غير صحيحة");
+      } else {
+        showFieldError("loginPassError", "حدث خطأ في التسجيل، حاول مجدداً");
+      }
+    });
 }
 
 function registerUser() {
+  clearErrors();
   const name = document.getElementById("regName").value.trim();
   const username = document.getElementById("regUsername").value.trim().toLowerCase();
   const email = document.getElementById("regEmail").value.trim();
   const password = document.getElementById("regPassword").value.trim();
 
-  if (!name || !username || !email || !password) return showToast("يرجى ملء كافة الحقول");
-  if (username.length < 5) return showToast("اسم المستخدم يجب ألا يقل عن 5 أحرف!");
+  if (!name) return showToast("الرجاء إدخال اسم العرض");
+  if (!username || username.length < 5) return showFieldError("regUserError", "اسم المستخدم يجب ألا يقل عن 5 أحرف!");
+  if (!email) return showFieldError("regEmailError", "الرجاء إدخال البريد الإلكتروني");
+  if (!password || password.length < 6) return showFieldError("regPassError", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
 
   auth.createUserWithEmailAndPassword(email, password)
     .then(cred => {
@@ -689,11 +734,23 @@ function registerUser() {
       db.collection("users").doc(cred.user.uid).set(userData).then(() => {
         currentUserData = userData;
         updateProfileUI(userData);
-        showToast("مرحباً بك في عالم بابل!");
+        showToast("مرحباً بك في Babylon Chat!");
         enterApp();
       });
     })
-    .catch(err => showToast("خطأ: " + err.message));
+    .catch(err => {
+      if (err.code === "auth/email-already-in-use") {
+        showFieldError("regEmailError", "هذا البريد الإلكتروني مستخدم بالفعل! جاري التحويل لتسجيل الدخول...");
+        setTimeout(() => {
+          document.getElementById("loginEmail").value = email;
+          switchTab('login');
+        }, 2000);
+      } else if (err.code === "auth/invalid-email") {
+        showFieldError("regEmailError", "صيغة البريد الإلكتروني غير صالحة");
+      } else {
+        showFieldError("regEmailError", "حدث خطأ أثناء إنشاء الحساب");
+      }
+    });
 }
 
 function enterApp() {
