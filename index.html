@@ -23,7 +23,6 @@
   --text-muted: #8696a7;
   --error-color: #f87171;
   
-  /* ألوان فقاعات تليجرام الاحترافية */
   --bubble-mine: #2b5278;
   --bubble-other: #182533;
 }
@@ -60,7 +59,6 @@ body {
   box-shadow: 0 15px 35px rgba(0,0,0,0.8);
 }
 
-/* شاشة تسجيل الدخول والإنشاء */
 .auth-page {
   height: 100%;
   display: flex;
@@ -163,7 +161,6 @@ body {
   margin-top: 8px;
 }
 
-/* هيدر تليجرام الرئيسي العلوي */
 .main-header {
   height: 56px;
   background: var(--babylon-surface);
@@ -191,7 +188,6 @@ body {
 }
 .icon-btn:hover { background: var(--babylon-surface-hover); color: white; }
 
-/* شريط التنقل السفلي مثل تليجرام تماماً */
 .telegram-bottom-nav {
   height: 60px;
   background: var(--babylon-surface);
@@ -215,18 +211,10 @@ body {
   font-size: 11px;
   gap: 3px;
   padding: 6px 0;
-  transition: color 0.2s;
 }
+.nav-item span.nav-icon { font-size: 20px; }
+.nav-item.active { color: #64b5f6; }
 
-.nav-item span.nav-icon {
-  font-size: 20px;
-}
-
-.nav-item.active {
-  color: #64b5f6;
-}
-
-/* قائمة المحادثات */
 .chat-list {
   flex: 1;
   overflow-y: auto;
@@ -288,7 +276,6 @@ body {
 .chat-item-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: white; }
 .chat-item-sub { font-size: 13.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* بروفايل تليجرام البابلي */
 .profile-view {
   flex: 1;
   overflow-y: auto;
@@ -356,7 +343,6 @@ body {
 }
 .profile-row:last-child { border: none; }
 
-/* 🏛 هيدر غرفة المحادثة الخالص بتصميم التليجرام 🏛 */
 .telegram-chat-header {
   height: 60px;
   background: #17212b;
@@ -413,7 +399,6 @@ body {
   color: var(--text-muted);
 }
 
-/* غرفة المحادثة */
 .chat-room {
   flex: 1;
   display: flex;
@@ -443,7 +428,6 @@ body {
   z-index: 1;
 }
 
-/* 💬 فقاعات الرسائل بتصميم تليجرام بدون تداخل 💬 */
 .msg-bubble {
   width: fit-content;
   max-width: 82%;
@@ -468,9 +452,7 @@ body {
   border-radius: 12px 12px 4px 12px;
 }
 
-.msg-text {
-  padding-left: 45px;
-}
+.msg-text { padding-left: 45px; }
 
 .reply-quote {
   background: rgba(0, 0, 0, 0.25);
@@ -595,10 +577,7 @@ body {
   gap: 12px;
   margin-bottom: 12px;
 }
-.emoji-btn {
-  font-size: 22px;
-  cursor: pointer;
-}
+.emoji-btn { font-size: 22px; cursor: pointer; }
 
 .msg-actions-card {
   width: 260px;
@@ -643,7 +622,6 @@ body {
 
 <div class="app-container">
 
-  <!-- شاشة الدخول والتسجيل -->
   <section id="authPage" class="auth-page">
     <div class="babylon-logo">🏛</div>
     <h1 class="auth-title">Babylon Chat</h1>
@@ -692,10 +670,8 @@ body {
     </div>
   </section>
 
-  <!-- التطبيق والصفحة الرئيسية -->
   <section id="mainPage" class="hidden" style="height:100%; display:flex; flex-direction:column;">
     
-    <!-- هيدر تليجرام العلوي -->
     <header id="mainHeader" class="main-header">
       <div class="main-header-title">Telegram</div>
       <button class="icon-btn" onclick="openSearch()" title="بحث عن مستخدم باليوزر">🔍</button>
@@ -705,7 +681,6 @@ body {
       <div id="chatList" style="display:flex; flex-direction:column;"></div>
     </div>
 
-    <!-- البحث المقتصر على الصفحة الرئيسية -->
     <div id="searchView" class="hidden" style="flex:1; display:flex; flex-direction:column; background:#0e1621;">
       <div style="padding:12px; background:var(--babylon-surface); border-bottom:1px solid var(--babylon-border); display:flex; align-items:center; gap:10px;">
         <button class="icon-btn" onclick="goHome()" title="الرجوع">‹</button>
@@ -714,7 +689,7 @@ body {
       <div id="searchResults" class="chat-list"></div>
     </div>
 
-    <!-- شاشة الملف الشخصي -->
+    <!-- شاشة الإعدادات والبروفايل المعدلة للتحديث التلقائي -->
     <div id="profileView" class="profile-view hidden">
       <div class="babylon-profile-header">
         <button class="icon-btn" style="position:absolute; right:12px; top:12px;" onclick="goHome()">‹</button>
@@ -723,7 +698,7 @@ body {
           <div id="pAvatarText" class="profile-avatar-img">🏛</div>
           <img id="pAvatarImg" class="profile-avatar-img hidden" src="" alt="Avatar">
           <label for="avatarInput" class="camera-badge">📷</label>
-          <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="uploadAvatar(event)">
+          <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="uploadAvatarLive(event)">
         </div>
 
         <h2 id="pHeaderName" style="font-size:18px; font-weight:600; color:var(--babylon-gold);">الاسم</h2>
@@ -738,33 +713,31 @@ body {
         </div>
       </div>
 
-      <div class="profile-section-label">تعديل الملف الشخصي</div>
+      <div class="profile-section-label">تعديل الملف الشخصي (تحديث تلقائي)</div>
       <div class="profile-settings-card">
         <div class="profile-row">
           <div class="input-group" style="margin-bottom:0;">
             <label>اسم العرض</label>
-            <input id="pNameInput" class="babylon-input">
+            <input id="pNameInput" class="babylon-input" oninput="liveUpdateName(event)">
           </div>
         </div>
         <div class="profile-row">
           <div class="input-group" style="margin-bottom:0;">
             <label>اسم المستخدم (يوزر - 5 أحرف فأكثر)</label>
-            <input id="pUsernameInput" class="babylon-input">
+            <input id="pUsernameInput" class="babylon-input" oninput="liveUpdateUsername(event)">
+            <span id="usernameLiveError" class="field-error hidden"></span>
           </div>
         </div>
       </div>
 
-      <div style="padding:16px;">
-        <button class="babylon-btn" onclick="saveProfile()">حفظ التغييرات</button>
-        <button class="babylon-btn" style="background:transparent; border:1px solid var(--error-color); color:var(--error-color); margin-top:12px;" onclick="logout()">تسجيل الخروج</button>
+      <div style="padding:20px;">
+        <button class="babylon-btn" style="background:transparent; border:1px solid var(--error-color); color:var(--error-color);" onclick="logout()">تسجيل الخروج</button>
       </div>
     </div>
 
-    <!-- 🏛 غرفة المحادثة الخالصة بتصميم تليجرام 🏛 -->
     <div id="chatView" class="chat-room hidden">
       <div class="chat-bg-pattern"></div>
 
-      <!-- هيدر الشات الخاص بتليجرام فقط -->
       <header class="telegram-chat-header">
         <button class="icon-btn" onclick="goHome()">‹</button>
         
@@ -799,17 +772,17 @@ body {
       </div>
     </div>
 
-    <!-- شريط التنقل السفلي الحديث (Bottom Nav Bar) -->
+    <!-- شريط التنقل السفلي المحدّث (المحادثات، الملف الشخصي، الإعدادات) -->
     <nav id="bottomNav" class="telegram-bottom-nav">
-      <button class="nav-item active" onclick="goHome()">
+      <button id="navChats" class="nav-item active" onclick="goHome()">
         <span class="nav-icon">💬</span>
         <span>المحادثات</span>
       </button>
-      <button class="nav-item" onclick="openProfile()">
+      <button id="navProfile" class="nav-item" onclick="openProfile()">
         <span class="nav-icon">👤</span>
         <span>الملف الشخصي</span>
       </button>
-      <button class="nav-item" onclick="openProfile()">
+      <button id="navSettings" class="nav-item" onclick="openProfile()">
         <span class="nav-icon">⚙️</span>
         <span>الإعدادات</span>
       </button>
@@ -870,6 +843,7 @@ let mediaRecorder = null;
 let audioChunks = [];
 let recordInterval = null;
 let recordSeconds = 0;
+let updateTimer = null;
 
 function clearErrors() {
   document.querySelectorAll('.field-error').forEach(el => {
@@ -890,7 +864,7 @@ function showToast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.remove("hidden");
-  setTimeout(() => t.classList.add("hidden"), 3500);
+  setTimeout(() => t.classList.add("hidden"), 3000);
 }
 
 function switchTab(type) {
@@ -1067,6 +1041,10 @@ function showView(viewId) {
     mainHeader.classList.remove("hidden");
     bottomNav.classList.remove("hidden");
   }
+
+  document.getElementById("navChats").classList.toggle("active", viewId === "homeView");
+  document.getElementById("navProfile").classList.toggle("active", viewId === "profileView");
+  document.getElementById("navSettings").classList.toggle("active", viewId === "profileView");
 }
 
 function goHome() {
@@ -1095,7 +1073,54 @@ function openProfile() {
   }
 }
 
-function uploadAvatar(e) {
+// التحديث التلقائي الفوري للاسم بدون زر حفظ
+function liveUpdateName(e) {
+  const newName = e.target.value.trim();
+  if (!newName || !currentUser) return;
+
+  clearTimeout(updateTimer);
+  updateTimer = setTimeout(() => {
+    db.collection("users").doc(currentUser.uid).set({ displayName: newName }, { merge: true }).then(() => {
+      currentUserData.displayName = newName;
+      document.getElementById("pHeaderName").textContent = newName;
+    });
+  }, 400);
+}
+
+// التحديث التلقائي الفوري لاسم المستخدم مع فحص التوفر وطول الأحرف
+function liveUpdateUsername(e) {
+  const newUsername = e.target.value.trim().toLowerCase();
+  clearErrors();
+
+  if (newUsername.length < 5) {
+    showFieldError("usernameLiveError", "اسم المستخدم يجب ألا يقل عن 5 أحرف!");
+    return;
+  }
+
+  clearTimeout(updateTimer);
+  updateTimer = setTimeout(() => {
+    db.collection("users").where("username", "==", newUsername).get().then(snap => {
+      let taken = false;
+      snap.forEach(doc => {
+        if (doc.id !== currentUser.uid) taken = true;
+      });
+
+      if (taken) {
+        showFieldError("usernameLiveError", "اسم المستخدم هذا مستخدم بالفعل!");
+        return;
+      }
+
+      db.collection("users").doc(currentUser.uid).set({ username: newUsername }, { merge: true }).then(() => {
+        currentUserData.username = newUsername;
+        document.getElementById("pHeaderUser").textContent = "@" + newUsername;
+        showToast("تم تحديث اليوزر تلقائياً");
+      });
+    });
+  }, 500);
+}
+
+// رفع وتحديث الصورة الشخصية تلقائياً
+function uploadAvatarLive(e) {
   const file = e.target.files[0];
   if (!file || !currentUser) return;
 
@@ -1117,44 +1142,13 @@ function uploadAvatar(e) {
       db.collection("users").doc(currentUser.uid).set({
         avatarUrl: compressedDataUrl
       }, { merge: true }).then(() => {
-        showToast("تم تحديث صورة البروفايل بنجاح!");
-        openProfile();
+        currentUserData.avatarUrl = compressedDataUrl;
+        updateProfileUI(currentUserData);
+        showToast("تم تحديث الصورة الشخصية بنجاح!");
       });
     };
   };
   reader.readAsDataURL(file);
-}
-
-function saveProfile() {
-  const newName = document.getElementById("pNameInput").value.trim();
-  const newUsername = document.getElementById("pUsernameInput").value.trim().toLowerCase();
-
-  if (!newName || !newUsername) return showToast("الرجاء عدم ترك الحقول فارغة");
-  if (newUsername.length < 5) return showToast("اسم المستخدم يجب أن يكون 5 أحرف على الأقل!");
-  if (!currentUser) return;
-
-  db.collection("users").where("username", "==", newUsername).get().then(snap => {
-    let taken = false;
-    snap.forEach(doc => {
-      if (doc.id !== currentUser.uid) taken = true;
-    });
-
-    if (taken) {
-      showToast("عذراً، اسم المستخدم هذا مستخدم بالفعل!");
-      return;
-    }
-
-    db.collection("users").doc(currentUser.uid).set({
-      displayName: newName,
-      username: newUsername
-    }, { merge: true }).then(() => {
-      currentUserData.displayName = newName;
-      currentUserData.username = newUsername;
-      updateProfileUI(currentUserData);
-      showToast("تم حفظ التغييرات بنجاح!");
-      openProfile();
-    });
-  });
 }
 
 function searchUsers() {
@@ -1547,7 +1541,6 @@ function loadChats() {
         });
       });
     });
-}
 </script>
 </body>
 </html>
