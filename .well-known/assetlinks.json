@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.pwabuilder.babylonchat",
+      "sha256_cert_fingerprints": [
+        "10:C3:72:E1:A0:7F:C2:9E:71:6E:1A:00:80:08:20:BA:7C:F2:C9:E7:16:E1:A0:FE:84:C3:72:E1:A0:7F:C2:9E"
+      ]
+    }
+  }
+]
