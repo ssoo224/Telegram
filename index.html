@@ -293,6 +293,7 @@ body {
 .chat-item-sub { font-size: 13.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 .unread-badge { background: #2b5278; color: white; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-right: 6px; }
 
+/* شاشة الملف الشخصي مستقلة */
 .profile-view {
   flex: 1;
   overflow-y: auto;
@@ -359,6 +360,13 @@ body {
   text-align: right;
 }
 .profile-row:last-child { border: none; }
+
+/* شاشة الإعدادات العامة المستقلة */
+.settings-view {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--babylon-dark);
+}
 
 .telegram-chat-header {
   height: 60px;
@@ -714,7 +722,7 @@ body {
       <div id="searchResults" class="chat-list"></div>
     </div>
 
-    <!-- شاشة الملف الشخصي والإعدادات -->
+    <!-- شاشة الملف الشخصي (مستقلة تماماً بدون إعدادات) -->
     <div id="profileView" class="profile-view hidden">
       <div class="babylon-profile-header">
         <button class="icon-btn" style="position:absolute; right:12px; top:12px;" onclick="goHome()">‹</button>
@@ -738,17 +746,6 @@ body {
         </div>
       </div>
 
-      <div class="profile-section-label">الإشعارات والتنبيهات</div>
-      <div class="profile-settings-card">
-        <div class="profile-row" style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <div style="font-size:15px; color:white; font-weight:600;">إشعارات المتصفح الخارجية</div>
-            <div style="font-size:12px; color:var(--text-muted);">استلام إشعارات عند الخروج من التطبيق</div>
-          </div>
-          <button class="babylon-btn" style="width:auto; padding:8px 14px; font-size:13px; margin-top:0;" onclick="requestNotificationPermission()">تفعيل</button>
-        </div>
-      </div>
-
       <div class="profile-section-label">تعديل الملف الشخصي (تحديث تلقائي فوري)</div>
       <div class="profile-settings-card">
         <div class="profile-row">
@@ -768,6 +765,25 @@ body {
 
       <div style="padding:20px;">
         <button class="babylon-btn" style="background:transparent; border:1px solid var(--error-color); color:var(--error-color);" onclick="logout()">تسجيل الخروج</button>
+      </div>
+    </div>
+
+    <!-- شاشة الإعدادات العامة المستقلة (تحتوي على الإشعارات والتنبيهات فقط) -->
+    <div id="settingsView" class="settings-view hidden">
+      <div class="babylon-profile-header" style="text-align:right; padding:18px 16px;">
+        <button class="icon-btn" style="position:absolute; left:12px; top:12px;" onclick="goHome()">✕</button>
+        <h2 style="font-size:18px; font-weight:700; color:var(--babylon-gold);">الإعدادات العامة</h2>
+      </div>
+
+      <div class="profile-section-label">التنبيهات والإشعارات</div>
+      <div class="profile-settings-card">
+        <div class="profile-row" style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:15px; color:white; font-weight:600;">إشعارات المتصفح والتنبيهات</div>
+            <div style="font-size:12px; color:var(--text-muted);">السماح بإرسال إشعارات الرسائل الجديدة</div>
+          </div>
+          <button class="babylon-btn" style="width:auto; padding:8px 16px; font-size:13px; margin-top:0;" onclick="requestNotificationPermission()">تفعيل</button>
+        </div>
       </div>
     </div>
 
@@ -819,7 +835,7 @@ body {
         <span class="nav-icon">👤</span>
         <span>الملف الشخصي</span>
       </button>
-      <button id="navSettings" class="nav-item" onclick="openProfile()">
+      <button id="navSettings" class="nav-item" onclick="openSettings()">
         <span class="nav-icon">⚙️</span>
         <span>الإعدادات</span>
       </button>
@@ -896,14 +912,14 @@ function requestNotificationPermission() {
   });
 }
 
-// تشغيل صوت تنبيه قصير
+// تشغيل صوت تنبيه قصير عند وصول رسالة
 function playNotificationSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
     gain.gain.setValueAtTime(0.1, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
     osc.connect(gain);
@@ -1118,7 +1134,7 @@ function logout() {
 }
 
 function showView(viewId) {
-  ["homeView", "searchView", "profileView", "chatView"].forEach(v => document.getElementById(v).classList.add("hidden"));
+  ["homeView", "searchView", "profileView", "settingsView", "chatView"].forEach(v => document.getElementById(v).classList.add("hidden"));
   document.getElementById(viewId).classList.remove("hidden");
 
   const mainHeader = document.getElementById("mainHeader");
@@ -1134,7 +1150,7 @@ function showView(viewId) {
 
   document.getElementById("navChats").classList.toggle("active", viewId === "homeView");
   document.getElementById("navProfile").classList.toggle("active", viewId === "profileView");
-  document.getElementById("navSettings").classList.toggle("active", viewId === "profileView");
+  document.getElementById("navSettings").classList.toggle("active", viewId === "settingsView");
 }
 
 function goHome() {
@@ -1161,6 +1177,13 @@ function openProfile() {
   if (currentUserData) {
     updateProfileUI(currentUserData);
   }
+}
+
+function openSettings() {
+  if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
+  if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
+  activeChatId = null;
+  showView("settingsView");
 }
 
 function liveUpdateName(e) {
@@ -1587,7 +1610,7 @@ function sendMessage(e) {
   }
 }
 
-// دالة تحميل المحادثات مع إرسال إشعارات المتصفح الخارجية وصوت التنبيه
+// دالة تحميل المحادثات مع إرسال الإشعارات والأصوات بدقة
 function loadChats() {
   const container = document.getElementById("chatList");
   
@@ -1640,11 +1663,10 @@ function loadChats() {
                 if (tStr.startsWith('0')) tStr = tStr.substring(1);
                 lastMsgTime = tStr;
 
-                // إذا وصلت رسالة جديدة من شخص آخر وليست رسالتك والرسالة حديثة (أقل من 6 ثواني)
+                // تفعيل التنبيه والصوت عند وصول رسالة جديدة من الطرف الآخر
                 if (!isMine && (Date.now() - m.createdAt < 6000)) {
                   playNotificationSound();
 
-                  // إشعار خارج المتصفح (Browser Notification)
                   if (document.hidden && Notification.permission === "granted") {
                     new Notification(u.displayName || "رسالة جديدة", {
                       body: m.text || "أرسل لك بصمة صوتية",
