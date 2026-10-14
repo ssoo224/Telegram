@@ -22,8 +22,8 @@
   --text-main: #f3f4f6;
   --text-muted: #94a3b8;
   --error-color: #f87171;
-  --bubble-mine: #27406b;
-  --bubble-other: #131d2e;
+  --bubble-mine: #1b4d8e;    /* الأزرق لرسائلك */
+  --bubble-other: #263345;   /* الرصاصي لرسائل الطرف الآخر */
 }
 
 * {
@@ -374,16 +374,18 @@ body {
   font-size: 14px;
   line-height: 1.4;
   border-radius: 12px 12px 12px 4px;
-  background: var(--bubble-other);
+  background: var(--bubble-other); /* رصاصي للطرف الآخر */
   align-self: flex-start;
   color: white;
   border: 1px solid var(--babylon-border);
+  position: relative;
+  cursor: pointer;
 }
 .msg-bubble.mine {
   align-self: flex-end;
-  background: var(--bubble-mine);
+  background: var(--bubble-mine); /* أزرق لرسائلك */
   border-radius: 12px 12px 4px 12px;
-  border-color: rgba(212, 175, 55, 0.3);
+  border-color: rgba(27, 77, 142, 0.5);
 }
 .msg-time {
   font-size: 10px;
@@ -500,9 +502,10 @@ body {
       <div id="chatList" style="flex:1; display:flex; flex-direction:column;"></div>
     </div>
 
-    <!-- واجهة البحث باليوزر -->
+    <!-- واجهة البحث باليوزر (مع زر العودة) -->
     <div id="searchView" class="hidden" style="flex:1; display:flex; flex-direction:column;">
-      <div style="padding:12px; background:var(--babylon-surface); border-bottom:1px solid var(--babylon-border);">
+      <div style="padding:12px; background:var(--babylon-surface); border-bottom:1px solid var(--babylon-border); display:flex; align-items:center; gap:10px;">
+        <button class="icon-btn" onclick="goHome()" title="الرجوع">‹</button>
         <input id="searchInput" class="babylon-input" placeholder="ابحث باسم المستخدم (5 أحرف فأكثر)..." oninput="searchUsers()">
       </div>
       <div id="searchResults" class="chat-list"></div>
@@ -559,14 +562,14 @@ body {
         <button class="icon-btn" onclick="goHome()">‹</button>
         <div style="flex:1; text-align:right; margin-right:12px;">
           <div id="chatTitle" style="font-weight:600; font-size:15px; color:var(--babylon-gold);">المحادثة</div>
-          <div id="chatSub" style="font-size:11px; color:var(--text-muted);"></div>
+          <div id="chatSub" style="font-size:11px; color:var(--text-muted);">متصل الآن</div>
         </div>
       </header>
 
       <div id="messagesArea" class="messages-area"></div>
 
       <form class="chat-input-bar" onsubmit="sendMessage(event)">
-        <input id="messageInput" placeholder="اكتب رسالتك البابلية..." autocomplete="off">
+        <input id="messageInput" placeholder="اكتب رسالتك البابلية..." autocomplete="off" oninput="handleTyping()">
         <button class="icon-btn" style="color:var(--babylon-gold)" type="submit">➤</button>
       </form>
     </div>
@@ -593,6 +596,7 @@ const db = firebase.firestore();
 let currentUser = null;
 let currentUserData = null;
 let activeChatId = null;
+let typingTimeout = null;
 
 function clearErrors() {
   document.querySelectorAll('.field-error').forEach(el => {
@@ -634,6 +638,14 @@ function switchTab(type) {
 auth.onAuthStateChanged(user => {
   if (user) {
     currentUser = user;
+    // تحديث حالة الاتصال كـ متصل
+    db.collection("users").doc(user.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
+    
+    // عند إغلاق التطبيق أو تسجيل الخروج يتم تعيينه كغير متصل
+    window.addEventListener('beforeunload', () => {
+      db.collection("users").doc(user.uid).set({ online: false, lastSeen: Date.now() }, { merge: true });
+    });
+
     loadUserDataAndEnter(user.uid);
   } else {
     document.getElementById("authPage").classList.remove("hidden");
@@ -767,7 +779,16 @@ function enterApp() {
   goHome();
 }
 
-function logout() { auth.signOut().then(() => location.reload()); }
+function logout() { 
+  if (currentUser) {
+    db.collection("users").doc(currentUser.uid).set({ online: false, lastSeen: Date.now() }, { merge: true }).then(() => {
+      auth.signOut().then(() => location.reload());
+    });
+  } else {
+    auth.signOut().then(() => location.reload());
+  }
+}
+
 function toggleMenu() { document.getElementById("menu").classList.toggle("hidden"); }
 
 function showView(viewId) {
@@ -777,11 +798,16 @@ function showView(viewId) {
 }
 
 function goHome() {
+  document.getElementById("searchInput").value = "";
+  document.getElementById("searchResults").innerHTML = "";
   showView("homeView");
   loadChats();
 }
 
-function openSearch() { showView("searchView"); }
+function openSearch() { 
+  showView("searchView");
+  document.getElementById("searchInput").focus();
+}
 
 function openProfile() {
   showView("profileView");
@@ -790,7 +816,6 @@ function openProfile() {
   }
 }
 
-// دالة ذكية لضغط وتصغير الصورة لكي تتخزن بسلاسة في قاعدة البيانات
 function uploadAvatar(e) {
   const file = e.target.files[0];
   if (!file || !currentUser) return;
@@ -923,14 +948,24 @@ function startChat(u) {
 function openChatRoom(otherUserId) {
   showView("chatView");
 
+  // عرض حالة الطرف الآخر الحية (متصل الآن أو آخر ظهور)
   db.collection("users").doc(otherUserId).onSnapshot(doc => {
     if (doc.exists) {
       const u = doc.data();
       document.getElementById("chatTitle").textContent = u.displayName || "مستخدم";
-      document.getElementById("chatSub").textContent = "@" + (u.username || "");
+      
+      const sub = document.getElementById("chatSub");
+      if (u.online) {
+        sub.textContent = "متصل الآن";
+        sub.style.color = "#4ade80"; // أخضر عند الاتصال
+      } else {
+        sub.textContent = "آخر ظهور قبل قليل";
+        sub.style.color = "var(--text-muted)";
+      }
     }
   });
 
+  // الاستماع للرسائل مع التمرير التلقائي الفوري وتفعيل إمكانية الحذف عند الضغط عليها
   db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "asc")
     .onSnapshot(snap => {
@@ -941,10 +976,37 @@ function openChatRoom(otherUserId) {
         const b = document.createElement("div");
         b.className = "msg-bubble" + (m.senderId === currentUser.uid ? " mine" : "");
         b.innerHTML = `<div>${m.text}</div><div class="msg-time">${new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>`;
+        
+        // إمكانية حذف رسالتك عند الضغط عليها
+        if (m.senderId === currentUser.uid) {
+          b.title = "اضغط لحذف الرسالة";
+          b.onclick = () => {
+            if (confirm("هل تريد حذف هذه الرسالة؟")) {
+              db.collection("chats").doc(activeChatId).collection("messages").doc(doc.id).delete();
+            }
+          };
+        }
+
         box.appendChild(b);
       });
+      // التمرير التلقائي لأسفل الشات
       box.scrollTop = box.scrollHeight;
     });
+}
+
+// مؤشر جاري الكتابة
+function handleTyping() {
+  if (!activeChatId || !currentUser) return;
+  db.collection("chats").doc(activeChatId).set({
+    typing: { [currentUser.uid]: true }
+  }, { merge: true });
+
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    db.collection("chats").doc(activeChatId).set({
+      typing: { [currentUser.uid]: false }
+    }, { merge: true });
+  }, 1500);
 }
 
 function sendMessage(e) {
