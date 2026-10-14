@@ -648,6 +648,7 @@ function loadUserDataAndEnter(uid) {
       updateProfileUI(currentUserData);
       enterApp();
     } else {
+      // فقط إذا لم تكن الوثيقة موجودة نهائياً ننشئها بالقيم الافتراضية
       const defaultData = {
         id: uid,
         displayName: currentUser.email.split('@')[0],
@@ -656,7 +657,7 @@ function loadUserDataAndEnter(uid) {
         avatarUrl: "",
         createdAt: Date.now()
       };
-      db.collection("users").doc(uid).set(defaultData, { merge: true }).then(() => {
+      db.collection("users").doc(uid).set(defaultData).then(() => {
         currentUserData = defaultData;
         updateProfileUI(currentUserData);
         enterApp();
@@ -670,9 +671,9 @@ function loadUserDataAndEnter(uid) {
 
 function updateProfileUI(u) {
   if (!u) return;
-  const displayName = u.displayName || "مستخدم";
-  const username = u.username || "user_name";
-  const email = u.email || (currentUser ? currentUser.email : "");
+  const displayName = u.displayName || currentUser.email.split('@')[0];
+  const username = u.username || "user_" + currentUser.uid.substring(0, 5);
+  const email = u.email || currentUser.email;
 
   document.getElementById("pNameInput").value = displayName;
   document.getElementById("pUsernameInput").value = username;
@@ -734,7 +735,7 @@ function registerUser() {
         avatarUrl: "",
         createdAt: Date.now()
       };
-      db.collection("users").doc(cred.user.uid).set(userData, { merge: true }).then(() => {
+      db.collection("users").doc(cred.user.uid).set(userData).then(() => {
         currentUserData = userData;
         updateProfileUI(userData);
         showToast("مرحباً بك في Babylon Chat!");
@@ -796,12 +797,10 @@ function uploadAvatar(e) {
     const imgData = evt.target.result;
     
     db.collection("users").doc(currentUser.uid).set({
-      id: currentUser.uid,
-      email: currentUser.email,
       avatarUrl: imgData
     }, { merge: true }).then(() => {
       showToast("تم تحديث صورة البروفايل بنجاح!");
-      openProfile(); // البقاء في واجهة البروفايل
+      openProfile();
     }).catch(err => {
       console.error(err);
       showToast("حدث خطأ في حفظ الصورة");
@@ -821,8 +820,6 @@ function saveProfile() {
   showToast("جاري حفظ التغييرات...");
 
   db.collection("users").doc(currentUser.uid).set({
-    id: currentUser.uid,
-    email: currentUser.email,
     displayName: newName,
     username: newUsername
   }, { merge: true }).then(() => {
@@ -831,7 +828,7 @@ function saveProfile() {
     currentUserData.username = newUsername;
     updateProfileUI(currentUserData);
     showToast("تم حفظ التغييرات بنجاح!");
-    openProfile(); // البقاء في واجهة البروفايل وعدم الانتقال للخارج
+    openProfile();
   }).catch(err => {
     console.error(err);
     showToast("حدث خطأ أثناء الحفظ");
