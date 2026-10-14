@@ -15,7 +15,6 @@
 :root {
   --primary: #4f46e5;
   --primary-hover: #4338ca;
-  --primary-light: #e0e7ff;
   --bg: #0f172a;
   --card-bg: #ffffff;
   --text-main: #1e293b;
@@ -26,7 +25,7 @@
   --bubble-other: #ffffff;
 }
 
-* { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+* { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 body { margin: 0; background: #0f172a; color: var(--text-main); }
 button, input { font: inherit; }
 button { cursor: pointer; border: none; outline: none; transition: all 0.2s; }
@@ -43,7 +42,7 @@ button { cursor: pointer; border: none; outline: none; transition: all 0.2s; }
   flex-direction: column;
 }
 
-/* شاشة تسجيل الدخول وإنشاء الحساب */
+/* شاشات التسجيل والدخول */
 .auth-container {
   min-height: 100dvh;
   background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
@@ -81,7 +80,6 @@ button { cursor: pointer; border: none; outline: none; transition: all 0.2s; }
 .auth-card h1 { margin: 0 0 6px; font-size: 26px; color: #0f172a; }
 .auth-card p { margin: 0 0 24px; color: var(--text-muted); font-size: 14px; }
 
-/* تبويبات التبديل */
 .auth-tabs {
   display: flex;
   background: #f1f5f9;
@@ -130,9 +128,7 @@ button { cursor: pointer; border: none; outline: none; transition: all 0.2s; }
   margin-top: 8px;
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
-.btn-primary:active { transform: scale(0.98); }
 
-/* الشريط العلوي */
 .topbar {
   background: linear-gradient(135deg, #4f46e5, #4338ca);
   color: white;
@@ -141,13 +137,11 @@ button { cursor: pointer; border: none; outline: none; transition: all 0.2s; }
   align-items: center;
   justify-content: space-between;
 }
-.brand { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+.brand { font-size: 20px; font-weight: 700; }
 .icon-btn { background: transparent; color: white; font-size: 22px; padding: 6px; border-radius: 8px; }
 
-/* القوائم والأقسام */
 .page { flex: 1; display: flex; flex-direction: column; background: var(--card-bg); }
 .empty-state { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: 30px; color: var(--text-muted); }
-.empty-icon { font-size: 48px; margin-bottom: 12px; }
 
 .fab {
   position: fixed;
@@ -167,12 +161,65 @@ button { cursor: pointer; border: none; outline: none; transition: all 0.2s; }
 .menu button { display: block; width: 100%; padding: 14px 16px; text-align: right; background: white; color: var(--text-main); border-bottom: 1px solid var(--border); }
 .menu button:last-child { color: #ef4444; border: none; }
 
-.result-row, .chat-row { width: 100%; border: none; border-bottom: 1px solid var(--border); background: white; display: flex; gap: 12px; align-items: center; padding: 14px; text-align: right; }
-.small-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; }
-.row-info strong { display: block; color: var(--text-main); font-size: 15px; }
-.row-info small { color: var(--text-muted); font-size: 13px; }
+/* تصميم الملف الشخصي مثل تليجرام */
+.telegram-profile {
+  background: #f8fafc;
+  min-height: 100dvh;
+}
+.profile-header-bg {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  padding: 30px 20px;
+  text-align: center;
+  color: white;
+  border-bottom-left-radius: 30px;
+  border-bottom-right-radius: 30px;
+  position: relative;
+}
+.profile-avatar-wrap {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 12px;
+}
+.profile-avatar-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #e0e7ff;
+  color: var(--primary);
+  font-size: 38px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: cover;
+  border: 4px solid white;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+.avatar-edit-icon {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  background: var(--primary);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  font-size: 14px;
+  cursor: pointer;
+}
+.profile-info-card {
+  margin: 20px;
+  background: white;
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
 
-/* غرف المحادثة */
 .chat-messages { flex: 1; background: var(--chat-bg); overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .message { max-width: 78%; padding: 10px 14px; background: var(--bubble-other); border-radius: 16px 16px 16px 4px; align-self: flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: 14px; color: var(--text-main); }
 .message.mine { align-self: flex-end; background: var(--bubble-mine); color: white; border-radius: 16px 16px 4px 16px; }
@@ -232,7 +279,7 @@ button { cursor: pointer; border: none; outline: none; transition: all 0.2s; }
           <label>كلمة المرور</label>
           <input id="regPassword" type="password" placeholder="6 أحرف على الأقل">
         </div>
-        <button class="btn-primary" onclick="registerUser()">إنشاء حساب</button>
+        <button class="btn-primary" onclick="registerUser()">إنشاء حساب وترخيص الإيميل</button>
       </div>
     </div>
   </section>
@@ -254,7 +301,7 @@ button { cursor: pointer; border: none; outline: none; transition: all 0.2s; }
     <div id="homePage" class="page">
       <div class="empty-state" id="emptyState">
         <div>
-          <div class="empty-icon">💬</div>
+          <div class="empty-icon" style="font-size:48px;">💬</div>
           <h3>لا توجد محادثات</h3>
           <p>ابدأ البحث عن أصدقائك وتحدث معهم الآن</p>
         </div>
@@ -272,19 +319,37 @@ button { cursor: pointer; border: none; outline: none; transition: all 0.2s; }
       <div id="searchResults"></div>
     </div>
 
-    <!-- الملف الشخصي -->
-    <div id="profilePage" class="hidden page" style="padding:20px;">
-      <h3 style="text-align:center; margin-bottom:20px;">تعديل الملف الشخصي</h3>
-      <div class="field">
-        <label>اسم العرض</label>
-        <input id="displayNameInput">
+    <!-- الملف الشخصي المميز مثل تليجرام -->
+    <div id="profilePage" class="hidden page telegram-profile">
+      <div class="profile-header-bg">
+        <button class="icon-btn" style="position:absolute; right:15px; top:15px;" onclick="goHome()">‹</button>
+        
+        <div class="profile-avatar-wrap">
+          <div id="profileAvatarText" class="profile-avatar-img">؟</div>
+          <img id="profileAvatarImg" class="profile-avatar-img hidden" src="" alt="Avatar">
+          <label for="avatarInput" class="avatar-edit-icon">📷</label>
+          <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="uploadAvatar(event)">
+        </div>
+
+        <h2 id="profileHeaderName" style="margin:5px 0 2px;">اسم المستخدم</h2>
+        <div id="profileHeaderUser" style="font-size:13px; opacity:0.8;">@username</div>
       </div>
-      <div class="field">
-        <label>اسم المستخدم</label>
-        <input id="profileUsernameInput">
+
+      <div class="profile-info-card">
+        <div class="field">
+          <label>اسم العرض</label>
+          <input id="displayNameInput">
+        </div>
+        <div class="field">
+          <label>اسم المستخدم (Username)</label>
+          <input id="profileUsernameInput">
+        </div>
+        <div class="field">
+          <label>البريد الإلكتروني</label>
+          <input id="profileEmailInput" readonly style="background:#eee;">
+        </div>
+        <button class="btn-primary" onclick="saveProfile()">حفظ التغييرات</button>
       </div>
-      <button class="btn-primary" onclick="saveProfile()">حفظ التغييرات</button>
-      <button class="btn-primary" style="background:#f1f5f9; color:#334155; margin-top:10px;" onclick="goHome()">إلغاء</button>
     </div>
 
     <!-- المحادثة -->
@@ -372,11 +437,17 @@ function registerUser() {
 
   auth.createUserWithEmailAndPassword(email, password)
     .then(cred => {
+      // إرسال كود/رابط التحقق إلى الإيميل
+      cred.user.sendEmailVerification().then(() => {
+        showToast("تم إرسال رابط التحقق إلى إيميلك! يرجى تأكيده.");
+      });
+
       db.collection("users").doc(cred.user.uid).set({
         id: cred.user.uid,
         displayName: name,
         username: username,
         email: email,
+        avatarUrl: "",
         createdAt: Date.now()
       }).then(() => enterApp());
     })
@@ -409,22 +480,59 @@ function goHome() {
 }
 
 function openSearch() { showSubPage("searchPage"); }
+
 function openProfile() {
   showSubPage("profilePage");
   db.collection("users").doc(currentUser.uid).get().then(doc => {
-    const data = doc.data();
-    document.getElementById("displayNameInput").value = data.displayName || "";
-    document.getElementById("profileUsernameInput").value = data.username || "";
+    if(doc.exists) {
+      const data = doc.data();
+      document.getElementById("displayNameInput").value = data.displayName || "";
+      document.getElementById("profileUsernameInput").value = data.username || "";
+      document.getElementById("profileEmailInput").value = data.email || currentUser.email;
+
+      document.getElementById("profileHeaderName").textContent = data.displayName || "مستخدم جديد";
+      document.getElementById("profileHeaderUser").textContent = "@" + (data.username || "username");
+
+      if (data.avatarUrl) {
+        document.getElementById("profileAvatarImg").src = data.avatarUrl;
+        document.getElementById("profileAvatarImg").classList.remove("hidden");
+        document.getElementById("profileAvatarText").classList.add("hidden");
+      } else {
+        document.getElementById("profileAvatarText").textContent = (data.displayName || "؟").charAt(0);
+        document.getElementById("profileAvatarText").classList.remove("hidden");
+        document.getElementById("profileAvatarImg").classList.add("hidden");
+      }
+    }
   });
 }
 
+function uploadAvatar(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64Image = e.target.result;
+    db.collection("users").doc(currentUser.uid).update({
+      avatarUrl: base64Image
+    }).then(() => {
+      showToast("تم تحديث صورة البروفايل بنجاح!");
+      openProfile();
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
 function saveProfile() {
+  const name = document.getElementById("displayNameInput").value.trim();
+  const username = document.getElementById("profileUsernameInput").value.trim().toLowerCase();
+
   db.collection("users").doc(currentUser.uid).update({
-    displayName: document.getElementById("displayNameInput").value.trim(),
-    username: document.getElementById("profileUsernameInput").value.trim().toLowerCase()
+    displayName: name,
+    username: username
   }).then(() => {
     showToast("تم الحفظ بنجاح");
-    goHome();
+    openProfile();
   });
 }
 
@@ -442,7 +550,7 @@ function searchUsers() {
 
         const btn = document.createElement("button");
         btn.className = "result-row";
-        btn.innerHTML = `<div class="small-avatar">${(u.displayName||"?").charAt(0)}</div>
+        btn.innerHTML = `<div class="small-avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%;height:100%;border-radius:50%">` : (u.displayName||"?").charAt(0)}</div>
                          <div class="row-info"><strong>${u.displayName}</strong><small>@${u.username}</small></div>`;
         btn.onclick = () => startChat(u);
         c.appendChild(btn);
