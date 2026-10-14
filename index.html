@@ -1630,7 +1630,8 @@ function sendMessage(e) {
 
       const otherUserId = activeChatId.split('__').find(id => id !== currentUser.uid);
       if (otherUserId) {
-        fetch('/api/send-notification', {
+        // الاتصال بـ notify.js الجديد
+        fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
