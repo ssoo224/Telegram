@@ -5,11 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Babylon Chat - تليجرام البابلي</title>
 
-<!-- ربط ملف الـ Manifest الخارجي -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#17212b">
 
-<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -245,7 +243,6 @@ body {
 .telegram-user-name { font-size: 15px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
 .telegram-user-status { font-size: 12px; color: var(--text-muted); }
 
-/* قائمة الخيارات العلوية (3 نقاط) */
 .chat-menu-dropdown {
   position: absolute; left: 12px; top: 50px; background: var(--babylon-surface);
   border: 1px solid var(--babylon-border); border-radius: 12px; width: 180px;
@@ -281,7 +278,6 @@ body {
 .msg-text { padding-left: 10px; padding-bottom: 4px; }
 .msg-img { max-width: 220px; border-radius: 8px; margin-bottom: 4px; display: block; object-fit: cover; cursor: pointer; }
 
-/* Lightbox لعرض الصور بكامل الشاشة */
 .lightbox-modal {
   position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 2000;
   display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
@@ -458,7 +454,7 @@ body {
         <div class="profile-cover-fade"></div>
         <div class="profile-top-bar">
           <button class="icon-btn" style="color:white; background:rgba(0,0,0,0.3);" onclick="openSettings()" title="الإعدادات">
-            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6-3.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
           </button>
           <button class="icon-btn" style="color:white; background:rgba(0,0,0,0.3);" onclick="openEditProfileModal()" title="تعديل">
             <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
@@ -659,19 +655,16 @@ body {
           </div>
         </div>
 
-        <!-- زر الـ 3 نقاط المضاف -->
         <button class="icon-btn" onclick="toggleChatOptionsMenu(event)" title="خيارات المحادثة">
           <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
         </button>
 
-        <!-- القائمة المنسدلة للـ 3 نقاط -->
         <div id="chatDropdownMenu" class="chat-menu-dropdown hidden">
           <button onclick="openInChatSearch()">🔍 بحث في المحادثة</button>
           <button class="danger" onclick="promptDeleteChat()">🗑 حذف المحادثة</button>
         </div>
       </header>
 
-      <!-- شريط البحث المدمج في المحادثة -->
       <div id="inChatSearchBar" class="hidden" style="padding: 8px 12px; background: var(--babylon-surface); display: flex; align-items: center; gap: 8px; z-index: 10;">
         <input id="inChatSearchInput" class="babylon-input" placeholder="ابحث عن كلمة..." oninput="searchInChatMessages(this.value)">
         <button class="icon-btn" onclick="closeInChatSearch()">✕</button>
@@ -725,7 +718,7 @@ body {
         <span>الملف الشخصي</span>
       </button>
       <button id="navSettings" class="nav-item" onclick="openSettings()">
-        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6-3.6z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
         <span>الإعدادات</span>
       </button>
     </nav>
@@ -740,13 +733,12 @@ body {
     <p style="color:var(--text-muted); font-size:13px; margin-bottom:16px; text-align:right;">كيف ترغب في حذف هذه المحادثة؟</p>
     <div style="display:flex; flex-direction:column; gap:8px;">
       <button class="babylon-btn" style="background:var(--error-color); color:white;" onclick="confirmDeleteChat('both')">حذف للطرفين 👥</button>
-      <button class="babylon-btn" style="background:var(--babylon-surface-card); color:white; border:1px solid var(--babylon-border);" onclick="confirmDeleteChat('mine')">حذف من طرفي فقط 👤</button>
+      <button class="babylon-btn" style="background:var(--babylon-surface-card); color:white; border:1px solid var(--babylon-border);" onclick="confirmDeleteChat('mine')">حذف من طرفي فقط (مسح السجل) 👤</button>
       <button class="babylon-btn" style="background:transparent; color:var(--text-muted);" onclick="closeDeleteChatModalDirect()">إلغاء</button>
     </div>
   </div>
 </div>
 
-<!-- نافذة عرض الصور بكامل الشاشة (Lightbox) -->
 <div id="lightboxModal" class="lightbox-modal hidden" onclick="closeLightbox()">
   <img id="lightboxImg" src="" alt="Fullscreen Image">
   <div class="lightbox-actions" onclick="event.stopPropagation()">
@@ -755,7 +747,6 @@ body {
   </div>
 </div>
 
-<!-- نافذة تعديل البروفايل -->
 <div id="editProfileModal" class="msg-actions-modal hidden" onclick="closeEditModal(event)">
   <div class="msg-actions-card" style="width:320px; padding:20px;">
     <h3 style="color:var(--babylon-gold); font-size:17px; margin-bottom:14px; text-align:right;">تعديل البيانات الشخصية</h3>
@@ -1343,7 +1334,7 @@ function confirmDeleteChat(mode) {
       [`deletedFor_${currentUser.uid}`]: true
     }, { merge: true }).then(() => {
       closeDeleteChatModalDirect();
-      showToast("تم حذف المحادثة من طرفك فقط");
+      showToast("تم مسح السجل من طرفك");
       goHome();
     });
   }
@@ -1468,56 +1459,58 @@ function openUserProfileDirect(u) {
   currentChatOtherUserId = u.id;
   const isDevUser = (u.username.toLowerCase() === "ali" || u.email === "anldheb429@gmail.com");
   
-  // التحقق هل أنا حاظره
   db.collection("users").doc(currentUser.uid).get().then(myDoc => {
     const blockedMap = myDoc.data().blockedUsers || {};
     updateBlockBtnUI(!!blockedMap[u.id]);
   });
 
-  // التحقق هل هو حاطرني
-  const hasBlockedMe = u.blockedUsers && u.blockedUsers[currentUser.uid];
+  db.collection("users").doc(currentUser.uid).get().then(myDoc => {
+    const myBlockedMap = myDoc.data().blockedUsers || {};
+    const iBlockedHim = !!myBlockedMap[u.id];
+    const hasBlockedMe = u.blockedUsers && u.blockedUsers[currentUser.uid];
 
-  const nameEl = document.getElementById("otherHeaderName");
-  nameEl.innerHTML = `<span>${u.displayName || "مستخدم"}</span>` + (isDevUser ? `<span class="verified-badge" title="حساب موثق للمطور"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
+    const nameEl = document.getElementById("otherHeaderName");
+    nameEl.innerHTML = `<span>${u.displayName || "مستخدم"}</span>` + (isDevUser ? `<span class="verified-badge" title="حساب موثق للمطور"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
 
-  document.getElementById("otherHeaderUser").textContent = "@" + (u.username || "user");
-  
-  const bio = u.bio || "";
-  const bioRow = document.getElementById("otherBioRow");
-  if (bio.trim() !== "" && !hasBlockedMe) {
-    document.getElementById("otherBioDisplay").textContent = bio;
-    bioRow.classList.remove("hidden");
-  } else {
-    bioRow.classList.add("hidden");
-  }
+    document.getElementById("otherHeaderUser").textContent = "@" + (u.username || "user");
+    
+    const bio = u.bio || "";
+    const bioRow = document.getElementById("otherBioRow");
+    if (bio.trim() !== "" && !hasBlockedMe && !iBlockedHim) {
+      document.getElementById("otherBioDisplay").textContent = bio;
+      bioRow.classList.remove("hidden");
+    } else {
+      bioRow.classList.add("hidden");
+    }
 
-  const statusDot = document.getElementById("otherStatusDot");
-  const statusText = document.getElementById("otherHeaderStatus");
-  
-  if (hasBlockedMe) {
-    statusDot.classList.add("offline");
-    statusText.textContent = "تم حظرك 🚫";
-  } else if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
-    statusDot.classList.remove("offline");
-    statusText.textContent = "متصل الآن";
-  } else {
-    statusDot.classList.add("offline");
-    statusText.textContent = "آخر ظهور قبل ساعة";
-  }
+    const statusDot = document.getElementById("otherStatusDot");
+    const statusText = document.getElementById("otherHeaderStatus");
+    
+    if (hasBlockedMe || iBlockedHim) {
+      statusDot.classList.add("offline");
+      statusText.textContent = "تم حظرك 🚫";
+    } else if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
+      statusDot.classList.remove("offline");
+      statusText.textContent = "متصل الآن";
+    } else {
+      statusDot.classList.add("offline");
+      statusText.textContent = "آخر ظهور قبل ساعة";
+    }
 
-  const avatarBox = document.getElementById("otherAvatarImg");
-  const avatarText = document.getElementById("otherAvatarText");
+    const avatarBox = document.getElementById("otherAvatarImg");
+    const avatarText = document.getElementById("otherAvatarText");
 
-  if (u.avatarUrl && !hasBlockedMe) {
-    avatarBox.src = u.avatarUrl;
-    avatarBox.classList.remove("hidden");
-    avatarText.classList.add("hidden");
-  } else {
-    avatarText.classList.remove("hidden");
-    avatarBox.classList.add("hidden");
-  }
+    if (u.avatarUrl && !hasBlockedMe && !iBlockedHim) {
+      avatarBox.src = u.avatarUrl;
+      avatarBox.classList.remove("hidden");
+      avatarText.classList.add("hidden");
+    } else {
+      avatarText.classList.remove("hidden");
+      avatarBox.classList.add("hidden");
+    }
 
-  showView("otherUserProfileView");
+    showView("otherUserProfileView");
+  });
 }
 
 function openCurrentChatUserProfile() {
@@ -1586,35 +1579,58 @@ function openChatRoom(otherUserId) {
   
   showView("chatView");
 
+  // فحص الحظر المتبادل من الطرفين
+  Promise.all([
+    db.collection("users").doc(currentUser.uid).get(),
+    db.collection("users").doc(otherUserId).get()
+  ]).then(([myDoc, otherDoc]) => {
+    const myBlocked = myDoc.data().blockedUsers || {};
+    const otherBlocked = otherDoc.data().blockedUsers || {};
+    const iBlockedHim = !!myBlocked[otherUserId];
+    const heBlockedMe = !!otherBlocked[currentUser.uid];
+
+    const inputBar = document.getElementById("textInputBar");
+    if (iBlockedHim || heBlockedMe) {
+      inputBar.style.display = "none";
+    } else {
+      inputBar.style.display = "flex";
+    }
+  });
+
   userUnsubscribe = db.collection("users").doc(otherUserId).onSnapshot(doc => {
     if (doc.exists) {
       const u = doc.data();
       const isDevUser = (u.username.toLowerCase() === "ali" || u.email === "anldheb429@gmail.com");
       
-      const hasBlockedMe = u.blockedUsers && u.blockedUsers[currentUser.uid];
+      db.collection("users").doc(currentUser.uid).get().then(myDoc => {
+        const myBlocked = myDoc.data().blockedUsers || {};
+        const iBlockedHim = !!myBlocked[otherUserId];
+        const hasBlockedMe = u.blockedUsers && u.blockedUsers[currentUser.uid];
 
-      const titleEl = document.getElementById("chatTitle");
-      titleEl.innerHTML = `<span>${u.displayName || "مستخدم"}</span>` + (isDevUser ? `<span class="verified-badge"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
+        const titleEl = document.getElementById("chatTitle");
+        titleEl.innerHTML = `<span>${u.displayName || "مستخدم"}</span>` + (isDevUser ? `<span class="verified-badge"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
 
-      const sub = document.getElementById("chatSub");
-      const avatarBox = document.getElementById("chatAvatar");
+        const sub = document.getElementById("chatSub");
+        const avatarBox = document.getElementById("chatAvatar");
 
-      if (u.avatarUrl && !hasBlockedMe) {
-        avatarBox.innerHTML = `<img src="${u.avatarUrl}">`;
-      } else {
-        avatarBox.innerHTML = `<svg style="width:20px;height:20px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
-      }
+        if (u.avatarUrl && !hasBlockedMe && !iBlockedHim) {
+          avatarBox.innerHTML = `<img src="${u.avatarUrl}">`;
+        } else {
+          avatarBox.innerHTML = `<svg style="width:20px;height:20px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+        }
 
-      if (hasBlockedMe) {
-        sub.textContent = "تم حظرك 🚫";
-        sub.style.color = "var(--error-color)";
-      } else if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
-        sub.textContent = "متصل الآن";
-        sub.style.color = "#4ade80";
-      } else {
-        sub.textContent = "آخر ظهور كان قريباً";
-        sub.style.color = "var(--text-muted)";
-      }
+        if (hasBlockedMe || iBlockedHim) {
+          sub.textContent = "تم حظرك 🚫";
+          sub.style.color = "var(--error-color)";
+          document.getElementById("textInputBar").style.display = "none";
+        } else if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
+          sub.textContent = "متصل الآن";
+          sub.style.color = "#4ade80";
+        } else {
+          sub.textContent = "آخر ظهور كان قريباً";
+          sub.style.color = "var(--text-muted)";
+        }
+      });
     }
   });
 
@@ -1866,6 +1882,7 @@ function loadChats() {
     let chatDocsList = [];
     snap.forEach(doc => {
       const data = doc.data();
+      // تحقق إذا لم يتم حذف المحادثة تماماً من قِبل المستخدم الحالي
       if (!data[`deletedFor_${currentUser.uid}`]) {
         chatDocsList.push({ id: doc.id, data: data });
       }
