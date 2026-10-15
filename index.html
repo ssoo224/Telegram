@@ -433,7 +433,6 @@ body {
   color: var(--text-muted);
 }
 
-/* غرفة المحادثة مع دعم الثيمات */
 .chat-room {
   flex: 1;
   display: flex;
@@ -656,7 +655,6 @@ body {
   border: 1px solid var(--babylon-gold);
 }
 
-/* عناصر الإعدادات والمظاهر */
 .set-row {
   display: flex; align-items: center; gap: 14px; padding: 15px 16px;
   background: var(--babylon-surface); border-bottom: 1px solid var(--babylon-border);
@@ -987,6 +985,7 @@ let activeChatId = null;
 let messagesUnsubscribe = null;
 let userUnsubscribe = null;
 let chatsListUnsubscribe = null;
+let userDocUnsubscribe = null;
 let heartbeatInterval = null;
 let isAppInitialized = false;
 
@@ -1011,7 +1010,6 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.log('SW Fail', err));
 }
 
-// ربط زر التسجيل بشكل مباشر
 document.addEventListener("DOMContentLoaded", () => {
   const regBtn = document.getElementById("regSubmitBtn");
   if (regBtn) {
@@ -1126,35 +1124,22 @@ auth.onAuthStateChanged(user => {
     isAppInitialized = false;
     currentUser = null;
     currentUserData = null;
+    if (userDocUnsubscribe) { userDocUnsubscribe(); userDocUnsubscribe = null; }
     document.getElementById("authPage").classList.remove("hidden");
     document.getElementById("mainPage").classList.add("hidden");
   }
 });
 
+// الحفاظ الكامل الدائم على الاسم واليوزر بدون أي تعديل أو مسح
 function loadUserDataAndEnter(uid) {
-  db.collection("users").doc(uid).get().then(doc => {
+  if (userDocUnsubscribe) userDocUnsubscribe();
+  
+  userDocUnsubscribe = db.collection("users").doc(uid).onSnapshot(doc => {
     if (doc.exists) {
       currentUserData = doc.data();
       updateProfileUI(currentUserData);
       enterApp();
-    } else {
-      const defaultData = {
-        id: uid,
-        displayName: currentUser.email.split('@')[0],
-        username: "user" + uid.substring(0, 5),
-        email: currentUser.email,
-        avatarUrl: "",
-        createdAt: Date.now()
-      };
-      db.collection("users").doc(uid).set(defaultData).then(() => {
-        currentUserData = defaultData;
-        updateProfileUI(currentUserData);
-        enterApp();
-      });
     }
-  }).catch(err => {
-    console.error(err);
-    enterApp();
   });
 }
 
@@ -1164,10 +1149,14 @@ function updateProfileUI(u) {
   const username = u.username || "user" + currentUser.uid.substring(0, 5);
   const email = u.email || currentUser.email;
 
-  document.getElementById("pNameInput").value = displayName;
-  document.getElementById("pUsernameInput").value = username;
-  document.getElementById("pEmailDisplay").textContent = email;
+  if (document.activeElement !== document.getElementById("pNameInput")) {
+    document.getElementById("pNameInput").value = displayName;
+  }
+  if (document.activeElement !== document.getElementById("pUsernameInput")) {
+    document.getElementById("pUsernameInput").value = username;
+  }
 
+  document.getElementById("pEmailDisplay").textContent = email;
   document.getElementById("pHeaderName").textContent = displayName;
   document.getElementById("pHeaderUser").textContent = "@" + username;
 
@@ -1723,7 +1712,7 @@ function stopAndSendRecording() {
       cancelRecording();
       showToast("تم إرسال البصمة الصوتية!");
     };
-    reader.readAsDataURL(base64Audio);
+    reader.readAsDataURL(audioBlob);
   };
 
   mediaRecorder.stop();
@@ -1760,7 +1749,6 @@ function sendMessage(e) {
         updatedAt: Date.now()
       }, { merge: true });
 
-      // إرسال إشعار أحادي دقيق فقط
       const otherUserId = activeChatId.split('__').find(id => id !== currentUser.uid);
       if (otherUserId) {
         fetch('/api/index', {
@@ -1780,7 +1768,7 @@ function sendMessage(e) {
   }
 }
 
-// تحميل وترتيب المحادثات حسب أحدث تاريخ (updatedAt)
+// جلب المحادثات بدون التسبب في خطأ الإندكس المفقود في Firestore
 function loadChats() {
   const container = document.getElementById("chatList");
   
@@ -1789,7 +1777,6 @@ function loadChats() {
 
   chatsListUnsubscribe = db.collection("chats")
     .where("participants", "array-contains", currentUser.uid)
-    .orderBy("updatedAt", "desc")
     .onSnapshot(snap => {
       if (snap.empty) {
         container.innerHTML = `
@@ -1801,11 +1788,20 @@ function loadChats() {
         return;
       }
 
+      let chatDocsList = [];
+      snap.forEach(doc => {
+        chatDocsList.push({ id: doc.id, data: doc.data() });
+      });
+
+      // ترتيب المحادثات حسب التحديث الأخير برمجياً
+      chatDocsList.sort((a, b) => (b.data.updatedAt || 0) - (a.data.updatedAt || 0));
+
       container.innerHTML = "";
       const processedUsers = new Set();
 
-      snap.forEach(chatDoc => {
-        const chatData = chatDoc.data();
+      chatDocsList.forEach(item => {
+        const chatData = item.data;
+        const chatId = item.id;
         const participants = chatData.participants || [];
         const otherId = participants.find(id => id !== currentUser.uid);
         
@@ -1816,7 +1812,7 @@ function loadChats() {
           if (!userDoc.exists) return;
           const u = userDoc.data();
 
-          db.collection("chats").doc(chatDoc.id).collection("messages")
+          db.collection("chats").doc(chatId).collection("messages")
             .orderBy("createdAt", "desc")
             .limit(1)
             .onSnapshot(msgSnap => {
@@ -1839,16 +1835,16 @@ function loadChats() {
                 }
               }
 
-              db.collection("chats").doc(chatDoc.id).collection("messages")
+              db.collection("chats").doc(chatId).collection("messages")
                 .where("senderId", "==", otherId)
                 .where("read", "==", false)
                 .onSnapshot(unReadSnap => {
                   let unreadCount = unReadSnap.size;
 
-                  let existingItem = document.getElementById("chat_item_" + chatDoc.id);
+                  let existingItem = document.getElementById("chat_item_" + chatId);
                   if (!existingItem) {
                     existingItem = document.createElement("div");
-                    existingItem.id = "chat_item_" + chatDoc.id;
+                    existingItem.id = "chat_item_" + chatId;
                     existingItem.className = "chat-item";
                     container.appendChild(existingItem);
                   }
@@ -1867,7 +1863,7 @@ function loadChats() {
                     </div>`;
 
                   existingItem.onclick = () => {
-                    activeChatId = chatDoc.id;
+                    activeChatId = chatId;
                     openChatRoom(otherId);
                   };
                 });
