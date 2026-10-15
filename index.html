@@ -12,7 +12,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
-<!-- مكتبة التشفير الآمن للرسائل -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 <style>
@@ -218,14 +217,6 @@ body {
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; }
 .status-dot.offline { background: var(--text-muted); }
 
-.profile-action-row { display: flex; gap: 10px; width: 100%; max-width: 340px; margin-bottom: 6px; }
-.profile-action-btn-sm {
-  flex: 1; background: transparent; border: 1.5px solid var(--babylon-border); border-radius: 12px;
-  padding: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; color: #ffffff; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-}
-.profile-action-btn-sm.gold { background: linear-gradient(135deg, var(--babylon-gold), #b38f27); color: var(--babylon-dark); border-color: transparent; font-weight: 700; }
-.profile-action-btn-sm:active { transform: scale(0.97); }
-
 .profile-info-card { background: var(--babylon-surface-card); border-radius: 18px; border: 1px solid var(--babylon-border); padding: 6px 16px; margin: 0 16px 20px; display: flex; flex-direction: column; }
 .info-item { padding: 14px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); text-align: right; cursor: pointer; }
 .info-item:active { opacity: 0.7; }
@@ -383,7 +374,7 @@ body {
   <section id="authPage" class="auth-page">
     <div class="babylon-logo">🏛</div>
     <h1 class="auth-title">Babylon Chat</h1>
-    <p class="auth-subtitle">منصة تواصل بابلية مشفرة وآمنة</p>
+    <p class="auth-subtitle">منصة تواصل بابلية مشفرة ومؤمنة بالكامل</p>
 
     <div class="babylon-tabs">
       <button id="tabLogin" class="babylon-tab active" onclick="switchTab('login')">تسجيل الدخول</button>
@@ -529,8 +520,8 @@ body {
           <span id="otherHeaderStatus">آخر ظهور قبل ساعة</span>
         </div>
 
-        <div class="profile-action-row">
-          <button class="profile-action-btn-sm gold" onclick="startChatFromProfile()">رسالة</button>
+        <div class="profile-action-row" style="display:flex; gap:10px; width:100%; max-width:340px; margin-bottom:6px; justify-content:center;">
+          <button class="babylon-btn" style="margin-top:0;" onclick="startChatFromProfile()">رسالة</button>
         </div>
       </div>
 
@@ -563,6 +554,13 @@ body {
           <span class="set-chev"><svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></span>
         </div>
 
+        <div class="profile-section-label" style="padding:10px 16px 4px; font-size:12px; color:var(--babylon-gold);">الأمان والجلسات</div>
+        <div class="set-row" onclick="openSessionsSettings()">
+          <span class="set-ico"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></span>
+          <span>الأجهزة النشطة (الجلسات)</span>
+          <span class="set-chev"><svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></span>
+        </div>
+
         <div class="profile-section-label" style="padding:10px 16px 4px; font-size:12px; color:var(--babylon-gold);">التنبيهات والإشعارات</div>
         <div class="set-row" onclick="openNotificationSettings()">
           <span class="set-ico"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg></span>
@@ -574,6 +572,22 @@ body {
         <div style="padding: 10px 16px 30px;">
           <button type="button" class="babylon-btn" style="background:transparent; border:1px solid var(--error-color); color:var(--error-color);" onclick="logout()">تسجيل الخروج</button>
         </div>
+      </div>
+    </div>
+
+    <!-- صفحة إدارة الجلسات النشطة -->
+    <div id="sessionsSettingsView" class="settings-view hidden" style="flex:1; display:flex; flex-direction:column;">
+      <div style="text-align:right; padding:18px 16px; position:relative;">
+        <button class="icon-btn" style="position:absolute; left:12px; top:12px;" onclick="openSettings()">
+          <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+        </button>
+        <h2 style="font-size:18px; font-weight:700; color:var(--babylon-gold);">الأجهزة النشطة</h2>
+      </div>
+      <div style="flex:1; overflow-y:auto; padding: 12px 16px;">
+        <div style="margin-bottom: 16px;">
+          <button type="button" class="babylon-btn" style="background:var(--error-color); color:white;" onclick="terminateOtherSessions()">إنهاء جميع الجلسات الأخرى 🔒</button>
+        </div>
+        <div id="sessionsList" style="display:flex; flex-direction:column; gap:10px;"></div>
       </div>
     </div>
 
@@ -827,6 +841,7 @@ let chatsListUnsubscribe = null;
 let userDocUnsubscribe = null;
 let heartbeatInterval = null;
 let isAppInitialized = false;
+let currentSessionId = 'sess_' + Math.random().toString(36).substring(2, 11);
 
 let sessionStartTime = Date.now();
 let selectedMsgId = null;
@@ -970,11 +985,18 @@ auth.onAuthStateChanged(user => {
       }, { merge: true });
     }
 
+    // تسجيل الجلسة الحالية في الأجهزة النشطة
+    registerCurrentSession(user.uid);
+
     db.collection("users").doc(user.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
     
     clearInterval(heartbeatInterval);
     heartbeatInterval = setInterval(() => {
       db.collection("users").doc(user.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
+      db.collection("users").doc(user.uid).collection("sessions").doc(currentSessionId).set({
+        lastActive: Date.now(),
+        userAgent: navigator.userAgent
+      }, { merge: true });
     }, 10000);
 
     window.addEventListener('beforeunload', () => {
@@ -993,6 +1015,74 @@ auth.onAuthStateChanged(user => {
     document.getElementById("mainPage").classList.add("hidden");
   }
 });
+
+function registerCurrentSession(uid) {
+  db.collection("users").doc(uid).collection("sessions").doc(currentSessionId).set({
+    sessionId: currentSessionId,
+    userAgent: navigator.userAgent,
+    createdAt: Date.now(),
+    lastActive: Date.now()
+  }, { merge: true });
+}
+
+function openSessionsSettings() {
+  showView('sessionsSettingsView');
+  loadActiveSessions();
+}
+
+function loadActiveSessions() {
+  if (!currentUser) return;
+  const listEl = document.getElementById("sessionsList");
+  listEl.innerHTML = "<div style='color:var(--text-muted); text-align:center;'>جاري تحميل الجلسات...</div>";
+
+  db.collection("users").doc(currentUser.uid).collection("sessions").get().then(snap => {
+    listEl.innerHTML = "";
+    if (snap.empty) {
+      listEl.innerHTML = "<div style='color:var(--text-muted); text-align:center;'>لا توجد جلسات أخرى نشطة</div>";
+      return;
+    }
+    snap.forEach(doc => {
+      const s = doc.data();
+      const isCurrent = s.sessionId === currentSessionId;
+      const browserName = s.userAgent.includes("Chrome") ? "متصفح كروم (Chrome)" : "متصفح الويب";
+      const dateStr = new Date(s.createdAt || Date.now()).toLocaleDateString();
+
+      const div = document.createElement("div");
+      div.className = "set-card";
+      div.style.margin = "0";
+      div.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:15px; color:white; font-weight:600;">${browserName} ${isCurrent ? '<span style="color:var(--babylon-gold); font-size:12px;">(الجلسة الحالية)</span>' : ''}</div>
+            <div style="font-size:12px; color:var(--text-muted);">تاريخ البدء: ${dateStr}</div>
+          </div>
+          ${!isCurrent ? `<button class="babylon-btn" style="width:auto; padding:6px 12px; font-size:12px; margin-top:0; background:transparent; border:1px solid var(--error-color); color:var(--error-color);" onclick="terminateSession('${s.sessionId}')">إنهاء</button>` : ''}
+        </div>`;
+      listEl.appendChild(div);
+    });
+  });
+}
+
+function terminateSession(sessionId) {
+  if (!currentUser) return;
+  db.collection("users").doc(currentUser.uid).collection("sessions").doc(sessionId).delete().then(() => {
+    showToast("تم إنهاء الجلسة المحددة بنجاح");
+    loadActiveSessions();
+  });
+}
+
+function terminateOtherSessions() {
+  if (!currentUser) return;
+  db.collection("users").doc(currentUser.uid).collection("sessions").get().then(snap => {
+    snap.forEach(doc => {
+      if (doc.id !== currentSessionId) {
+        doc.ref.delete();
+      }
+    });
+    showToast("تم إنهاء كافة الجلسات الأخرى بنجاح!");
+    loadActiveSessions();
+  });
+}
 
 function loadUserDataAndEnter(uid) {
   if (userDocUnsubscribe) userDocUnsubscribe();
@@ -1141,7 +1231,6 @@ function loginUser() {
   }
 }
 
-// دالة إنشاء حساب مع إرسال رابط تأكيد الإيميل التلقائي
 function registerUser() {
   clearErrors();
   const name = document.getElementById("regName").value.trim();
@@ -1168,7 +1257,6 @@ function registerUser() {
     }
 
     auth.createUserWithEmailAndPassword(email, password).then(cred => {
-      // إرسال رابط تأكيد الإيميل الرسمي
       cred.user.sendEmailVerification().then(() => {
         showToast("تم إرسال رابط التحقق إلى بريدك الإلكتروني! 📧");
       }).catch(e => {});
@@ -1212,7 +1300,7 @@ function logout() {
 }
 
 function showView(viewId) {
-  ["homeView", "searchView", "profileView", "otherUserProfileView", "settingsView", "chatSettingsView", "notificationSettingsView", "chatView"].forEach(v => {
+  ["homeView", "searchView", "profileView", "otherUserProfileView", "settingsView", "chatSettingsView", "sessionsSettingsView", "notificationSettingsView", "chatView"].forEach(v => {
     const el = document.getElementById(v);
     if (el) el.classList.add("hidden");
   });
@@ -1235,7 +1323,7 @@ function showView(viewId) {
 
   document.getElementById("navChats").classList.toggle("active", viewId === "homeView" || viewId === "chatView" || viewId === "otherUserProfileView");
   document.getElementById("navProfile").classList.toggle("active", viewId === "profileView");
-  document.getElementById("navSettings").classList.toggle("active", viewId === "settingsView" || viewId === "chatSettingsView" || viewId === "notificationSettingsView");
+  document.getElementById("navSettings").classList.toggle("active", viewId === "settingsView" || viewId === "chatSettingsView" || viewId === "sessionsSettingsView" || viewId === "notificationSettingsView");
 }
 
 function goHome() {
@@ -1598,10 +1686,14 @@ function openChatRoom(otherUserId) {
     }
   });
 
+  // تحديث حالة القراءة الفورية للرسائل الواردة من الطرف الآخر فور فتح الشات
   db.collection("chats").doc(activeChatId).collection("messages")
     .where("senderId", "==", otherUserId).where("read", "==", false)
-    .get().then(snap => { snap.forEach(d => d.ref.update({ read: true })); });
+    .get().then(snap => {
+      snap.forEach(d => d.ref.update({ read: true }));
+    });
 
+  // استماع فوري للرسائل وتحديث القراءة تلقائياً
   messagesUnsubscribe = db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "asc")
     .onSnapshot(snap => {
@@ -1612,12 +1704,16 @@ function openChatRoom(otherUserId) {
         const m = doc.data();
         const isMine = m.senderId === currentUser.uid;
         
+        // إذا كانت رسالة واردة وليست مقروءة، قم بتحديثها فوراً إلى مقروءة بما أن المستخدم داخل الشات
+        if (!isMine && !m.read) {
+          doc.ref.update({ read: true });
+        }
+
         let checkHtml = isMine ? (m.read ? `<span class="check-mark read">✓✓</span>` : `<span class="check-mark">✓</span>`) : "";
 
         let rawTimeStr = new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
         if (rawTimeStr.startsWith('0')) rawTimeStr = rawTimeStr.substring(1);
 
-        // فك تشفير الرسالة النصية تلقائياً عند عرضها
         let decryptedText = "مرفق مشفر";
         try {
           if (m.text) {
@@ -1874,14 +1970,12 @@ function stopAndSendRecording() {
   mediaRecorder.stop();
 }
 
-// إرسال الرسالة النصية بعد تشفيرها بـ AES
 function sendMessage(e) {
   e.preventDefault();
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
   if (!text || !activeChatId) return;
 
-  // تشفير النص قبل الإرسال بقاعدة البيانات
   const encryptedText = CryptoJS.AES.encrypt(text, activeChatId).toString();
 
   if (editingMsgId) {
