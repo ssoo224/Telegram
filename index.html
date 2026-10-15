@@ -312,13 +312,13 @@ body {
 }
 .profile-avatar-box {
   position: relative;
-  width: 90px;
-  height: 90px;
+  width: 96px;
+  height: 96px;
   margin: 0 auto 12px;
 }
 .profile-avatar-img {
-  width: 90px;
-  height: 90px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   background: var(--babylon-gold);
   font-size: 34px;
@@ -327,23 +327,24 @@ body {
   align-items: center;
   justify-content: center;
   object-fit: cover;
-  border: 2px solid var(--babylon-gold);
+  border: 3px solid var(--babylon-gold);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
 }
 .camera-badge {
   position: absolute;
-  bottom: 0;
-  left: 0;
+  bottom: 2px;
+  left: 2px;
   background: var(--babylon-gold);
   color: var(--babylon-dark);
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   border: 2px solid var(--babylon-surface);
-  font-size: 13px;
+  font-size: 14px;
 }
 .profile-section-label {
   padding: 16px 16px 6px;
@@ -464,7 +465,7 @@ body {
 .msg-bubble {
   width: fit-content;
   max-width: 82%;
-  padding: 6px 10px 6px 10px;
+  padding: 6px 10px 18px 10px;
   font-size: var(--msg-font, 14.5px);
   line-height: 1.4;
   background: var(--bubble-other, #182533);
@@ -489,7 +490,7 @@ body {
   border-color: transparent;
 }
 
-.msg-text { padding-left: 45px; }
+.msg-text { padding-left: 10px; padding-bottom: 4px; }
 
 .reply-quote {
   background: rgba(0, 0, 0, 0.25);
@@ -513,7 +514,7 @@ body {
   font-size: 10.5px;
   color: var(--meta-other, rgba(255, 255, 255, 0.6));
   position: absolute;
-  bottom: 4px;
+  bottom: 3px;
   left: 8px;
   user-select: none;
 }
@@ -541,16 +542,17 @@ body {
   font-size: 11px;
 }
 
+/* تنسيق مشغل الصوت والبصمة */
 .audio-player {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 210px;
-  padding: 2px 50px 2px 0;
+  width: 220px;
+  padding: 2px 0 6px 0;
 }
 .audio-player audio {
   width: 100%;
-  height: 32px;
+  height: 36px;
   filter: invert(0.9) hue-rotate(180deg);
 }
 
@@ -753,8 +755,8 @@ body {
   <section id="mainPage" class="hidden" style="height:100%; display:flex; flex-direction:column;">
     
     <header id="mainHeader" class="main-header">
-      <div class="main-header-title">Telegram</div>
-      <button class="icon-btn" onclick="openSearch()" title="بحث عن مستخدم باليوزر">🔍</button>
+      <div class="main-header-title">Babylon Chat</div>
+      <button id="mainSearchBtn" class="icon-btn" onclick="openSearch()" title="بحث عن مستخدم باليوزر">🔍</button>
     </header>
 
     <div id="homeView" class="chat-list" style="flex:1; overflow-y:auto;">
@@ -825,19 +827,34 @@ body {
         </div>
 
         <div class="profile-section-label">التنبيهات والإشعارات</div>
-        <div class="profile-settings-card">
-          <div class="profile-row" style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <div style="font-size:15px; color:white; font-weight:600;">إشعارات النظام الفورية</div>
-              <div style="font-size:12px; color:var(--text-muted);">السماح بإرسال إشعارات الرسائل للسيستم</div>
-            </div>
-            <button type="button" class="babylon-btn" style="width:auto; padding:8px 16px; font-size:13px; margin-top:0;" onclick="requestNotificationPermission()">تفعيل</button>
-          </div>
+        <div class="set-row" onclick="openNotificationSettings()">
+          <span class="set-ico">🔔</span><span>الإشعارات والتنبيهات</span><span class="set-chev">‹</span>
         </div>
 
         <div class="profile-section-label">الحساب والتسجيل</div>
         <div style="padding: 10px 16px 30px;">
           <button type="button" class="babylon-btn" style="background:transparent; border:1px solid var(--error-color); color:var(--error-color);" onclick="logout()">تسجيل الخروج</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- شاشة إعدادات الإشعارات -->
+    <div id="notificationSettingsView" class="settings-view hidden" style="flex:1; display:flex; flex-direction:column;">
+      <div class="babylon-profile-header" style="text-align:right; padding:18px 16px;">
+        <button class="icon-btn" style="position:absolute; left:12px; top:12px;" onclick="openSettings()">‹</button>
+        <h2 style="font-size:18px; font-weight:700; color:var(--babylon-gold);">إعدادات الإشعارات</h2>
+      </div>
+
+      <div style="flex:1; overflow-y:auto; padding-bottom:24px;">
+        <div class="profile-section-label">إشعارات الرسائل والسيستم</div>
+        <div class="profile-settings-card">
+          <div class="profile-row" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:15px; color:white; font-weight:600;">إشعارات النظام الفورية</div>
+              <div style="font-size:12px; color:var(--text-muted);">تفعيل وصول الرسائل خلفية الشاشة</div>
+            </div>
+            <button type="button" class="babylon-btn" style="width:auto; padding:8px 16px; font-size:13px; margin-top:0;" onclick="requestNotificationPermission()">تفعيل</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1138,7 +1155,6 @@ function loadUserDataAndEnter(uid) {
       currentUserData = doc.data();
       updateProfileUI(currentUserData);
       
-      // الدخول للتطبيق مرة واحدة فقط دون تكرار
       if (!isAppInitialized) {
         isAppInitialized = true;
         enterApp();
@@ -1271,7 +1287,7 @@ function logout() {
 }
 
 function showView(viewId) {
-  ["homeView", "searchView", "profileView", "settingsView", "chatSettingsView", "chatView"].forEach(v => {
+  ["homeView", "searchView", "profileView", "settingsView", "chatSettingsView", "notificationSettingsView", "chatView"].forEach(v => {
     const el = document.getElementById(v);
     if (el) el.classList.add("hidden");
   });
@@ -1279,6 +1295,7 @@ function showView(viewId) {
 
   const mainHeader = document.getElementById("mainHeader");
   const bottomNav = document.getElementById("bottomNav");
+  const mainSearchBtn = document.getElementById("mainSearchBtn");
 
   if (viewId === "chatView") {
     mainHeader.classList.add("hidden");
@@ -1288,9 +1305,16 @@ function showView(viewId) {
     bottomNav.classList.remove("hidden");
   }
 
+  // التحكم بظهور زر البحث فقط في الواجهة الرئيسية للمحادثات
+  if (viewId === "homeView") {
+    mainSearchBtn.classList.remove("hidden");
+  } else {
+    mainSearchBtn.classList.add("hidden");
+  }
+
   document.getElementById("navChats").classList.toggle("active", viewId === "homeView");
   document.getElementById("navProfile").classList.toggle("active", viewId === "profileView");
-  document.getElementById("navSettings").classList.toggle("active", viewId === "settingsView" || viewId === "chatSettingsView");
+  document.getElementById("navSettings").classList.toggle("active", viewId === "settingsView" || viewId === "chatSettingsView" || viewId === "notificationSettingsView");
 }
 
 function goHome() {
@@ -1333,6 +1357,10 @@ function openChatSettings() {
   document.getElementById('radiusRange').value = prefs.radius;
   document.getElementById('radiusVal').textContent = prefs.radius;
   markSelectedTheme(true);
+}
+
+function openNotificationSettings() {
+  showView('notificationSettingsView');
 }
 
 function liveUpdateName(e) {
@@ -1393,11 +1421,11 @@ function uploadAvatarLive(e) {
     img.onload = function() {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      canvas.width = 150;
-      canvas.height = 150;
-      ctx.drawImage(img, 0, 0, 150, 150);
+      canvas.width = 180;
+      canvas.height = 180;
+      ctx.drawImage(img, 0, 0, 180, 180);
 
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
       db.collection("users").doc(currentUser.uid).set({
         avatarUrl: compressedDataUrl
@@ -1772,7 +1800,6 @@ function sendMessage(e) {
   }
 }
 
-// دالة جلب وعرض المحادثات مع حل مشكلة الرسالة الترحيبية المزيفة
 function loadChats() {
   const container = document.getElementById("chatList");
   
@@ -1799,7 +1826,6 @@ function loadChats() {
 
       chatDocsList.sort((a, b) => (b.data.updatedAt || 0) - (a.data.updatedAt || 0));
 
-      // تنظيف الرسالة الترحيبية الفارغة إذا كانت توجد محادثات
       const emptyElement = container.querySelector('.empty-chats');
       if (emptyElement) {
         container.innerHTML = "";
