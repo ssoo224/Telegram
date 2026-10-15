@@ -678,7 +678,7 @@ body {
         <input id="loginPassword" class="babylon-input" type="password" placeholder="••••••••">
         <span id="loginPassError" class="field-error hidden"></span>
       </div>
-      <button class="babylon-btn" onclick="loginUser()">دخول</button>
+      <button type="button" class="babylon-btn" onclick="loginUser()">دخول</button>
     </div>
 
     <div id="formRegister" class="hidden" style="width:100%;">
@@ -767,7 +767,7 @@ body {
       </div>
 
       <div style="padding:20px;">
-        <button class="babylon-btn" style="background:transparent; border:1px solid var(--error-color); color:var(--error-color);" onclick="logout()">تسجيل الخروج</button>
+        <button type="button" class="babylon-btn" style="background:transparent; border:1px solid var(--error-color); color:var(--error-color);" onclick="logout()">تسجيل الخروج</button>
       </div>
     </div>
 
@@ -785,7 +785,7 @@ body {
             <div style="font-size:15px; color:white; font-weight:600;">إشعارات النظام الفورية</div>
             <div style="font-size:12px; color:var(--text-muted);">السماح بإرسال إشعارات الرسائل للسيستم</div>
           </div>
-          <button class="babylon-btn" style="width:auto; padding:8px 16px; font-size:13px; margin-top:0;" onclick="requestNotificationPermission()">تفعيل</button>
+          <button type="button" class="babylon-btn" style="width:auto; padding:8px 16px; font-size:13px; margin-top:0;" onclick="requestNotificationPermission()">تفعيل</button>
         </div>
       </div>
     </div>
@@ -1098,14 +1098,27 @@ function registerUser() {
   const email = document.getElementById("regEmail").value.trim();
   const password = document.getElementById("regPassword").value.trim();
 
-  if (!name) return showToast("الرجاء إدخال اسم العرض");
+  if (!name) {
+    showToast("الرجاء إدخال اسم العرض");
+    return;
+  }
   
   if (!isValidUsername(username)) {
-    return showFieldError("regUserError", "اليوزر غير صالح! يجب أن يبدأ بحرف إنجليزي، ويحتوي على أحرف وأرقام ونقاط أو شرطة سفلى فقط (5 أحرف فأكثر)");
+    showFieldError("regUserError", "اليوزر غير صالح! يجب أن يبدأ بحرف إنجليزي، ويحتوي على أحرف وأرقام ونقاط أو شرطة سفلى فقط (5 أحرف فأكثر)");
+    return;
   }
 
-  if (!email) return showFieldError("regEmailError", "الرجاء إدخال البريد الإلكتروني");
-  if (!password || password.length < 6) return showFieldError("regPassError", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+  if (!email) {
+    showFieldError("regEmailError", "الرجاء إدخال البريد الإلكتروني");
+    return;
+  }
+  
+  if (!password || password.length < 6) {
+    showFieldError("regPassError", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+    return;
+  }
+
+  showToast("جاري إنشاء الحساب...");
 
   db.collection("users").where("username", "==", username).get().then(snap => {
     if (!snap.empty) {
@@ -1130,8 +1143,12 @@ function registerUser() {
           enterApp();
         });
       }).catch(err => {
-        showFieldError("regPassError", err.message);
+        console.error("Auth Error:", err);
+        showFieldError("regPassError", "خطأ في التسجيل: " + err.message);
       });
+  }).catch(err => {
+    console.error("Firestore Error:", err);
+    showToast("حدث خطأ في الاتصال بقاعدة البيانات");
   });
 }
 
