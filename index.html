@@ -224,6 +224,7 @@ body {
   padding: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; color: #ffffff; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
 }
 .profile-action-btn-sm.gold { background: linear-gradient(135deg, var(--babylon-gold), #b38f27); color: var(--babylon-dark); border-color: transparent; font-weight: 700; }
+.profile-action-btn-sm.danger-btn { border-color: var(--error-color); color: var(--error-color); }
 .profile-action-btn-sm:active { transform: scale(0.97); }
 
 .profile-info-card { background: var(--babylon-surface-card); border-radius: 18px; border: 1px solid var(--babylon-border); padding: 6px 16px; margin: 0 16px 20px; display: flex; flex-direction: column; }
@@ -236,13 +237,27 @@ body {
 
 .settings-view { flex: 1; overflow-y: auto; background: var(--babylon-dark); }
 
-.telegram-chat-header { height: 60px; background: #17212b; border-bottom: 1px solid rgba(0,0,0,0.3); display: flex; align-items: center; padding: 0 8px; z-index: 10; gap: 8px; }
+.telegram-chat-header { height: 60px; background: #17212b; border-bottom: 1px solid rgba(0,0,0,0.3); display: flex; align-items: center; padding: 0 8px; z-index: 10; gap: 8px; position: relative; }
 .telegram-user-info { flex: 1; display: flex; align-items: center; gap: 12px; cursor: pointer; min-width: 0; }
 .telegram-avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--babylon-gold); color: var(--babylon-dark); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 17px; flex-shrink: 0; overflow: hidden; }
 .telegram-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .telegram-user-details { display: flex; flex-direction: column; text-align: right; min-width: 0; }
 .telegram-user-name { font-size: 15px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
 .telegram-user-status { font-size: 12px; color: var(--text-muted); }
+
+/* قائمة الخيارات العلوية (3 نقاط) */
+.chat-menu-dropdown {
+  position: absolute; left: 12px; top: 50px; background: var(--babylon-surface);
+  border: 1px solid var(--babylon-border); border-radius: 12px; width: 180px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 100; overflow: hidden;
+}
+.chat-menu-dropdown button {
+  width: 100%; padding: 12px 14px; background: transparent; border: none;
+  color: white; font-size: 13.5px; text-align: right; cursor: pointer;
+  display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.chat-menu-dropdown button:last-child { border-bottom: none; }
+.chat-menu-dropdown button.danger { color: var(--error-color); }
 
 .chat-room { flex: 1; display: flex; flex-direction: column; background-color: var(--chat-bg, #0e1621); position: relative; overflow: hidden; }
 .pattern-layer {
@@ -443,7 +458,7 @@ body {
         <div class="profile-cover-fade"></div>
         <div class="profile-top-bar">
           <button class="icon-btn" style="color:white; background:rgba(0,0,0,0.3);" onclick="openSettings()" title="الإعدادات">
-            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6-3.6z"/></svg>
           </button>
           <button class="icon-btn" style="color:white; background:rgba(0,0,0,0.3);" onclick="openEditProfileModal()" title="تعديل">
             <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
@@ -515,7 +530,7 @@ body {
 
         <div class="profile-action-row">
           <button class="profile-action-btn-sm gold" onclick="startChatFromProfile()">رسالة</button>
-          <button class="profile-action-btn-sm" onclick="showToast('تم كتم الإشعارات')">كتم</button>
+          <button id="blockToggleBtn" class="profile-action-btn-sm danger-btn" onclick="toggleBlockUser()">حظر 🚫</button>
         </div>
       </div>
 
@@ -643,7 +658,24 @@ body {
             <div id="chatSub" class="telegram-user-status">غير متصل</div>
           </div>
         </div>
+
+        <!-- زر الـ 3 نقاط المضاف -->
+        <button class="icon-btn" onclick="toggleChatOptionsMenu(event)" title="خيارات المحادثة">
+          <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        </button>
+
+        <!-- القائمة المنسدلة للـ 3 نقاط -->
+        <div id="chatDropdownMenu" class="chat-menu-dropdown hidden">
+          <button onclick="openInChatSearch()">🔍 بحث في المحادثة</button>
+          <button class="danger" onclick="promptDeleteChat()">🗑 حذف المحادثة</button>
+        </div>
       </header>
+
+      <!-- شريط البحث المدمج في المحادثة -->
+      <div id="inChatSearchBar" class="hidden" style="padding: 8px 12px; background: var(--babylon-surface); display: flex; align-items: center; gap: 8px; z-index: 10;">
+        <input id="inChatSearchInput" class="babylon-input" placeholder="ابحث عن كلمة..." oninput="searchInChatMessages(this.value)">
+        <button class="icon-btn" onclick="closeInChatSearch()">✕</button>
+      </div>
 
       <div id="messagesArea" class="messages-area"></div>
 
@@ -693,12 +725,25 @@ body {
         <span>الملف الشخصي</span>
       </button>
       <button id="navSettings" class="nav-item" onclick="openSettings()">
-        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6-3.6z"/></svg>
         <span>الإعدادات</span>
       </button>
     </nav>
   </section>
 
+</div>
+
+<!-- نافذة اختيار حذف المحادثة -->
+<div id="deleteChatModal" class="msg-actions-modal hidden" onclick="closeDeleteChatModal(event)">
+  <div class="msg-actions-card" style="width:300px; padding:18px;">
+    <h3 style="color:var(--error-color); font-size:16px; margin-bottom:12px; text-align:right;">حذف المحادثة</h3>
+    <p style="color:var(--text-muted); font-size:13px; margin-bottom:16px; text-align:right;">كيف ترغب في حذف هذه المحادثة؟</p>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button class="babylon-btn" style="background:var(--error-color); color:white;" onclick="confirmDeleteChat('both')">حذف للطرفين 👥</button>
+      <button class="babylon-btn" style="background:var(--babylon-surface-card); color:white; border:1px solid var(--babylon-border);" onclick="confirmDeleteChat('mine')">حذف من طرفي فقط 👤</button>
+      <button class="babylon-btn" style="background:transparent; color:var(--text-muted);" onclick="closeDeleteChatModalDirect()">إلغاء</button>
+    </div>
+  </div>
 </div>
 
 <!-- نافذة عرض الصور بكامل الشاشة (Lightbox) -->
@@ -813,9 +858,15 @@ document.addEventListener("DOMContentLoaded", () => {
       registerUser();
     });
   }
+
+  document.addEventListener("click", function(e) {
+    const dropdown = document.getElementById("chatDropdownMenu");
+    if (dropdown && !dropdown.classList.contains("hidden") && !e.target.closest(".icon-btn")) {
+      dropdown.classList.add("hidden");
+    }
+  });
 });
 
-// طلب الأذونات التلقائي عند أول دخول
 function requestInitialPermissionsOnEntry() {
   if ("Notification" in window && Notification.permission !== "granted") {
     Notification.requestPermission().then(permission => {
@@ -824,7 +875,6 @@ function requestInitialPermissionsOnEntry() {
       }
     });
   }
-  // طلب إذن المايك مسبقاً لضمان جاهزية البصمات
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
       stream.getTracks().forEach(track => track.stop());
@@ -1175,6 +1225,7 @@ function goHome() {
   activeChatId = null;
   currentChatOtherUserId = null;
   cancelReply();
+  closeInChatSearch();
   document.getElementById("searchInput").value = "";
   document.getElementById("searchResults").innerHTML = "";
   showView("homeView");
@@ -1216,7 +1267,6 @@ function openNotificationSettings() {
   showView('notificationSettingsView');
 }
 
-// معاينة الصور بكامل الشاشة (Lightbox)
 function openLightbox(imgSrc) {
   const modal = document.getElementById("lightboxModal");
   const img = document.getElementById("lightboxImg");
@@ -1229,6 +1279,109 @@ function openLightbox(imgSrc) {
 
 function closeLightbox() {
   document.getElementById("lightboxModal").classList.add("hidden");
+}
+
+function toggleChatOptionsMenu(e) {
+  e.stopPropagation();
+  const dropdown = document.getElementById("chatDropdownMenu");
+  dropdown.classList.toggle("hidden");
+}
+
+function openInChatSearch() {
+  document.getElementById("chatDropdownMenu").classList.add("hidden");
+  document.getElementById("inChatSearchBar").classList.remove("hidden");
+  document.getElementById("inChatSearchInput").focus();
+}
+
+function closeInChatSearch() {
+  document.getElementById("inChatSearchBar").classList.add("hidden");
+  document.getElementById("inChatSearchInput").value = "";
+  searchInChatMessages("");
+}
+
+function searchInChatMessages(keyword) {
+  const query = keyword.trim().toLowerCase();
+  const bubbles = document.querySelectorAll("#messagesArea .msg-bubble");
+  bubbles.forEach(bubble => {
+    const textEl = bubble.querySelector(".msg-text");
+    if (!textEl) return;
+    const txt = textEl.textContent.toLowerCase();
+    if (query && txt.includes(query)) {
+      bubble.style.border = "2px solid var(--babylon-gold)";
+    } else {
+      bubble.style.border = "";
+    }
+  });
+}
+
+function promptDeleteChat() {
+  document.getElementById("chatDropdownMenu").classList.add("hidden");
+  document.getElementById("deleteChatModal").classList.remove("hidden");
+}
+
+function closeDeleteChatModal(e) {
+  if (e.target.id === "deleteChatModal") closeDeleteChatModalDirect();
+}
+
+function closeDeleteChatModalDirect() {
+  document.getElementById("deleteChatModal").classList.add("hidden");
+}
+
+function confirmDeleteChat(mode) {
+  if (!activeChatId) return;
+  if (mode === 'both') {
+    db.collection("chats").doc(activeChatId).collection("messages").get().then(snap => {
+      snap.forEach(d => d.ref.delete());
+      db.collection("chats").doc(activeChatId).delete().then(() => {
+        closeDeleteChatModalDirect();
+        showToast("تم حذف المحادثة للطرفين");
+        goHome();
+      });
+    });
+  } else if (mode === 'mine') {
+    db.collection("chats").doc(activeChatId).set({
+      [`deletedFor_${currentUser.uid}`]: true
+    }, { merge: true }).then(() => {
+      closeDeleteChatModalDirect();
+      showToast("تم حذف المحادثة من طرفك فقط");
+      goHome();
+    });
+  }
+}
+
+function toggleBlockUser() {
+  if (!currentChatOtherUserId || !currentUser) return;
+  const myDocRef = db.collection("users").doc(currentUser.uid);
+
+  myDocRef.get().then(doc => {
+    const blockedMap = doc.data().blockedUsers || {};
+    const isBlocked = !!blockedMap[currentChatOtherUserId];
+
+    if (isBlocked) {
+      delete blockedMap[currentChatOtherUserId];
+      myDocRef.set({ blockedUsers: blockedMap }, { merge: true }).then(() => {
+        showToast("تم إلغاء حظر المستخدم");
+        updateBlockBtnUI(false);
+      });
+    } else {
+      blockedMap[currentChatOtherUserId] = true;
+      myDocRef.set({ blockedUsers: blockedMap }, { merge: true }).then(() => {
+        showToast("تم حظر المستخدم 🚫");
+        updateBlockBtnUI(true);
+      });
+    }
+  });
+}
+
+function updateBlockBtnUI(isBlocked) {
+  const btn = document.getElementById("blockToggleBtn");
+  if (isBlocked) {
+    btn.textContent = "إلغاء الحظر 🟢";
+    btn.classList.remove("danger-btn");
+  } else {
+    btn.textContent = "حظر 🚫";
+    btn.classList.add("danger-btn");
+  }
 }
 
 function uploadAvatarLive(e) {
@@ -1315,6 +1468,15 @@ function openUserProfileDirect(u) {
   currentChatOtherUserId = u.id;
   const isDevUser = (u.username.toLowerCase() === "ali" || u.email === "anldheb429@gmail.com");
   
+  // التحقق هل أنا حاظره
+  db.collection("users").doc(currentUser.uid).get().then(myDoc => {
+    const blockedMap = myDoc.data().blockedUsers || {};
+    updateBlockBtnUI(!!blockedMap[u.id]);
+  });
+
+  // التحقق هل هو حاطرني
+  const hasBlockedMe = u.blockedUsers && u.blockedUsers[currentUser.uid];
+
   const nameEl = document.getElementById("otherHeaderName");
   nameEl.innerHTML = `<span>${u.displayName || "مستخدم"}</span>` + (isDevUser ? `<span class="verified-badge" title="حساب موثق للمطور"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
 
@@ -1322,7 +1484,7 @@ function openUserProfileDirect(u) {
   
   const bio = u.bio || "";
   const bioRow = document.getElementById("otherBioRow");
-  if (bio.trim() !== "") {
+  if (bio.trim() !== "" && !hasBlockedMe) {
     document.getElementById("otherBioDisplay").textContent = bio;
     bioRow.classList.remove("hidden");
   } else {
@@ -1331,7 +1493,11 @@ function openUserProfileDirect(u) {
 
   const statusDot = document.getElementById("otherStatusDot");
   const statusText = document.getElementById("otherHeaderStatus");
-  if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
+  
+  if (hasBlockedMe) {
+    statusDot.classList.add("offline");
+    statusText.textContent = "تم حظرك 🚫";
+  } else if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
     statusDot.classList.remove("offline");
     statusText.textContent = "متصل الآن";
   } else {
@@ -1342,7 +1508,7 @@ function openUserProfileDirect(u) {
   const avatarBox = document.getElementById("otherAvatarImg");
   const avatarText = document.getElementById("otherAvatarText");
 
-  if (u.avatarUrl) {
+  if (u.avatarUrl && !hasBlockedMe) {
     avatarBox.src = u.avatarUrl;
     avatarBox.classList.remove("hidden");
     avatarText.classList.add("hidden");
@@ -1392,7 +1558,6 @@ function startChat(u) {
   });
 }
 
-// مؤشر الكتابة الحية (Typing Status)
 function handleTypingInput() {
   if (!activeChatId || !currentUser) return;
   db.collection("chats").doc(activeChatId).set({
@@ -1426,15 +1591,24 @@ function openChatRoom(otherUserId) {
       const u = doc.data();
       const isDevUser = (u.username.toLowerCase() === "ali" || u.email === "anldheb429@gmail.com");
       
+      const hasBlockedMe = u.blockedUsers && u.blockedUsers[currentUser.uid];
+
       const titleEl = document.getElementById("chatTitle");
       titleEl.innerHTML = `<span>${u.displayName || "مستخدم"}</span>` + (isDevUser ? `<span class="verified-badge"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
 
       const sub = document.getElementById("chatSub");
       const avatarBox = document.getElementById("chatAvatar");
-      if (u.avatarUrl) avatarBox.innerHTML = `<img src="${u.avatarUrl}">`;
-      else avatarBox.innerHTML = `<svg style="width:20px;height:20px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
 
-      if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
+      if (u.avatarUrl && !hasBlockedMe) {
+        avatarBox.innerHTML = `<img src="${u.avatarUrl}">`;
+      } else {
+        avatarBox.innerHTML = `<svg style="width:20px;height:20px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+      }
+
+      if (hasBlockedMe) {
+        sub.textContent = "تم حظرك 🚫";
+        sub.style.color = "var(--error-color)";
+      } else if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
         sub.textContent = "متصل الآن";
         sub.style.color = "#4ade80";
       } else {
@@ -1444,7 +1618,6 @@ function openChatRoom(otherUserId) {
     }
   });
 
-  // الاستماع لحالة الكتابة اللحظية
   typingUnsubscribe = db.collection("chats").doc(activeChatId).onSnapshot(doc => {
     if (doc.exists) {
       const data = doc.data();
@@ -1691,8 +1864,23 @@ function loadChats() {
     }
 
     let chatDocsList = [];
-    snap.forEach(doc => chatDocsList.push({ id: doc.id, data: doc.data() }));
+    snap.forEach(doc => {
+      const data = doc.data();
+      if (!data[`deletedFor_${currentUser.uid}`]) {
+        chatDocsList.push({ id: doc.id, data: data });
+      }
+    });
+
     chatDocsList.sort((a, b) => (b.data.updatedAt || 0) - (a.data.updatedAt || 0));
+
+    if (chatDocsList.length === 0) {
+      container.innerHTML = `
+        <div class="empty-chats">
+          <div class="empty-chats-icon"><svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:currentColor;"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div>
+          <div style="font-weight: 600; font-size:16px; margin-bottom: 6px; color: var(--babylon-gold);">لا توجد محادثات في بابل بعد</div>
+        </div>`;
+      return;
+    }
 
     if (container.querySelector('.empty-chats')) container.innerHTML = "";
 
@@ -1713,6 +1901,7 @@ function loadChats() {
         if (!userDoc.exists) return;
         const u = userDoc.data();
         const isDevUser = (u.username.toLowerCase() === "ali" || u.email === "anldheb429@gmail.com");
+        const hasBlockedMe = u.blockedUsers && u.blockedUsers[currentUser.uid];
 
         db.collection("chats").doc(chatId).collection("messages").orderBy("createdAt", "desc").limit(1).get().then(msgSnap => {
           let lastMsgText = "لا توجد رسائل بعد";
@@ -1738,7 +1927,7 @@ function loadChats() {
             let unreadCount = unReadSnap.size;
 
             existingItem.innerHTML = `
-              <div class="avatar" onclick="event.stopPropagation(); openUserProfileDirectFromId('${otherId}')">${u.avatarUrl ? `<img src="${u.avatarUrl}">` : `<svg style="width:24px;height:24px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`}</div>
+              <div class="avatar" onclick="event.stopPropagation(); openUserProfileDirectFromId('${otherId}')">${(u.avatarUrl && !hasBlockedMe) ? `<img src="${u.avatarUrl}">` : `<svg style="width:24px;height:24px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`}</div>
               <div class="chat-item-info" onclick="activeChatId='${chatId}'; openChatRoom('${otherId}')">
                 <div class="chat-item-header-row">
                   <div class="chat-item-name" onclick="event.stopPropagation(); openUserProfileDirectFromId('${otherId}')">
