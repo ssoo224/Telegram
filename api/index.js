@@ -1,50 +1,45 @@
 const admin = require('firebase-admin');
 
 if (!admin.apps.length) {
-  let serviceAccount;
-  try {
-    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-  } catch (e) {
-    serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
-  }
-
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+    })
   });
 }
 
-const db = admin.firestore();
-
-export default async function handler(req, res) {
-  if (req.method === 'GET') {
-    return res.status(200).json({ status: "Babylon Chat Notification Server is Running! 🚀" });
-  }
-
+module.exports = async (req, res) => {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).send('Method Not Allowed');
   }
 
   const { recipientId, senderName, messageText } = req.body;
 
   try {
-    const userDoc = await db.collection('users').doc(recipientId).get();
-    if (!userDoc.exists || !userDoc.data().fcmToken) {
-      return res.status(404).json({ error: 'Token not found' });
+    const userDoc = await admin.firestore().collection('users').doc(recipientId).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: 'User not found' });
     }
 
     const fcmToken = userDoc.data().fcmToken;
+    if (!fcmToken) {
+      return res.status(200).json({ message: 'No FCM token for user' });
+    }
 
-    const message = {
+    // إرسال إشعار واحد ذو صياغة واضحة
+    await admin.messaging().send({
       token: fcmToken,
       notification: {
-        title: senderName || "رسالة جديدة",
-        body: messageText || "أرسل لك رسالة جديدة"
+        title: senderName,
+        body: messageText
       }
-    };
+    });
 
-    await admin.messaging().send(message);
     return res.status(200).json({ success: true });
   } catch (error) {
+    console.error('Error sending notification:', error);
     return res.status(500).json({ error: error.message });
   }
-}
+};
