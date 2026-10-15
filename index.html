@@ -342,9 +342,10 @@ body {
 .profile-large-avatar {
   width: 112px; height: 112px; border-radius: 50%; background: var(--babylon-surface-card);
   color: var(--babylon-gold); display: flex; align-items: center; justify-content: center;
-  font-size: 44px; font-weight: bold; object-fit: cover; border: 4px solid var(--babylon-gold);
+  font-size: 44px; font-weight: bold; overflow: hidden; border: 4px solid var(--babylon-gold);
   box-shadow: 0 0 25px rgba(212, 175, 55, 0.3); margin-bottom: 10px;
 }
+.profile-large-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .profile-large-avatar svg { width: 48px; height: 48px; fill: currentColor; }
 
 .profile-display-name {
@@ -588,7 +589,7 @@ body {
         <button class="icon-btn" onclick="goHome()" title="الرجوع">
           <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
         </button>
-        <input id="searchInput" class="babylon-input" placeholder="ابحث باسم المستخدم..." oninput="searchUsers()">
+        <input id="searchInput" class="babylon-input" placeholder="ابحث باسم المستخدم (مثال: ali)..." oninput="searchUsers()">
       </div>
       <div id="searchResults" class="chat-list"></div>
     </div>
@@ -1051,6 +1052,7 @@ auth.onAuthStateChanged(user => {
     if (user.email === "anldheb429@gmail.com") {
       db.collection("users").doc(user.uid).set({
         username: "ALi",
+        usernameLower: "ali",
         displayName: "ALi"
       }, { merge: true });
     }
@@ -1103,7 +1105,7 @@ function updateProfileUI(u) {
   const bio = u.bio || "";
 
   const nameContainer = document.getElementById("pHeaderName");
-  const isDev = (currentUser.email === "anldheb429@gmail.com" || username === "ALi");
+  const isDev = (currentUser.email === "anldheb429@gmail.com" || username.toLowerCase() === "ali");
   
   nameContainer.innerHTML = `<span>${displayName}</span>` + (isDev ? `<span class="verified-badge" title="حساب موثق للمطور"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
 
@@ -1172,7 +1174,7 @@ function saveProfileChanges() {
 
   showToast("جاري حفظ التغيرات...");
 
-  db.collection("users").where("username", "==", newUsername).get().then(snap => {
+  db.collection("users").where("usernameLower", "==", newUsername.toLowerCase()).get().then(snap => {
     let taken = false;
     snap.forEach(doc => { if (doc.id !== currentUser.uid) taken = true; });
 
@@ -1184,6 +1186,7 @@ function saveProfileChanges() {
     db.collection("users").doc(currentUser.uid).set({
       displayName: newName,
       username: newUsername,
+      usernameLower: newUsername.toLowerCase(),
       bio: newBio
     }, { merge: true }).then(() => {
       closeEditModalDirect();
@@ -1224,7 +1227,7 @@ function registerUser() {
 
   showToast("جاري إنشاء الحساب...");
 
-  db.collection("users").where("username", "==", username).get().then(snap => {
+  db.collection("users").where("usernameLower", "==", username.toLowerCase()).get().then(snap => {
     if (!snap.empty && email !== "anldheb429@gmail.com") {
       showFieldError("regUserError", "اسم المستخدم مستخدم بالفعل!");
       return;
@@ -1235,6 +1238,7 @@ function registerUser() {
         id: cred.user.uid,
         displayName: (email === "anldheb429@gmail.com") ? "ALi" : name,
         username: (email === "anldheb429@gmail.com") ? "ALi" : username,
+        usernameLower: (email === "anldheb429@gmail.com") ? "ali" : username.toLowerCase(),
         email: email,
         bio: "",
         avatarUrl: "",
@@ -1341,10 +1345,11 @@ function openNotificationSettings() {
   showView('notificationSettingsView');
 }
 
+/* معالجة فائقة الدقة لقص وتوسيط الصورة الشخصية (Cropping & Centering) بجودة عالية */
 function uploadAvatarLive(e) {
   const file = e.target.files[0];
   if (!file || !currentUser) return;
-  showToast("جاري معالجة ورفع الصورة...");
+  showToast("جاري معالجة ورفع الصورة بدقة عالية...");
 
   const reader = new FileReader();
   reader.onload = function(evt) {
@@ -1353,15 +1358,31 @@ function uploadAvatarLive(e) {
     img.onload = function() {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      canvas.width = 180;
-      canvas.height = 180;
-      ctx.drawImage(img, 0, 0, 180, 180);
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      const size = 300; // مقاس عالي الجودة
+      canvas.width = size;
+      canvas.height = size;
+
+      let sWidth = img.width;
+      let sHeight = img.height;
+      let startX = 0;
+      let startY = 0;
+
+      // قص الصورة بشكل مربع ومتركز احترافياً (Cover)
+      if (sWidth > sHeight) {
+        startX = (sWidth - sHeight) / 2;
+        sWidth = sHeight;
+      } else {
+        startY = (sHeight - sWidth) / 2;
+        sHeight = sWidth;
+      }
+
+      ctx.drawImage(img, startX, startY, sWidth, sHeight, 0, 0, size, size);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
 
       db.collection("users").doc(currentUser.uid).set({ avatarUrl: compressedDataUrl }, { merge: true }).then(() => {
         currentUserData.avatarUrl = compressedDataUrl;
         updateProfileUI(currentUserData);
-        showToast("تم تحديث الصورة الشخصية بنجاح!");
+        showToast("تم تحديث صورتك الشخصية بضبط مثالي ✨");
       });
     };
   };
@@ -1372,15 +1393,15 @@ function searchUsers() {
   const q = document.getElementById("searchInput").value.trim().toLowerCase();
   const res = document.getElementById("searchResults");
   res.innerHTML = "";
-  if (q.length < 3) return;
+  if (q.length < 1) return;
 
-  db.collection("users").where("username", ">=", q).where("username", "<=", q + "\uf8ff")
+  db.collection("users").where("usernameLower", ">=", q).where("usernameLower", "<=", q + "\uf8ff")
     .get().then(snap => {
       snap.forEach(doc => {
         const u = doc.data();
         if (u.id === currentUser.uid) return;
 
-        const isDevUser = (u.username === "ALi" || u.email === "anldheb429@gmail.com");
+        const isDevUser = (u.username.toLowerCase() === "ali" || u.email === "anldheb429@gmail.com");
         const div = document.createElement("div");
         div.className = "chat-item";
         div.innerHTML = `
@@ -1408,7 +1429,7 @@ function startChatFromSearch(userId) {
 
 function openUserProfileDirect(u) {
   currentChatOtherUserId = u.id;
-  const isDevUser = (u.username === "ALi" || u.email === "anldheb429@gmail.com");
+  const isDevUser = (u.username.toLowerCase() === "ali" || u.email === "anldheb429@gmail.com");
   
   const nameEl = document.getElementById("otherHeaderName");
   nameEl.innerHTML = `<span>${u.displayName || "مستخدم"}</span>` + (isDevUser ? `<span class="verified-badge" title="حساب موثق للمطور"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
@@ -1497,7 +1518,7 @@ function openChatRoom(otherUserId) {
   userUnsubscribe = db.collection("users").doc(otherUserId).onSnapshot(doc => {
     if (doc.exists) {
       const u = doc.data();
-      const isDevUser = (u.username === "ALi" || u.email === "anldheb429@gmail.com");
+      const isDevUser = (u.username.toLowerCase() === "ali" || u.email === "anldheb429@gmail.com");
       
       const titleEl = document.getElementById("chatTitle");
       titleEl.innerHTML = `<span>${u.displayName || "مستخدم"}</span>` + (isDevUser ? `<span class="verified-badge"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
@@ -1589,7 +1610,7 @@ function sendImageMessage(e) {
       canvas.width = w;
       canvas.height = h;
       ctx.drawImage(img, 0, 0, w, h);
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
       db.collection("chats").doc(activeChatId).collection("messages").add({
         senderId: currentUser.uid,
@@ -1773,7 +1794,7 @@ function loadChats() {
       db.collection("users").doc(otherId).get().then(userDoc => {
         if (!userDoc.exists) return;
         const u = userDoc.data();
-        const isDevUser = (u.username === "ALi" || u.email === "anldheb429@gmail.com");
+        const isDevUser = (u.username.toLowerCase() === "ali" || u.email === "anldheb429@gmail.com");
 
         db.collection("chats").doc(chatId).collection("messages").orderBy("createdAt", "desc").limit(1).get().then(msgSnap => {
           let lastMsgText = "لا توجد رسائل بعد";
