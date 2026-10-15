@@ -701,7 +701,7 @@ body {
         <input id="regPassword" class="babylon-input" type="password" placeholder="6 أحرف على الأقل">
         <span id="regPassError" class="field-error hidden"></span>
       </div>
-      <button type="button" class="babylon-btn" onclick="registerUser()">تسجيل حساب جديد</button>
+      <button type="button" id="regSubmitBtn" class="babylon-btn">تسجيل حساب جديد</button>
     </div>
   </section>
 
@@ -913,6 +913,17 @@ if ('serviceWorker' in navigator) {
     .then(reg => console.log('SW Registered', reg))
     .catch(err => console.log('SW Fail', err));
 }
+
+// ربط زر إنشاء الحساب برمجياً بشكل مباشر لضمان الاستجابة التامة
+document.addEventListener("DOMContentLoaded", () => {
+  const regBtn = document.getElementById("regSubmitBtn");
+  if (regBtn) {
+    regBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      registerUser();
+    });
+  }
+});
 
 function requestNotificationPermission() {
   if (!("Notification" in window)) {
