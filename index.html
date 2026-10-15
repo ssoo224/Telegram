@@ -22,9 +22,9 @@
   --babylon-blue: #1b2a4a;
   --babylon-dark: #0f172a;
   --babylon-surface: #17212b;
-  --babylon-surface-card: #202b36;
+  --babylon-surface-card: #1e293b;
   --babylon-surface-hover: #232e3c;
-  --babylon-border: #232e3c;
+  --babylon-border: #2e3b4e;
   --text-main: #f8fafc;
   --text-muted: #8696a7;
   --error-color: #f87171;
@@ -300,41 +300,49 @@ body {
 .unread-badge { background: #2b5278; color: white; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-right: 6px; }
 
 /* ---------------------------------------------------- */
-/* تصميم شاشة البروفايل الخرافي الجديد (تليجرام بابل) */
+/* البروفايل المطور المزود بخلفية جذابة ودون فراغات */
 /* ---------------------------------------------------- */
 .profile-view {
   flex: 1;
   overflow-y: auto;
-  background: #0f172a;
-  padding: 16px;
+  background: #0b1120;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+}
+
+.profile-cover-banner {
+  height: 120px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+  position: relative;
+  width: 100%;
 }
 
 .profile-header-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 10px 10px;
+  padding: 0 16px 16px;
   text-align: center;
+  margin-top: -60px;
+  position: relative;
+  z-index: 2;
 }
 
 .profile-large-avatar {
-  width: 110px;
-  height: 110px;
+  width: 118px;
+  height: 118px;
   border-radius: 50%;
   background: var(--babylon-surface-card);
   color: var(--babylon-gold);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 42px;
+  font-size: 46px;
   font-weight: bold;
   object-fit: cover;
-  border: 3px solid #283747;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  margin-bottom: 12px;
+  border: 4px solid #0b1120;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
+  margin-bottom: 10px;
 }
 
 .profile-display-name {
@@ -347,15 +355,14 @@ body {
 .profile-status-badge {
   font-size: 13px;
   color: #4ade80;
-  background: rgba(74, 222, 128, 0.1);
-  padding: 3px 12px;
+  background: rgba(74, 222, 128, 0.12);
+  padding: 4px 14px;
   border-radius: 20px;
   font-weight: 600;
   display: inline-block;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
-/* الأزرار الثلاثة السريعة */
 .profile-action-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -375,29 +382,19 @@ body {
   gap: 6px;
   color: #ffffff;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: transform 0.15s;
 }
+.profile-action-btn:active { transform: scale(0.96); }
 
-.profile-action-btn:hover {
-  background: var(--babylon-surface-hover);
-}
+.profile-action-btn .btn-icon { font-size: 22px; }
+.profile-action-btn .btn-text { font-size: 12px; font-weight: 600; color: #e2e8f0; }
 
-.profile-action-btn .btn-icon {
-  font-size: 22px;
-}
-
-.profile-action-btn .btn-text {
-  font-size: 12px;
-  font-weight: 600;
-  color: #e2e8f0;
-}
-
-/* بطاقة المعلومات (البايو، اليوزر، الايميل) */
 .profile-info-card {
   background: var(--babylon-surface-card);
-  border-radius: 18px;
+  border-radius: 20px;
   border: 1px solid var(--babylon-border);
   padding: 6px 16px;
+  margin: 0 16px 20px;
   display: flex;
   flex-direction: column;
 }
@@ -408,12 +405,10 @@ body {
   text-align: right;
 }
 
-.info-item:last-child {
-  border-bottom: none;
-}
+.info-item:last-child { border-bottom: none; }
 
 .info-item .val {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: #ffffff;
   margin-bottom: 2px;
@@ -832,8 +827,10 @@ body {
       <div id="searchResults" class="chat-list"></div>
     </div>
 
-    <!-- شاشة البروفايل الشخصي (التصميم الجديد المماثل للصورة) -->
+    <!-- شاشة البروفايل الشخصي (التصميم الأنيق المطور) -->
     <div id="profileView" class="profile-view hidden">
+      <div class="profile-cover-banner"></div>
+      
       <div class="profile-header-card">
         <div style="position:relative;">
           <div id="pAvatarText" class="profile-large-avatar">🏛</div>
@@ -843,7 +840,6 @@ body {
         <div id="pHeaderName" class="profile-display-name">علي</div>
         <div id="pHeaderStatus" class="profile-status-badge">متصل الآن</div>
 
-        <!-- الأزرار الثلاثة التفاعلية -->
         <div class="profile-action-grid">
           <div class="profile-action-btn" onclick="openSettings()">
             <span class="btn-icon">⚙️</span>
@@ -861,12 +857,7 @@ body {
         </div>
       </div>
 
-      <!-- بطاقة التفاصيل (البريد، البايو، اليوزر) -->
       <div class="profile-info-card">
-        <div class="info-item">
-          <div id="pEmailDisplay" class="val">email@domain.com</div>
-          <div class="lbl">البريد الإلكتروني الأساسي</div>
-        </div>
         <div class="info-item">
           <div id="pBioDisplay" class="val">لا توجد نبذة تعريفية بعد</div>
           <div class="lbl">النبذة التعريفية (البايو)</div>
@@ -875,15 +866,17 @@ body {
           <div id="pHeaderUser" class="val">@username</div>
           <div class="lbl">اسم المستخدم</div>
         </div>
+        <div class="info-item">
+          <div id="pEmailDisplay" class="val">email@domain.com</div>
+          <div class="lbl">البريد الإلكتروني الأساسي (ظاهر لك فقط)</div>
+        </div>
       </div>
     </div>
 
-    <!-- شاشة عرض بروفايل مستخدم آخر -->
+    <!-- شاشة عرض بروفايل مستخدم آخر (محمية الخصوصية) -->
     <div id="otherUserProfileView" class="profile-view hidden">
-      <div style="display:flex; justify-content:space-between; width:100%; padding:4px 0;">
-        <button class="icon-btn" onclick="goBackFromOtherProfile()">‹</button>
-        <span style="font-weight:700; color:var(--babylon-gold); font-size:16px; align-self:center;">الملف الشخصي</span>
-        <div style="width:40px;"></div>
+      <div class="profile-cover-banner">
+        <button class="icon-btn" style="position:absolute; right:12px; top:12px; color:white; background:rgba(0,0,0,0.4);" onclick="goBackFromOtherProfile()">‹</button>
       </div>
 
       <div class="profile-header-card">
@@ -893,7 +886,7 @@ body {
         <div id="otherHeaderName" class="profile-display-name">مستخدم</div>
         <div id="otherHeaderStatus" class="profile-status-badge" style="color:var(--text-muted); background:rgba(255,255,255,0.05);">غير متصل</div>
 
-        <div class="profile-action-grid" style="grid-template-columns: 1fr; margin-top:8px;">
+        <div class="profile-action-grid" style="grid-template-columns: 1fr; margin-top:4px;">
           <div class="profile-action-btn" onclick="startChatFromProfile()" style="background:linear-gradient(135deg, var(--babylon-gold), #b38f27); color:var(--babylon-dark);">
             <span class="btn-icon">💬</span>
             <span class="btn-text" style="color:var(--babylon-dark); font-size:14px; font-weight:700;">مراسلة الآن</span>
@@ -909,10 +902,6 @@ body {
         <div class="info-item">
           <div id="otherHeaderUser" class="val">@username</div>
           <div class="lbl">اسم المستخدم</div>
-        </div>
-        <div class="info-item">
-          <div id="otherEmailDisplay" class="val">مخفي</div>
-          <div class="lbl">البريد الإلكتروني</div>
         </div>
       </div>
     </div>
@@ -1064,7 +1053,7 @@ body {
 
 </div>
 
-<!-- نافذة تعديل بيانات الملف الشخصي (الاسم، اليوزر، البايو) -->
+<!-- نافذة تعديل بيانات الملف الشخصي -->
 <div id="editProfileModal" class="msg-actions-modal hidden" onclick="closeEditModal(event)">
   <div class="msg-actions-card" style="width:320px; padding:20px;">
     <h3 style="color:var(--babylon-gold); font-size:17px; margin-bottom:14px; text-align:right;">تعديل البيانات الشخصية</h3>
@@ -1608,13 +1597,12 @@ function openUserProfileDirect(u) {
   document.getElementById("otherHeaderName").textContent = u.displayName || "مستخدم";
   document.getElementById("otherHeaderUser").textContent = "@" + (u.username || "user");
   document.getElementById("otherBioDisplay").textContent = u.bio || "لا توجد نبذة تعريفية";
-  document.getElementById("otherEmailDisplay").textContent = u.email || "مخفي";
 
   const statusBadge = document.getElementById("otherHeaderStatus");
   if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
     statusBadge.textContent = "متصل الآن";
     statusBadge.style.color = "#4ade80";
-    statusBadge.style.background = "rgba(74, 222, 128, 0.1)";
+    statusBadge.style.background = "rgba(74, 222, 128, 0.12)";
   } else {
     statusBadge.textContent = "غير متصل";
     statusBadge.style.color = "var(--text-muted)";
