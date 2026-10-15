@@ -809,10 +809,6 @@ body {
           </div>
         </div>
       </div>
-
-      <div style="padding:20px;">
-        <button type="button" class="babylon-btn" style="background:transparent; border:1px solid var(--error-color); color:var(--error-color);" onclick="logout()">تسجيل الخروج</button>
-      </div>
     </div>
 
     <!-- شاشة الإعدادات العامة -->
@@ -837,6 +833,11 @@ body {
             </div>
             <button type="button" class="babylon-btn" style="width:auto; padding:8px 16px; font-size:13px; margin-top:0;" onclick="requestNotificationPermission()">تفعيل</button>
           </div>
+        </div>
+
+        <div class="profile-section-label">الحساب والتسجيل</div>
+        <div style="padding: 10px 16px 30px;">
+          <button type="button" class="babylon-btn" style="background:transparent; border:1px solid var(--error-color); color:var(--error-color);" onclick="logout()">تسجيل الخروج</button>
         </div>
       </div>
     </div>
@@ -1117,7 +1118,6 @@ auth.onAuthStateChanged(user => {
     });
 
     if (!isAppInitialized) {
-      isAppInitialized = true;
       loadUserDataAndEnter(user.uid);
     }
   } else {
@@ -1137,7 +1137,12 @@ function loadUserDataAndEnter(uid) {
     if (doc.exists) {
       currentUserData = doc.data();
       updateProfileUI(currentUserData);
-      enterApp();
+      
+      // الدخول للتطبيق مرة واحدة فقط دون تكرار
+      if (!isAppInitialized) {
+        isAppInitialized = true;
+        enterApp();
+      }
     }
   });
 }
@@ -1767,7 +1772,7 @@ function sendMessage(e) {
   }
 }
 
-// دالة جلب وعرض المحادثات مع منع الوميض وإعادة التحميل المزعج
+// دالة جلب وعرض المحادثات مع حل مشكلة الرسالة الترحيبية المزيفة
 function loadChats() {
   const container = document.getElementById("chatList");
   
@@ -1792,21 +1797,14 @@ function loadChats() {
         chatDocsList.push({ id: doc.id, data: doc.data() });
       });
 
-      // ترتيب المحادثات حسب التحديث الأخير
       chatDocsList.sort((a, b) => (b.data.updatedAt || 0) - (a.data.updatedAt || 0));
 
-      // إذا كانت القائمة فارغة تماماً اعرض الرسالة الترحيبية
-      if (chatDocsList.length === 0) {
-        container.innerHTML = `
-          <div class="empty-chats">
-            <div class="empty-chats-icon">🏛</div>
-            <div style="font-weight: 600; font-size:16px; margin-bottom: 6px; color: var(--babylon-gold);">لا توجد محادثات في بابل بعد</div>
-            <div style="font-size: 13px; color: var(--text-muted);">اضغط على أيقونة البحث (🔍) في الأعلى وابحث عن مستخدم بيوزر صالح</div>
-          </div>`;
-        return;
+      // تنظيف الرسالة الترحيبية الفارغة إذا كانت توجد محادثات
+      const emptyElement = container.querySelector('.empty-chats');
+      if (emptyElement) {
+        container.innerHTML = "";
       }
 
-      // بناء عناصر القائمة دفعة واحدة دون تفريغ العنصر بشكل كامل لمنع الوميض
       chatDocsList.forEach(item => {
         const chatData = item.data;
         const chatId = item.id;
@@ -1826,7 +1824,6 @@ function loadChats() {
           container.appendChild(existingItem);
         }
 
-        // جلب تفاصيل المستخدم والرسالة الأخيرة للمحادثة بشكل هادئ وثابت
         db.collection("users").doc(otherId).get().then(userDoc => {
           if (!userDoc.exists) return;
           const u = userDoc.data();
