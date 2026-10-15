@@ -1130,7 +1130,6 @@ auth.onAuthStateChanged(user => {
   }
 });
 
-// الحفاظ الكامل الدائم على الاسم واليوزر بدون أي تعديل أو مسح
 function loadUserDataAndEnter(uid) {
   if (userDocUnsubscribe) userDocUnsubscribe();
   
@@ -1768,7 +1767,7 @@ function sendMessage(e) {
   }
 }
 
-// جلب المحادثات بدون التسبب في خطأ الإندكس المفقود في Firestore
+// دالة جلب وعرض المحادثات مع منع الوميض وإعادة التحميل المزعج
 function loadChats() {
   const container = document.getElementById("chatList");
   
@@ -1793,21 +1792,41 @@ function loadChats() {
         chatDocsList.push({ id: doc.id, data: doc.data() });
       });
 
-      // ترتيب المحادثات حسب التحديث الأخير برمجياً
+      // ترتيب المحادثات حسب التحديث الأخير
       chatDocsList.sort((a, b) => (b.data.updatedAt || 0) - (a.data.updatedAt || 0));
 
-      container.innerHTML = "";
-      const processedUsers = new Set();
+      // إذا كانت القائمة فارغة تماماً اعرض الرسالة الترحيبية
+      if (chatDocsList.length === 0) {
+        container.innerHTML = `
+          <div class="empty-chats">
+            <div class="empty-chats-icon">🏛</div>
+            <div style="font-weight: 600; font-size:16px; margin-bottom: 6px; color: var(--babylon-gold);">لا توجد محادثات في بابل بعد</div>
+            <div style="font-size: 13px; color: var(--text-muted);">اضغط على أيقونة البحث (🔍) في الأعلى وابحث عن مستخدم بيوزر صالح</div>
+          </div>`;
+        return;
+      }
 
+      // بناء عناصر القائمة دفعة واحدة دون تفريغ العنصر بشكل كامل لمنع الوميض
       chatDocsList.forEach(item => {
         const chatData = item.data;
         const chatId = item.id;
         const participants = chatData.participants || [];
         const otherId = participants.find(id => id !== currentUser.uid);
-        
-        if (!otherId || processedUsers.has(otherId)) return;
-        processedUsers.add(otherId);
+        if (!otherId) return;
 
+        let existingItem = document.getElementById("chat_item_" + chatId);
+        if (!existingItem) {
+          existingItem = document.createElement("div");
+          existingItem.id = "chat_item_" + chatId;
+          existingItem.className = "chat-item";
+          existingItem.onclick = () => {
+            activeChatId = chatId;
+            openChatRoom(otherId);
+          };
+          container.appendChild(existingItem);
+        }
+
+        // جلب تفاصيل المستخدم والرسالة الأخيرة للمحادثة بشكل هادئ وثابت
         db.collection("users").doc(otherId).get().then(userDoc => {
           if (!userDoc.exists) return;
           const u = userDoc.data();
@@ -1815,7 +1834,7 @@ function loadChats() {
           db.collection("chats").doc(chatId).collection("messages")
             .orderBy("createdAt", "desc")
             .limit(1)
-            .onSnapshot(msgSnap => {
+            .get().then(msgSnap => {
               let lastMsgText = "لا توجد رسائل بعد";
               let lastMsgTime = "";
 
@@ -1823,7 +1842,6 @@ function loadChats() {
                 const m = msgSnap.docs[0].data();
                 const isMine = (m.senderId === currentUser.uid);
                 const prefix = isMine ? "أنت: " : "";
-                
                 lastMsgText = prefix + (m.audioUrl ? "🎤 بصمة صوتية" : (m.text || ""));
                 
                 let tStr = new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
@@ -1838,16 +1856,8 @@ function loadChats() {
               db.collection("chats").doc(chatId).collection("messages")
                 .where("senderId", "==", otherId)
                 .where("read", "==", false)
-                .onSnapshot(unReadSnap => {
+                .get().then(unReadSnap => {
                   let unreadCount = unReadSnap.size;
-
-                  let existingItem = document.getElementById("chat_item_" + chatId);
-                  if (!existingItem) {
-                    existingItem = document.createElement("div");
-                    existingItem.id = "chat_item_" + chatId;
-                    existingItem.className = "chat-item";
-                    container.appendChild(existingItem);
-                  }
 
                   existingItem.innerHTML = `
                     <div class="avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}">` : (u.displayName||"?").charAt(0).toUpperCase()}</div>
@@ -1861,11 +1871,6 @@ function loadChats() {
                         ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
                       </div>
                     </div>`;
-
-                  existingItem.onclick = () => {
-                    activeChatId = chatId;
-                    openChatRoom(otherId);
-                  };
                 });
             });
         });
