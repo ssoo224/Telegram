@@ -22,6 +22,7 @@
   --babylon-blue: #1b2a4a;
   --babylon-dark: #0f172a;
   --babylon-surface: #17212b;
+  --babylon-surface-card: #202b36;
   --babylon-surface-hover: #232e3c;
   --babylon-border: #232e3c;
   --text-main: #f8fafc;
@@ -298,73 +299,131 @@ body {
 .chat-item-sub { font-size: 13.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 .unread-badge { background: #2b5278; color: white; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-right: 6px; }
 
+/* ---------------------------------------------------- */
+/* تصميم شاشة البروفايل الخرافي الجديد (تليجرام بابل) */
+/* ---------------------------------------------------- */
 .profile-view {
   flex: 1;
   overflow-y: auto;
-  background: var(--babylon-dark);
+  background: #0f172a;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
-.babylon-profile-header {
-  background: var(--babylon-surface);
-  padding: 24px 16px;
+
+.profile-header-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 10px 10px;
   text-align: center;
-  border-bottom: 1px solid var(--babylon-border);
-  position: relative;
 }
-.profile-avatar-box {
-  position: relative;
-  width: 96px;
-  height: 96px;
-  margin: 0 auto 12px;
-}
-.profile-avatar-img {
-  width: 96px;
-  height: 96px;
+
+.profile-large-avatar {
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
-  background: var(--babylon-gold);
-  font-size: 34px;
-  color: var(--babylon-dark);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  object-fit: cover;
-  border: 3px solid var(--babylon-gold);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-}
-.camera-badge {
-  position: absolute;
-  bottom: 2px;
-  left: 2px;
-  background: var(--babylon-gold);
-  color: var(--babylon-dark);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border: 2px solid var(--babylon-surface);
-  font-size: 14px;
-}
-.profile-section-label {
-  padding: 16px 16px 6px;
-  font-size: 12px;
-  font-weight: 700;
+  background: var(--babylon-surface-card);
   color: var(--babylon-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  font-weight: bold;
+  object-fit: cover;
+  border: 3px solid #283747;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  margin-bottom: 12px;
+}
+
+.profile-display-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.profile-status-badge {
+  font-size: 13px;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+/* الأزرار الثلاثة السريعة */
+.profile-action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.profile-action-btn {
+  background: var(--babylon-surface-card);
+  border: 1px solid var(--babylon-border);
+  border-radius: 16px;
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.profile-action-btn:hover {
+  background: var(--babylon-surface-hover);
+}
+
+.profile-action-btn .btn-icon {
+  font-size: 22px;
+}
+
+.profile-action-btn .btn-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+/* بطاقة المعلومات (البايو، اليوزر، الايميل) */
+.profile-info-card {
+  background: var(--babylon-surface-card);
+  border-radius: 18px;
+  border: 1px solid var(--babylon-border);
+  padding: 6px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.info-item {
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   text-align: right;
 }
-.profile-settings-card {
-  background: var(--babylon-surface);
-  border-top: 1px solid var(--babylon-border);
-  border-bottom: 1px solid var(--babylon-border);
-  padding: 0 16px;
+
+.info-item:last-child {
+  border-bottom: none;
 }
-.profile-row {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--babylon-border);
-  text-align: right;
+
+.info-item .val {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 2px;
+  word-break: break-word;
 }
-.profile-row:last-child { border: none; }
+
+.info-item .lbl {
+  font-size: 12px;
+  color: var(--text-muted);
+}
 
 .settings-view {
   flex: 1;
@@ -542,7 +601,6 @@ body {
   font-size: 11px;
 }
 
-/* تنسيق مشغل الصوت والبصمة */
 .audio-player {
   display: flex;
   align-items: center;
@@ -621,15 +679,16 @@ body {
 .emoji-btn { font-size: 22px; cursor: pointer; }
 
 .msg-actions-card {
-  width: 260px;
+  width: 280px;
   background: var(--babylon-surface);
   border: 1px solid var(--babylon-border);
-  border-radius: 14px;
+  border-radius: 18px;
   overflow: hidden;
+  padding: 10px;
 }
 .msg-actions-card button {
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   background: transparent;
   border: none;
   color: white;
@@ -640,7 +699,9 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  border-radius: 8px;
 }
+.msg-actions-card button:last-child { border-bottom: none; }
 .msg-actions-card button.danger { color: var(--error-color); }
 
 .toast {
@@ -771,44 +832,87 @@ body {
       <div id="searchResults" class="chat-list"></div>
     </div>
 
-    <!-- شاشة الملف الشخصي -->
+    <!-- شاشة البروفايل الشخصي (التصميم الجديد المماثل للصورة) -->
     <div id="profileView" class="profile-view hidden">
-      <div class="babylon-profile-header">
-        <button class="icon-btn" style="position:absolute; right:12px; top:12px;" onclick="goHome()">‹</button>
-        
-        <div class="profile-avatar-box">
-          <div id="pAvatarText" class="profile-avatar-img">🏛</div>
-          <img id="pAvatarImg" class="profile-avatar-img hidden" src="" alt="Avatar">
-          <label for="avatarInput" class="camera-badge">📷</label>
+      <div class="profile-header-card">
+        <div style="position:relative;">
+          <div id="pAvatarText" class="profile-large-avatar">🏛</div>
+          <img id="pAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
+        </div>
+
+        <div id="pHeaderName" class="profile-display-name">علي</div>
+        <div id="pHeaderStatus" class="profile-status-badge">متصل الآن</div>
+
+        <!-- الأزرار الثلاثة التفاعلية -->
+        <div class="profile-action-grid">
+          <div class="profile-action-btn" onclick="openSettings()">
+            <span class="btn-icon">⚙️</span>
+            <span class="btn-text">الإعدادات</span>
+          </div>
+          <div class="profile-action-btn" onclick="openEditProfileModal()">
+            <span class="btn-icon">✏️</span>
+            <span class="btn-text">تعديل البيانات</span>
+          </div>
+          <label for="avatarInput" class="profile-action-btn">
+            <span class="btn-icon">📷</span>
+            <span class="btn-text">تعيين صورة</span>
+          </label>
           <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="uploadAvatarLive(event)">
         </div>
-
-        <h2 id="pHeaderName" style="font-size:18px; font-weight:600; color:var(--babylon-gold);">الاسم</h2>
-        <div id="pHeaderUser" style="font-size:13px; color:var(--text-muted); margin-top:2px;">@username</div>
       </div>
 
-      <div class="profile-section-label">معلومات الحساب</div>
-      <div class="profile-settings-card">
-        <div class="profile-row">
-          <div style="font-size:11px; color:var(--babylon-gold); margin-bottom:3px;">البريد الإلكتروني الأساسي</div>
-          <div id="pEmailDisplay" style="font-size:15px; color:#e2e8f0;">email@domain.com</div>
+      <!-- بطاقة التفاصيل (البريد، البايو، اليوزر) -->
+      <div class="profile-info-card">
+        <div class="info-item">
+          <div id="pEmailDisplay" class="val">email@domain.com</div>
+          <div class="lbl">البريد الإلكتروني الأساسي</div>
+        </div>
+        <div class="info-item">
+          <div id="pBioDisplay" class="val">لا توجد نبذة تعريفية بعد</div>
+          <div class="lbl">النبذة التعريفية (البايو)</div>
+        </div>
+        <div class="info-item">
+          <div id="pHeaderUser" class="val">@username</div>
+          <div class="lbl">اسم المستخدم</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- شاشة عرض بروفايل مستخدم آخر -->
+    <div id="otherUserProfileView" class="profile-view hidden">
+      <div style="display:flex; justify-content:space-between; width:100%; padding:4px 0;">
+        <button class="icon-btn" onclick="goBackFromOtherProfile()">‹</button>
+        <span style="font-weight:700; color:var(--babylon-gold); font-size:16px; align-self:center;">الملف الشخصي</span>
+        <div style="width:40px;"></div>
+      </div>
+
+      <div class="profile-header-card">
+        <div id="otherAvatarText" class="profile-large-avatar">🏛</div>
+        <img id="otherAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
+
+        <div id="otherHeaderName" class="profile-display-name">مستخدم</div>
+        <div id="otherHeaderStatus" class="profile-status-badge" style="color:var(--text-muted); background:rgba(255,255,255,0.05);">غير متصل</div>
+
+        <div class="profile-action-grid" style="grid-template-columns: 1fr; margin-top:8px;">
+          <div class="profile-action-btn" onclick="startChatFromProfile()" style="background:linear-gradient(135deg, var(--babylon-gold), #b38f27); color:var(--babylon-dark);">
+            <span class="btn-icon">💬</span>
+            <span class="btn-text" style="color:var(--babylon-dark); font-size:14px; font-weight:700;">مراسلة الآن</span>
+          </div>
         </div>
       </div>
 
-      <div class="profile-section-label">تعديل الملف الشخصي (تحديث تلقائي فوري)</div>
-      <div class="profile-settings-card">
-        <div class="profile-row">
-          <div class="input-group" style="margin-bottom:0;">
-            <label>اسم العرض</label>
-            <input id="pNameInput" class="babylon-input rtl" oninput="liveUpdateName(event)">
-          </div>
+      <div class="profile-info-card">
+        <div class="info-item">
+          <div id="otherBioDisplay" class="val">لا توجد نبذة تعريفية</div>
+          <div class="lbl">النبذة التعريفية (البايو)</div>
         </div>
-        <div class="profile-row">
-          <div class="input-group" style="margin-bottom:0;">
-            <label>اسم المستخدم (يبدأ بحرف، 5 أحرف فأكثر)</label>
-            <input id="pUsernameInput" class="babylon-input" oninput="liveUpdateUsername(event)">
-            <span id="usernameLiveError" class="field-error hidden"></span>
-          </div>
+        <div class="info-item">
+          <div id="otherHeaderUser" class="val">@username</div>
+          <div class="lbl">اسم المستخدم</div>
+        </div>
+        <div class="info-item">
+          <div id="otherEmailDisplay" class="val">مخفي</div>
+          <div class="lbl">البريد الإلكتروني</div>
         </div>
       </div>
     </div>
@@ -910,7 +1014,7 @@ body {
       <header class="telegram-chat-header">
         <button class="icon-btn" onclick="goHome()">‹</button>
         
-        <div class="telegram-user-info">
+        <div class="telegram-user-info" onclick="openCurrentChatUserProfile()">
           <div id="chatAvatar" class="telegram-avatar">؟</div>
           <div class="telegram-user-details">
             <div id="chatTitle" class="telegram-user-name">المحادثة</div>
@@ -960,6 +1064,34 @@ body {
 
 </div>
 
+<!-- نافذة تعديل بيانات الملف الشخصي (الاسم، اليوزر، البايو) -->
+<div id="editProfileModal" class="msg-actions-modal hidden" onclick="closeEditModal(event)">
+  <div class="msg-actions-card" style="width:320px; padding:20px;">
+    <h3 style="color:var(--babylon-gold); font-size:17px; margin-bottom:14px; text-align:right;">تعديل البيانات الشخصية</h3>
+    
+    <div class="input-group">
+      <label>اسم العرض</label>
+      <input id="modalNameInput" class="babylon-input rtl" placeholder="اسمك الكريم">
+    </div>
+
+    <div class="input-group">
+      <label>اسم المستخدم (@)</label>
+      <input id="modalUsernameInput" class="babylon-input" placeholder="username" oninput="validateUsernameInput(this)">
+      <span id="modalUserError" class="field-error hidden"></span>
+    </div>
+
+    <div class="input-group">
+      <label>النبذة التعريفية (البايو)</label>
+      <textarea id="modalBioInput" class="babylon-input rtl" style="height:70px; resize:none;" placeholder="اكتب نبذة عن نفسك..."></textarea>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <button type="button" class="babylon-btn" onclick="saveProfileChanges()">حفظ التغيرات</button>
+      <button type="button" class="babylon-btn" style="background:transparent; border:1px solid var(--text-muted); color:white;" onclick="closeEditModalDirect()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <div id="msgModal" class="msg-actions-modal hidden" onclick="closeMsgModal(event)">
   <div class="emoji-picker-bar">
     <span class="emoji-btn" onclick="addReaction('👍')">👍</span>
@@ -1000,6 +1132,7 @@ if (firebase.messaging.isSupported()) {
 let currentUser = null;
 let currentUserData = null;
 let activeChatId = null;
+let currentChatOtherUserId = null;
 let messagesUnsubscribe = null;
 let userUnsubscribe = null;
 let chatsListUnsubscribe = null;
@@ -1020,7 +1153,6 @@ let mediaRecorder = null;
 let audioChunks = [];
 let recordInterval = null;
 let recordSeconds = 0;
-let updateTimer = null;
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('firebase-messaging-sw.js')
@@ -1168,17 +1300,12 @@ function updateProfileUI(u) {
   const displayName = u.displayName || currentUser.email.split('@')[0];
   const username = u.username || "user" + currentUser.uid.substring(0, 5);
   const email = u.email || currentUser.email;
+  const bio = u.bio || "لا توجد نبذة تعريفية بعد";
 
-  if (document.activeElement !== document.getElementById("pNameInput")) {
-    document.getElementById("pNameInput").value = displayName;
-  }
-  if (document.activeElement !== document.getElementById("pUsernameInput")) {
-    document.getElementById("pUsernameInput").value = username;
-  }
-
-  document.getElementById("pEmailDisplay").textContent = email;
   document.getElementById("pHeaderName").textContent = displayName;
   document.getElementById("pHeaderUser").textContent = "@" + username;
+  document.getElementById("pEmailDisplay").textContent = email;
+  document.getElementById("pBioDisplay").textContent = bio;
 
   const avatarBox = document.getElementById("pAvatarImg");
   const avatarText = document.getElementById("pAvatarText");
@@ -1192,6 +1319,61 @@ function updateProfileUI(u) {
     avatarText.classList.remove("hidden");
     avatarBox.classList.add("hidden");
   }
+}
+
+function openEditProfileModal() {
+  if (!currentUserData) return;
+  document.getElementById("modalNameInput").value = currentUserData.displayName || "";
+  document.getElementById("modalUsernameInput").value = currentUserData.username || "";
+  document.getElementById("modalBioInput").value = currentUserData.bio || "";
+  document.getElementById("modalUserError").classList.add("hidden");
+  document.getElementById("editProfileModal").classList.remove("hidden");
+}
+
+function closeEditModal(e) {
+  if (e.target.id === "editProfileModal") {
+    document.getElementById("editProfileModal").classList.add("hidden");
+  }
+}
+
+function closeEditModalDirect() {
+  document.getElementById("editProfileModal").classList.add("hidden");
+}
+
+function saveProfileChanges() {
+  const newName = document.getElementById("modalNameInput").value.trim();
+  const newUsername = document.getElementById("modalUsernameInput").value.trim().toLowerCase();
+  const newBio = document.getElementById("modalBioInput").value.trim();
+
+  if (!newName) return showToast("الرجاء أدخل اسم العرض");
+
+  if (!isValidUsername(newUsername)) {
+    showFieldError("modalUserError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 5 أحرف فأكثر (أحرف، أرقام، _, .)");
+    return;
+  }
+
+  showToast("جاري حفظ التغيرات...");
+
+  db.collection("users").where("username", "==", newUsername).get().then(snap => {
+    let taken = false;
+    snap.forEach(doc => {
+      if (doc.id !== currentUser.uid) taken = true;
+    });
+
+    if (taken) {
+      showFieldError("modalUserError", "اسم المستخدم هذا مستخدم بالفعل!");
+      return;
+    }
+
+    db.collection("users").doc(currentUser.uid).set({
+      displayName: newName,
+      username: newUsername,
+      bio: newBio
+    }, { merge: true }).then(() => {
+      closeEditModalDirect();
+      showToast("تم تحديث معلوماتك بنجاح ✨");
+    });
+  });
 }
 
 function loginUser() {
@@ -1250,6 +1432,7 @@ function registerUser() {
           displayName: name,
           username: username,
           email: email,
+          bio: "",
           avatarUrl: "",
           createdAt: Date.now()
         };
@@ -1287,7 +1470,7 @@ function logout() {
 }
 
 function showView(viewId) {
-  ["homeView", "searchView", "profileView", "settingsView", "chatSettingsView", "notificationSettingsView", "chatView"].forEach(v => {
+  ["homeView", "searchView", "profileView", "otherUserProfileView", "settingsView", "chatSettingsView", "notificationSettingsView", "chatView"].forEach(v => {
     const el = document.getElementById(v);
     if (el) el.classList.add("hidden");
   });
@@ -1305,7 +1488,6 @@ function showView(viewId) {
     bottomNav.classList.remove("hidden");
   }
 
-  // التحكم بظهور زر البحث فقط في الواجهة الرئيسية للمحادثات
   if (viewId === "homeView") {
     mainSearchBtn.classList.remove("hidden");
   } else {
@@ -1321,6 +1503,7 @@ function goHome() {
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
   if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
   activeChatId = null;
+  currentChatOtherUserId = null;
   cancelReply();
   document.getElementById("searchInput").value = "";
   document.getElementById("searchResults").innerHTML = "";
@@ -1361,51 +1544,6 @@ function openChatSettings() {
 
 function openNotificationSettings() {
   showView('notificationSettingsView');
-}
-
-function liveUpdateName(e) {
-  const newName = e.target.value.trim();
-  if (!newName || !currentUser) return;
-
-  clearTimeout(updateTimer);
-  updateTimer = setTimeout(() => {
-    db.collection("users").doc(currentUser.uid).set({ displayName: newName }, { merge: true }).then(() => {
-      currentUserData.displayName = newName;
-      document.getElementById("pHeaderName").textContent = newName;
-    });
-  }, 400);
-}
-
-function liveUpdateUsername(e) {
-  validateUsernameInput(e.target);
-  const newUsername = e.target.value.trim().toLowerCase();
-  clearErrors();
-
-  if (!isValidUsername(newUsername)) {
-    showFieldError("usernameLiveError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 5 أحرف فأكثر (أحرف، أرقام، _, .)");
-    return;
-  }
-
-  clearTimeout(updateTimer);
-  updateTimer = setTimeout(() => {
-    db.collection("users").where("username", "==", newUsername).get().then(snap => {
-      let taken = false;
-      snap.forEach(doc => {
-        if (doc.id !== currentUser.uid) taken = true;
-      });
-
-      if (taken) {
-        showFieldError("usernameLiveError", "اسم المستخدم هذا مستخدم بالفعل!");
-        return;
-      }
-
-      db.collection("users").doc(currentUser.uid).set({ username: newUsername }, { merge: true }).then(() => {
-        currentUserData.username = newUsername;
-        document.getElementById("pHeaderUser").textContent = "@" + newUsername;
-        showToast("تم تحديث اليوزر تلقائياً");
-      });
-    });
-  }, 500);
 }
 
 function uploadAvatarLive(e) {
@@ -1459,10 +1597,78 @@ function searchUsers() {
             <div class="chat-item-name">${u.displayName}</div>
             <div class="chat-item-sub">@${u.username}</div>
           </div>`;
-        div.onclick = () => startChat(u);
+        div.onclick = () => openUserProfileDirect(u);
         res.appendChild(div);
       });
     });
+}
+
+function openUserProfileDirect(u) {
+  currentChatOtherUserId = u.id;
+  document.getElementById("otherHeaderName").textContent = u.displayName || "مستخدم";
+  document.getElementById("otherHeaderUser").textContent = "@" + (u.username || "user");
+  document.getElementById("otherBioDisplay").textContent = u.bio || "لا توجد نبذة تعريفية";
+  document.getElementById("otherEmailDisplay").textContent = u.email || "مخفي";
+
+  const statusBadge = document.getElementById("otherHeaderStatus");
+  if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
+    statusBadge.textContent = "متصل الآن";
+    statusBadge.style.color = "#4ade80";
+    statusBadge.style.background = "rgba(74, 222, 128, 0.1)";
+  } else {
+    statusBadge.textContent = "غير متصل";
+    statusBadge.style.color = "var(--text-muted)";
+    statusBadge.style.background = "rgba(255, 255, 255, 0.05)";
+  }
+
+  const avatarBox = document.getElementById("otherAvatarImg");
+  const avatarText = document.getElementById("otherAvatarText");
+
+  if (u.avatarUrl) {
+    avatarBox.src = u.avatarUrl;
+    avatarBox.classList.remove("hidden");
+    avatarText.classList.add("hidden");
+  } else {
+    avatarText.textContent = (u.displayName || "?").charAt(0).toUpperCase();
+    avatarText.classList.remove("hidden");
+    avatarBox.classList.add("hidden");
+  }
+
+  showView("otherUserProfileView");
+}
+
+function openCurrentChatUserProfile() {
+  if (!currentChatOtherUserId) return;
+  db.collection("users").doc(currentChatOtherUserId).get().then(doc => {
+    if (doc.exists) {
+      openUserProfileDirect(doc.data());
+    }
+  });
+}
+
+function goBackFromOtherProfile() {
+  if (activeChatId && currentChatOtherUserId) {
+    openChatRoom(currentChatOtherUserId);
+  } else {
+    goHome();
+  }
+}
+
+function startChatFromProfile() {
+  if (!currentChatOtherUserId) return;
+  const targetId = currentChatOtherUserId;
+  const chatId = [currentUser.uid, targetId].sort().join("__");
+  activeChatId = chatId;
+
+  db.collection("chats").doc(chatId).get().then(doc => {
+    if (!doc.exists) {
+      db.collection("chats").doc(chatId).set({
+        participants: [currentUser.uid, targetId],
+        updatedAt: Date.now()
+      });
+    }
+    openChatRoom(targetId);
+  });
 }
 
 function startChat(u) {
@@ -1481,6 +1687,7 @@ function startChat(u) {
 }
 
 function openChatRoom(otherUserId) {
+  currentChatOtherUserId = otherUserId;
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
   if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
   
