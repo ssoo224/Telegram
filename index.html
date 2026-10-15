@@ -222,7 +222,6 @@ body {
   padding: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; color: #ffffff; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
 }
 .profile-action-btn-sm.gold { background: linear-gradient(135deg, var(--babylon-gold), #b38f27); color: var(--babylon-dark); border-color: transparent; font-weight: 700; }
-.profile-action-btn-sm.danger-btn { border-color: var(--error-color); color: var(--error-color); }
 .profile-action-btn-sm:active { transform: scale(0.97); }
 
 .profile-info-card { background: var(--babylon-surface-card); border-radius: 18px; border: 1px solid var(--babylon-border); padding: 6px 16px; margin: 0 16px 20px; display: flex; flex-direction: column; }
@@ -270,6 +269,7 @@ body {
   line-height: 1.4; background: var(--bubble-other, #182533); align-self: flex-start; color: var(--text-other, #ffffff);
   border-radius: var(--r, 12px) var(--r, 12px) var(--r, 12px) 4px; border: 1px solid var(--bubble-line, rgba(255,255,255,0.06));
   position: relative; cursor: pointer; word-break: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.3); display: flex; flex-direction: column; z-index: 1;
+  transition: transform 0.2s;
 }
 .msg-bubble.mine {
   align-self: flex-end; background: var(--bubble-mine, #2b5278); color: var(--text-mine, #ffffff);
@@ -301,8 +301,11 @@ body {
 .reactions-row { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
 .reaction-badge { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 1px 6px; font-size: 11px; }
 
-.audio-player { display: flex; align-items: center; gap: 8px; width: 220px; padding: 2px 0 6px 0; }
-.audio-player audio { width: 100%; height: 36px; filter: invert(0.9) hue-rotate(180deg); }
+/* تصميم أمواج البصمة الصوتية الأنيق (رقم 4) */
+.audio-player { display: flex; align-items: center; gap: 10px; width: 230px; padding: 4px 0; }
+.waveform-bars { display: flex; align-items: center; gap: 2px; flex: 1; height: 24px; cursor: pointer; }
+.w-bar { width: 3px; background: rgba(255,255,255,0.4); border-radius: 2px; transition: background 0.2s; }
+.audio-player audio { display: none; }
 
 .chat-input-container { background: #17212b; border-top: 1px solid rgba(0,0,0,0.2); display: flex; flex-direction: column; z-index: 2; position: relative; }
 .typing-indicator-bar { padding: 4px 16px; font-size: 11.5px; color: var(--babylon-gold); background: rgba(0,0,0,0.15); display: flex; align-items: center; gap: 4px; }
@@ -526,7 +529,6 @@ body {
 
         <div class="profile-action-row">
           <button class="profile-action-btn-sm gold" onclick="startChatFromProfile()">رسالة</button>
-          <button id="blockToggleBtn" class="profile-action-btn-sm danger-btn" onclick="toggleBlockUser()">حظر 🚫</button>
         </div>
       </div>
 
@@ -784,6 +786,7 @@ body {
     <span class="emoji-btn" onclick="addReaction('👏')">👏</span>
   </div>
   <div class="msg-actions-card">
+    <button onclick="actionReply()">↩ الرد على الرسالة</button>
     <button onclick="actionCopy()">📋 نسخ النص</button>
     <button id="btnEditMsg" class="hidden" onclick="actionEdit()">✏ تعديل الرسالة</button>
     <button id="btnDeleteMsg" class="danger hidden" onclick="actionDelete()">🗑 حذف الرسالة</button>
@@ -1340,41 +1343,6 @@ function confirmDeleteChat(mode) {
   }
 }
 
-function toggleBlockUser() {
-  if (!currentChatOtherUserId || !currentUser) return;
-  const myDocRef = db.collection("users").doc(currentUser.uid);
-
-  myDocRef.get().then(doc => {
-    const blockedMap = doc.data().blockedUsers || {};
-    const isBlocked = !!blockedMap[currentChatOtherUserId];
-
-    if (isBlocked) {
-      delete blockedMap[currentChatOtherUserId];
-      myDocRef.set({ blockedUsers: blockedMap }, { merge: true }).then(() => {
-        showToast("تم إلغاء حظر المستخدم");
-        updateBlockBtnUI(false);
-      });
-    } else {
-      blockedMap[currentChatOtherUserId] = true;
-      myDocRef.set({ blockedUsers: blockedMap }, { merge: true }).then(() => {
-        showToast("تم حظر المستخدم 🚫");
-        updateBlockBtnUI(true);
-      });
-    }
-  });
-}
-
-function updateBlockBtnUI(isBlocked) {
-  const btn = document.getElementById("blockToggleBtn");
-  if (isBlocked) {
-    btn.textContent = "إلغاء الحظر 🟢";
-    btn.classList.remove("danger-btn");
-  } else {
-    btn.textContent = "حظر 🚫";
-    btn.classList.add("danger-btn");
-  }
-}
-
 function uploadAvatarLive(e) {
   const file = e.target.files[0];
   if (!file || !currentUser) return;
@@ -1458,59 +1426,45 @@ function startChatFromSearch(userId) {
 function openUserProfileDirect(u) {
   currentChatOtherUserId = u.id;
   const isDevUser = (u.username.toLowerCase() === "ali" || u.email === "anldheb429@gmail.com");
+
+  const nameEl = document.getElementById("otherHeaderName");
+  nameEl.innerHTML = `<span>${u.displayName || "مستخدم"}</span>` + (isDevUser ? `<span class="verified-badge" title="حساب موثق للمطور"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
+
+  document.getElementById("otherHeaderUser").textContent = "@" + (u.username || "user");
   
-  db.collection("users").doc(currentUser.uid).get().then(myDoc => {
-    const blockedMap = myDoc.data().blockedUsers || {};
-    updateBlockBtnUI(!!blockedMap[u.id]);
-  });
+  const bio = u.bio || "";
+  const bioRow = document.getElementById("otherBioRow");
+  if (bio.trim() !== "") {
+    document.getElementById("otherBioDisplay").textContent = bio;
+    bioRow.classList.remove("hidden");
+  } else {
+    bioRow.classList.add("hidden");
+  }
 
-  db.collection("users").doc(currentUser.uid).get().then(myDoc => {
-    const myBlockedMap = myDoc.data().blockedUsers || {};
-    const iBlockedHim = !!myBlockedMap[u.id];
-    const hasBlockedMe = u.blockedUsers && u.blockedUsers[currentUser.uid];
+  const statusDot = document.getElementById("otherStatusDot");
+  const statusText = document.getElementById("otherHeaderStatus");
+  
+  if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
+    statusDot.classList.remove("offline");
+    statusText.textContent = "متصل الآن";
+  } else {
+    statusDot.classList.add("offline");
+    statusText.textContent = "آخر ظهور قبل ساعة";
+  }
 
-    const nameEl = document.getElementById("otherHeaderName");
-    nameEl.innerHTML = `<span>${u.displayName || "مستخدم"}</span>` + (isDevUser ? `<span class="verified-badge" title="حساب موثق للمطور"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
+  const avatarBox = document.getElementById("otherAvatarImg");
+  const avatarText = document.getElementById("otherAvatarText");
 
-    document.getElementById("otherHeaderUser").textContent = "@" + (u.username || "user");
-    
-    const bio = u.bio || "";
-    const bioRow = document.getElementById("otherBioRow");
-    if (bio.trim() !== "" && !hasBlockedMe && !iBlockedHim) {
-      document.getElementById("otherBioDisplay").textContent = bio;
-      bioRow.classList.remove("hidden");
-    } else {
-      bioRow.classList.add("hidden");
-    }
+  if (u.avatarUrl) {
+    avatarBox.src = u.avatarUrl;
+    avatarBox.classList.remove("hidden");
+    avatarText.classList.add("hidden");
+  } else {
+    avatarText.classList.remove("hidden");
+    avatarBox.classList.add("hidden");
+  }
 
-    const statusDot = document.getElementById("otherStatusDot");
-    const statusText = document.getElementById("otherHeaderStatus");
-    
-    if (hasBlockedMe || iBlockedHim) {
-      statusDot.classList.add("offline");
-      statusText.textContent = "تم حظرك 🚫";
-    } else if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
-      statusDot.classList.remove("offline");
-      statusText.textContent = "متصل الآن";
-    } else {
-      statusDot.classList.add("offline");
-      statusText.textContent = "آخر ظهور قبل ساعة";
-    }
-
-    const avatarBox = document.getElementById("otherAvatarImg");
-    const avatarText = document.getElementById("otherAvatarText");
-
-    if (u.avatarUrl && !hasBlockedMe && !iBlockedHim) {
-      avatarBox.src = u.avatarUrl;
-      avatarBox.classList.remove("hidden");
-      avatarText.classList.add("hidden");
-    } else {
-      avatarText.classList.remove("hidden");
-      avatarBox.classList.add("hidden");
-    }
-
-    showView("otherUserProfileView");
-  });
+  showView("otherUserProfileView");
 }
 
 function openCurrentChatUserProfile() {
@@ -1578,59 +1532,32 @@ function openChatRoom(otherUserId) {
   if (typingUnsubscribe) { typingUnsubscribe(); typingUnsubscribe = null; }
   
   showView("chatView");
-
-  // فحص الحظر المتبادل من الطرفين
-  Promise.all([
-    db.collection("users").doc(currentUser.uid).get(),
-    db.collection("users").doc(otherUserId).get()
-  ]).then(([myDoc, otherDoc]) => {
-    const myBlocked = myDoc.data().blockedUsers || {};
-    const otherBlocked = otherDoc.data().blockedUsers || {};
-    const iBlockedHim = !!myBlocked[otherUserId];
-    const heBlockedMe = !!otherBlocked[currentUser.uid];
-
-    const inputBar = document.getElementById("textInputBar");
-    if (iBlockedHim || heBlockedMe) {
-      inputBar.style.display = "none";
-    } else {
-      inputBar.style.display = "flex";
-    }
-  });
+  document.getElementById("textInputBar").style.display = "flex";
 
   userUnsubscribe = db.collection("users").doc(otherUserId).onSnapshot(doc => {
     if (doc.exists) {
       const u = doc.data();
       const isDevUser = (u.username.toLowerCase() === "ali" || u.email === "anldheb429@gmail.com");
       
-      db.collection("users").doc(currentUser.uid).get().then(myDoc => {
-        const myBlocked = myDoc.data().blockedUsers || {};
-        const iBlockedHim = !!myBlocked[otherUserId];
-        const hasBlockedMe = u.blockedUsers && u.blockedUsers[currentUser.uid];
+      const titleEl = document.getElementById("chatTitle");
+      titleEl.innerHTML = `<span>${u.displayName || "مستخدم"}</span>` + (isDevUser ? `<span class="verified-badge"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
 
-        const titleEl = document.getElementById("chatTitle");
-        titleEl.innerHTML = `<span>${u.displayName || "مستخدم"}</span>` + (isDevUser ? `<span class="verified-badge"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></span>` : '');
+      const sub = document.getElementById("chatSub");
+      const avatarBox = document.getElementById("chatAvatar");
 
-        const sub = document.getElementById("chatSub");
-        const avatarBox = document.getElementById("chatAvatar");
+      if (u.avatarUrl) {
+        avatarBox.innerHTML = `<img src="${u.avatarUrl}">`;
+      } else {
+        avatarBox.innerHTML = `<svg style="width:20px;height:20px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+      }
 
-        if (u.avatarUrl && !hasBlockedMe && !iBlockedHim) {
-          avatarBox.innerHTML = `<img src="${u.avatarUrl}">`;
-        } else {
-          avatarBox.innerHTML = `<svg style="width:20px;height:20px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
-        }
-
-        if (hasBlockedMe || iBlockedHim) {
-          sub.textContent = "تم حظرك 🚫";
-          sub.style.color = "var(--error-color)";
-          document.getElementById("textInputBar").style.display = "none";
-        } else if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
-          sub.textContent = "متصل الآن";
-          sub.style.color = "#4ade80";
-        } else {
-          sub.textContent = "آخر ظهور كان قريباً";
-          sub.style.color = "var(--text-muted)";
-        }
-      });
+      if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
+        sub.textContent = "متصل الآن";
+        sub.style.color = "#4ade80";
+      } else {
+        sub.textContent = "آخر ظهور كان قريباً";
+        sub.style.color = "var(--text-muted)";
+      }
     }
   });
 
@@ -1666,6 +1593,8 @@ function openChatRoom(otherUserId) {
 
         const b = document.createElement("div");
         b.className = "msg-bubble" + (isMine ? " mine" : "");
+        b.dataset.id = doc.id;
+        b.dataset.text = m.text || "مرفق";
         
         let htmlContent = "";
         if (m.replyTo) htmlContent += `<div class="reply-quote">${m.replyTo}</div>`;
@@ -1673,7 +1602,21 @@ function openChatRoom(otherUserId) {
         if (m.imageUrl) {
           htmlContent += `<img class="msg-img" src="${m.imageUrl}" onclick="openLightbox('${m.imageUrl}')">`;
         } else if (m.audioUrl) {
-          htmlContent += `<div class="audio-player"><audio controls src="${m.audioUrl}"></audio></div>`;
+          htmlContent += `
+            <div class="audio-player">
+              <button class="icon-btn" style="width:32px;height:32px;background:var(--babylon-surface)" onclick="toggleAudioPlay(this)">▶</button>
+              <div class="waveform-bars" onclick="toggleAudioPlay(this)">
+                <div class="w-bar" style="height:10px"></div>
+                <div class="w-bar" style="height:18px"></div>
+                <div class="w-bar" style="height:24px"></div>
+                <div class="w-bar" style="height:14px"></div>
+                <div class="w-bar" style="height:20px"></div>
+                <div class="w-bar" style="height:8px"></div>
+                <div class="w-bar" style="height:16px"></div>
+                <div class="w-bar" style="height:22px"></div>
+              </div>
+              <audio src="${m.audioUrl}"></audio>
+            </div>`;
         } else {
           htmlContent += `<div class="msg-text">${m.text}</div>`;
         }
@@ -1687,8 +1630,25 @@ function openChatRoom(otherUserId) {
         htmlContent += `<div class="msg-meta"><span>${rawTimeStr}</span> ${checkHtml}</div>`;
         b.innerHTML = htmlContent;
 
+        // ميزة السحب للرد (رقم 3)
+        let startX = 0;
+        b.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
+        b.addEventListener('touchmove', e => {
+          let diff = e.touches[0].clientX - startX;
+          if (diff > 30) {
+            b.style.transform = `translateX(${Math.min(diff, 50)}px)`;
+          }
+        });
+        b.addEventListener('touchend', e => {
+          let diff = e.changedTouches[0].clientX - startX;
+          b.style.transform = 'translateX(0px)';
+          if (diff > 40) {
+            triggerReply(m.text || "مرفق");
+          }
+        });
+
         let pressTimer = null;
-        b.ontouchstart = () => { pressTimer = setTimeout(() => openMsgModal(doc.id, m.text || "مرفق", m.senderId, m.reactions || {}), 450); };
+        b.ontouchstart = (e) => { pressTimer = setTimeout(() => openMsgModal(doc.id, m.text || "مرفق", m.senderId, m.reactions || {}), 450); };
         b.ontouchend = () => clearTimeout(pressTimer);
         b.onmousedown = () => { pressTimer = setTimeout(() => openMsgModal(doc.id, m.text || "مرفق", m.senderId, m.reactions || {}), 450); };
         b.onmouseup = b.onmouseleave = () => clearTimeout(pressTimer);
@@ -1697,6 +1657,32 @@ function openChatRoom(otherUserId) {
       });
       box.scrollTop = box.scrollHeight;
     });
+}
+
+function toggleAudioPlay(btnEl) {
+  const container = btnEl.closest('.audio-player');
+  const audio = container.querySelector('audio');
+  const playBtn = container.querySelector('.icon-btn');
+  if (audio.paused) {
+    audio.play();
+    playBtn.textContent = "⏸";
+    audio.onended = () => { playBtn.textContent = "▶"; };
+  } else {
+    audio.pause();
+    playBtn.textContent = "▶";
+  }
+}
+
+function triggerReply(txt) {
+  replyingToText = txt;
+  document.getElementById("replyPreviewText").textContent = "الرد على: " + txt;
+  document.getElementById("replyPreviewBar").classList.remove("hidden");
+  document.getElementById("messageInput").focus();
+}
+
+function actionReply() {
+  triggerReply(selectedMsgText);
+  document.getElementById("msgModal").classList.add("hidden");
 }
 
 function sendImageMessage(e) {
@@ -1882,7 +1868,6 @@ function loadChats() {
     let chatDocsList = [];
     snap.forEach(doc => {
       const data = doc.data();
-      // تحقق إذا لم يتم حذف المحادثة تماماً من قِبل المستخدم الحالي
       if (!data[`deletedFor_${currentUser.uid}`]) {
         chatDocsList.push({ id: doc.id, data: data });
       }
@@ -1918,7 +1903,6 @@ function loadChats() {
         if (!userDoc.exists) return;
         const u = userDoc.data();
         const isDevUser = (u.username.toLowerCase() === "ali" || u.email === "anldheb429@gmail.com");
-        const hasBlockedMe = u.blockedUsers && u.blockedUsers[currentUser.uid];
 
         db.collection("chats").doc(chatId).collection("messages").orderBy("createdAt", "desc").limit(1).get().then(msgSnap => {
           let lastMsgText = "لا توجد رسائل بعد";
@@ -1944,7 +1928,7 @@ function loadChats() {
             let unreadCount = unReadSnap.size;
 
             existingItem.innerHTML = `
-              <div class="avatar" onclick="event.stopPropagation(); openUserProfileDirectFromId('${otherId}')">${(u.avatarUrl && !hasBlockedMe) ? `<img src="${u.avatarUrl}">` : `<svg style="width:24px;height:24px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`}</div>
+              <div class="avatar" onclick="event.stopPropagation(); openUserProfileDirectFromId('${otherId}')">${u.avatarUrl ? `<img src="${u.avatarUrl}">` : `<svg style="width:24px;height:24px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`}</div>
               <div class="chat-item-info" onclick="activeChatId='${chatId}'; openChatRoom('${otherId}')">
                 <div class="chat-item-header-row">
                   <div class="chat-item-name" onclick="event.stopPropagation(); openUserProfileDirectFromId('${otherId}')">
