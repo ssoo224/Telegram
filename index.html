@@ -200,6 +200,7 @@ body {
 }
 .icon-btn:hover { background: var(--babylon-surface-hover); color: white; }
 
+/* الشريط السفلي الاحترافي بنظام SVG والكبسولة الذهبية */
 .telegram-bottom-nav {
   height: 60px;
   background: var(--babylon-surface);
@@ -223,9 +224,30 @@ body {
   font-size: 11px;
   gap: 3px;
   padding: 6px 0;
+  position: relative;
+  transition: color 0.2s;
 }
-.nav-item span.nav-icon { font-size: 20px; }
-.nav-item.active { color: #64b5f6; }
+
+.nav-item svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.nav-item.active {
+  color: var(--babylon-gold);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  width: 46px;
+  height: 28px;
+  background: rgba(212, 175, 55, 0.15);
+  border-radius: 14px;
+  z-index: -1;
+}
 
 .chat-list {
   flex: 1;
@@ -300,7 +322,7 @@ body {
 .unread-badge { background: #2b5278; color: white; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-right: 6px; }
 
 /* ---------------------------------------------------- */
-/* البروفايل المطور المزود بخلفية جذابة ودون فراغات */
+/* البروفايل العراقي المتناسق بغلاف الثيم المتلاشي */
 /* ---------------------------------------------------- */
 .profile-view {
   flex: 1;
@@ -311,10 +333,42 @@ body {
 }
 
 .profile-cover-banner {
-  height: 120px;
-  background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+  height: 140px;
   position: relative;
   width: 100%;
+  overflow: hidden;
+  background: var(--babylon-dark);
+}
+
+.profile-cover-pattern {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-auto-rows: 40px;
+  place-items: center;
+  font-size: 22px;
+  color: var(--babylon-gold);
+  opacity: 0.15;
+  filter: grayscale(1);
+  pointer-events: none;
+}
+
+.profile-cover-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(11,17,32,0.1) 0%, #0b1120 100%);
+}
+
+.profile-top-bar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 5;
 }
 
 .profile-header-card {
@@ -323,25 +377,25 @@ body {
   align-items: center;
   padding: 0 16px 16px;
   text-align: center;
-  margin-top: -60px;
+  margin-top: -55px;
   position: relative;
   z-index: 2;
 }
 
 .profile-large-avatar {
-  width: 118px;
-  height: 118px;
+  width: 112px;
+  height: 112px;
   border-radius: 50%;
   background: var(--babylon-surface-card);
   color: var(--babylon-gold);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 46px;
+  font-size: 44px;
   font-weight: bold;
   object-fit: cover;
-  border: 4px solid #0b1120;
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
+  border: 4px solid var(--babylon-gold);
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.3);
   margin-bottom: 10px;
 }
 
@@ -352,46 +406,59 @@ body {
   margin-bottom: 4px;
 }
 
-.profile-status-badge {
+.profile-status-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
-  color: #4ade80;
-  background: rgba(74, 222, 128, 0.12);
-  padding: 4px 14px;
-  border-radius: 20px;
-  font-weight: 600;
-  display: inline-block;
+  color: var(--text-muted);
   margin-bottom: 18px;
 }
 
-.profile-action-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+}
+.status-dot.offline { background: var(--text-muted); }
+
+/* أزرار الأكشن المدمجة العصرية */
+.profile-action-row {
+  display: flex;
   gap: 10px;
   width: 100%;
+  max-width: 340px;
+  margin-bottom: 6px;
 }
 
-.profile-action-btn {
-  background: var(--babylon-surface-card);
-  border: 1px solid var(--babylon-border);
-  border-radius: 16px;
-  padding: 14px 8px;
+.profile-action-btn-sm {
+  flex: 1;
+  background: transparent;
+  border: 1.5px solid var(--babylon-border);
+  border-radius: 12px;
+  padding: 10px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
   color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: all 0.2s;
 }
-.profile-action-btn:active { transform: scale(0.96); }
-
-.profile-action-btn .btn-icon { font-size: 22px; }
-.profile-action-btn .btn-text { font-size: 12px; font-weight: 600; color: #e2e8f0; }
+.profile-action-btn-sm.gold {
+  background: linear-gradient(135deg, var(--babylon-gold), #b38f27);
+  color: var(--babylon-dark);
+  border-color: transparent;
+  font-weight: 700;
+}
+.profile-action-btn-sm:active { transform: scale(0.97); }
 
 .profile-info-card {
   background: var(--babylon-surface-card);
-  border-radius: 20px;
+  border-radius: 18px;
   border: 1px solid var(--babylon-border);
   padding: 6px 16px;
   margin: 0 16px 20px;
@@ -403,9 +470,10 @@ body {
   padding: 14px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   text-align: right;
+  cursor: pointer;
 }
-
-.info-item:last-child { border-bottom: none; }
+.info-item:active { opacity: 0.7; }
+.info-item:last-child { border-bottom: none; cursor: default; }
 
 .info-item .val {
   font-size: 15px;
@@ -413,7 +481,10 @@ body {
   color: #ffffff;
   margin-bottom: 2px;
   word-break: break-word;
+  direction: ltr;
+  text-align: right;
 }
+.info-item .val.rtl-text { direction: rtl; }
 
 .info-item .lbl {
   font-size: 12px;
@@ -827,56 +898,56 @@ body {
       <div id="searchResults" class="chat-list"></div>
     </div>
 
-    <!-- شاشة البروفايل الشخصي (التصميم الأنيق المطور) -->
+    <!-- شاشة البروفايل الشخصي الاحترافية -->
     <div id="profileView" class="profile-view hidden">
-      <div class="profile-cover-banner"></div>
+      <div class="profile-cover-banner" id="pCoverBanner">
+        <div class="profile-cover-pattern" id="pCoverPattern"></div>
+        <div class="profile-cover-fade"></div>
+        <div class="profile-top-bar">
+          <button class="icon-btn" style="color:white; background:rgba(0,0,0,0.3);" onclick="openSettings()" title="الإعدادات">⚙️</button>
+          <button class="icon-btn" style="color:white; background:rgba(0,0,0,0.3);" onclick="openEditProfileModal()" title="تعديل">✏️</button>
+        </div>
+      </div>
       
       <div class="profile-header-card">
         <div style="position:relative;">
           <div id="pAvatarText" class="profile-large-avatar">🏛</div>
           <img id="pAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
+          <label for="avatarInput" style="position:absolute; bottom:6px; left:6px; background:var(--babylon-gold); color:var(--babylon-dark); width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; border:2px solid #0b1120;" title="تغيير الصورة">📷</label>
+          <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="uploadAvatarLive(event)">
         </div>
 
         <div id="pHeaderName" class="profile-display-name">علي</div>
-        <div id="pHeaderStatus" class="profile-status-badge">متصل الآن</div>
-
-        <div class="profile-action-grid">
-          <div class="profile-action-btn" onclick="openSettings()">
-            <span class="btn-icon">⚙️</span>
-            <span class="btn-text">الإعدادات</span>
-          </div>
-          <div class="profile-action-btn" onclick="openEditProfileModal()">
-            <span class="btn-icon">✏️</span>
-            <span class="btn-text">تعديل البيانات</span>
-          </div>
-          <label for="avatarInput" class="profile-action-btn">
-            <span class="btn-icon">📷</span>
-            <span class="btn-text">تعيين صورة</span>
-          </label>
-          <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="uploadAvatarLive(event)">
+        <div class="profile-status-box">
+          <span class="status-dot"></span>
+          <span>متصل الآن</span>
         </div>
       </div>
 
       <div class="profile-info-card">
-        <div class="info-item">
-          <div id="pBioDisplay" class="val">لا توجد نبذة تعريفية بعد</div>
+        <div id="pBioRow" class="info-item hidden">
+          <div id="pBioDisplay" class="val rtl-text"></div>
           <div class="lbl">النبذة التعريفية (البايو)</div>
         </div>
-        <div class="info-item">
+        <div class="info-item" onclick="copyText('@' + document.getElementById('pHeaderUser').textContent)">
           <div id="pHeaderUser" class="val">@username</div>
-          <div class="lbl">اسم المستخدم</div>
+          <div class="lbl">اسم المستخدم (اضغط للنسخ)</div>
         </div>
         <div class="info-item">
           <div id="pEmailDisplay" class="val">email@domain.com</div>
-          <div class="lbl">البريد الإلكتروني الأساسي (ظاهر لك فقط)</div>
+          <div class="lbl">البريد الإلكتروني (ظاهر لك فقط)</div>
         </div>
       </div>
     </div>
 
-    <!-- شاشة عرض بروفايل مستخدم آخر (محمية الخصوصية) -->
+    <!-- شاشة عرض بروفايل مستخدم آخر الاحترافية -->
     <div id="otherUserProfileView" class="profile-view hidden">
-      <div class="profile-cover-banner">
-        <button class="icon-btn" style="position:absolute; right:12px; top:12px; color:white; background:rgba(0,0,0,0.4);" onclick="goBackFromOtherProfile()">‹</button>
+      <div class="profile-cover-banner" id="otherCoverBanner">
+        <div class="profile-cover-pattern" id="otherCoverPattern"></div>
+        <div class="profile-cover-fade"></div>
+        <div class="profile-top-bar">
+          <button class="icon-btn" style="color:white; background:rgba(0,0,0,0.3);" onclick="goBackFromOtherProfile()">‹</button>
+        </div>
       </div>
 
       <div class="profile-header-card">
@@ -884,24 +955,30 @@ body {
         <img id="otherAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
 
         <div id="otherHeaderName" class="profile-display-name">مستخدم</div>
-        <div id="otherHeaderStatus" class="profile-status-badge" style="color:var(--text-muted); background:rgba(255,255,255,0.05);">غير متصل</div>
+        <div class="profile-status-box">
+          <span id="otherStatusDot" class="status-dot offline"></span>
+          <span id="otherHeaderStatus">آخر ظهور قبل ساعة</span>
+        </div>
 
-        <div class="profile-action-grid" style="grid-template-columns: 1fr; margin-top:4px;">
-          <div class="profile-action-btn" onclick="startChatFromProfile()" style="background:linear-gradient(135deg, var(--babylon-gold), #b38f27); color:var(--babylon-dark);">
-            <span class="btn-icon">💬</span>
-            <span class="btn-text" style="color:var(--babylon-dark); font-size:14px; font-weight:700;">مراسلة الآن</span>
-          </div>
+        <!-- صف أزرار الأكشن المدمجة للصديق -->
+        <div class="profile-action-row">
+          <button class="profile-action-btn-sm gold" onclick="startChatFromProfile()">
+            <span>💬</span> رسالة
+          </button>
+          <button class="profile-action-btn-sm" onclick="showToast('تم كتم الإشعارات')">
+            <span>🔕</span> كتم
+          </button>
         </div>
       </div>
 
       <div class="profile-info-card">
-        <div class="info-item">
-          <div id="otherBioDisplay" class="val">لا توجد نبذة تعريفية</div>
+        <div id="otherBioRow" class="info-item hidden">
+          <div id="otherBioDisplay" class="val rtl-text"></div>
           <div class="lbl">النبذة التعريفية (البايو)</div>
         </div>
-        <div class="info-item">
+        <div class="info-item" onclick="copyText(document.getElementById('otherHeaderUser').textContent)">
           <div id="otherHeaderUser" class="val">@username</div>
-          <div class="lbl">اسم المستخدم</div>
+          <div class="lbl">اسم المستخدم (اضغط للنسخ)</div>
         </div>
       </div>
     </div>
@@ -982,7 +1059,7 @@ body {
         </div>
 
         <div class="set-card">
-          <div class="set-card-title">ثيم وخلفية المحادثة</div>
+          <div class="set-card-title">ثيم وخلفية المحادثة والبروفايل</div>
           <div id="themeStrip" class="theme-strip"></div>
         </div>
 
@@ -1034,18 +1111,18 @@ body {
       </div>
     </div>
 
-    <!-- شريط التنقل السفلي -->
+    <!-- شريط التنقل السفلي الموحد بأيقونات SVG خطية -->
     <nav id="bottomNav" class="telegram-bottom-nav">
       <button id="navChats" class="nav-item active" onclick="goHome()">
-        <span class="nav-icon">💬</span>
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
         <span>المحادثات</span>
       </button>
       <button id="navProfile" class="nav-item" onclick="openProfile()">
-        <span class="nav-icon">👤</span>
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
         <span>الملف الشخصي</span>
       </button>
       <button id="navSettings" class="nav-item" onclick="openSettings()">
-        <span class="nav-icon">⚙️</span>
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
         <span>الإعدادات</span>
       </button>
     </nav>
@@ -1226,6 +1303,11 @@ function showToast(msg) {
   setTimeout(() => t.classList.add("hidden"), 3000);
 }
 
+function copyText(txt) {
+  navigator.clipboard.writeText(txt);
+  showToast("تم نسخ: " + txt);
+}
+
 function switchTab(type) {
   clearErrors();
   if (type === 'login') {
@@ -1289,12 +1371,19 @@ function updateProfileUI(u) {
   const displayName = u.displayName || currentUser.email.split('@')[0];
   const username = u.username || "user" + currentUser.uid.substring(0, 5);
   const email = u.email || currentUser.email;
-  const bio = u.bio || "لا توجد نبذة تعريفية بعد";
+  const bio = u.bio || "";
 
   document.getElementById("pHeaderName").textContent = displayName;
   document.getElementById("pHeaderUser").textContent = "@" + username;
   document.getElementById("pEmailDisplay").textContent = email;
-  document.getElementById("pBioDisplay").textContent = bio;
+
+  const bioRow = document.getElementById("pBioRow");
+  if (bio.trim() !== "") {
+    document.getElementById("pBioDisplay").textContent = bio;
+    bioRow.classList.remove("hidden");
+  } else {
+    bioRow.classList.add("hidden");
+  }
 
   const avatarBox = document.getElementById("pAvatarImg");
   const avatarText = document.getElementById("pAvatarText");
@@ -1308,6 +1397,16 @@ function updateProfileUI(u) {
     avatarText.classList.remove("hidden");
     avatarBox.classList.add("hidden");
   }
+
+  updateCoverBannerPattern();
+}
+
+function updateCoverBannerPattern() {
+  const t = THEMES[prefs.theme] || THEMES.babylon;
+  const patternEl = document.getElementById('pCoverPattern');
+  const otherPatternEl = document.getElementById('otherCoverPattern');
+  if (patternEl) renderPattern(patternEl, t, 32);
+  if (otherPatternEl) renderPattern(otherPatternEl, t, 32);
 }
 
 function openEditProfileModal() {
@@ -1483,7 +1582,8 @@ function showView(viewId) {
     mainSearchBtn.classList.add("hidden");
   }
 
-  document.getElementById("navChats").classList.toggle("active", viewId === "homeView");
+  // تحديث حالة الشريط السفلي مع الحفاظ على تبويب المحادثات مفعلاً عند الدخول لبروفايل صديق
+  document.getElementById("navChats").classList.toggle("active", viewId === "homeView" || viewId === "chatView" || viewId === "otherUserProfileView");
   document.getElementById("navProfile").classList.toggle("active", viewId === "profileView");
   document.getElementById("navSettings").classList.toggle("active", viewId === "settingsView" || viewId === "chatSettingsView" || viewId === "notificationSettingsView");
 }
@@ -1596,17 +1696,24 @@ function openUserProfileDirect(u) {
   currentChatOtherUserId = u.id;
   document.getElementById("otherHeaderName").textContent = u.displayName || "مستخدم";
   document.getElementById("otherHeaderUser").textContent = "@" + (u.username || "user");
-  document.getElementById("otherBioDisplay").textContent = u.bio || "لا توجد نبذة تعريفية";
-
-  const statusBadge = document.getElementById("otherHeaderStatus");
-  if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
-    statusBadge.textContent = "متصل الآن";
-    statusBadge.style.color = "#4ade80";
-    statusBadge.style.background = "rgba(74, 222, 128, 0.12)";
+  
+  const bio = u.bio || "";
+  const bioRow = document.getElementById("otherBioRow");
+  if (bio.trim() !== "") {
+    document.getElementById("otherBioDisplay").textContent = bio;
+    bioRow.classList.remove("hidden");
   } else {
-    statusBadge.textContent = "غير متصل";
-    statusBadge.style.color = "var(--text-muted)";
-    statusBadge.style.background = "rgba(255, 255, 255, 0.05)";
+    bioRow.classList.add("hidden");
+  }
+
+  const statusDot = document.getElementById("otherStatusDot");
+  const statusText = document.getElementById("otherHeaderStatus");
+  if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
+    statusDot.classList.remove("offline");
+    statusText.textContent = "متصل الآن";
+  } else {
+    statusDot.classList.add("offline");
+    statusText.textContent = "آخر ظهور قبل ساعة";
   }
 
   const avatarBox = document.getElementById("otherAvatarImg");
@@ -1656,21 +1763,6 @@ function startChatFromProfile() {
       });
     }
     openChatRoom(targetId);
-  });
-}
-
-function startChat(u) {
-  const chatId = [currentUser.uid, u.id].sort().join("__");
-  activeChatId = chatId;
-
-  db.collection("chats").doc(chatId).get().then(doc => {
-    if (!doc.exists) {
-      db.collection("chats").doc(chatId).set({
-        participants: [currentUser.uid, u.id],
-        updatedAt: Date.now()
-      });
-    }
-    openChatRoom(u.id);
   });
 }
 
@@ -2096,7 +2188,7 @@ function loadChats() {
     });
 }
 
-/* ثيمات التراث العراقي للمحادثات */
+/* ثيمات التراث العراقي للمحادثات والغلاف */
 const THEMES = {
   babylon: { name:'بابل', hero:'🏛', chatBg:'#0d1626', mine:'linear-gradient(135deg,#1b4d8e,#2f78cf)', other:'#263345',
     textMine:'#ffffff', textOther:'#f3f4f6', accent:'#d4af37', tick:'#ffe08a', metaOther:'#94a3b8', line:'rgba(255,255,255,0.06)',
@@ -2164,6 +2256,7 @@ function applyPrefs(rebuildPattern) {
   if (rebuildPattern) {
     renderPattern(document.getElementById('chatPattern'), t, 80);
     renderPattern(document.getElementById('pvPattern'), t, 30);
+    updateCoverBannerPattern();
   }
 }
 
