@@ -221,8 +221,8 @@ body {
 .info-item { padding: 14px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); text-align: right; cursor: pointer; }
 .info-item:active { opacity: 0.7; }
 .info-item:last-child { border-bottom: none; cursor: default; }
-.info-item .val { font-size: 15px; font-weight: 600; color: #ffffff; margin-bottom: 2px; word-break: break-word; direction: ltr; text-align: right; }
-.info-item .val.rtl-text { direction: rtl; }
+.info-item .val { font-size: 15px; font-weight: 600; color: #ffffff; margin-bottom: 2px; word-break: break-word; direction: ltr; unicode-bidi: isolate; text-align: right; }
+.info-item .val.rtl-text { direction: rtl; unicode-bidi: normal; }
 .info-item .lbl { font-size: 12px; color: var(--text-muted); }
 
 .settings-view { flex: 1; overflow-y: auto; background: var(--babylon-dark); }
@@ -258,7 +258,7 @@ body {
 
 .messages-area { flex: 1; padding: 12px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; position: relative; z-index: 1; }
 .msg-bubble {
-  width: fit-content; max-width: 82%; padding: 6px 10px 18px 10px; font-size: var(--msg-font, 14.5px);
+  width: fit-content; max-width: 82%; padding: 6px 12px 20px 12px; font-size: var(--msg-font, 14.5px);
   line-height: 1.4; background: var(--bubble-other, #182533); align-self: flex-start; color: var(--text-other, #ffffff);
   border-radius: var(--r, 12px) var(--r, 12px) var(--r, 12px) 4px; border: 1px solid var(--bubble-line, rgba(255,255,255,0.06));
   position: relative; cursor: pointer; word-break: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.3); display: flex; flex-direction: column; z-index: 1;
@@ -268,7 +268,7 @@ body {
   align-self: flex-end; background: var(--bubble-mine, #2b5278); color: var(--text-mine, #ffffff);
   border-radius: var(--r, 12px) var(--r, 12px) 4px var(--r, 12px); border-color: transparent;
 }
-.msg-text { padding-left: 10px; padding-bottom: 4px; }
+.msg-text { padding-bottom: 2px; }
 .msg-img { max-width: 220px; border-radius: 8px; margin-bottom: 4px; display: block; object-fit: cover; cursor: pointer; }
 
 .lightbox-modal {
@@ -285,10 +285,10 @@ body {
 }
 .msg-meta {
   display: inline-flex; align-items: center; gap: 3px; font-size: 10.5px;
-  color: var(--meta-other, rgba(255, 255, 255, 0.6)); position: absolute; bottom: 3px; left: 8px; user-select: none;
+  color: var(--meta-other, rgba(255, 255, 255, 0.6)); position: absolute; bottom: 3px; left: 10px; user-select: none; direction: ltr;
 }
 .msg-bubble.mine .msg-meta { color: rgba(255,255,255,0.72); }
-.check-mark { font-size: 11px; color: rgba(255, 255, 255, 0.6); }
+.check-mark { font-size: 11px; color: rgba(255, 255, 255, 0.6); display: inline-block; }
 .check-mark.read { color: var(--tick-read, #4ade80); font-weight: bold; }
 
 .reactions-row { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
@@ -485,7 +485,7 @@ body {
           <div id="pBioDisplay" class="val rtl-text"></div>
           <div class="lbl">النبذة التعريفية (البايو)</div>
         </div>
-        <div class="info-item" onclick="copyText('@' + document.getElementById('pHeaderUser').textContent)">
+        <div class="info-item" onclick="copyText(document.getElementById('pHeaderUser').textContent.replace('@', ''))">
           <div id="pHeaderUser" class="val">@username</div>
           <div class="lbl">اسم المستخدم (اضغط للنسخ)</div>
         </div>
@@ -530,7 +530,7 @@ body {
           <div id="otherBioDisplay" class="val rtl-text"></div>
           <div class="lbl">النبذة التعريفية (البايو)</div>
         </div>
-        <div class="info-item" onclick="copyText(document.getElementById('otherHeaderUser').textContent)">
+        <div class="info-item" onclick="copyText(document.getElementById('otherHeaderUser').textContent.replace('@', ''))">
           <div id="otherHeaderUser" class="val">@username</div>
           <div class="lbl">اسم المستخدم (اضغط للنسخ)</div>
         </div>
@@ -985,7 +985,6 @@ auth.onAuthStateChanged(user => {
       }, { merge: true });
     }
 
-    // تسجيل الجلسة الحالية في الأجهزة النشطة
     registerCurrentSession(user.uid);
 
     db.collection("users").doc(user.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
@@ -1527,7 +1526,13 @@ function searchUsers() {
 
 function openUserProfileDirectFromId(userId) {
   db.collection("users").doc(userId).get().then(doc => {
-    if (doc.exists) openUserProfileDirect(doc.data());
+    if (doc.exists) {
+      openUserProfileDirect(doc.data());
+    } else {
+      showToast("عذراً، هذا الحساب غير موجود في بابل!");
+    }
+  }).catch(() => {
+    showToast("لم يتم العثور على حساب بهذا اليوزر");
   });
 }
 
@@ -1584,7 +1589,11 @@ function openUserProfileDirect(u) {
 function openCurrentChatUserProfile() {
   if (!currentChatOtherUserId) return;
   db.collection("users").doc(currentChatOtherUserId).get().then(doc => {
-    if (doc.exists) openUserProfileDirect(doc.data());
+    if (doc.exists) {
+      openUserProfileDirect(doc.data());
+    } else {
+      showToast("عذراً، هذا الحساب غير موجود!");
+    }
   });
 }
 
@@ -1686,14 +1695,12 @@ function openChatRoom(otherUserId) {
     }
   });
 
-  // تحديث حالة القراءة الفورية للرسائل الواردة من الطرف الآخر فور فتح الشات
   db.collection("chats").doc(activeChatId).collection("messages")
     .where("senderId", "==", otherUserId).where("read", "==", false)
     .get().then(snap => {
       snap.forEach(d => d.ref.update({ read: true }));
     });
 
-  // استماع فوري للرسائل وتحديث القراءة تلقائياً
   messagesUnsubscribe = db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "asc")
     .onSnapshot(snap => {
@@ -1704,7 +1711,6 @@ function openChatRoom(otherUserId) {
         const m = doc.data();
         const isMine = m.senderId === currentUser.uid;
         
-        // إذا كانت رسالة واردة وليست مقروءة، قم بتحديثها فوراً إلى مقروءة بما أن المستخدم داخل الشات
         if (!isMine && !m.read) {
           doc.ref.update({ read: true });
         }
