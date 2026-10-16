@@ -11,7 +11,6 @@
 
 <!-- Firebase SDKs -->
 <script>
-/* أداة فحص الأخطاء: افتح الموقع بإضافة ?debug=1 لآخر الرابط لتظهر الأخطاء على الشاشة */
 (function () {
   if (location.search.indexOf('debug') === -1) return;
   function show(msg) {
@@ -642,7 +641,6 @@ body {
 .theme-name { font-size: 12px; margin-top: 6px; color: var(--text-muted); }
 .theme-card.sel .theme-name { color: var(--babylon-gold); font-weight: 700; }
 
-/* البروفايل المحسن والمعالج بالكامل */
 i[data-ic]{display:inline-flex;font-style:normal}
 .pf-cover{position:relative;height:140px;flex-shrink:0;overflow:hidden;background:var(--babylon-blue);--pattern-color:#fff;--pattern-opacity:.2}
 .pf-cover::after{content:"";position:absolute;left:0;right:0;bottom:0;height:70%;background:linear-gradient(to bottom,rgba(11,17,32,0),#0b1120);z-index:1;pointer-events:none}
@@ -673,7 +671,6 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .pf-ltr{direction:ltr;unicode-bidi:isolate;text-align:right}
 .pf-lbl{font-size:12px;color:var(--text-muted);margin-top:2px}
 
-/* علامة التوثيق الفاخرة */
 .verified-badge {
   display: inline-flex;
   align-items: center;
@@ -689,7 +686,6 @@ i[data-ic]{display:inline-flex;font-style:normal}
   box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
 }
 
-/* مختار الغلاف */
 .cover-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .cover-opt{position:relative;height:78px;border-radius:12px;overflow:hidden;border:3px solid transparent;cursor:pointer;--pattern-color:#fff;--pattern-opacity:.24}
 .cover-opt .pattern-layer{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:26px;place-items:center;font-size:13px;color:var(--pattern-color);opacity:var(--pattern-opacity);pointer-events:none}
@@ -697,7 +693,6 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .cover-opt b{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:11px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);z-index:1}
 .cover-opt.sel{border-color:var(--babylon-gold)}
 
-/* الشريط السفلي بأيقونات موحدة */
 .nav-item .nav-icon{display:flex;align-items:center;justify-content:center;width:58px;height:30px;border-radius:15px;transition:background .2s,color .2s}
 .nav-item.active{color:var(--babylon-gold)}
 .nav-item.active .nav-icon{background:rgba(212,175,55,.16)}
@@ -1769,7 +1764,6 @@ function openChatRoom(otherUserId, keepLimit) {
     }
   });
 
-  // الاستماع لحالة الكتابة (Typing Indicator)
   chatDocUnsubscribe = db.collection("chats").doc(activeChatId).onSnapshot(doc => {
     if (!doc.exists) return;
     const data = doc.data();
@@ -1811,10 +1805,8 @@ function openChatRoom(otherUserId, keepLimit) {
       const box = document.getElementById("messagesArea");
       const prevH = box.scrollHeight;
       
-      // حفظ مؤشر الكتابة مؤقتاً قبل مسح المحتوى لو كان موجوداً
       const existingTyping = document.getElementById("typingIndicatorBubble");
 
-      // تفريغ رسائل المحادثة فقط وإبقاء المؤشر إن وجد
       Array.from(box.children).forEach(child => {
         if (child.id !== "typingIndicatorBubble" && !child.classList.contains("load-older-btn")) {
           child.remove();
