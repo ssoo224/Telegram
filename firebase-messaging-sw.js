@@ -12,12 +12,6 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage((payload) => {
-  const notificationTitle = payload.notification.title || "Babylon Chat";
-  const notificationOptions = {
-    body: payload.notification.body || "لديك رسالة جديدة في بابل",
-    icon: "/icon-512.png"
-  };
-
-  self.registration.showNotification(notificationTitle, notificationOptions);
-});
+// مكتبة Firebase تعرض الإشعار تلقائياً من حمولة السيرفر (العنوان والنص والأيقونة)،
+// لذلك لا نستدعي showNotification هنا حتى لا يظهر الإشعار مرتين.
+messaging.onBackgroundMessage(() => {});
