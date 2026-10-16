@@ -39,7 +39,7 @@ module.exports = async (req, res) => {
       tokens,
       notification: { title, body },
       webpush: {
-        notification: { icon: '/icon-512.png', badge: '/icon-512.png', tag: chatId, renotify: true },
+        notification: { icon: '/icon-512.png', badge: '/badge-96.png', tag: chatId, renotify: true },
         fcmOptions: { link: '/' }
       },
       data: { chatId, senderId: decoded.uid }
