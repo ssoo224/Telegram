@@ -31,6 +31,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 
@@ -833,7 +834,9 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .sv-bar i{display:block;height:100%;width:0;background:#fff}
 .sv-top{position:absolute;top:14px;left:0;right:0;z-index:6;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:linear-gradient(rgba(0,0,0,.6),transparent);color:#fff}
 .sv-img{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
-.sv-img img{max-width:100%;max-height:100%;object-fit:contain}
+.sv-img img,.sv-img video{max-width:100%;max-height:100%;object-fit:contain}
+.sv-img video{width:100%;height:100%;background:#000}
+.vid-badge{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;padding:2px 6px;border-radius:10px;font-size:11px}
 .sv-tap{position:absolute;top:80px;bottom:150px;width:38%;z-index:3}
 .sv-tap.n{left:0}.sv-tap.p{right:0}
 .sv-cap{position:absolute;left:0;right:0;bottom:120px;text-align:center;padding:10px 16px;color:#fff;background:rgba(0,0,0,.5);font-size:15px;z-index:4;white-space:pre-wrap;direction:rtl}
@@ -1215,7 +1218,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
 </div>
 
 <!-- نافذة اختيار نوع النشر -->
-<input type="file" id="storyMediaPicker" accept="image/*" class="hidden" onchange="onStoryMediaSelected(event)">
+<input type="file" id="storyMediaPicker" accept="image/*,video/*" class="hidden" onchange="onStoryMediaSelected(event)">
 <div id="publishTypeModal" class="viewers-modal hidden" onclick="if(event.target.id==='publishTypeModal')this.classList.add('hidden')">
   <div class="viewers-card" style="padding:20px; gap:12px;">
     <div class="viewers-title">اختر نوع المنشور 🚀</div>
@@ -1229,6 +1232,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
   <div class="viewers-card" style="gap:10px;overflow-y:auto;">
     <div class="viewers-title" style="margin:0">قصة جديدة ✨</div>
     <img id="scPreview" alt="" style="width:100%;max-height:36dvh;object-fit:contain;border-radius:12px;background:#000;">
+    <video id="scPreviewVid" class="hidden" controls playsinline muted style="width:100%;max-height:36dvh;object-fit:contain;border-radius:12px;background:#000;"></video>
     <textarea id="scCaption" class="babylon-input rtl" maxlength="200" rows="2" placeholder="أضف تعليق (اختياري)..." style="resize:none;user-select:text;"></textarea>
     <div style="color:var(--text-muted);font-size:13px;text-align:right;">مدة الظهور (بعدها تختفي)</div>
     <div id="scDur" class="sc-chips"></div>
@@ -1249,7 +1253,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
       </div>
       <button class="icon-btn" onclick="closeStoryViewer()" style="color:white;">✕</button>
     </div>
-    <div class="sv-img"><img id="storyImg" src="" alt="Story"></div>
+    <div class="sv-img"><img id="storyImg" src="" alt="Story"><video id="storyVid" class="hidden" playsinline preload="auto"></video></div>
     <div class="sv-tap n" onpointerdown="svDown()" onpointerup="svUp(1)" onpointerleave="svCancel()"></div>
     <div class="sv-tap p" onpointerdown="svDown()" onpointerup="svUp(-1)" onpointerleave="svCancel()"></div>
     <div id="svCap" class="sv-cap hidden"></div>
@@ -2965,7 +2969,8 @@ function onStoryMediaSelected(e) {
   const file = e.target.files[0];
   e.target.value = '';
   if (!file) return;
-  if (!file.type.startsWith('image/')) return showToast('اختر ملف صورة فقط');
+  if (file.type.startsWith('video/')) return handleStoryVideo(file);
+  if (!file.type.startsWith('image/')) return showToast('اختر صورة أو مقطع فيديو');
   showToast('جاري تجهيز الصورة...');
   compressImage(file, data => {
     if (!data) return showToast('تعذر تجهيز الصورة، جرب صورة ثانية');
@@ -2975,8 +2980,44 @@ function onStoryMediaSelected(e) {
       .catch(() => showToast('تعذر النشر'));
   });
 }
-function openComposer(data) {
-  scData = data; scHours = 24;
+const MAX_STORY_VIDEO = 30;            // الحد الأقصى بالثواني
+const MAX_STORY_VIDEO_MB = 100;        // الحد الأقصى للحجم
+let scVid = null;
+function handleStoryVideo(file) {
+  if (selectedPublishType !== 'story') return showToast('المنشور الدائم يقبل الصور فقط، المقاطع للقصص');
+  if (file.size > MAX_STORY_VIDEO_MB * 1024 * 1024) return showToast('حجم المقطع كبير (الأقصى ' + MAX_STORY_VIDEO_MB + ' ميجا)');
+  showToast('جاري فحص المقطع...');
+  const url = URL.createObjectURL(file);
+  const v = document.createElement('video');
+  v.preload = 'metadata'; v.muted = true; v.playsInline = true;
+  const fail = m => { URL.revokeObjectURL(url); showToast(m); };
+  v.onerror = () => fail('تعذر قراءة المقطع، جرب مقطع ثاني');
+  v.onloadedmetadata = () => {
+    const dur = v.duration;
+    if (!isFinite(dur) || dur <= 0) return fail('تعذر قراءة مدة المقطع');
+    if (dur > MAX_STORY_VIDEO + 0.5) return fail('المقطع أطول من ' + MAX_STORY_VIDEO + ' ثانية (مدته ' + Math.round(dur) + ' ث). قصّه وجرب مرة ثانية');
+    v.onseeked = () => {
+      let poster = '';
+      try {
+        const sc = Math.min(1, 480 / Math.max(v.videoWidth || 480, v.videoHeight || 480));
+        const c = document.createElement('canvas');
+        c.width = Math.round((v.videoWidth || 480) * sc); c.height = Math.round((v.videoHeight || 480) * sc);
+        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+        poster = c.toDataURL('image/jpeg', 0.6);
+      } catch (e) {}
+      if (!poster) poster = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      openComposer(poster, { file, url, duration: Math.min(dur, MAX_STORY_VIDEO) });
+    };
+    try { v.currentTime = Math.min(0.1, dur / 2); } catch (e) { v.onseeked(); }
+  };
+  v.src = url;
+}
+function openComposer(data, vid) {
+  scData = data; scHours = 24; scVid = vid || null;
+  const pv = $('scPreviewVid');
+  if (scVid) { pv.src = scVid.url; pv.classList.remove('hidden'); $('scPreview').classList.add('hidden'); }
+  else { pv.pause(); pv.removeAttribute('src'); pv.classList.add('hidden'); $('scPreview').classList.remove('hidden'); }
+  $('scPublish').textContent = 'نشر القصة';
   $('scPreview').src = data;
   $('scCaption').value = ''; $('scPin').checked = false;
   $('scDur').innerHTML = DURS.map(h => `<button type="button" data-h="${h}" class="${h === 24 ? 'on' : ''}" onclick="setDur(${h})">${h} ساعة</button>`).join('');
@@ -2984,16 +3025,38 @@ function openComposer(data) {
   $('storyComposer').classList.remove('hidden');
 }
 function setDur(h) { scHours = h; document.querySelectorAll('#scDur button').forEach(b => b.classList.toggle('on', +b.dataset.h === h)); }
-function closeComposer() { $('storyComposer').classList.add('hidden'); scData = null; }
+function closeComposer() {
+  $('storyComposer').classList.add('hidden'); scData = null;
+  const pv = $('scPreviewVid'); pv.pause(); pv.removeAttribute('src'); pv.load();
+  if (scVid) { try { URL.revokeObjectURL(scVid.url); } catch (e) {} scVid = null; }
+}
 function publishStory() {
   if (!scData || !currentUser) return;
-  $('scPublish').disabled = true;
-  const now = Date.now();
-  db.collection('stories').add({
-    userId: currentUser.uid, imageUrl: scData, caption: $('scCaption').value.trim(),
-    createdAt: now, expiresAt: now + scHours * 3600000, pinned: $('scPin').checked
-  }).then(() => { closeComposer(); showToast('تم نشر القصة 🌟'); checkUserStories(true); })
-    .catch(() => { $('scPublish').disabled = false; showToast('تعذر نشر القصة'); });
+  const btn = $('scPublish');
+  btn.disabled = true;
+  const caption = $('scCaption').value.trim(), pinned = $('scPin').checked, hours = scHours, poster = scData;
+  const save = extra => {
+    const now = Date.now();
+    return db.collection('stories').add(Object.assign({
+      userId: currentUser.uid, imageUrl: poster, caption,
+      createdAt: now, expiresAt: now + hours * 3600000, pinned
+    }, extra || {}));
+  };
+  const done = () => { closeComposer(); btn.textContent = 'نشر القصة'; showToast('تم نشر القصة 🌟'); checkUserStories(true); };
+  const fail = m => { btn.disabled = false; btn.textContent = 'نشر القصة'; showToast(m || 'تعذر نشر القصة'); };
+  if (!scVid) return save().then(done).catch(() => fail());
+  if (!firebase.storage) return fail('خدمة رفع الفيديو غير متوفرة');
+  const f = scVid.file, dur = scVid.duration;
+  const ext = (f.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'mp4';
+  const path = `stories/${currentUser.uid}/${Date.now()}.${ext}`;
+  const ref = firebase.storage().ref(path);
+  const task = ref.put(f, { contentType: f.type || 'video/mp4' });
+  task.on('state_changed',
+    sn => { btn.textContent = 'جاري الرفع ' + Math.round(sn.bytesTransferred / sn.totalBytes * 100) + '%'; },
+    () => fail('تعذر رفع المقطع، تأكد من الاتصال وقواعد التخزين'),
+    () => ref.getDownloadURL()
+      .then(u => save({ mediaType: 'video', videoUrl: u, videoPath: path, duration: dur }))
+      .then(done).catch(() => fail()));
 }
 
 /* ---------- قصصي + الحلقات ---------- */
@@ -3030,7 +3093,7 @@ function renderTiles(grid, list, mine) {
     const d = document.createElement('div');
     d.className = 'post-grid-item' + (!act && !s.pinned ? ' st-old' : '');
     const badge = s.pinned ? '📌' : act ? '⏳ ' + leftTxt(s.expiresAt) : 'أرشيف';
-    d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (mine ? `<div class="st-badge">${badge}</div>` : '');
+    d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (s.videoUrl ? '<div class="vid-badge">🎬</div>' : '') + (mine ? `<div class="st-badge">${badge}</div>` : '');
     d.onclick = () => {
       const play = list.slice().reverse();
       startViewer(s.userId, play, play.findIndex(x => x.id === s.id), mine);
@@ -3083,7 +3146,7 @@ function loadOtherStories(uid) {
     pins.forEach(s => {
       const d = document.createElement('div');
       d.className = 'post-grid-item';
-      d.innerHTML = `<img src="${esc(s.imageUrl)}">`;
+      d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (s.videoUrl ? '<div class="vid-badge">🎬</div>' : '');
       d.onclick = () => { const play = pins.slice().reverse(); startViewer(uid, play, play.findIndex(x => x.id === s.id), false); };
       grid.appendChild(d);
     });
@@ -3120,7 +3183,18 @@ function showStory() {
   const s = SV.list[SV.i];
   if (!s) return closeStoryViewer();
   SV.t = 0; SV.react = null; SV.views = [];
-  $('storyImg').src = s.imageUrl;
+  const vEl = $('storyVid');
+  SV.dur = SDUR;
+  if (s.videoUrl) {
+    SV.dur = Math.min(30, s.duration || 30) * 1000;
+    $('storyImg').classList.add('hidden'); vEl.classList.remove('hidden');
+    vEl.onloadedmetadata = () => { if (isFinite(vEl.duration) && vEl.duration > 0) SV.dur = Math.min(30, vEl.duration) * 1000; };
+    vEl.src = s.videoUrl; vEl.currentTime = 0; vEl.muted = false;
+    const pl = vEl.play(); if (pl && pl.catch) pl.catch(() => { vEl.muted = true; vEl.play().catch(() => {}); });
+  } else {
+    vEl.pause(); vEl.removeAttribute('src'); vEl.classList.add('hidden');
+    $('storyImg').classList.remove('hidden'); $('storyImg').src = s.imageUrl;
+  }
   const cap = $('svCap');
   cap.textContent = s.caption || '';
   cap.classList.toggle('hidden', !s.caption);
@@ -3152,17 +3226,26 @@ function svFooter(s) {
 function markReact() { document.querySelectorAll('.sv-reacts span').forEach(x => x.classList.toggle('on', x.dataset.e === SV.react)); }
 function updateBars() {
   document.querySelectorAll('#svBars .sv-bar i').forEach((el, k) => {
-    el.style.width = k < SV.i ? '100%' : k === SV.i ? Math.min(100, SV.t / SDUR * 100) + '%' : '0%';
+    el.style.width = k < SV.i ? '100%' : k === SV.i ? Math.min(100, SV.t / (SV.dur || SDUR) * 100) + '%' : '0%';
   });
 }
 function tick() {
-  if (SV.paused || SV.hold || $('storyViewer').classList.contains('hidden')) return;
+  if ($('storyViewer').classList.contains('hidden')) return;
+  const cur = SV.list[SV.i], v = $('storyVid'), isVid = cur && cur.videoUrl;
+  if (SV.paused || SV.hold) { if (isVid && !v.paused) v.pause(); return; }
+  if (isVid) {
+    if (v.paused && !v.ended) v.play().catch(() => {});
+    if (v.readyState >= 2 && !v.paused) SV.t = v.currentTime * 1000;
+    updateBars();
+    if (v.ended || SV.t >= (SV.dur || SDUR) - 50) storyNav(1);
+    return;
+  }
   SV.t += 50; updateBars();
   if (SV.t >= SDUR) storyNav(1);
 }
 function storyNav(d) {
   const n = SV.i + d;
-  if (n < 0) { SV.t = 0; updateBars(); return; }
+  if (n < 0) { SV.t = 0; const vv = $('storyVid'); if (vv && !vv.classList.contains('hidden')) vv.currentTime = 0; updateBars(); return; }
   if (n >= SV.list.length) return closeStoryViewer();
   SV.i = n; showStory();
 }
@@ -3175,6 +3258,7 @@ function closeStoryViewer() {
   clearInterval(SV.iv);
   $('storyViewer').classList.add('hidden');
   $('storyImg').src = '';
+  { const v = $('storyVid'); v.pause(); v.removeAttribute('src'); v.classList.add('hidden'); $('storyImg').classList.remove('hidden'); }
   checkUserStories();
   renderStoriesBar();
   if (otherStoryUid && !$('otherUserProfileView').classList.contains('hidden')) loadOtherStories(otherStoryUid);
@@ -3215,6 +3299,7 @@ function svDelete() {
   db.collection('stories').doc(s.id).collection('views').get()
     .then(q => Promise.all(q.docs.map(d => d.ref.delete().catch(() => {}))))
     .catch(() => {})
+    .then(() => { if (s.videoPath && firebase.storage) return firebase.storage().ref(s.videoPath).delete().catch(() => {}); })
     .then(() => db.collection('stories').doc(s.id).delete())
     .then(() => {
       showToast('تم حذف القصة 🗑');
