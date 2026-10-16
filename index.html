@@ -816,6 +816,41 @@ i[data-ic]{display:inline-flex;font-style:normal}
 
 .msg-image img{display:block;width:100%;max-width:240px;border-radius:10px;cursor:pointer}
 .th-hero svg{width:40px;height:40px}
+
+/* ===== نظام القصص الكامل ===== */
+.avatar-story-ring.has-story.seen{background:#4b5a6b;animation:none}
+.avatar.sring{box-shadow:0 0 0 2px #0f172a,0 0 0 4px var(--babylon-gold)}
+.avatar.sring.seen{box-shadow:0 0 0 2px #0f172a,0 0 0 4px #4b5a6b}
+.sbar{display:flex;gap:14px;overflow-x:auto;padding:12px 14px;border-bottom:1px solid var(--babylon-border);flex-shrink:0}
+.sb-item{display:flex;flex-direction:column;align-items:center;gap:6px;width:62px;flex-shrink:0;font-size:11px;color:var(--text-muted);cursor:pointer}
+.sb-item .avatar{width:54px;height:54px;font-size:20px;position:relative}
+.sb-item span{max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-plus{position:absolute;bottom:-2px;right:-2px;width:20px;height:20px;border-radius:50%;background:#2AABEE;color:#fff;font-size:15px;line-height:20px;text-align:center;border:2px solid #0f172a}
+.story-viewer-modal{align-items:center}
+.sv-stage{position:relative;width:100%;max-width:480px;height:100%;margin:0 auto;background:#000;display:flex;flex-direction:column;overflow:hidden}
+.sv-bars{display:flex;gap:3px;padding:10px 10px 0;position:absolute;top:0;left:0;right:0;z-index:6}
+.sv-bar{flex:1;height:3px;background:rgba(255,255,255,.3);border-radius:2px;overflow:hidden}
+.sv-bar i{display:block;height:100%;width:0;background:#fff}
+.sv-top{position:absolute;top:14px;left:0;right:0;z-index:6;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:linear-gradient(rgba(0,0,0,.6),transparent);color:#fff}
+.sv-img{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.sv-img img{max-width:100%;max-height:100%;object-fit:contain}
+.sv-tap{position:absolute;top:80px;bottom:150px;width:38%;z-index:3}
+.sv-tap.n{left:0}.sv-tap.p{right:0}
+.sv-cap{position:absolute;left:0;right:0;bottom:120px;text-align:center;padding:10px 16px;color:#fff;background:rgba(0,0,0,.5);font-size:15px;z-index:4;white-space:pre-wrap;direction:rtl}
+.sv-foot{position:absolute;left:0;right:0;bottom:0;z-index:6;padding:30px 12px 14px;background:linear-gradient(transparent,rgba(0,0,0,.88));color:#fff;display:flex;flex-direction:column;gap:10px}
+.sv-reacts{display:flex;justify-content:center;gap:8px;font-size:24px}
+.sv-reacts span{cursor:pointer;padding:3px 5px;border-radius:50%}
+.sv-reacts span.on{background:rgba(255,255,255,.3)}
+.sv-reply{display:flex;gap:8px}
+.sv-reply input{flex:1;padding:11px 14px;border-radius:22px;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.4);color:#fff;outline:none;direction:rtl;user-select:text;font-size:14px}
+.sv-own{display:flex;gap:8px;justify-content:space-between;align-items:center}
+.sv-pill{background:rgba(255,255,255,.2);border:none;color:#fff;padding:9px 14px;border-radius:20px;font-size:14px;cursor:pointer}
+.sc-chips{display:flex;gap:8px}
+.sc-chips button{flex:1;padding:10px;border-radius:10px;border:1px solid var(--babylon-border);background:transparent;color:#fff;cursor:pointer;font-size:14px}
+.sc-chips button.on{background:var(--babylon-gold);color:#0f172a;font-weight:700}
+.st-badge{position:absolute;top:4px;left:4px;background:rgba(0,0,0,.65);color:#fff;padding:2px 7px;border-radius:10px;font-size:11px}
+.st-old img{opacity:.5}
+.vw-react{font-size:20px}
 </style>
 </head>
 
@@ -908,6 +943,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
     </header>
 
     <div id="homeView" class="chat-list" style="flex:1; overflow-y:auto;">
+      <div id="storiesBar" class="sbar hidden"></div>
       <div id="chatList" style="display:flex; flex-direction:column;"></div>
     </div>
 
@@ -965,6 +1001,10 @@ i[data-ic]{display:inline-flex;font-style:normal}
         </div>
       </div>
 
+      <div class="posts-grid-header">قصصي ⏳</div>
+      <div id="myStoriesGrid" class="posts-grid"></div>
+      <div id="myStoriesEmpty" class="hidden" style="padding:14px 16px;color:var(--text-muted);font-size:13px;">ما عندك قصص. اضغط على صورتك أو زر الإضافة حتى تنشر.</div>
+
       <!-- شبكة المنشورات المدمجة -->
       <div class="posts-grid-header">المنشورات 📸</div>
       <div id="postsGrid" class="posts-grid"></div>
@@ -985,8 +1025,10 @@ i[data-ic]{display:inline-flex;font-style:normal}
       </div>
 
       <div class="pf-head">
-        <div id="otherAvatarText" class="profile-large-avatar">🏛</div>
-        <img id="otherAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
+        <div id="otherStoryRing" class="avatar-story-ring" onclick="openOtherStories()">
+          <div id="otherAvatarText" class="profile-large-avatar">🏛</div>
+          <img id="otherAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
+        </div>
         <div id="otherHeaderName" class="pf-name">
           <span id="otherHeaderNameText">مستخدم</span>
           <span id="otherBadgeBox" class="hidden"><span class="verified-badge">✓</span></span>
@@ -1017,6 +1059,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
           <div class="pf-row-body"><div id="otherJoinDisplay" class="pf-val"></div><div class="pf-lbl">تاريخ الانضمام</div></div>
         </div>
       </div>
+      <div id="otherPinnedWrap" class="hidden"><div class="posts-grid-header">📌 القصص المثبتة</div><div id="otherPinnedGrid" class="posts-grid"></div></div>
     </div>
 
     <!-- شاشة الإعدادات العامة -->
@@ -1176,38 +1219,48 @@ i[data-ic]{display:inline-flex;font-style:normal}
 <div id="publishTypeModal" class="viewers-modal hidden" onclick="if(event.target.id==='publishTypeModal')this.classList.add('hidden')">
   <div class="viewers-card" style="padding:20px; gap:12px;">
     <div class="viewers-title">اختر نوع المنشور 🚀</div>
-    <button class="babylon-btn" onclick="selectPublishType('story')">⏳ قصة (تختفي بعد 24 ساعة)</button>
+    <button class="babylon-btn" onclick="selectPublishType('story')">⏳ قصة (بوقت تحدده)</button>
     <button class="babylon-btn" style="background:transparent; border:1px solid var(--babylon-gold); color:var(--babylon-gold);" onclick="selectPublishType('post')">📌 منشور دائم بالبروفايل</button>
   </div>
 </div>
 
-<!-- شاشة عرض الستوري -->
+<!-- نافذة نشر قصة -->
+<div id="storyComposer" class="viewers-modal hidden">
+  <div class="viewers-card" style="gap:10px;overflow-y:auto;">
+    <div class="viewers-title" style="margin:0">قصة جديدة ✨</div>
+    <img id="scPreview" alt="" style="width:100%;max-height:36dvh;object-fit:contain;border-radius:12px;background:#000;">
+    <textarea id="scCaption" class="babylon-input rtl" maxlength="200" rows="2" placeholder="أضف تعليق (اختياري)..." style="resize:none;user-select:text;"></textarea>
+    <div style="color:var(--text-muted);font-size:13px;text-align:right;">مدة الظهور (بعدها تختفي)</div>
+    <div id="scDur" class="sc-chips"></div>
+    <label style="display:flex;align-items:center;gap:8px;color:#fff;font-size:14px;"><input type="checkbox" id="scPin"> 📌 تثبيت بالملف الشخصي (تبقى دائماً)</label>
+    <button id="scPublish" class="babylon-btn" onclick="publishStory()">نشر القصة</button>
+    <button class="babylon-btn" style="background:transparent;border:1px solid var(--babylon-border);color:var(--text-muted);margin-top:0" onclick="closeComposer()">إلغاء</button>
+  </div>
+</div>
+
+<!-- شاشة عرض القصص -->
 <div id="storyViewer" class="story-viewer-modal hidden">
-  <div class="story-progress-bar">
-    <div class="story-progress-segment"><div id="storyFill" class="story-progress-fill"></div></div>
-  </div>
-  <div class="story-header">
-    <div class="story-user-info">
-      <div id="storyUserAvatar" class="story-avatar">Ali</div>
-      <span id="storyUserName" style="font-weight:bold;">Ali</span>
+  <div class="sv-stage">
+    <div id="svBars" class="sv-bars"></div>
+    <div class="sv-top">
+      <div class="story-user-info">
+        <div id="storyUserAvatar" class="story-avatar"></div>
+        <div style="text-align:right;line-height:1.3;"><div id="storyUserName" style="font-weight:bold;font-size:14px;"></div><div id="svTime" style="font-size:11px;opacity:.8;"></div></div>
+      </div>
+      <button class="icon-btn" onclick="closeStoryViewer()" style="color:white;">✕</button>
     </div>
-    <button class="icon-btn" onclick="closeStoryViewer()" style="color:white;">✕</button>
-  </div>
-  <div class="story-content">
-    <img id="storyImg" src="" alt="Story">
-  </div>
-  <div class="story-footer">
-    <div id="storyViewsBtn" class="story-views-btn" onclick="openViewersList()">
-      👁 <span id="storyViewsCount">0</span> مشاهدة
-    </div>
-    <button id="storyLikeBtn" class="story-like-btn" onclick="toggleStoryLike()">❤️</button>
+    <div class="sv-img"><img id="storyImg" src="" alt="Story"></div>
+    <div class="sv-tap n" onpointerdown="svDown()" onpointerup="svUp(1)" onpointerleave="svCancel()"></div>
+    <div class="sv-tap p" onpointerdown="svDown()" onpointerup="svUp(-1)" onpointerleave="svCancel()"></div>
+    <div id="svCap" class="sv-cap hidden"></div>
+    <div id="svFoot" class="sv-foot"></div>
   </div>
 </div>
 
 <!-- قائمة المشاهدين والتفاعلات -->
-<div id="viewersModal" class="viewers-modal hidden" onclick="if(event.target.id==='viewersModal')this.classList.add('hidden')">
+<div id="viewersModal" class="viewers-modal hidden" onclick="if(event.target.id==='viewersModal')closeViewersList()">
   <div class="viewers-card">
-    <div class="viewers-title">المشاهدون ❤️</div>
+    <div id="viewersTitle" class="viewers-title">المشاهدون</div>
     <div id="viewersList" class="viewers-list"></div>
   </div>
 </div>
@@ -1862,6 +1915,7 @@ function openUserProfileDirect(u) {
   }
 
   showView("otherUserProfileView");
+  loadOtherStories(u.id);
 }
 
 function openCurrentChatUserProfile() {
@@ -2021,6 +2075,7 @@ function openChatRoom(otherUserId, keepLimit) {
         
         let htmlContent = "";
         if (m.replyTo) htmlContent += `<div class="reply-quote">${esc(m.replyTo)}</div>`;
+        if (m.storyReply) htmlContent += `<div class="reply-quote">${m.senderId === currentUser.uid ? "↩ رديت على قصة" : "↩ رد على قصتك"}</div>`;
 
         if (m.audioUrl) {
           htmlContent += `<div class="audio-player"><audio controls src="${esc(m.audioUrl)}"></audio></div>`;
@@ -2278,6 +2333,8 @@ function loadChats() {
       });
 
       chatDocsList.sort((a, b) => (b.data.updatedAt || 0) - (a.data.updatedAt || 0));
+      storyPartnerIds = chatDocsList.map(c => (c.data.participants || []).find(id => id !== currentUser.uid)).filter(Boolean);
+      renderStoriesBar();
 
       const emptyElement = container.querySelector('.empty-chats');
       if (emptyElement) container.innerHTML = "";
@@ -2334,7 +2391,7 @@ function loadChats() {
                   const verifiedBadge = isUVerified ? `<span class="verified-badge" style="width:13px;height:13px;font-size:8px;">✓</span>` : '';
 
                   existingItem.innerHTML = `
-                    <div class="avatar">${u.avatarUrl ? `<img src="${esc(u.avatarUrl)}">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>
+                    <div class="avatar${ringCls(u)}" onclick="chatAvatarStory(event,'${otherId}')">${u.avatarUrl ? `<img src="${esc(u.avatarUrl)}">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>
                     <div class="chat-item-info">
                       <div class="chat-item-header-row">
                         <div class="chat-item-name">${esc(u.displayName || "مستخدم")} ${verifiedBadge}</div>
@@ -2866,182 +2923,327 @@ function syncUsernameDoc(oldName, newName) {
     .catch(() => {});
 }
 
-/* دوال الستوري والمنشورات بالكامل */
-function openPublishOptions() {
-  document.getElementById("publishTypeModal").classList.remove("hidden");
+/* ================= نظام القصص الكامل ================= */
+const $ = id => document.getElementById(id);
+const SEEN_KEY = 'babylon_seen_users';
+let seenUsers = {}; try { seenUsers = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}'); } catch (e) {}
+const userCache = {};
+let myStories = [], storyPartnerIds = [], otherStoryUid = null, otherStories = [];
+let scData = null, scHours = 24, barTimer = null;
+let SV = { uid: null, list: [], i: 0, mine: false, paused: false, hold: false, t: 0, iv: null, react: null, views: [] };
+const SDUR = 5000;
+const DURS = [6, 12, 24, 48];
+
+function fetchUser(uid, fresh) {
+  if (!fresh && userCache[uid]) return Promise.resolve(userCache[uid]);
+  return db.collection('users').doc(uid).get().then(d => d.exists ? (userCache[uid] = d.data()) : null).catch(() => null);
+}
+function avInner(u) { return u && u.avatarUrl ? `<img src="${esc(u.avatarUrl)}">` : esc(((u && u.displayName) || '?').charAt(0).toUpperCase()); }
+function isActive(s) { return s.expiresAt > Date.now(); }
+function ago(ts) { const m = Math.floor((Date.now() - ts) / 60000); return m < 1 ? 'الآن' : m < 60 ? `قبل ${m} د` : m < 1440 ? `قبل ${Math.floor(m / 60)} س` : `قبل ${Math.floor(m / 1440)} يوم`; }
+function leftTxt(ts) { const m = Math.max(1, Math.floor((ts - Date.now()) / 60000)); return m < 60 ? `${m} د` : `${Math.floor(m / 60)} س`; }
+function isSeenUser(uid, latest) { return (seenUsers[uid] || 0) >= latest; }
+function markSeen(uid, ts) { if ((seenUsers[uid] || 0) < ts) { seenUsers[uid] = ts; try { localStorage.setItem(SEEN_KEY, JSON.stringify(seenUsers)); } catch (e) {} } }
+function ringCls(u) {
+  if (!u || !(u.storyUntil > Date.now())) return '';
+  return ' sring' + (isSeenUser(u.id || '', u.storyAt || 0) ? ' seen' : '');
+}
+function loadStories(uid) {
+  return db.collection('stories').where('userId', '==', uid).get()
+    .then(snap => { const a = []; snap.forEach(d => a.push({ id: d.id, ...d.data() })); return a.sort((x, y) => y.createdAt - x.createdAt); })
+    .catch(() => []);
 }
 
+/* ---------- النشر ---------- */
+function openPublishOptions() { $('publishTypeModal').classList.remove('hidden'); }
 function selectPublishType(type) {
   selectedPublishType = type;
-  document.getElementById("publishTypeModal").classList.add("hidden");
-  document.getElementById("storyMediaPicker").click();
+  $('publishTypeModal').classList.add('hidden');
+  $('storyMediaPicker').click();
 }
-
 function onStoryMediaSelected(e) {
   const file = e.target.files[0];
+  e.target.value = '';
   if (!file) return;
-
-  showToast("جاري معالجة الصورة والرفع...");
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    const base64Img = evt.target.result;
-
-    if (selectedPublishType === 'story') {
-      db.collection("stories").add({
-        userId: currentUser.uid,
-        imageUrl: base64Img,
-        createdAt: Date.now(),
-        expiresAt: Date.now() + (24 * 60 * 60 * 1000),
-        views: [],
-        likes: []
-      }).then(() => {
-        showToast("تم نشر القصة بنجاح 🌟");
-        checkUserStories();
-      });
-    } else {
-      db.collection("posts").add({
-        userId: currentUser.uid,
-        imageUrl: base64Img,
-        createdAt: Date.now(),
-        likes: []
-      }).then(() => {
-        showToast("تم إضافة المنشور للبروفايل 📸");
-        loadUserPosts();
-      });
-    }
-  };
-  reader.readAsDataURL(file);
+  if (!file.type.startsWith('image/')) return showToast('اختر ملف صورة فقط');
+  showToast('جاري تجهيز الصورة...');
+  compressImage(file, data => {
+    if (!data) return showToast('تعذر تجهيز الصورة، جرب صورة ثانية');
+    if (selectedPublishType === 'story') return openComposer(data);
+    db.collection('posts').add({ userId: currentUser.uid, imageUrl: data, createdAt: Date.now(), likes: [] })
+      .then(() => { showToast('تم إضافة المنشور للبروفايل 📸'); loadUserPosts(); })
+      .catch(() => showToast('تعذر النشر'));
+  });
 }
-
-function checkUserStories() {
-  if (!currentUser) return;
+function openComposer(data) {
+  scData = data; scHours = 24;
+  $('scPreview').src = data;
+  $('scCaption').value = ''; $('scPin').checked = false;
+  $('scDur').innerHTML = DURS.map(h => `<button type="button" data-h="${h}" class="${h === 24 ? 'on' : ''}" onclick="setDur(${h})">${h} ساعة</button>`).join('');
+  $('scPublish').disabled = false;
+  $('storyComposer').classList.remove('hidden');
+}
+function setDur(h) { scHours = h; document.querySelectorAll('#scDur button').forEach(b => b.classList.toggle('on', +b.dataset.h === h)); }
+function closeComposer() { $('storyComposer').classList.add('hidden'); scData = null; }
+function publishStory() {
+  if (!scData || !currentUser) return;
+  $('scPublish').disabled = true;
   const now = Date.now();
-  db.collection("stories")
-    .where("userId", "==", currentUser.uid)
-    .where("expiresAt", ">", now)
-    .get().then(snap => {
-      activeUserStories = [];
-      snap.forEach(doc => activeUserStories.push({ id: doc.id, ...doc.data() }));
-
-      const ring = document.getElementById("pStoryRing");
-      if (ring) {
-        if (activeUserStories.length > 0) {
-          ring.classList.add("has-story");
-        } else {
-          ring.classList.remove("has-story");
-        }
-      }
-    });
+  db.collection('stories').add({
+    userId: currentUser.uid, imageUrl: scData, caption: $('scCaption').value.trim(),
+    createdAt: now, expiresAt: now + scHours * 3600000, pinned: $('scPin').checked
+  }).then(() => { closeComposer(); showToast('تم نشر القصة 🌟'); checkUserStories(true); })
+    .catch(() => { $('scPublish').disabled = false; showToast('تعذر نشر القصة'); });
 }
 
-function handleAvatarClick() {
-  if (activeUserStories.length > 0) {
-    openStoryViewer(0);
-  } else {
-    openPublishOptions();
+/* ---------- قصصي + الحلقات ---------- */
+function syncStoryMeta() {
+  const act = myStories.filter(isActive);
+  const until = act.length ? Math.max(...act.map(s => s.expiresAt)) : 0;
+  const at = act.length ? Math.max(...act.map(s => s.createdAt)) : 0;
+  const cur = currentUserData || {};
+  if ((cur.storyUntil || 0) !== until || (cur.storyAt || 0) !== at) {
+    db.collection('users').doc(currentUser.uid).set({ storyUntil: until, storyAt: at }, { merge: true }).catch(() => {});
   }
 }
-
-function openStoryViewer(index) {
-  currentStoryIndex = index;
-  const story = activeUserStories[currentStoryIndex];
-  if (!story) return;
-
-  document.getElementById("storyImg").src = story.imageUrl;
-  document.getElementById("storyViewsCount").textContent = (story.views || []).length;
-  
-  const likeBtn = document.getElementById("storyLikeBtn");
-  if (story.likes && story.likes.includes(currentUser.uid)) {
-    likeBtn.classList.add("liked");
-  } else {
-    likeBtn.classList.remove("liked");
-  }
-
-  document.getElementById("storyViewer").classList.remove("hidden");
-
-  if (currentUser && (!story.views || !story.views.includes(currentUser.uid))) {
-    db.collection("stories").doc(story.id).update({
-      views: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-    });
-  }
-
-  const fill = document.getElementById("storyFill");
-  fill.style.width = "0%";
-  setTimeout(() => fill.style.width = "100%", 50);
-
-  clearTimeout(storyTimer);
-  storyTimer = setTimeout(() => {
-    if (currentStoryIndex + 1 < activeUserStories.length) {
-      openStoryViewer(currentStoryIndex + 1);
-    } else {
-      closeStoryViewer();
+function checkUserStories(forceSync) {
+  if (!currentUser) return;
+  loadStories(currentUser.uid).then(list => {
+    myStories = list;
+    const act = list.filter(isActive);
+    const ring = $('pStoryRing');
+    if (ring) {
+      ring.classList.toggle('has-story', act.length > 0);
+      ring.classList.toggle('seen', act.length > 0 && isSeenUser(currentUser.uid, Math.max(...act.map(s => s.createdAt))));
     }
-  }, 5000);
+    renderTiles($('myStoriesGrid'), list, true);
+    $('myStoriesEmpty').classList.toggle('hidden', list.length > 0);
+    syncStoryMeta();
+    renderStoriesBar();
+  });
 }
-
-function closeStoryViewer() {
-  clearTimeout(storyTimer);
-  document.getElementById("storyViewer").classList.add("hidden");
+function renderTiles(grid, list, mine) {
+  if (!grid) return;
+  grid.innerHTML = '';
+  list.forEach(s => {
+    const act = isActive(s);
+    const d = document.createElement('div');
+    d.className = 'post-grid-item' + (!act && !s.pinned ? ' st-old' : '');
+    const badge = s.pinned ? '📌' : act ? '⏳ ' + leftTxt(s.expiresAt) : 'أرشيف';
+    d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (mine ? `<div class="st-badge">${badge}</div>` : '');
+    d.onclick = () => {
+      const play = list.slice().reverse();
+      startViewer(s.userId, play, play.findIndex(x => x.id === s.id), mine);
+    };
+    grid.appendChild(d);
+  });
 }
-
-function toggleStoryLike() {
-  const story = activeUserStories[currentStoryIndex];
-  if (!story || !currentUser) return;
-
-  const btn = document.getElementById("storyLikeBtn");
-  const isLiked = story.likes && story.likes.includes(currentUser.uid);
-
-  if (isLiked) {
-    db.collection("stories").doc(story.id).update({
-      likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+function renderStoriesBar() {
+  clearTimeout(barTimer);
+  barTimer = setTimeout(async () => {
+    const bar = $('storiesBar');
+    if (!bar || !currentUser) return;
+    const act = myStories.filter(isActive);
+    const me = currentUserData || {};
+    const mySeen = act.length && isSeenUser(currentUser.uid, Math.max(...act.map(s => s.createdAt)));
+    let html = `<div class="sb-item" onclick="myStoryClick()"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''}">${avInner(me)}${act.length ? '' : '<div class="sb-plus">+</div>'}</div><span>قصتي</span></div>`;
+    const us = await Promise.all(storyPartnerIds.map(id => fetchUser(id, true)));
+    us.forEach((u, i) => {
+      if (!u || !(u.storyUntil > Date.now())) return;
+      const id = storyPartnerIds[i]; u.id = id;
+      html += `<div class="sb-item" onclick="openStories('${id}')"><div class="avatar${ringCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
     });
-    btn.classList.remove("liked");
-  } else {
-    db.collection("stories").doc(story.id).update({
-      likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-    });
-    btn.classList.add("liked");
-  }
+    bar.innerHTML = html;
+    bar.classList.remove('hidden');
+  }, 350);
+}
+function myStoryClick() { myStories.some(isActive) ? openStories(currentUser.uid) : (selectedPublishType = 'story', $('storyMediaPicker').click()); }
+function handleAvatarClick() { myStories.some(isActive) ? openStories(currentUser.uid) : openPublishOptions(); }
+function chatAvatarStory(ev, uid) {
+  const el = ev.currentTarget;
+  if (!el.classList.contains('sring')) return;
+  ev.stopPropagation();
+  openStories(uid);
 }
 
-function openViewersList() {
-  const story = activeUserStories[currentStoryIndex];
-  if (!story) return;
-
-  const list = document.getElementById("viewersList");
-  list.innerHTML = "";
-
-  const viewerIds = story.views || [];
-  if (viewerIds.length === 0) {
-    list.innerHTML = `<div style="color:var(--text-muted); text-align:center; padding:10px;">لا توجد مشاهدات بعد</div>`;
-  }
-
-  viewerIds.forEach(uid => {
-    db.collection("users").doc(uid).get().then(doc => {
-      if (!doc.exists) return;
-      const u = doc.data();
-      const hasLiked = story.likes && story.likes.includes(uid);
-
-      const item = document.createElement("div");
-      item.className = "viewer-item";
-      item.innerHTML = `
-        <div class="viewer-info">
-          <div style="width:36px;height:36px;border-radius:50%;background:var(--babylon-gold);display:flex;align-items:center;justify-content:center;color:#000;font-weight:bold;">
-            ${(u.displayName||"?").charAt(0)}
-          </div>
-          <div style="text-align:right;">
-            <div style="color:white;font-weight:600;font-size:14px;">${u.displayName}</div>
-            <div style="color:var(--text-muted);font-size:11px;">@${u.username}</div>
-          </div>
-        </div>
-        ${hasLiked ? `<span style="font-size:18px;">❤️</span>` : ''}
-      `;
-      list.appendChild(item);
+/* ---------- بروفايل شخص آخر ---------- */
+function loadOtherStories(uid) {
+  otherStoryUid = uid; otherStories = [];
+  $('otherStoryRing').classList.remove('has-story', 'seen');
+  $('otherPinnedWrap').classList.add('hidden');
+  loadStories(uid).then(list => {
+    if (otherStoryUid !== uid) return;
+    otherStories = list;
+    const act = list.filter(isActive);
+    $('otherStoryRing').classList.toggle('has-story', act.length > 0);
+    $('otherStoryRing').classList.toggle('seen', act.length > 0 && isSeenUser(uid, Math.max(...act.map(s => s.createdAt))));
+    const pins = list.filter(s => s.pinned);
+    $('otherPinnedWrap').classList.toggle('hidden', !pins.length);
+    const grid = $('otherPinnedGrid'); grid.innerHTML = '';
+    pins.forEach(s => {
+      const d = document.createElement('div');
+      d.className = 'post-grid-item';
+      d.innerHTML = `<img src="${esc(s.imageUrl)}">`;
+      d.onclick = () => { const play = pins.slice().reverse(); startViewer(uid, play, play.findIndex(x => x.id === s.id), false); };
+      grid.appendChild(d);
     });
   });
-
-  document.getElementById("viewersModal").classList.remove("hidden");
 }
+function openOtherStories() { if (otherStoryUid) openStories(otherStoryUid); }
+
+/* ---------- العارض ---------- */
+function openStories(uid) {
+  const mine = uid === currentUser.uid;
+  const go = list => {
+    const act = list.filter(isActive).reverse();
+    if (!act.length) return showToast('لا توجد قصص حالياً');
+    const seen = seenUsers[uid] || 0;
+    let i = mine ? 0 : act.findIndex(s => s.createdAt > seen);
+    startViewer(uid, act, i < 0 ? 0 : i, mine);
+  };
+  mine ? go(myStories) : loadStories(uid).then(go);
+}
+function startViewer(uid, list, i, mine) {
+  if (!list.length) return;
+  SV = { uid, list, i: Math.max(0, i), mine, paused: false, hold: false, t: 0, iv: null, react: null, views: [] };
+  $('storyViewer').classList.remove('hidden');
+  fetchUser(uid).then(u => {
+    if (!u) return;
+    $('storyUserAvatar').innerHTML = avInner(u);
+    $('storyUserName').textContent = mine ? 'قصتي' : (u.displayName || 'مستخدم');
+  });
+  clearInterval(SV.iv);
+  SV.iv = setInterval(tick, 50);
+  showStory();
+}
+function showStory() {
+  const s = SV.list[SV.i];
+  if (!s) return closeStoryViewer();
+  SV.t = 0; SV.react = null; SV.views = [];
+  $('storyImg').src = s.imageUrl;
+  const cap = $('svCap');
+  cap.textContent = s.caption || '';
+  cap.classList.toggle('hidden', !s.caption);
+  $('svBars').innerHTML = SV.list.map(() => '<div class="sv-bar"><i></i></div>').join('');
+  $('svTime').textContent = ago(s.createdAt) + (SV.mine ? (s.pinned ? ' · 📌 مثبتة' : isActive(s) ? ' · تنتهي بعد ' + leftTxt(s.expiresAt) : ' · أرشيف') : '');
+  svFooter(s);
+  markSeen(SV.uid, s.createdAt);
+  if (!SV.mine) db.collection('stories').doc(s.id).collection('views').doc(currentUser.uid).set({ uid: currentUser.uid, at: Date.now() }, { merge: true }).catch(() => {});
+  updateBars();
+}
+function svFooter(s) {
+  const f = $('svFoot');
+  if (SV.mine) {
+    f.innerHTML = `<div class="sv-own"><button class="sv-pill" onclick="openViewersList()">👁 <span id="svViews">0</span></button><button class="sv-pill" onclick="svPin()">${s.pinned ? '📍 إلغاء التثبيت' : '📌 تثبيت'}</button><button class="sv-pill" onclick="svDelete()">🗑 حذف</button></div>`;
+    db.collection('stories').doc(s.id).collection('views').get().then(q => {
+      if (SV.list[SV.i] !== s) return;
+      SV.views = q.docs.map(d => d.data());
+      const r = SV.views.filter(v => v.reaction).length;
+      const el = $('svViews'); if (el) el.textContent = SV.views.length + (r ? ` · ${r} تفاعل` : '');
+    }).catch(() => {});
+  } else {
+    f.innerHTML = `<div class="sv-reacts">${['❤️', '🔥', '😂', '😮', '😢', '👏'].map(e => `<span data-e="${e}" onclick="svReact('${e}')">${e}</span>`).join('')}</div><div class="sv-reply"><input id="svReplyInput" placeholder="رد على القصة..." autocomplete="off" onfocus="svPause(true)" onblur="svPause(false)" onkeydown="if(event.key==='Enter')sendStoryReply()"><button class="sv-pill" onmousedown="event.preventDefault()" onclick="sendStoryReply()">إرسال</button></div>`;
+    db.collection('stories').doc(s.id).collection('views').doc(currentUser.uid).get().then(d => {
+      if (SV.list[SV.i] !== s || !d.exists) return;
+      SV.react = d.data().reaction || null; markReact();
+    }).catch(() => {});
+  }
+}
+function markReact() { document.querySelectorAll('.sv-reacts span').forEach(x => x.classList.toggle('on', x.dataset.e === SV.react)); }
+function updateBars() {
+  document.querySelectorAll('#svBars .sv-bar i').forEach((el, k) => {
+    el.style.width = k < SV.i ? '100%' : k === SV.i ? Math.min(100, SV.t / SDUR * 100) + '%' : '0%';
+  });
+}
+function tick() {
+  if (SV.paused || SV.hold || $('storyViewer').classList.contains('hidden')) return;
+  SV.t += 50; updateBars();
+  if (SV.t >= SDUR) storyNav(1);
+}
+function storyNav(d) {
+  const n = SV.i + d;
+  if (n < 0) { SV.t = 0; updateBars(); return; }
+  if (n >= SV.list.length) return closeStoryViewer();
+  SV.i = n; showStory();
+}
+let svDownAt = 0;
+function svDown() { svDownAt = Date.now(); SV.hold = true; }
+function svCancel() { SV.hold = false; }
+function svUp(dir) { SV.hold = false; if (Date.now() - svDownAt < 250) storyNav(dir); }
+function svPause(b) { SV.paused = b; }
+function closeStoryViewer() {
+  clearInterval(SV.iv);
+  $('storyViewer').classList.add('hidden');
+  $('storyImg').src = '';
+  checkUserStories();
+  renderStoriesBar();
+  if (otherStoryUid && !$('otherUserProfileView').classList.contains('hidden')) loadOtherStories(otherStoryUid);
+}
+
+/* ---------- التفاعل والرد ---------- */
+function svReact(e) {
+  const s = SV.list[SV.i]; if (!s) return;
+  const off = SV.react === e;
+  SV.react = off ? null : e; markReact();
+  db.collection('stories').doc(s.id).collection('views').doc(currentUser.uid)
+    .set({ uid: currentUser.uid, at: Date.now(), reaction: off ? firebase.firestore.FieldValue.delete() : e }, { merge: true })
+    .catch(() => showToast('تعذر إرسال التفاعل'));
+}
+function sendStoryReply() {
+  const inp = $('svReplyInput'); if (!inp) return;
+  const text = inp.value.trim(); if (!text) return;
+  const me = currentUser.uid, chatId = [me, SV.uid].sort().join('__');
+  db.collection('chats').doc(chatId).set({ participants: [me, SV.uid], updatedAt: Date.now() }, { merge: true })
+    .then(() => db.collection('chats').doc(chatId).collection('messages').add({ senderId: me, text, storyReply: true, read: false, createdAt: Date.now() }))
+    .then(() => { notifyPeer(chatId, '↩ رد على قصتك: ' + text); inp.value = ''; inp.blur(); showToast('تم إرسال ردك ✅'); })
+    .catch(() => showToast('تعذر إرسال الرد'));
+}
+
+/* ---------- إدارة قصتي: تثبيت / حذف / مشاهدون ---------- */
+function svPin() {
+  const s = SV.list[SV.i]; if (!s) return;
+  db.collection('stories').doc(s.id).update({ pinned: !s.pinned }).then(() => {
+    s.pinned = !s.pinned;
+    showToast(s.pinned ? 'تم التثبيت بالملف الشخصي 📌' : 'تم إلغاء التثبيت');
+    showStory(); checkUserStories();
+  }).catch(() => showToast('تعذر التنفيذ'));
+}
+function svDelete() {
+  const s = SV.list[SV.i]; if (!s) return;
+  svPause(true);
+  if (!confirm('تحذف هذه القصة نهائياً؟')) return svPause(false);
+  db.collection('stories').doc(s.id).collection('views').get()
+    .then(q => Promise.all(q.docs.map(d => d.ref.delete().catch(() => {}))))
+    .catch(() => {})
+    .then(() => db.collection('stories').doc(s.id).delete())
+    .then(() => {
+      showToast('تم حذف القصة 🗑');
+      SV.list.splice(SV.i, 1); SV.paused = false;
+      myStories = myStories.filter(x => x.id !== s.id);
+      if (!SV.list.length) return closeStoryViewer();
+      if (SV.i >= SV.list.length) SV.i = SV.list.length - 1;
+      showStory(); checkUserStories();
+    }).catch(() => { svPause(false); showToast('تعذر الحذف'); });
+}
+function openViewersList() {
+  const s = SV.list[SV.i]; if (!s) return;
+  svPause(true);
+  const list = $('viewersList');
+  const views = SV.views.slice().sort((a, b) => (b.at || 0) - (a.at || 0));
+  $('viewersTitle').textContent = `المشاهدون (${views.length})`;
+  list.innerHTML = views.length ? '' : '<div style="color:var(--text-muted);text-align:center;padding:10px;">لا توجد مشاهدات بعد</div>';
+  views.forEach(v => {
+    fetchUser(v.uid).then(u => {
+      if (!u) return;
+      const it = document.createElement('div');
+      it.className = 'viewer-item';
+      it.innerHTML = `<div class="viewer-info"><div class="story-avatar" style="color:#000">${avInner(u)}</div><div style="text-align:right;"><div style="color:white;font-weight:600;font-size:14px;">${esc(u.displayName || 'مستخدم')}</div><div style="color:var(--text-muted);font-size:11px;">@${esc(u.username || '')} · ${ago(v.at || 0)}</div></div></div>${v.reaction ? `<span class="vw-react">${esc(v.reaction)}</span>` : ''}`;
+      list.appendChild(it);
+    });
+  });
+  $('viewersModal').classList.remove('hidden');
+}
+function closeViewersList() { $('viewersModal').classList.add('hidden'); svPause(false); }
 
 function loadUserPosts() {
   if (!currentUser) return;
