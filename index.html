@@ -327,7 +327,9 @@ body {
   background: #0b1120;
   display: flex;
   flex-direction: column;
+  padding-bottom: 150px; /* مساحة تحت حتى لا يغطي زر الإضافة والشريط السفلي المحتوى */
 }
+.profile-view > * { flex-shrink: 0; } /* يمنع انضغاط الكروت وقص محتواها */
 
 /* إطار الستوري المتدرج حول صورة البروفايل */
 .avatar-story-ring {
