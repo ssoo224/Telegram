@@ -642,6 +642,8 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .nav-item .nav-icon{display:flex;align-items:center;justify-content:center;width:58px;height:30px;border-radius:15px;transition:background .2s,color .2s}
 .nav-item.active{color:var(--babylon-gold)}
 .nav-item.active .nav-icon{background:rgba(212,175,55,.16)}
+
+.load-older-btn{align-self:center;margin:8px auto;padding:7px 16px;border-radius:16px;border:1px solid var(--babylon-border);background:var(--babylon-surface);color:var(--babylon-gold);font-size:13px;cursor:pointer;position:relative;z-index:1}
 </style>
 </head>
 
@@ -1169,8 +1171,12 @@ auth.onAuthStateChanged(user => {
     
     clearInterval(heartbeatInterval);
     heartbeatInterval = setInterval(() => {
+      if (document.hidden) return;
       db.collection("users").doc(user.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
-    }, 10000);
+    }, 20000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && currentUser) db.collection("users").doc(currentUser.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
+    });
 
     window.addEventListener('beforeunload', () => {
       db.collection("users").doc(user.uid).set({ online: false, lastSeen: Date.now() }, { merge: true });
@@ -1196,6 +1202,7 @@ function loadUserDataAndEnter(uid) {
     if (doc.exists) {
       currentUserData = doc.data();
       updateProfileUI(currentUserData);
+      syncPrefsFromUser(currentUserData);
       
       if (!isAppInitialized) {
         isAppInitialized = true;
@@ -1513,10 +1520,10 @@ function searchUsers() {
         const div = document.createElement("div");
         div.className = "chat-item";
         div.innerHTML = `
-          <div class="avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}">` : (u.displayName||"?").charAt(0).toUpperCase()}</div>
+          <div class="avatar">${u.avatarUrl ? `<img src="${esc(u.avatarUrl)}">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>
           <div class="chat-item-info">
-            <div class="chat-item-name">${u.displayName} ${verifiedBadge}</div>
-            <div class="chat-item-sub">@${u.username}</div>
+            <div class="chat-item-name">${esc(u.displayName)} ${verifiedBadge}</div>
+            <div class="chat-item-sub">@${esc(u.username)}</div>
           </div>`;
         div.onclick = () => openUserProfileDirect(u);
         res.appendChild(div);
@@ -1592,7 +1599,11 @@ function startChatFromProfile() {
   });
 }
 
-function openChatRoom(otherUserId) {
+let msgLimit = 50;
+let loadingOlder = false;
+
+function openChatRoom(otherUserId, keepLimit) {
+  if (!keepLimit) msgLimit = 50;
   currentChatOtherUserId = otherUserId;
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
   if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
@@ -1611,12 +1622,12 @@ function openChatRoom(otherUserId) {
       
       const avatarBox = document.getElementById("chatAvatar");
       if (u.avatarUrl) {
-        avatarBox.innerHTML = `<img src="${u.avatarUrl}">`;
+        avatarBox.innerHTML = `<img src="${esc(u.avatarUrl)}">`;
       } else {
         avatarBox.textContent = (u.displayName || "?").charAt(0).toUpperCase();
       }
 
-      if (u.online && (Date.now() - (u.lastSeen || 0) < 25000)) {
+      if (u.online && (Date.now() - (u.lastSeen || 0) < 45000)) {
         sub.textContent = "متصل الآن";
         sub.style.color = "#4ade80";
       } else {
@@ -1634,12 +1645,27 @@ function openChatRoom(otherUserId) {
     });
 
   messagesUnsubscribe = db.collection("chats").doc(activeChatId).collection("messages")
-    .orderBy("createdAt", "asc")
+    .orderBy("createdAt", "desc").limit(msgLimit)
     .onSnapshot(snap => {
       const box = document.getElementById("messagesArea");
+      const prevH = box.scrollHeight;
       box.innerHTML = "";
-      
-      snap.forEach(doc => {
+
+      if (snap.size >= msgLimit) {
+        const more = document.createElement("button");
+        more.type = "button";
+        more.className = "load-older-btn";
+        more.textContent = "تحميل رسائل أقدم";
+        more.onclick = () => { msgLimit += 50; loadingOlder = true; openChatRoom(currentChatOtherUserId, true); };
+        box.appendChild(more);
+      }
+
+      snap.docs.forEach(d => {
+        const dm = d.data();
+        if (dm.senderId !== currentUser.uid && dm.read === false) d.ref.update({ read: true }).catch(() => {});
+      });
+
+      snap.docs.slice().reverse().forEach(doc => {
         const m = doc.data();
         const isMine = m.senderId === currentUser.uid;
         
@@ -1655,18 +1681,18 @@ function openChatRoom(otherUserId) {
         b.className = "msg-bubble" + (isMine ? " mine" : "");
         
         let htmlContent = "";
-        if (m.replyTo) htmlContent += `<div class="reply-quote">${m.replyTo}</div>`;
+        if (m.replyTo) htmlContent += `<div class="reply-quote">${esc(m.replyTo)}</div>`;
 
         if (m.audioUrl) {
-          htmlContent += `<div class="audio-player"><audio controls src="${m.audioUrl}"></audio></div>`;
+          htmlContent += `<div class="audio-player"><audio controls src="${esc(m.audioUrl)}"></audio></div>`;
         } else {
-          htmlContent += `<div class="msg-text">${m.text}</div>`;
+          htmlContent += `<div class="msg-text">${esc(m.text)}</div>`;
         }
 
         if (m.reactions && Object.keys(m.reactions).length > 0) {
           htmlContent += `<div class="reactions-row">`;
           for (let r in m.reactions) {
-            htmlContent += `<span class="reaction-badge">${r}</span>`;
+            htmlContent += `<span class="reaction-badge">${esc(r)}</span>`;
           }
           htmlContent += `</div>`;
         }
@@ -1702,7 +1728,8 @@ function openChatRoom(otherUserId) {
 
         box.appendChild(b);
       });
-      box.scrollTop = box.scrollHeight;
+      if (loadingOlder) { box.scrollTop = Math.max(0, box.scrollHeight - prevH); loadingOlder = false; }
+      else box.scrollTop = box.scrollHeight;
     });
 }
 
@@ -1795,6 +1822,7 @@ function startRecording() {
 
     recordInterval = setInterval(() => {
       recordSeconds++;
+      if (recordSeconds >= 60) { showToast("وصلت الحد الأقصى للتسجيل (دقيقة)"); stopAndSendRecording(); return; }
       let mins = String(Math.floor(recordSeconds / 60)).padStart(2, '0');
       let secs = String(recordSeconds % 60).padStart(2, '0');
       document.getElementById("recordTimer").textContent = `${mins}:${secs}`;
@@ -1804,6 +1832,7 @@ function startRecording() {
 
 function cancelRecording() {
   if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  if (mediaRecorder && mediaRecorder.stream) mediaRecorder.stream.getTracks().forEach(t => t.stop());
   clearInterval(recordInterval);
   document.getElementById("recordingBar").classList.add("hidden");
   document.getElementById("textInputBar").classList.remove("hidden");
@@ -1817,6 +1846,7 @@ function stopAndSendRecording() {
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64Audio = reader.result;
+      if (base64Audio.length > 950000) { showToast("البصمة كبيرة جداً، سجّل مدة أقصر"); cancelRecording(); return; }
 
       db.collection("chats").doc(activeChatId).collection("messages").add({
         senderId: currentUser.uid,
@@ -1963,14 +1993,14 @@ function loadChats() {
                   const verifiedBadge = isUVerified ? `<span class="verified-badge" style="width:13px;height:13px;font-size:8px;">✓</span>` : '';
 
                   existingItem.innerHTML = `
-                    <div class="avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}">` : (u.displayName||"?").charAt(0).toUpperCase()}</div>
+                    <div class="avatar">${u.avatarUrl ? `<img src="${esc(u.avatarUrl)}">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>
                     <div class="chat-item-info">
                       <div class="chat-item-header-row">
-                        <div class="chat-item-name">${u.displayName || "مستخدم"} ${verifiedBadge}</div>
+                        <div class="chat-item-name">${esc(u.displayName || "مستخدم")} ${verifiedBadge}</div>
                         <div class="chat-item-time">${lastMsgTime}</div>
                       </div>
                       <div class="chat-item-sub-row">
-                        <div class="chat-item-sub">${lastMsgText}</div>
+                        <div class="chat-item-sub">${esc(lastMsgText)}</div>
                         ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
                       </div>
                     </div>`;
@@ -2016,6 +2046,7 @@ try {
 
 function savePrefs() {
   try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {}
+  syncPrefsToCloud();
 }
 
 function renderPattern(el, t, count) {
@@ -2186,7 +2217,7 @@ function formatJoinDate(ts) {
 }
 
 function setPfStatus(el, online, lastSeen) {
-  const live = !!online && (Date.now() - (lastSeen || 0) < 25000);
+  const live = !!online && (Date.now() - (lastSeen || 0) < 45000);
   el.classList.toggle('online', live);
   el.querySelector('span:last-child').textContent = live ? 'متصل الآن' : formatLastSeen(lastSeen);
 }
@@ -2249,6 +2280,30 @@ function setCover(id) {
 
 hydrateIcons();
 fillGovSelect();
+/* ===== تعقيم النصوص ومزامنة الإعدادات ===== */
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+let prefsSyncTimer = null;
+let prefsFromCloudDone = false;
+function syncPrefsToCloud() {
+  clearTimeout(prefsSyncTimer);
+  prefsSyncTimer = setTimeout(() => {
+    if (currentUser) db.collection('users').doc(currentUser.uid).set({ chatPrefs: prefs }, { merge: true }).catch(() => {});
+  }, 800);
+}
+function syncPrefsFromUser(u) {
+  if (prefsFromCloudDone || !u) return;
+  prefsFromCloudDone = true;
+  const c = u.chatPrefs;
+  if (!c) { syncPrefsToCloud(); return; }
+  if (THEMES[c.theme]) prefs.theme = c.theme;
+  if (c.font >= 12 && c.font <= 22) prefs.font = Number(c.font);
+  if (c.radius >= 0 && c.radius <= 20) prefs.radius = Number(c.radius);
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {}
+  applyPrefs(true);
+}
 </script>
 </body>
 </html>
