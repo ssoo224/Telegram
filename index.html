@@ -299,13 +299,32 @@ body {
 .chat-item-sub { font-size: 13.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 .unread-badge { background: #2b5278; color: white; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-right: 6px; }
 
-/* البروفايل */
+/* البروفايل المطور */
 .profile-view {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: #0b1120;
   display: flex;
   flex-direction: column;
+}
+
+.profile-large-avatar {
+  width: 110px !important;
+  height: 110px !important;
+  border-radius: 50% !important;
+  background: var(--babylon-surface-card);
+  color: var(--babylon-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  font-weight: bold;
+  object-fit: cover;
+  border: 4px solid #0b1120;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+  margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .settings-view {
@@ -564,22 +583,22 @@ body {
 .theme-name { font-size: 12px; margin-top: 6px; color: var(--text-muted); }
 .theme-card.sel .theme-name { color: var(--babylon-gold); font-weight: 700; }
 
-/* البروفايل المحسن */
+/* البروفايل المحسن والمعالج بالكامل */
 i[data-ic]{display:inline-flex;font-style:normal}
-.pf-cover{position:relative;height:160px;flex-shrink:0;overflow:hidden;background:var(--babylon-blue);--pattern-color:#fff;--pattern-opacity:.2}
+.pf-cover{position:relative;height:140px;flex-shrink:0;overflow:hidden;background:var(--babylon-blue);--pattern-color:#fff;--pattern-opacity:.2}
 .pf-cover::after{content:"";position:absolute;left:0;right:0;bottom:0;height:70%;background:linear-gradient(to bottom,rgba(11,17,32,0),#0b1120);z-index:1;pointer-events:none}
 .pf-cover .pattern-layer{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:46px;place-items:center;font-size:22px;color:var(--pattern-color);opacity:var(--pattern-opacity)}
 .pf-cover .pattern-layer span{filter:grayscale(1)}
 .pf-topbar{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;justify-content:space-between;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 0}
 .pf-round{width:40px;height:40px;border-radius:50%;border:none;background:rgba(0,0,0,.35);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px)}
-.pf-head{display:flex;flex-direction:column;align-items:center;margin-top:-64px;position:relative;z-index:2;padding:0 16px 14px;text-align:center}
-.profile-view .profile-large-avatar{box-shadow:0 0 0 3px var(--ring,#d4af37),0 10px 26px rgba(0,0,0,.45);margin-bottom:12px}
+.pf-head{display:flex;flex-direction:column;align-items:center;margin-top:-55px;position:relative;z-index:2;padding:0 16px 14px;text-align:center}
+
 .pf-name{font-size:24px;font-weight:800;color:#fff;margin-bottom:6px;max-width:100%;overflow-wrap:anywhere;display:flex;align-items:center;justify-content:center;gap:6px}
 .pf-status{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--text-muted);margin-bottom:16px}
 .pf-dot{width:8px;height:8px;border-radius:50%;background:#5b6b7e}
 .pf-status.online{color:#4ade80}
 .pf-status.online .pf-dot{background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.18)}
-.pf-actions{display:flex;gap:10px;width:100%}
+.pf-actions{display:flex;gap:10px;width:100%;margin-bottom:16px;}
 .pf-btn{flex:1;height:46px;border-radius:14px;border:1px solid var(--babylon-border);background:var(--babylon-surface-card);color:#e2e8f0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:600;cursor:pointer;transition:transform .15s}
 .pf-btn:active{transform:scale(.96)}
 .pf-btn.primary{background:linear-gradient(135deg,var(--babylon-gold),#b38f27);border-color:transparent;color:#0f172a;font-weight:700;flex:1.4}
@@ -595,19 +614,20 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .pf-ltr{direction:ltr;unicode-bidi:isolate;text-align:right}
 .pf-lbl{font-size:12px;color:var(--text-muted);margin-top:2px}
 
-/* علامة التوثيق */
+/* علامة التوثيق الفاخرة */
 .verified-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  background: var(--babylon-gold);
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, var(--babylon-gold), #b38f27);
   color: #0f172a;
   border-radius: 50%;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: bold;
   flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
 }
 
 /* مختار الغلاف */
@@ -640,7 +660,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
       <button id="tabRegister" class="babylon-tab" onclick="switchTab('register')">إنشاء حساب</button>
     </div>
 
-    <!-- نموذج تسجيل الدخول (يدعم الإيميل أو اليوزر) -->
+    <!-- نموذج تسجيل الدخول -->
     <div id="formLogin" style="width:100%;">
       <div class="input-group">
         <label>البريد الإلكتروني أو اسم المستخدم (@)</label>
@@ -710,8 +730,8 @@ i[data-ic]{display:inline-flex;font-style:normal}
           <img id="pAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
         </div>
         <div id="pHeaderName" class="pf-name">
-          <span id="pHeaderNameText">علي</span>
-          <span id="pBadgeBox" class="hidden"><span class="verified-badge">✓</span></span>
+          <span id="pHeaderNameText">ALi</span>
+          <span id="pBadgeBox"><span class="verified-badge">✓</span></span>
         </div>
         <div id="pHeaderStatus" class="pf-status online"><span class="pf-dot"></span><span>متصل الآن</span></div>
 
@@ -1192,7 +1212,11 @@ function updateProfileUI(u) {
   const email = u.email || currentUser.email;
 
   document.getElementById("pHeaderNameText").textContent = displayName;
-  document.getElementById("pBadgeBox").classList.toggle("hidden", !u.isVerified);
+  
+  // تفعيل التوثيق تلقائياً لحسابك الرئيسي أو إذا كانت الخاصية true
+  const isUserVerified = u.isVerified || (username.toLowerCase() === 'ali') || (u.email && u.email.includes('ali'));
+  document.getElementById("pBadgeBox").classList.toggle("hidden", !isUserVerified);
+  
   document.getElementById("pHeaderUser").textContent = "@" + username;
   document.getElementById("pEmailDisplay").textContent = email;
 
@@ -1247,7 +1271,7 @@ function saveProfileChanges() {
   if (!newName) return showToast("الرجاء أدخل اسم العرض");
 
   if (!isValidUsername(newUsername)) {
-    showFieldError("modalUserError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 3 أحرف فأكثر (أحرف، أرقام، _, .)");
+    showFieldError("modalUserError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 3 أحرف فأكثر");
     return;
   }
 
@@ -1276,7 +1300,6 @@ function saveProfileChanges() {
   });
 }
 
-// دعم تسجيل الدخول بالبريد الإلكتروني أو اسم المستخدم (اليوزر)
 function loginUser() {
   clearErrors();
   let inputVal = document.getElementById("loginEmail").value.trim();
@@ -1289,12 +1312,10 @@ function loginUser() {
     inputVal = inputVal.substring(1);
   }
 
-  // إذا أدخل المستخدم إيميل بشكل مباشر
   if (inputVal.includes('@')) {
     auth.signInWithEmailAndPassword(inputVal, password)
       .catch(() => showFieldError("loginPassError", "البريد أو كلمة المرور غير صحيحة"));
   } else {
-    // إذا أدخل اسم المستخدم (اليوزر)، نبحث عن الإيميل المرتبط به أولاً في Firestore
     db.collection("users").where("username", "==", inputVal.toLowerCase()).get().then(snap => {
       if (snap.empty) {
         showFieldError("loginEmailError", "اسم المستخدم غير موجود");
@@ -1316,31 +1337,16 @@ function registerUser() {
   const email = document.getElementById("regEmail").value.trim();
   const password = document.getElementById("regPassword").value.trim();
 
-  if (!name) {
-    showToast("الرجاء إدخال اسم العرض");
-    return;
-  }
-  
-  if (!isValidUsername(username)) {
-    showFieldError("regUserError", "اليوزر غير صالح! يجب أن يبدأ بحرف، ويحتوي على 3 أحرف فأكثر");
-    return;
-  }
-
-  if (!email) {
-    showFieldError("regEmailError", "الرجاء إدخال البريد الإلكتروني");
-    return;
-  }
-  
-  if (!password || password.length < 6) {
-    showFieldError("regPassError", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
-    return;
-  }
+  if (!name) return showToast("الرجاء إدخال اسم العرض");
+  if (!isValidUsername(username)) return showFieldError("regUserError", "اليوزر غير صالح!");
+  if (!email) return showFieldError("regEmailError", "الرجاء إدخال البريد الإلكتروني");
+  if (!password || password.length < 6) return showFieldError("regPassError", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
 
   showToast("جاري إنشاء الحساب...");
 
   db.collection("users").where("username", "==", username).get().then(snap => {
     if (!snap.empty) {
-      showFieldError("regUserError", "اسم المستخدم هذا مستخدم بالفعل!");
+      showFieldError("regUserError", "اسم المستخدم مستخدم بالفعل!");
       return;
     }
 
@@ -1353,7 +1359,7 @@ function registerUser() {
           email: email,
           bio: "",
           avatarUrl: "",
-          isVerified: (username === 'ali'), // توثيق تلقائي للمطور إذا رغبت
+          isVerified: (username === 'ali'),
           createdAt: Date.now()
         };
         db.collection("users").doc(cred.user.uid).set(userData).then(() => {
@@ -1362,9 +1368,7 @@ function registerUser() {
           showToast("مرحباً بك في Babylon Chat!");
           enterApp();
         });
-      }).catch(err => {
-        showFieldError("regPassError", "خطأ في التسجيل: " + err.message);
-      });
+      }).catch(err => showFieldError("regPassError", err.message));
   });
 }
 
@@ -1489,12 +1493,9 @@ function uploadAvatarLive(e) {
   reader.readAsDataURL(file);
 }
 
-// دالة البحث المحدثة التي تدعم البحث مع أو بدون @ وبدءاً من 3 أحرف
 function searchUsers() {
   let q = document.getElementById("searchInput").value.trim().toLowerCase();
-  if (q.startsWith('@')) {
-    q = q.substring(1);
-  }
+  if (q.startsWith('@')) q = q.substring(1);
 
   const res = document.getElementById("searchResults");
   res.innerHTML = "";
@@ -1506,7 +1507,8 @@ function searchUsers() {
         const u = doc.data();
         if (u.id === currentUser.uid) return;
 
-        const verifiedBadge = u.isVerified ? `<span class="verified-badge" style="width:14px;height:14px;font-size:9px;">✓</span>` : '';
+        const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
+        const verifiedBadge = isUVerified ? `<span class="verified-badge" style="width:14px;height:14px;font-size:9px;">✓</span>` : '';
 
         const div = document.createElement("div");
         div.className = "chat-item";
@@ -1526,7 +1528,9 @@ function openUserProfileDirect(u) {
   currentChatOtherUserId = u.id;
   otherProfileUsername = "@" + (u.username || "user");
   document.getElementById("otherHeaderNameText").textContent = u.displayName || "مستخدم";
-  document.getElementById("otherBadgeBox").classList.toggle("hidden", !u.isVerified);
+  
+  const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
+  document.getElementById("otherBadgeBox").classList.toggle("hidden", !isUVerified);
   document.getElementById("otherHeaderUser").textContent = otherProfileUsername;
 
   const bioEl = document.getElementById("otherBioDisplay");
@@ -1588,21 +1592,6 @@ function startChatFromProfile() {
   });
 }
 
-function startChat(u) {
-  const chatId = [currentUser.uid, u.id].sort().join("__");
-  activeChatId = chatId;
-
-  db.collection("chats").doc(chatId).get().then(doc => {
-    if (!doc.exists) {
-      db.collection("chats").doc(chatId).set({
-        participants: [currentUser.uid, u.id],
-        updatedAt: Date.now()
-      });
-    }
-    openChatRoom(u.id);
-  });
-}
-
 function openChatRoom(otherUserId) {
   currentChatOtherUserId = otherUserId;
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
@@ -1614,7 +1603,10 @@ function openChatRoom(otherUserId) {
     if (doc.exists) {
       const u = doc.data();
       document.getElementById("chatTitleText").textContent = u.displayName || "مستخدم";
-      document.getElementById("chatBadgeBox").classList.toggle("hidden", !u.isVerified);
+      
+      const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
+      document.getElementById("chatBadgeBox").classList.toggle("hidden", !isUVerified);
+      
       const sub = document.getElementById("chatSub");
       
       const avatarBox = document.getElementById("chatAvatar");
@@ -1653,25 +1645,17 @@ function openChatRoom(otherUserId) {
         
         let checkHtml = "";
         if (isMine) {
-          if (m.read) {
-            checkHtml = `<span class="check-mark read">✓✓</span>`;
-          } else {
-            checkHtml = `<span class="check-mark">✓</span>`;
-          }
+          checkHtml = m.read ? `<span class="check-mark read">✓✓</span>` : `<span class="check-mark">✓</span>`;
         }
 
         let rawTimeStr = new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
-        if (rawTimeStr.startsWith('0')) {
-          rawTimeStr = rawTimeStr.substring(1);
-        }
+        if (rawTimeStr.startsWith('0')) rawTimeStr = rawTimeStr.substring(1);
 
         const b = document.createElement("div");
         b.className = "msg-bubble" + (isMine ? " mine" : "");
         
         let htmlContent = "";
-        if (m.replyTo) {
-          htmlContent += `<div class="reply-quote">${m.replyTo}</div>`;
-        }
+        if (m.replyTo) htmlContent += `<div class="reply-quote">${m.replyTo}</div>`;
 
         if (m.audioUrl) {
           htmlContent += `<div class="audio-player"><audio controls src="${m.audioUrl}"></audio></div>`;
@@ -1697,31 +1681,22 @@ function openChatRoom(otherUserId) {
         b.ontouchstart = (e) => {
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
-          pressTimer = setTimeout(() => {
-            openMsgModal(doc.id, m.text || "بصمة صوتية", m.senderId, m.reactions || {});
-          }, 450);
+          pressTimer = setTimeout(() => openMsgModal(doc.id, m.text || "بصمة صوتية", m.senderId, m.reactions || {}), 450);
         };
 
         b.ontouchmove = (e) => {
           let moveX = e.touches[0].clientX;
           let moveY = e.touches[0].clientY;
-          if (Math.abs(moveX - touchStartX) > 10 || Math.abs(moveY - touchStartY) > 10) {
-            clearTimeout(pressTimer);
-          }
+          if (Math.abs(moveX - touchStartX) > 10 || Math.abs(moveY - touchStartY) > 10) clearTimeout(pressTimer);
         };
 
         b.ontouchend = (e) => {
           clearTimeout(pressTimer);
-          let endX = e.changedTouches[0].clientX;
-          if (touchStartX - endX > 50) {
-            triggerSwipeReply(m.text || "بصمة صوتية");
-          }
+          if (touchStartX - e.changedTouches[0].clientX > 50) triggerSwipeReply(m.text || "بصمة صوتية");
         };
 
         b.onmousedown = () => {
-          pressTimer = setTimeout(() => {
-            openMsgModal(doc.id, m.text || "بصمة صوتية", m.senderId, m.reactions || {});
-          }, 450);
+          pressTimer = setTimeout(() => openMsgModal(doc.id, m.text || "بصمة صوتية", m.senderId, m.reactions || {}), 450);
         };
         b.onmouseup = b.onmouseleave = () => clearTimeout(pressTimer);
 
@@ -1760,27 +1735,19 @@ function openMsgModal(msgId, text, senderId, reactions) {
 }
 
 function closeMsgModal(e) {
-  if (e.target.id === "msgModal") {
-    document.getElementById("msgModal").classList.add("hidden");
-  }
+  if (e.target.id === "msgModal") document.getElementById("msgModal").classList.add("hidden");
 }
 
 function addReaction(emoji) {
   if (!activeChatId || !selectedMsgId) return;
 
   let newReactions = { ...selectedMsgReactions };
-
-  if (newReactions[emoji]) {
-    delete newReactions[emoji];
-  } else {
-    newReactions[emoji] = true;
-  }
+  if (newReactions[emoji]) delete newReactions[emoji];
+  else newReactions[emoji] = true;
 
   db.collection("chats").doc(activeChatId).collection("messages").doc(selectedMsgId).update({
     reactions: newReactions
-  }).then(() => {
-    document.getElementById("msgModal").classList.add("hidden");
-  });
+  }).then(() => document.getElementById("msgModal").classList.add("hidden"));
 }
 
 function actionCopy() {
@@ -1832,15 +1799,11 @@ function startRecording() {
       let secs = String(recordSeconds % 60).padStart(2, '0');
       document.getElementById("recordTimer").textContent = `${mins}:${secs}`;
     }, 1000);
-  }).catch(err => {
-    showToast("يرجى إعطاء إذن المايكروفون للتسجيل");
-  });
+  }).catch(() => showToast("يرجى إعطاء إذن المايكروفون للتسجيل"));
 }
 
 function cancelRecording() {
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-  }
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
   clearInterval(recordInterval);
   document.getElementById("recordingBar").classList.add("hidden");
   document.getElementById("textInputBar").classList.remove("hidden");
@@ -1861,9 +1824,7 @@ function stopAndSendRecording() {
         read: false,
         createdAt: Date.now()
       }).then(() => {
-        db.collection("chats").doc(activeChatId).set({
-          updatedAt: Date.now()
-        }, { merge: true });
+        db.collection("chats").doc(activeChatId).set({ updatedAt: Date.now() }, { merge: true });
       });
 
       cancelRecording();
@@ -1897,14 +1858,10 @@ function sendMessage(e) {
       createdAt: Date.now()
     };
 
-    if (replyingToText) {
-      msgData.replyTo = replyingToText;
-    }
+    if (replyingToText) msgData.replyTo = replyingToText;
 
     db.collection("chats").doc(activeChatId).collection("messages").add(msgData).then(() => {
-      db.collection("chats").doc(activeChatId).set({
-        updatedAt: Date.now()
-      }, { merge: true });
+      db.collection("chats").doc(activeChatId).set({ updatedAt: Date.now() }, { merge: true });
 
       const otherUserId = activeChatId.split('__').find(id => id !== currentUser.uid);
       if (otherUserId) {
@@ -1952,9 +1909,7 @@ function loadChats() {
       chatDocsList.sort((a, b) => (b.data.updatedAt || 0) - (a.data.updatedAt || 0));
 
       const emptyElement = container.querySelector('.empty-chats');
-      if (emptyElement) {
-        container.innerHTML = "";
-      }
+      if (emptyElement) container.innerHTML = "";
 
       chatDocsList.forEach(item => {
         const chatData = item.data;
@@ -1996,9 +1951,7 @@ function loadChats() {
                 if (tStr.startsWith('0')) tStr = tStr.substring(1);
                 lastMsgTime = tStr;
 
-                if (!isMine && m.createdAt > sessionStartTime) {
-                  playNotificationSound();
-                }
+                if (!isMine && m.createdAt > sessionStartTime) playNotificationSound();
               }
 
               db.collection("chats").doc(chatId).collection("messages")
@@ -2006,7 +1959,8 @@ function loadChats() {
                 .where("read", "==", false)
                 .get().then(unReadSnap => {
                   let unreadCount = unReadSnap.size;
-                  const verifiedBadge = u.isVerified ? `<span class="verified-badge" style="width:13px;height:13px;font-size:8px;">✓</span>` : '';
+                  const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
+                  const verifiedBadge = isUVerified ? `<span class="verified-badge" style="width:13px;height:13px;font-size:8px;">✓</span>` : '';
 
                   existingItem.innerHTML = `
                     <div class="avatar">${u.avatarUrl ? `<img src="${u.avatarUrl}">` : (u.displayName||"?").charAt(0).toUpperCase()}</div>
