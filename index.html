@@ -300,7 +300,7 @@ body {
 .unread-badge { background: #2b5278; color: white; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-right: 6px; }
 
 /* ---------------------------------------------------- */
-/* البروفايل المطور المزود بخلفية جذابة ودون فراغات[span_0](start_span)[span_0](end_span) */
+/* البروفايل المطور المزود بخلفية جذابة ودون فراغات */
 /* ---------------------------------------------------- */
 .profile-view {
   flex: 1;
@@ -752,7 +752,7 @@ body {
 .theme-name { font-size: 12px; margin-top: 6px; color: var(--text-muted); }
 .theme-card.sel .theme-name { color: var(--babylon-gold); font-weight: 700; }
 
-/* ===== البروفايل الجديد[span_1](start_span)[span_1](end_span) ===== */
+/* ===== البروفايل الجديد ===== */
 i[data-ic]{display:inline-flex;font-style:normal}
 .pf-cover{position:relative;height:160px;flex-shrink:0;overflow:hidden;background:var(--babylon-blue);--pattern-color:#fff;--pattern-opacity:.2}
 .pf-cover::after{content:"";position:absolute;left:0;right:0;bottom:0;height:70%;background:linear-gradient(to bottom,rgba(11,17,32,0),#0b1120);z-index:1;pointer-events:none}
@@ -783,7 +783,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .pf-ltr{direction:ltr;unicode-bidi:isolate;text-align:right}
 .pf-lbl{font-size:12px;color:var(--text-muted);margin-top:2px}
 
-/* مختار الغلاف[span_2](start_span)[span_2](end_span) */
+/* مختار الغلاف */
 .cover-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .cover-opt{position:relative;height:78px;border-radius:12px;overflow:hidden;border:3px solid transparent;cursor:pointer;--pattern-color:#fff;--pattern-opacity:.24}
 .cover-opt .pattern-layer{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:26px;place-items:center;font-size:13px;color:var(--pattern-color);opacity:var(--pattern-opacity);pointer-events:none}
@@ -791,7 +791,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .cover-opt b{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:11px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);z-index:1}
 .cover-opt.sel{border-color:var(--babylon-gold)}
 
-/* الشريط السفلي بأيقونات موحدة[span_3](start_span)[span_3](end_span) */
+/* الشريط السفلي بأيقونات موحدة */
 .nav-item .nav-icon{display:flex;align-items:center;justify-content:center;width:58px;height:30px;border-radius:15px;transition:background .2s,color .2s}
 .nav-item.active{color:var(--babylon-gold)}
 .nav-item.active .nav-icon{background:rgba(212,175,55,.16)}
@@ -806,7 +806,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
   <section id="authPage" class="auth-page">
     <div class="babylon-logo">🏛</div>
     <h1 class="auth-title">Babylon Chat</h1>
-    <p class="auth-subtitle">تواصل عبر البريد الإلكتروني بنكهة بابلية أصيلة[span_4](start_span)[span_4](end_span)</p>
+    <p class="auth-subtitle">تواصل عبر البريد الإلكتروني بنكهة بابلية أصيلة</p>
 
     <div class="babylon-tabs">
       <button id="tabLogin" class="babylon-tab active" onclick="switchTab('login')">تسجيل الدخول</button>
@@ -833,8 +833,8 @@ i[data-ic]{display:inline-flex;font-style:normal}
         <input id="regName" class="babylon-input rtl" type="text" placeholder="اسمك الكريم">
       </div>
       <div class="input-group">
-        <label>اسم المستخدم (يبدأ بحرف، و5 أحرف فأكثر)[span_5](start_span)[span_5](end_span)</label>
-        <input id="regUsername" class="babylon-input" type="text" placeholder="babylon_user" oninput="validateUsernameInput(this)">
+        <label>اسم المستخدم (يبدأ بحرف، و3 أحرف فأكثر)</label>
+        <input id="regUsername" class="babylon-input" type="text" placeholder="ali" oninput="validateUsernameInput(this)">
         <span id="regUserError" class="field-error hidden"></span>
       </div>
       <div class="input-group">
@@ -866,12 +866,12 @@ i[data-ic]{display:inline-flex;font-style:normal}
     <div id="searchView" class="hidden" style="flex:1; display:flex; flex-direction:column; background:#0e1621;">
       <div style="padding:12px; background:var(--babylon-surface); border-bottom:1px solid var(--babylon-border); display:flex; align-items:center; gap:10px;">
         <button class="icon-btn" onclick="goHome()" title="الرجوع">‹</button>
-        <input id="searchInput" class="babylon-input" placeholder="ابحث باسم المستخدم (5 أحرف فأكثر)..." oninput="searchUsers()">
+        <input id="searchInput" class="babylon-input" placeholder="ابحث باسم المستخدم..." oninput="searchUsers()">
       </div>
       <div id="searchResults" class="chat-list"></div>
     </div>
 
-    <!-- شاشة البروفايل الشخصي[span_6](start_span)[span_6](end_span) -->
+    <!-- شاشة البروفايل الشخصي -->
     <div id="profileView" class="profile-view hidden">
       <div class="pf-cover" id="pCover"><div class="pattern-layer" id="pCoverPattern"></div></div>
 
@@ -915,7 +915,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
       </div>
     </div>
 
-    <!-- شاشة عرض بروفايل مستخدم آخر[span_7](start_span)[span_7](end_span) -->
+    <!-- شاشة عرض بروفايل مستخدم آخر -->
     <div id="otherUserProfileView" class="profile-view hidden">
       <div class="pf-cover" id="otherCover">
         <div class="pattern-layer" id="otherCoverPattern"></div>
@@ -1085,7 +1085,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
       </div>
     </div>
 
-    <!-- شريط التنقل السفلي[span_8](start_span)[span_8](end_span) -->
+    <!-- شريط التنقل السفلي -->
     <nav id="bottomNav" class="telegram-bottom-nav">
       <button id="navChats" class="nav-item active" onclick="goHome()">
         <span class="nav-icon"><i data-ic="chat" data-size="22"></i></span>
@@ -1104,7 +1104,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
 
 </div>
 
-<!-- نافذة تعديل بيانات الملف الشخصي[span_9](start_span)[span_9](end_span) -->
+<!-- نافذة تعديل بيانات الملف الشخصي -->
 <div id="editProfileModal" class="msg-actions-modal hidden" onclick="closeEditModal(event)">
   <div class="msg-actions-card" style="width:320px; padding:20px;">
     <h3 style="color:var(--babylon-gold); font-size:17px; margin-bottom:14px; text-align:right;">تعديل البيانات الشخصية</h3>
@@ -1121,12 +1121,12 @@ i[data-ic]{display:inline-flex;font-style:normal}
     </div>
 
     <div class="input-group">
-      <label>النبذة التعريفية (البايو)[span_10](start_span)[span_10](end_span)</label>
+      <label>النبذة التعريفية (البايو)</label>
       <textarea id="modalBioInput" class="babylon-input rtl" style="height:70px; resize:none;" maxlength="120" placeholder="اكتب نبذة عن نفسك..."></textarea>
     </div>
 
     <div class="input-group">
-      <label>المحافظة[span_11](start_span)[span_11](end_span)</label>
+      <label>المحافظة</label>
       <select id="modalGovInput" class="babylon-input rtl"></select>
     </div>
 
@@ -1139,7 +1139,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
 
 <div id="coverModal" class="msg-actions-modal hidden" onclick="closeCoverModal(event)">
   <div class="msg-actions-card" style="width:340px; padding:18px;">
-    <h3 style="color:var(--babylon-gold); font-size:17px; margin-bottom:12px; text-align:right;">غلاف ملفك الشخصي[span_12](start_span)[span_12](end_span)</h3>
+    <h3 style="color:var(--babylon-gold); font-size:17px; margin-bottom:12px; text-align:right;">غلاف ملفك الشخصي</h3>
     <div id="coverGrid" class="cover-grid"></div>
   </div>
 </div>
@@ -1257,7 +1257,8 @@ function playNotificationSound() {
 }
 
 function isValidUsername(username) {
-  const regex = /^[a-zA-Z][a-zA-Z0-9_\.]{4,}$/;
+  // تم تعديل الشرط ليقبل 3 أحرف فأكثر للمطور وباقي المستخدمين
+  const regex = /^[a-zA-Z][a-zA-Z0-9_\.]{2,}$/;
   return regex.test(username);
 }
 
@@ -1408,7 +1409,7 @@ function saveProfileChanges() {
   if (!newName) return showToast("الرجاء أدخل اسم العرض");
 
   if (!isValidUsername(newUsername)) {
-    showFieldError("modalUserError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 5 أحرف فأكثر (أحرف، أرقام، _, .)");
+    showFieldError("modalUserError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 3 أحرف فأكثر (أحرف، أرقام، _, .)");
     return;
   }
 
@@ -1464,7 +1465,7 @@ function registerUser() {
   }
   
   if (!isValidUsername(username)) {
-    showFieldError("regUserError", "اليوزر غير صالح! يجب أن يبدأ بحرف إنجليزي، ويحتوي على أحرف وأرقام ونقاط أو شرطة سفلى فقط (5 أحرف فأكثر)");
+    showFieldError("regUserError", "اليوزر غير صالح! يجب أن يبدأ بحرف إنجليزي، ويحتوي على أحرف وأرقام ونقاط أو شرطة سفلى فقط (3 أحرف فأكثر)");
     return;
   }
 
@@ -1638,7 +1639,7 @@ function searchUsers() {
   const q = document.getElementById("searchInput").value.trim().toLowerCase();
   const res = document.getElementById("searchResults");
   res.innerHTML = "";
-  if (q.length < 5) return;
+  if (q.length < 3) return;
 
   db.collection("users").where("username", ">=", q).where("username", "<=", q + "\uf8ff")
     .get().then(snap => {
@@ -2289,7 +2290,8 @@ function setRadius(v) {
 
 buildThemeStrip();
 applyPrefs(true);
-/* ===== أيقونات خطية موحدة ===== */
+
+/* أيقونات خطية موحدة */
 const ICONS = {
   chat:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
   user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
@@ -2315,7 +2317,6 @@ function hydrateIcons() {
   });
 }
 
-/* ===== البروفايل: غلاف، حالة، نسخ ===== */
 const GOVERNORATES = ['بغداد','البصرة','نينوى','أربيل','السليمانية','دهوك','كركوك','الأنبار','ديالى','صلاح الدين','بابل','كربلاء','النجف','واسط','ذي قار','ميسان','المثنى','القادسية'];
 const COVER_RING = { babylon:'#d4af37', ashur:'#e0b36a', sumer:'#cc7b49', samarra:'#c9a24a', baghdad:'#25aaa3', ahwar:'#5fb98f' };
 let otherProfileUsername = '';
