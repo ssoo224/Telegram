@@ -644,6 +644,9 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .nav-item.active .nav-icon{background:rgba(212,175,55,.16)}
 
 .load-older-btn{align-self:center;margin:8px auto;padding:7px 16px;border-radius:16px;border:1px solid var(--babylon-border);background:var(--babylon-surface);color:var(--babylon-gold);font-size:13px;cursor:pointer;position:relative;z-index:1}
+
+.msg-image img{display:block;width:100%;max-width:240px;border-radius:10px;cursor:pointer}
+.th-hero svg{width:40px;height:40px}
 </style>
 </head>
 
@@ -939,6 +942,8 @@ i[data-ic]{display:inline-flex;font-style:normal}
 
         <form id="textInputBar" class="chat-input-bar" onsubmit="sendMessage(event)">
           <input id="messageInput" placeholder="اكتب رسالتك..." autocomplete="off">
+          <label class="icon-btn" for="chatImageInput" style="color:var(--text-muted); cursor:pointer;" title="إرسال صورة"><i data-ic="image" data-size="22"></i></label>
+          <input type="file" id="chatImageInput" accept="image/*" class="hidden" onchange="sendImage(event)">
           <button type="button" class="icon-btn" style="color:var(--text-muted)" onclick="startRecording()">🎙</button>
           <button class="icon-btn" style="color:var(--babylon-gold)" type="submit">➤</button>
         </form>
@@ -1686,7 +1691,7 @@ function openChatRoom(otherUserId, keepLimit) {
         if (m.audioUrl) {
           htmlContent += `<div class="audio-player"><audio controls src="${esc(m.audioUrl)}"></audio></div>`;
         } else {
-          htmlContent += `<div class="msg-text">${esc(m.text)}</div>`;
+          htmlContent += m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${esc(m.text)}</div>`;
         }
 
         if (m.reactions && Object.keys(m.reactions).length > 0) {
@@ -1699,6 +1704,8 @@ function openChatRoom(otherUserId, keepLimit) {
 
         htmlContent += `<div class="msg-meta"><span>${rawTimeStr}</span> ${checkHtml}</div>`;
         b.innerHTML = htmlContent;
+        const msgImg = b.querySelector(".msg-image img");
+        if (msgImg) msgImg.onclick = (ev) => { ev.stopPropagation(); openImageViewer(msgImg.src); };
 
         let pressTimer = null;
         let touchStartX = 0;
@@ -1707,7 +1714,7 @@ function openChatRoom(otherUserId, keepLimit) {
         b.ontouchstart = (e) => {
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
-          pressTimer = setTimeout(() => openMsgModal(doc.id, m.text || "بصمة صوتية", m.senderId, m.reactions || {}), 450);
+          pressTimer = setTimeout(() => openMsgModal(doc.id, m.text || (m.imageUrl ? "📷 صورة" : "بصمة صوتية"), m.senderId, m.reactions || {}), 450);
         };
 
         b.ontouchmove = (e) => {
@@ -1718,11 +1725,11 @@ function openChatRoom(otherUserId, keepLimit) {
 
         b.ontouchend = (e) => {
           clearTimeout(pressTimer);
-          if (touchStartX - e.changedTouches[0].clientX > 50) triggerSwipeReply(m.text || "بصمة صوتية");
+          if (touchStartX - e.changedTouches[0].clientX > 50) triggerSwipeReply(m.text || (m.imageUrl ? "📷 صورة" : "بصمة صوتية"));
         };
 
         b.onmousedown = () => {
-          pressTimer = setTimeout(() => openMsgModal(doc.id, m.text || "بصمة صوتية", m.senderId, m.reactions || {}), 450);
+          pressTimer = setTimeout(() => openMsgModal(doc.id, m.text || (m.imageUrl ? "📷 صورة" : "بصمة صوتية"), m.senderId, m.reactions || {}), 450);
         };
         b.onmouseup = b.onmouseleave = () => clearTimeout(pressTimer);
 
@@ -1975,7 +1982,7 @@ function loadChats() {
                 const m = msgSnap.docs[0].data();
                 const isMine = (m.senderId === currentUser.uid);
                 const prefix = isMine ? "أنت: " : "";
-                lastMsgText = prefix + (m.audioUrl ? "🎤 بصمة صوتية" : (m.text || ""));
+                lastMsgText = prefix + (m.audioUrl ? "🎤 بصمة صوتية" : (m.imageUrl ? "📷 صورة" : (m.text || "")));
                 
                 let tStr = new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
                 if (tStr.startsWith('0')) tStr = tStr.substring(1);
@@ -2013,24 +2020,24 @@ function loadChats() {
 
 /* ثيمات التراث العراقي للمحادثات */
 const THEMES = {
-  babylon: { name:'بابل', hero:'🏛', chatBg:'#0d1626', mine:'linear-gradient(135deg,#1b4d8e,#2f78cf)', other:'#263345',
+  babylon: { name:'بابل', hero:'ic:gate', chatBg:'#0d1626', mine:'linear-gradient(135deg,#1b4d8e,#2f78cf)', other:'#263345',
     textMine:'#ffffff', textOther:'#f3f4f6', accent:'#d4af37', tick:'#ffe08a', metaOther:'#94a3b8', line:'rgba(255,255,255,0.06)',
-    pattern:'#d4af37', patternOp:0.11, symbols:['🏛','🏺','⭐','🐂','𒀭','🌙'] },
-  ashur: { name:'آشور', hero:'🐂', chatBg:'#1f1710', mine:'linear-gradient(135deg,#8a5a2b,#c48b47)', other:'#3a2c1d',
+    pattern:'#d4af37', patternOp:0.11, symbols:['ic:gate','ic:star8','ic:bull','ic:tablet','ic:crescent','ic:jar'] },
+  ashur: { name:'آشور', hero:'ic:bull', chatBg:'#1f1710', mine:'linear-gradient(135deg,#8a5a2b,#c48b47)', other:'#3a2c1d',
     textMine:'#fff8ec', textOther:'#f1e4cc', accent:'#e0b36a', tick:'#ffe6b0', metaOther:'#b89f7a', line:'rgba(255,255,255,0.05)',
-    pattern:'#c9a064', patternOp:0.11, symbols:['🐂','🦅','🏹','🛡','🦁','⚔'] },
-  sumer: { name:'سومر', hero:'🏺', chatBg:'#ecd9b8', mine:'linear-gradient(135deg,#a8552d,#cc7b49)', other:'#fbf1de',
+    pattern:'#c9a064', patternOp:0.11, symbols:['ic:bull','ic:arch','ic:sun','ic:gate','ic:star8','ic:tablet'] },
+  sumer: { name:'سومر', hero:'ic:ziggurat', chatBg:'#ecd9b8', mine:'linear-gradient(135deg,#a8552d,#cc7b49)', other:'#fbf1de',
     textMine:'#ffffff', textOther:'#3b2412', accent:'#8a4524', tick:'#fff3c4', metaOther:'#7a5c3a', line:'rgba(0,0,0,0.08)',
-    pattern:'#7a4a24', patternOp:0.16, symbols:['🏺','🌾','🐑','🪔','📜','🌿'] },
-  samarra: { name:'سامراء', hero:'🌀', chatBg:'#dcc690', mine:'linear-gradient(135deg,#5f4a1c,#8c6d2f)', other:'#f6eacb',
+    pattern:'#7a4a24', patternOp:0.16, symbols:['ic:ziggurat','ic:tablet','ic:lyre','ic:jar','ic:reeds','ic:sun'] },
+  samarra: { name:'سامراء', hero:'ic:minaret', chatBg:'#dcc690', mine:'linear-gradient(135deg,#5f4a1c,#8c6d2f)', other:'#f6eacb',
     textMine:'#ffffff', textOther:'#3a2c10', accent:'#5a4318', tick:'#ffffff', metaOther:'#7b6537', line:'rgba(0,0,0,0.08)',
-    pattern:'#5f4a1c', patternOp:0.15, symbols:['🕌','🌀','🧱','🌴','☀','🏺'] },
-  baghdad: { name:'بغداد العباسية', hero:'🕌', chatBg:'#0b2b2c', mine:'linear-gradient(135deg,#13787a,#25aaa3)', other:'#17484a',
+    pattern:'#5f4a1c', patternOp:0.15, symbols:['ic:minaret','ic:palm','ic:arch','ic:sun','ic:wave','ic:jar'] },
+  baghdad: { name:'بغداد العباسية', hero:'ic:arch', chatBg:'#0b2b2c', mine:'linear-gradient(135deg,#13787a,#25aaa3)', other:'#17484a',
     textMine:'#ffffff', textOther:'#eef6f2', accent:'#f3ead3', tick:'#c4f5f0', metaOther:'#8fb8b4', line:'rgba(255,255,255,0.06)',
-    pattern:'#f3ead3', patternOp:0.10, symbols:['🕌','🌙','✦','❖','📚','🧭'] },
-  ahwar: { name:'الأهوار', hero:'🛶', chatBg:'#cfe3d4', mine:'linear-gradient(135deg,#2b7a8c,#3f9a7a)', other:'#f2f8ef',
+    pattern:'#f3ead3', patternOp:0.10, symbols:['ic:arch','ic:crescent','ic:star8','ic:minaret','ic:palm','ic:sun'] },
+  ahwar: { name:'الأهوار', hero:'ic:boat', chatBg:'#cfe3d4', mine:'linear-gradient(135deg,#2b7a8c,#3f9a7a)', other:'#f2f8ef',
     textMine:'#ffffff', textOther:'#1f3a2a', accent:'#2b6a4a', tick:'#d9f5c8', metaOther:'#5f7f6a', line:'rgba(0,0,0,0.07)',
-    pattern:'#3f6b3a', patternOp:0.16, symbols:['🌾','🛶','🐃','🦆','🌊','🐟'] }
+    pattern:'#3f6b3a', patternOp:0.16, symbols:['ic:reeds','ic:boat','ic:fish','ic:wave','ic:palm','ic:sun'] }
 };
 
 const PREFS_KEY = 'babylon_chat_prefs';
@@ -2055,7 +2062,9 @@ function renderPattern(el, t, count) {
   const n = t.symbols.length;
   for (let i = 0; i < count; i++) {
     const sp = document.createElement('span');
-    sp.textContent = t.symbols[(i * 5 + Math.floor(i / 5) * 2) % n];
+    const sym = t.symbols[(i * 5 + Math.floor(i / 5) * 2) % n];
+    if (sym.indexOf('ic:') === 0) { try { sp.innerHTML = svgIcon(sym.slice(3), '1em'); } catch (e) {} }
+    else sp.textContent = sym;
     sp.style.transform = 'rotate(' + (((i * 37) % 50) - 25) + 'deg)';
     el.appendChild(sp);
   }
@@ -2098,7 +2107,7 @@ function buildThemeStrip() {
       '<div class="pattern-layer"></div>' +
       '<div class="th-mine" style="background:' + t.mine + '"></div>' +
       '<div class="th-other" style="background:' + t.other + '"></div>' +
-      '<div class="th-hero">' + t.hero + '</div></div>' +
+      '<div class="th-hero" style="color:' + t.pattern + '">' + glyphHtml(t.hero, 40) + '</div></div>' +
       '<div class="theme-name">' + t.name + '</div>';
     renderPattern(c.querySelector('.pattern-layer'), t, 24);
     c.onclick = () => setTheme(id);
@@ -2161,7 +2170,7 @@ function svgIcon(name, size) {
 }
 function hydrateIcons() {
   document.querySelectorAll('[data-ic]').forEach(el => {
-    if (!el.firstChild) el.innerHTML = svgIcon(el.dataset.ic, el.dataset.size);
+    el.innerHTML = svgIcon(el.dataset.ic, el.dataset.size);
   });
 }
 
@@ -2304,6 +2313,85 @@ function syncPrefsFromUser(u) {
   try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {}
   applyPrefs(true);
 }
+/* ===== رسومات SVG عراقية + إرسال الصور ===== */
+Object.assign(ICONS, {
+  image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
+  ziggurat:'<path d="M2 21h20M4 21v-4h16v4M7 17v-4h10v4M10 13V9h4v4M12 9V6"/>',
+  gate:'<path d="M4 21V8h3V5h2v3h6V5h2v3h3v13M9 21v-6a3 3 0 0 1 6 0v6M4 12h5M15 12h5"/>',
+  star8:'<path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/><circle cx="12" cy="12" r="3"/>',
+  crescent:'<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
+  palm:'<path d="M12 22V10M12 10c-1-3-4-4-7-3M12 10c1-3 4-4 7-3M12 10c-3 0-5 2-6 5M12 10c3 0 5 2 6 5M12 10V4"/>',
+  minaret:'<path d="M12 2v3M12 5c-2.5 0-4 .8-4 2s1.500 2 4 2 4 .8 4 2-1.500 2-4 2-5 .8-5 2 2 2 5 2 5 .8 5 2M5 22h14"/>',
+  tablet:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="m9 8 2 1-2 1M13 8l2 1-2 1M9 14l2 1-2 1M13 14l2 1-2 1"/>',
+  jar:'<path d="M10 3h4M10.500 3v3C7 7 5.500 10 5.500 14c0 4 2.500 7 6.500 7s6.500-3 6.500-7c0-4-1.500-7-5-8V3M7 12h10"/>',
+  boat:'<path d="M2 15c4 4 16 4 20 0M5 15 3 9M19 15l2-6M8 11c1-2 3-3 4-3s3 1 4 3"/>',
+  reeds:'<path d="M8 22V8M8 8c-1-2 0-4 0-6 1 2 1 4 0 6M13 22V5M13 5c-1-2 0-3 0-4 1 1 1 3 0 4M18 22V10M18 10c-1-2 0-3 0-5 1 2 1 3 0 5"/>',
+  bull:'<path d="M3 5c0 5 3 7 5 7M21 5c0 5-3 7-5 7M8 12c-1 3 0 7 4 9 4-2 5-6 4-9M10 15.500h.01M14 15.500h.01"/>',
+  arch:'<path d="M5 22V11a7 7 0 0 1 14 0v11M9 22V12a3 3 0 0 1 6 0v10M3 22h18"/>',
+  fish:'<path d="M3 12c3-5 9-6 13-2l5-3v10l-5-3c-4 4-10 3-13-2zM8 11h.01"/>',
+  lyre:'<path d="M6 3c-2 6 0 12 6 14 6-2 8-8 6-14M6 3h12M10 6v13M14 6v13M8 21h8"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
+  wave:'<path d="M2 9c3-3 5 3 8 0s5 3 8 0 3 0 4-1M2 16c3-3 5 3 8 0s5 3 8 0 3 0 4-1"/>'
+});
+function glyphHtml(sym, size) {
+  if (sym.indexOf('ic:') !== 0) return esc(sym);
+  try { return svgIcon(sym.slice(3), size || 24); } catch (e) { return ''; }
+}
+
+function compressImage(file, cb) {
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    let dim = 1024, q = 0.72, out = '';
+    for (let i = 0; i < 6; i++) {
+      const sc = Math.min(1, dim / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * sc);
+      c.height = Math.round(img.height * sc);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      out = c.toDataURL('image/jpeg', q);
+      if (out.length < 850000) break;
+      dim *= 0.8; q = Math.max(0.5, q - 0.08);
+    }
+    cb(out.length < 900000 ? out : null);
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); cb(null); };
+  img.src = url;
+}
+
+function sendImage(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file || !activeChatId) return;
+  if (!file.type.startsWith('image/')) return showToast('اختر ملف صورة فقط');
+  if (file.size > 15 * 1024 * 1024) return showToast('الصورة كبيرة جداً');
+  showToast('جاري تجهيز الصورة...');
+  compressImage(file, dataUrl => {
+    if (!dataUrl) return showToast('تعذر تجهيز الصورة، جرب صورة أخرى');
+    const chatId = activeChatId;
+    db.collection('chats').doc(chatId).collection('messages').add({
+      senderId: currentUser.uid, imageUrl: dataUrl, read: false, createdAt: Date.now()
+    }).then(() => {
+      db.collection('chats').doc(chatId).set({ updatedAt: Date.now() }, { merge: true });
+    }).catch(() => showToast('تعذر إرسال الصورة'));
+  });
+}
+
+function openImageViewer(src) {
+  const v = document.createElement('div');
+  v.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;padding:12px;';
+  const im = document.createElement('img');
+  im.src = src;
+  im.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;';
+  v.appendChild(im);
+  v.onclick = () => v.remove();
+  document.body.appendChild(v);
+}
+
+hydrateIcons();
+buildThemeStrip();
+applyPrefs(true);
 </script>
 </body>
 </html>
