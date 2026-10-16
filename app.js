@@ -1,3 +1,1118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Babylon Chat - تليجرام البابلي</title>
+
+<!-- ربط ملف الـ Manifest الخارجي -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#17212b">
+
+<!-- Firebase SDKs -->
+<script>
+/* أداة فحص الأخطاء: افتح الموقع بإضافة ?debug=1 لآخر الرابط لتظهر الأخطاء على الشاشة */
+(function () {
+  if (location.search.indexOf('debug') === -1) return;
+  function show(msg) {
+    var d = document.getElementById('__err');
+    if (!d) {
+      d = document.createElement('div'); d.id = '__err';
+      d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#7f1d1d;color:#fff;font:12px/1.5 monospace;padding:10px;direction:ltr;text-align:left;max-height:45%;overflow:auto;white-space:pre-wrap;word-break:break-all';
+      d.onclick = function () { d.remove(); };
+      document.documentElement.appendChild(d);
+    }
+    d.textContent += msg + '\n';
+  }
+  window.addEventListener('error', function (e) { show('ERROR: ' + e.message + ' @ ' + String(e.filename || '').split('/').pop() + ':' + e.lineno + ':' + e.colno); });
+  window.addEventListener('unhandledrejection', function (e) { show('PROMISE: ' + ((e.reason && (e.reason.code || e.reason.message)) || e.reason)); });
+  show('debug mode ON');
+})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
+
+<style>
+:root {
+  --babylon-gold: #d4af37;
+  --babylon-gold-hover: #c5a028;
+  --babylon-blue: #1b2a4a;
+  --babylon-dark: #0f172a;
+  --babylon-surface: #17212b;
+  --babylon-surface-card: #1e293b;
+  --babylon-surface-hover: #232e3c;
+  --babylon-border: #2e3b4e;
+  --text-main: #f8fafc;
+  --text-muted: #8696a7;
+  --error-color: #f87171;
+  
+  --bubble-mine: #2b5278;
+  --bubble-other: #182533;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+body {
+  background-color: #090d16;
+  color: var(--text-main);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100dvh;
+}
+
+.hidden { display: none !important; }
+
+.app-container {
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;
+  background: var(--babylon-dark);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+}
+
+.auth-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 24px;
+  background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%);
+  text-align: center;
+  overflow-y: auto;
+}
+
+.babylon-logo {
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(135deg, var(--babylon-gold), #b38f27);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  color: var(--babylon-dark);
+  margin-bottom: 20px;
+  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.3);
+  border: 2px solid #fff5c0;
+}
+
+.auth-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; color: var(--babylon-gold); }
+.auth-subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 24px; }
+
+.babylon-tabs {
+  display: flex;
+  width: 100%;
+  background: var(--babylon-dark);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+  border: 1px solid var(--babylon-border);
+}
+
+.babylon-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.babylon-tab.active {
+  background: var(--babylon-gold);
+  color: var(--babylon-dark);
+}
+
+.input-group {
+  width: 100%;
+  text-align: right;
+  margin-bottom: 14px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 12px;
+  color: var(--babylon-gold);
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.babylon-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--babylon-dark);
+  border: 1px solid var(--babylon-border);
+  border-radius: 10px;
+  color: white;
+  outline: none;
+  font-size: 14px;
+  direction: ltr;
+  text-align: left;
+}
+.babylon-input.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.field-error {
+  color: var(--error-color);
+  font-size: 12px;
+  margin-top: 5px;
+  text-align: right;
+  display: block;
+}
+
+.babylon-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--babylon-gold), #b38f27);
+  color: var(--babylon-dark);
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.main-header {
+  height: 56px;
+  background: var(--babylon-surface);
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 10;
+}
+.main-header-title { font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: 0.3px; }
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-btn:hover { background: var(--babylon-surface-hover); color: white; }
+
+.telegram-bottom-nav {
+  height: 60px;
+  background: var(--babylon-surface);
+  border-top: 1px solid rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 10;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  gap: 3px;
+  padding: 6px 0;
+}
+.nav-item span.nav-icon { font-size: 20px; }
+.nav-item.active { color: #64b5f6; }
+
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background-color: #0e1621;
+}
+
+.empty-chats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px;
+  color: var(--text-muted);
+}
+.empty-chats-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--babylon-surface);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  margin-bottom: 16px;
+  border: 1px solid var(--babylon-border);
+  color: var(--babylon-gold);
+}
+
+.chat-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  gap: 14px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+  position: relative;
+}
+.chat-item:hover { background: var(--babylon-surface-hover); }
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--babylon-gold), var(--babylon-blue));
+  color: var(--babylon-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.chat-item-info { flex: 1; min-width: 0; text-align: right; }
+.chat-item-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.chat-item-name { font-size: 16px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
+.chat-item-time { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+.chat-item-sub-row { display: flex; justify-content: space-between; align-items: center; }
+.chat-item-sub { font-size: 13.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.unread-badge { background: #2b5278; color: white; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-right: 6px; }
+
+/* البروفايل المطور */
+.profile-view {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #0b1120;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-large-avatar {
+  width: 110px !important;
+  height: 110px !important;
+  border-radius: 50% !important;
+  background: var(--babylon-surface-card);
+  color: var(--babylon-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  font-weight: bold;
+  object-fit: cover;
+  border: 4px solid #0b1120;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.settings-view {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--babylon-dark);
+}
+
+.telegram-chat-header {
+  height: 60px;
+  background: #17212b;
+  border-bottom: 1px solid rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  z-index: 10;
+  gap: 8px;
+}
+
+.telegram-user-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.telegram-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--babylon-gold);
+  color: var(--babylon-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 17px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.telegram-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.telegram-user-details {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  min-width: 0;
+}
+
+.telegram-user-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.telegram-user-status {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.chat-room {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--chat-bg, #0e1621);
+  position: relative;
+  overflow: hidden;
+}
+
+.pattern-layer {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  display: grid; grid-template-columns: repeat(var(--cols, 5), 1fr); grid-auto-rows: var(--cell, 64px);
+  place-items: center; font-size: var(--glyph, 26px);
+  color: var(--pattern-color, #d4af37); opacity: var(--pattern-opacity, 0.1);
+}
+.pattern-layer span { filter: grayscale(1); }
+
+.messages-area {
+  flex: 1;
+  padding: 12px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.msg-bubble {
+  width: fit-content;
+  max-width: 82%;
+  padding: 6px 10px 18px 10px;
+  font-size: var(--msg-font, 14.5px);
+  line-height: 1.4;
+  background: var(--bubble-other, #182533);
+  align-self: flex-start;
+  color: var(--text-other, #ffffff);
+  border-radius: var(--r, 12px) var(--r, 12px) var(--r, 12px) 4px;
+  border: 1px solid var(--bubble-line, rgba(255,255,255,0.06));
+  position: relative;
+  cursor: pointer;
+  word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+.msg-bubble.mine {
+  align-self: flex-end;
+  background: var(--bubble-mine, #2b5278);
+  color: var(--text-mine, #ffffff);
+  border-radius: var(--r, 12px) var(--r, 12px) 4px var(--r, 12px);
+  border-color: transparent;
+}
+
+.msg-text { padding-left: 10px; padding-bottom: 4px; }
+
+/* فقاعة مؤشر الكتابة (Instagram Style) */
+.typing-bubble {
+  align-self: flex-start;
+  background: var(--bubble-other, #182533);
+  padding: 10px 16px;
+  border-radius: 18px 18px 18px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+  border: 1px solid var(--bubble-line, rgba(255,255,255,0.06));
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  z-index: 1;
+}
+
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  background-color: var(--text-muted, #8696a7);
+  border-radius: 50%;
+  animation: instagramTyping 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes instagramTyping {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+    background-color: var(--babylon-gold, #d4af37);
+  }
+}
+
+.reply-quote {
+  background: rgba(0, 0, 0, 0.25);
+  border-right: 3px solid var(--accent-chat, #d4af37);
+  padding: 3px 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--accent-chat, #d4af37);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.msg-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  color: var(--meta-other, rgba(255, 255, 255, 0.6));
+  position: absolute;
+  bottom: 3px;
+  left: 8px;
+  user-select: none;
+}
+.msg-bubble.mine .msg-meta { color: rgba(255,255,255,0.72); }
+
+.check-mark { font-size: 11px; color: rgba(255, 255, 255, 0.6); }
+.check-mark.read { color: var(--tick-read, #4ade80); font-weight: bold; }
+
+.reactions-row { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+.reaction-badge { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 1px 6px; font-size: 11px; }
+
+.audio-player { display: flex; align-items: center; gap: 8px; width: 220px; padding: 2px 0 6px 0; }
+.audio-player audio { width: 100%; height: 36px; filter: invert(0.9) hue-rotate(180deg); }
+
+.chat-input-container {
+  background: #17212b;
+  border-top: 1px solid rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+  position: relative;
+}
+
+.reply-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px 0 14px;
+  font-size: 12px;
+  color: var(--babylon-gold);
+}
+
+.chat-input-bar { padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
+.chat-input-bar input { flex: 1; background: transparent; border: none; padding: 10px 12px; color: white; outline: none; font-size: 15px; }
+
+.recording-indicator { color: #f87171; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+.msg-actions-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
+}
+.emoji-picker-bar {
+  background: var(--babylon-surface); border: 1px solid var(--babylon-border);
+  border-radius: 30px; padding: 8px 14px; display: flex; gap: 12px; margin-bottom: 12px;
+}
+.emoji-btn { font-size: 22px; cursor: pointer; }
+
+.msg-actions-card {
+  width: 280px; background: var(--babylon-surface); border: 1px solid var(--babylon-border);
+  border-radius: 18px; overflow: hidden; padding: 10px;
+}
+.msg-actions-card button {
+  width: 100%; padding: 12px; background: transparent; border: none; color: white;
+  font-size: 14px; text-align: right; border-bottom: 1px solid var(--babylon-border);
+  cursor: pointer; display: flex; align-items: center; gap: 10px; border-radius: 8px;
+}
+.msg-actions-card button:last-child { border-bottom: none; }
+.msg-actions-card button.danger { color: var(--error-color); }
+
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--babylon-surface); color: var(--babylon-gold); padding: 10px 18px;
+  border-radius: 20px; font-size: 13px; z-index: 1000; border: 1px solid var(--babylon-gold);
+}
+
+.set-row {
+  display: flex; align-items: center; gap: 14px; padding: 15px 16px;
+  background: var(--babylon-surface); border-bottom: 1px solid var(--babylon-border);
+  cursor: pointer; color: white; font-size: 15px; text-align: right;
+}
+.set-row:hover { background: var(--babylon-surface-hover); }
+.set-row .set-ico { font-size: 20px; width: 26px; text-align: center; }
+.set-row .set-chev { margin-right: auto; color: var(--text-muted); }
+.set-card { background: var(--babylon-surface); border-radius: 16px; margin: 12px 12px 0; padding: 14px 16px 10px; }
+.set-card-title { font-size: 14px; font-weight: 700; color: var(--babylon-gold); text-align: right; margin-bottom: 10px; }
+.slider-row { display: flex; align-items: center; gap: 14px; direction: ltr; padding-bottom: 6px; }
+.slider-row input[type=range] { flex: 1; accent-color: var(--babylon-gold); height: 28px; }
+.slider-row .slider-val { min-width: 26px; font-size: 18px; color: var(--babylon-gold); font-weight: 600; text-align: right; }
+
+.pv {
+  position: relative; overflow: hidden; background: var(--chat-bg, #0d1626);
+  margin: 12px 0 0; padding: 14px; min-height: 190px;
+  display: flex; flex-direction: column; gap: 8px; justify-content: center;
+}
+.pv .msg-bubble { cursor: default; max-width: 80%; z-index: 1; }
+.pv-name { font-size: 13px; font-weight: 700; color: var(--accent-chat, #d4af37); margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+
+.theme-strip {
+  display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 4px 4px 12px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.theme-strip::-webkit-scrollbar { display: none; }
+.theme-card { flex: 0 0 96px; scroll-snap-align: center; cursor: pointer; text-align: center; }
+.theme-thumb {
+  position: relative; height: 132px; border-radius: 14px; overflow: hidden;
+  border: 3px solid transparent; transition: border-color 0.15s, transform 0.15s;
+}
+.theme-card.sel .theme-thumb { border-color: var(--babylon-gold); transform: scale(1.03); }
+.th-mine { position: absolute; top: 16px; left: 16%; right: 12%; height: 22px; border-radius: 12px; z-index: 1; }
+.th-other { position: absolute; top: 48px; left: 12%; right: 26%; height: 22px; border-radius: 12px; z-index: 1; }
+.th-hero { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font-size: 36px; z-index: 1; line-height: 1.1; }
+.theme-name { font-size: 12px; margin-top: 6px; color: var(--text-muted); }
+.theme-card.sel .theme-name { color: var(--babylon-gold); font-weight: 700; }
+
+/* البروفايل المحسن والمعالج بالكامل */
+i[data-ic]{display:inline-flex;font-style:normal}
+.pf-cover{position:relative;height:140px;flex-shrink:0;overflow:hidden;background:var(--babylon-blue);--pattern-color:#fff;--pattern-opacity:.2}
+.pf-cover::after{content:"";position:absolute;left:0;right:0;bottom:0;height:70%;background:linear-gradient(to bottom,rgba(11,17,32,0),#0b1120);z-index:1;pointer-events:none}
+.pf-cover .pattern-layer{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:46px;place-items:center;font-size:22px;color:var(--pattern-color);opacity:var(--pattern-opacity)}
+.pf-cover .pattern-layer span{filter:grayscale(1)}
+.pf-topbar{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;justify-content:space-between;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 0}
+.pf-round{width:40px;height:40px;border-radius:50%;border:none;background:rgba(0,0,0,.35);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px)}
+.pf-head{display:flex;flex-direction:column;align-items:center;margin-top:-55px;position:relative;z-index:2;padding:0 16px 14px;text-align:center}
+
+.pf-name{font-size:24px;font-weight:800;color:#fff;margin-bottom:6px;max-width:100%;overflow-wrap:anywhere;display:flex;align-items:center;justify-content:center;gap:6px}
+.pf-status{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--text-muted);margin-bottom:16px}
+.pf-dot{width:8px;height:8px;border-radius:50%;background:#5b6b7e}
+.pf-status.online{color:#4ade80}
+.pf-status.online .pf-dot{background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.18)}
+.pf-actions{display:flex;gap:10px;width:100%;margin-bottom:16px;}
+.pf-btn{flex:1;height:46px;border-radius:14px;border:1px solid var(--babylon-border);background:var(--babylon-surface-card);color:#e2e8f0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:600;cursor:pointer;transition:transform .15s}
+.pf-btn:active{transform:scale(.96)}
+.pf-btn.primary{background:linear-gradient(135deg,var(--babylon-gold),#b38f27);border-color:transparent;color:#0f172a;font-weight:700;flex:1.4}
+.pf-card{background:var(--babylon-surface-card);border:1px solid var(--babylon-border);border-radius:18px;margin:0 16px 24px;overflow:hidden}
+.pf-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);text-align:right}
+.pf-row:last-child{border-bottom:none}
+.pf-row[onclick]{cursor:pointer}
+.pf-row[onclick]:active{background:rgba(255,255,255,.03)}
+.pf-row .pf-ico{color:var(--babylon-gold);display:flex;flex-shrink:0}
+.pf-row-body{flex:1;min-width:0}
+.pf-val{font-size:15px;font-weight:600;color:#fff;word-break:break-word;white-space:pre-wrap}
+.pf-val.muted{color:var(--text-muted);font-weight:500}
+.pf-ltr{direction:ltr;unicode-bidi:isolate;text-align:right}
+.pf-lbl{font-size:12px;color:var(--text-muted);margin-top:2px}
+
+/* علامة التوثيق الفاخرة */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, var(--babylon-gold), #b38f27);
+  color: #0f172a;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+}
+
+/* مختار الغلاف */
+.cover-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cover-opt{position:relative;height:78px;border-radius:12px;overflow:hidden;border:3px solid transparent;cursor:pointer;--pattern-color:#fff;--pattern-opacity:.24}
+.cover-opt .pattern-layer{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:26px;place-items:center;font-size:13px;color:var(--pattern-color);opacity:var(--pattern-opacity);pointer-events:none}
+.cover-opt .pattern-layer span{filter:grayscale(1)}
+.cover-opt b{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:11px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);z-index:1}
+.cover-opt.sel{border-color:var(--babylon-gold)}
+
+/* الشريط السفلي بأيقونات موحدة */
+.nav-item .nav-icon{display:flex;align-items:center;justify-content:center;width:58px;height:30px;border-radius:15px;transition:background .2s,color .2s}
+.nav-item.active{color:var(--babylon-gold)}
+.nav-item.active .nav-icon{background:rgba(212,175,55,.16)}
+
+.load-older-btn{align-self:center;margin:8px auto;padding:7px 16px;border-radius:16px;border:1px solid var(--babylon-border);background:var(--babylon-surface);color:var(--babylon-gold);font-size:13px;cursor:pointer;position:relative;z-index:1}
+
+.msg-image img{display:block;width:100%;max-width:240px;border-radius:10px;cursor:pointer}
+.th-hero svg{width:40px;height:40px}
+</style>
+</head>
+
+<body>
+
+<div class="app-container">
+
+  <!-- شاشة الدخول والتسجيل -->
+  <section id="authPage" class="auth-page">
+    <div class="babylon-logo">🏛</div>
+    <h1 class="auth-title">Babylon Chat</h1>
+    <p class="auth-subtitle">تواصل عبر البريد أو اسم المستخدم بنكهة بابلية أصيلة</p>
+
+    <div class="babylon-tabs">
+      <button id="tabLogin" class="babylon-tab active" onclick="switchTab('login')">تسجيل الدخول</button>
+      <button id="tabRegister" class="babylon-tab" onclick="switchTab('register')">إنشاء حساب</button>
+    </div>
+
+    <!-- نموذج تسجيل الدخول -->
+    <div id="formLogin" style="width:100%;">
+      <div class="input-group">
+        <label>البريد الإلكتروني أو اسم المستخدم (@)</label>
+        <input id="loginEmail" class="babylon-input rtl" type="text" placeholder="name@domain.com أو ali">
+        <span id="loginEmailError" class="field-error hidden"></span>
+      </div>
+      <div class="input-group">
+        <label>كلمة المرور</label>
+        <input id="loginPassword" class="babylon-input" type="password" placeholder="••••••••">
+        <span id="loginPassError" class="field-error hidden"></span>
+      </div>
+      <button type="button" class="babylon-btn" onclick="loginUser()">دخول</button>
+      <button type="button" onclick="openForgotPassword()" style="background:none;border:none;color:var(--babylon-gold);margin-top:14px;font-size:13px;cursor:pointer;width:100%;">نسيت كلمة المرور؟</button>
+    </div>
+
+    <!-- استعادة كلمة المرور -->
+    <div id="formForgot" class="hidden" style="width:100%;">
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px;text-align:right;">اكتب بريدك الإلكتروني وراح نرسل لك رابط لتعيين كلمة مرور جديدة.</p>
+      <div class="input-group">
+        <label>البريد الإلكتروني</label>
+        <input id="forgotEmail" class="babylon-input" type="email" placeholder="name@domain.com">
+        <span id="forgotEmailError" class="field-error hidden"></span>
+      </div>
+      <button type="button" class="babylon-btn" onclick="sendReset()">إرسال رابط الاستعادة</button>
+      <button type="button" onclick="closeForgotPassword()" style="background:none;border:none;color:var(--text-muted);margin-top:14px;font-size:13px;cursor:pointer;width:100%;">رجوع لتسجيل الدخول</button>
+    </div>
+
+    <!-- نموذج التسجيل الجديد -->
+    <div id="formRegister" class="hidden" style="width:100%;">
+      <div class="input-group">
+        <label>اسم العرض (الاسم الشخصي)</label>
+        <input id="regName" class="babylon-input rtl" type="text" placeholder="اسمك الكريم">
+      </div>
+      <div class="input-group">
+        <label>اسم المستخدم (3 أحرف فأكثر)</label>
+        <input id="regUsername" class="babylon-input" type="text" placeholder="ali" oninput="validateUsernameInput(this)">
+        <span id="regUserError" class="field-error hidden"></span>
+      </div>
+      <div class="input-group">
+        <label>البريد الإلكتروني</label>
+        <input id="regEmail" class="babylon-input" type="email" placeholder="name@domain.com">
+        <span id="regEmailError" class="field-error hidden"></span>
+      </div>
+      <div class="input-group">
+        <label>كلمة المرور</label>
+        <input id="regPassword" class="babylon-input" type="password" placeholder="6 أحرف على الأقل">
+        <span id="regPassError" class="field-error hidden"></span>
+      </div>
+      <button type="button" id="regSubmitBtn" class="babylon-btn">تسجيل حساب جديد</button>
+    </div>
+  </section>
+
+  <!-- صفحة التحقق من البريد -->
+  <section id="verifyPage" class="auth-page hidden">
+    <div class="babylon-logo">✉</div>
+    <h1 class="auth-title">تحقق من بريدك</h1>
+    <p class="auth-subtitle">أرسلنا رابط التحقق إلى<br><b id="verifyEmail" style="direction:ltr;unicode-bidi:isolate;color:var(--babylon-gold);"></b><br>افتح الرابط ثم ارجع واضغط "تم التحقق". إذا ما وصل شيّك مجلد السبام.</p>
+    <div style="width:100%;">
+      <button type="button" class="babylon-btn" onclick="checkVerified()">تم التحقق، دخول</button>
+      <button type="button" id="resendBtn" class="babylon-btn" style="margin-top:10px;background:transparent;border:1px solid var(--babylon-border);color:var(--babylon-gold);" onclick="resendVerification()">إعادة إرسال الرابط</button>
+      <button type="button" class="babylon-btn" style="margin-top:10px;background:transparent;border:1px solid var(--error-color);color:var(--error-color);" onclick="auth.signOut().then(() => location.reload())">تسجيل الخروج</button>
+    </div>
+  </section>
+
+  <!-- الصفحة الرئيسية وتطبيق الدردشة -->
+  <section id="mainPage" class="hidden" style="height:100%; display:flex; flex-direction:column;">
+    
+    <header id="mainHeader" class="main-header">
+      <div class="main-header-title">Babylon Chat</div>
+      <button id="mainSearchBtn" class="icon-btn" onclick="openSearch()" title="بحث عن مستخدم باليوزر">🔍</button>
+    </header>
+
+    <div id="homeView" class="chat-list" style="flex:1; overflow-y:auto;">
+      <div id="chatList" style="display:flex; flex-direction:column;"></div>
+    </div>
+
+    <div id="searchView" class="hidden" style="flex:1; display:flex; flex-direction:column; background:#0e1621;">
+      <div style="padding:12px; background:var(--babylon-surface); border-bottom:1px solid var(--babylon-border); display:flex; align-items:center; gap:10px;">
+        <button class="icon-btn" onclick="goHome()" title="الرجوع">‹</button>
+        <input id="searchInput" class="babylon-input rtl" placeholder="ابحث باسم المستخدم (مثال: ali أو @ali)..." oninput="searchUsers()">
+      </div>
+      <div id="searchResults" class="chat-list"></div>
+    </div>
+
+    <!-- شاشة البروفايل الشخصي -->
+    <div id="profileView" class="profile-view hidden">
+      <div class="pf-cover" id="pCover"><div class="pattern-layer" id="pCoverPattern"></div></div>
+
+      <div class="pf-head">
+        <div style="position:relative;">
+          <div id="pAvatarText" class="profile-large-avatar">🏛</div>
+          <img id="pAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
+        </div>
+        <div id="pHeaderName" class="pf-name">
+          <span id="pHeaderNameText">ALi</span>
+          <span id="pBadgeBox"><span class="verified-badge">✓</span></span>
+        </div>
+        <div id="pHeaderStatus" class="pf-status online"><span class="pf-dot"></span><span>متصل الآن</span></div>
+
+        <div class="pf-actions">
+          <button type="button" class="pf-btn primary" onclick="openEditProfileModal()"><i data-ic="pencil"></i><span>تعديل</span></button>
+          <label for="avatarInput" class="pf-btn"><i data-ic="camera"></i><span>الصورة</span></label>
+          <button type="button" class="pf-btn" onclick="openCoverPicker()"><i data-ic="palette"></i><span>الغلاف</span></button>
+          <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="uploadAvatarLive(event)">
+        </div>
+      </div>
+
+      <div class="pf-card">
+        <div class="pf-row" onclick="openEditProfileModal()">
+          <span class="pf-ico"><i data-ic="text"></i></span>
+          <div class="pf-row-body"><div id="pBioDisplay" class="pf-val muted">أضف نبذة عن نفسك</div><div class="pf-lbl">النبذة التعريفية</div></div>
+        </div>
+        <div class="pf-row" onclick="copyText('@' + (currentUserData && currentUserData.username), 'تم نسخ اسم المستخدم')">
+          <span class="pf-ico"><i data-ic="at"></i></span>
+          <div class="pf-row-body"><div id="pHeaderUser" class="pf-val pf-ltr">@username</div><div class="pf-lbl">اسم المستخدم (اضغط للنسخ)</div></div>
+        </div>
+        <div class="pf-row hidden" id="pGovRow">
+          <span class="pf-ico"><i data-ic="pin"></i></span>
+          <div class="pf-row-body"><div id="pGovDisplay" class="pf-val"></div><div class="pf-lbl">المحافظة</div></div>
+        </div>
+        <div class="pf-row hidden" id="pJoinRow">
+          <span class="pf-ico"><i data-ic="calendar"></i></span>
+          <div class="pf-row-body"><div id="pJoinDisplay" class="pf-val"></div><div class="pf-lbl">تاريخ الانضمام</div></div>
+        </div>
+        <div class="pf-row">
+          <span class="pf-ico"><i data-ic="mail"></i></span>
+          <div class="pf-row-body"><div id="pEmailDisplay" class="pf-val pf-ltr">email@domain.com</div><div class="pf-lbl">البريد الإلكتروني (ظاهر لك فقط)</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- شاشة عرض بروفايل مستخدم آخر -->
+    <div id="otherUserProfileView" class="profile-view hidden">
+      <div class="pf-cover" id="otherCover">
+        <div class="pattern-layer" id="otherCoverPattern"></div>
+        <div class="pf-topbar">
+          <button type="button" class="pf-round" onclick="goBackFromOtherProfile()" aria-label="رجوع"><i data-ic="chevron" data-size="22"></i></button>
+          <span></span>
+        </div>
+      </div>
+
+      <div class="pf-head">
+        <div id="otherAvatarText" class="profile-large-avatar">🏛</div>
+        <img id="otherAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
+        <div id="otherHeaderName" class="pf-name">
+          <span id="otherHeaderNameText">مستخدم</span>
+          <span id="otherBadgeBox" class="hidden"><span class="verified-badge">✓</span></span>
+        </div>
+        <div id="otherHeaderStatus" class="pf-status"><span class="pf-dot"></span><span>غير متصل</span></div>
+
+        <div class="pf-actions">
+          <button type="button" class="pf-btn primary" onclick="startChatFromProfile()"><i data-ic="chat"></i><span>رسالة</span></button>
+          <button type="button" class="pf-btn" onclick="copyText(otherProfileUsername, 'تم نسخ اسم المستخدم')"><i data-ic="copy"></i><span>نسخ اليوزر</span></button>
+        </div>
+      </div>
+
+      <div class="pf-card">
+        <div class="pf-row hidden" id="otherBioRow">
+          <span class="pf-ico"><i data-ic="text"></i></span>
+          <div class="pf-row-body"><div id="otherBioDisplay" class="pf-val"></div><div class="pf-lbl">النبذة التعريفية</div></div>
+        </div>
+        <div class="pf-row" onclick="copyText(otherProfileUsername, 'تم نسخ اسم المستخدم')">
+          <span class="pf-ico"><i data-ic="at"></i></span>
+          <div class="pf-row-body"><div id="otherHeaderUser" class="pf-val pf-ltr">@username</div><div class="pf-lbl">اسم المستخدم</div></div>
+        </div>
+        <div class="pf-row hidden" id="otherGovRow">
+          <span class="pf-ico"><i data-ic="pin"></i></span>
+          <div class="pf-row-body"><div id="otherGovDisplay" class="pf-val"></div><div class="pf-lbl">المحافظة</div></div>
+        </div>
+        <div class="pf-row hidden" id="otherJoinRow">
+          <span class="pf-ico"><i data-ic="calendar"></i></span>
+          <div class="pf-row-body"><div id="otherJoinDisplay" class="pf-val"></div><div class="pf-lbl">تاريخ الانضمام</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- شاشة الإعدادات العامة -->
+    <div id="settingsView" class="settings-view hidden" style="flex:1; display:flex; flex-direction:column;">
+      <div class="babylon-profile-header" style="text-align:right; padding:18px 16px;">
+        <button class="icon-btn" style="position:absolute; left:12px; top:12px;" onclick="goHome()">✕</button>
+        <h2 style="font-size:18px; font-weight:700; color:var(--babylon-gold);">الإعدادات العامة</h2>
+      </div>
+
+      <div style="flex:1; overflow-y:auto;">
+        <div class="profile-section-label">التخصيص والسمات</div>
+        <div class="set-row" onclick="openChatSettings()">
+          <span class="set-ico">💬</span><span>المحادثات والثيمات</span><span class="set-chev">‹</span>
+        </div>
+
+        <div class="profile-section-label">التنبيهات والإشعارات</div>
+        <div class="set-row" onclick="openNotificationSettings()">
+          <span class="set-ico">🔔</span><span>الإشعارات والتنبيهات</span><span class="set-chev">‹</span>
+        </div>
+
+        <div class="profile-section-label">الحساب والتسجيل</div>
+        <div style="padding: 10px 16px 30px;">
+          <button type="button" class="babylon-btn" style="background:transparent; border:1px solid var(--error-color); color:var(--error-color);" onclick="logout()">تسجيل الخروج</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- شاشة إعدادات الإشعارات -->
+    <div id="notificationSettingsView" class="settings-view hidden" style="flex:1; display:flex; flex-direction:column;">
+      <div class="babylon-profile-header" style="text-align:right; padding:18px 16px;">
+        <button class="icon-btn" style="position:absolute; left:12px; top:12px;" onclick="openSettings()">‹</button>
+        <h2 style="font-size:18px; font-weight:700; color:var(--babylon-gold);">إعدادات الإشعارات</h2>
+      </div>
+
+      <div style="flex:1; overflow-y:auto; padding-bottom:24px;">
+        <div class="profile-section-label">إشعارات الرسائل والسيستم</div>
+        <div class="profile-settings-card">
+          <div class="profile-row" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:15px; color:white; font-weight:600;">إشعارات النظام الفورية</div>
+              <div style="font-size:12px; color:var(--text-muted);">تفعيل وصول الرسائل خلفية الشاشة</div>
+            </div>
+            <button type="button" class="babylon-btn" style="width:auto; padding:8px 16px; font-size:13px; margin-top:0;" onclick="requestNotificationPermission()">تفعيل</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- شاشة إعدادات المحادثات والسمات -->
+    <div id="chatSettingsView" class="settings-view hidden" style="flex:1; display:flex; flex-direction:column;">
+      <div class="babylon-profile-header" style="text-align:right; padding:18px 16px;">
+        <button class="icon-btn" style="position:absolute; left:12px; top:12px;" onclick="openSettings()">‹</button>
+        <h2 style="font-size:18px; font-weight:700; color:var(--babylon-gold);">إعدادات المحادثات</h2>
+      </div>
+
+      <div style="flex:1; overflow-y:auto; padding-bottom:24px;">
+        <div class="set-card">
+          <div class="set-card-title">حجم خط الرسائل</div>
+          <div class="slider-row">
+            <input id="fontRange" type="range" min="12" max="22" step="1" value="15" oninput="setFont(this.value)">
+            <span id="fontVal" class="slider-val">15</span>
+          </div>
+        </div>
+
+        <div class="pv">
+          <div class="pattern-layer" id="pvPattern"></div>
+          <div class="msg-bubble">
+            <div class="pv-name"><span>أبو علي</span> <span class="verified-badge">✓</span></div>
+            <div>صباح الخير! شلونك اليوم؟</div>
+            <div class="msg-meta"><span>3:46</span></div>
+          </div>
+          <div class="msg-bubble mine">
+            <div>الحمدلله تمام، وانت شلونك 😎</div>
+            <div class="msg-meta"><span>4:01</span> <span class="check-mark read">✓✓</span></div>
+          </div>
+        </div>
+
+        <div class="set-card">
+          <div class="set-card-title">ثيم وخلفية المحادثة</div>
+          <div id="themeStrip" class="theme-strip"></div>
+        </div>
+
+        <div class="set-card">
+          <div class="set-card-title">زوايا الرسالة</div>
+          <div class="slider-row">
+            <input id="radiusRange" type="range" min="0" max="20" step="1" value="12" oninput="setRadius(this.value)">
+            <span id="radiusVal" class="slider-val">12</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- غرفة المحادثة -->
+    <div id="chatView" class="chat-room hidden">
+      <div class="pattern-layer" id="chatPattern"></div>
+
+      <header class="telegram-chat-header">
+        <button class="icon-btn" onclick="goHome()">‹</button>
+        
+        <div class="telegram-user-info" onclick="openCurrentChatUserProfile()">
+          <div id="chatAvatar" class="telegram-avatar">؟</div>
+          <div class="telegram-user-details">
+            <div id="chatTitle" class="telegram-user-name">
+              <span id="chatTitleText">المحادثة</span>
+              <span id="chatBadgeBox" class="hidden"><span class="verified-badge" style="width:14px;height:14px;font-size:9px;">✓</span></span>
+            </div>
+            <div id="chatSub" class="telegram-user-status">غير متصل</div>
+          </div>
+        </div>
+      </header>
+
+      <div id="messagesArea" class="messages-area"></div>
+
+      <div class="chat-input-container">
+        <div id="replyPreviewBar" class="reply-preview-bar hidden">
+          <div id="replyPreviewText">الرد على: ...</div>
+          <button class="icon-btn" style="width:24px;height:24px;font-size:14px;" onclick="cancelReply()">✕</button>
+        </div>
+        
+        <div id="recordingBar" class="chat-input-bar hidden">
+          <div class="recording-indicator">🔴 جاري تسجيل بصمة صوتية... <span id="recordTimer">00:00</span></div>
+          <button class="icon-btn" style="color:var(--error-color)" onclick="cancelRecording()">✕</button>
+          <button class="icon-btn" style="color:var(--babylon-gold)" onclick="stopAndSendRecording()">➤</button>
+        </div>
+
+        <form id="textInputBar" class="chat-input-bar" onsubmit="sendMessage(event)">
+          <input id="messageInput" placeholder="اكتب رسالتك..." autocomplete="off">
+          <label class="icon-btn" for="chatImageInput" style="color:var(--text-muted); cursor:pointer;" title="إرسال صورة"><i data-ic="image" data-size="22"></i></label>
+          <input type="file" id="chatImageInput" accept="image/*" class="hidden" onchange="sendImage(event)">
+          <button type="button" class="icon-btn" style="color:var(--text-muted)" onclick="startRecording()">🎙</button>
+          <button class="icon-btn" style="color:var(--babylon-gold)" type="submit">➤</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- شريط التنقل السفلي -->
+    <nav id="bottomNav" class="telegram-bottom-nav">
+      <button id="navChats" class="nav-item active" onclick="goHome()">
+        <span class="nav-icon"><i data-ic="chat" data-size="22"></i></span>
+        <span>المحادثات</span>
+      </button>
+      <button id="navProfile" class="nav-item" onclick="openProfile()">
+        <span class="nav-icon"><i data-ic="user" data-size="22"></i></span>
+        <span>الملف الشخصي</span>
+      </button>
+      <button id="navSettings" class="nav-item" onclick="openSettings()">
+        <span class="nav-icon"><i data-ic="sliders" data-size="22"></i></span>
+        <span>الإعدادات</span>
+      </button>
+    </nav>
+  </section>
+
+</div>
+
+<!-- نافذة تعديل بيانات الملف الشخصي -->
+<div id="editProfileModal" class="msg-actions-modal hidden" onclick="closeEditModal(event)">
+  <div class="msg-actions-card" style="width:320px; padding:20px;">
+    <h3 style="color:var(--babylon-gold); font-size:17px; margin-bottom:14px; text-align:right;">تعديل البيانات الشخصية</h3>
+    
+    <div class="input-group">
+      <label>اسم العرض</label>
+      <input id="modalNameInput" class="babylon-input rtl" placeholder="اسمك الكريم">
+    </div>
+
+    <div class="input-group">
+      <label>اسم المستخدم (@)</label>
+      <input id="modalUsernameInput" class="babylon-input" placeholder="username" oninput="validateUsernameInput(this)">
+      <span id="modalUserError" class="field-error hidden"></span>
+    </div>
+
+    <div class="input-group">
+      <label>النبذة التعريفية (البايو)</label>
+      <textarea id="modalBioInput" class="babylon-input rtl" style="height:70px; resize:none;" maxlength="120" placeholder="اكتب نبذة عن نفسك..."></textarea>
+    </div>
+
+    <div class="input-group">
+      <label>المحافظة</label>
+      <select id="modalGovInput" class="babylon-input rtl"></select>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <button type="button" class="babylon-btn" onclick="saveProfileChanges()">حفظ التغيرات</button>
+      <button type="button" class="babylon-btn" style="background:transparent; border:1px solid var(--text-muted); color:white;" onclick="closeEditModalDirect()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div id="coverModal" class="msg-actions-modal hidden" onclick="closeCoverModal(event)">
+  <div class="msg-actions-card" style="width:340px; padding:18px;">
+    <h3 style="color:var(--babylon-gold); font-size:17px; margin-bottom:12px; text-align:right;">غلاف ملفك الشخصي</h3>
+    <div id="coverGrid" class="cover-grid"></div>
+  </div>
+</div>
+
+<div id="msgModal" class="msg-actions-modal hidden" onclick="closeMsgModal(event)">
+  <div class="emoji-picker-bar">
+    <span class="emoji-btn" onclick="addReaction('👍')">👍</span>
+    <span class="emoji-btn" onclick="addReaction('❤️')">❤️</span>
+    <span class="emoji-btn" onclick="addReaction('😂')">😂</span>
+    <span class="emoji-btn" onclick="addReaction('😮')">😮</span>
+    <span class="emoji-btn" onclick="addReaction('🔥')">🔥</span>
+    <span class="emoji-btn" onclick="addReaction('👏')">👏</span>
+  </div>
+  <div class="msg-actions-card">
+    <button onclick="actionCopy()">📋 نسخ النص</button>
+    <button id="btnEditMsg" class="hidden" onclick="actionEdit()">✏ تعديل الرسالة</button>
+    <button id="btnDeleteMsg" class="danger hidden" onclick="actionDelete()">🗑 حذف الرسالة</button>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<!-- JavaScript الكامل والمدمج -->
+<script>
 const firebaseConfig = {
   apiKey: "AIzaSyDxQZCL4OawmPLKLRdQdbrQOHN7vl3p5EQ",
   authDomain: "aj-chat-df534.firebaseapp.com",
@@ -9,7 +1124,6 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
-/* Firebase App Check: ضع مفتاح reCAPTCHA v3 هنا لتفعيله (فارغ = معطل بدون أي تأثير) */
 const APP_CHECK_SITE_KEY = "";
 if (APP_CHECK_SITE_KEY && firebase.appCheck) {
   if (location.hostname === "localhost") self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
@@ -31,6 +1145,7 @@ let messagesUnsubscribe = null;
 let userUnsubscribe = null;
 let chatsListUnsubscribe = null;
 let userDocUnsubscribe = null;
+let chatDocUnsubscribe = null;
 let heartbeatInterval = null;
 let isAppInitialized = false;
 
@@ -47,6 +1162,7 @@ let mediaRecorder = null;
 let audioChunks = [];
 let recordInterval = null;
 let recordSeconds = 0;
+let typingTimeout = null;
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('firebase-messaging-sw.js')
@@ -60,6 +1176,26 @@ document.addEventListener("DOMContentLoaded", () => {
     regBtn.addEventListener("click", function(e) {
       e.preventDefault();
       registerUser();
+    });
+  }
+
+  const msgInput = document.getElementById("messageInput");
+  if (msgInput) {
+    msgInput.addEventListener("input", () => {
+      if (!activeChatId || !currentUser) return;
+
+      db.collection("chats").doc(activeChatId).set({
+        [`typing_${currentUser.uid}`]: true
+      }, { merge: true });
+
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        if (activeChatId && currentUser) {
+          db.collection("chats").doc(activeChatId).set({
+            [`typing_${currentUser.uid}`]: false
+          }, { merge: true });
+        }
+      }, 2000);
     });
   }
 });
@@ -417,6 +1553,7 @@ function showView(viewId) {
 function goHome() {
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
   if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
+  if (chatDocUnsubscribe) { chatDocUnsubscribe(); chatDocUnsubscribe = null; }
   activeChatId = null;
   currentChatOtherUserId = null;
   cancelReply();
@@ -434,6 +1571,7 @@ function openSearch() {
 function openProfile() {
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
   if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
+  if (chatDocUnsubscribe) { chatDocUnsubscribe(); chatDocUnsubscribe = null; }
   activeChatId = null;
   showView("profileView");
   if (currentUserData) {
@@ -444,6 +1582,7 @@ function openProfile() {
 function openSettings() {
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
   if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
+  if (chatDocUnsubscribe) { chatDocUnsubscribe(); chatDocUnsubscribe = null; }
   activeChatId = null;
   showView("settingsView");
 }
@@ -599,6 +1738,7 @@ function openChatRoom(otherUserId, keepLimit) {
   currentChatOtherUserId = otherUserId;
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
   if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
+  if (chatDocUnsubscribe) { chatDocUnsubscribe(); chatDocUnsubscribe = null; }
   
   showView("chatView");
 
@@ -629,6 +1769,35 @@ function openChatRoom(otherUserId, keepLimit) {
     }
   });
 
+  // الاستماع لحالة الكتابة (Typing Indicator)
+  chatDocUnsubscribe = db.collection("chats").doc(activeChatId).onSnapshot(doc => {
+    if (!doc.exists) return;
+    const data = doc.data();
+    const isPeerTyping = data && data[`typing_${otherUserId}`];
+    
+    const box = document.getElementById("messagesArea");
+    let typingBubble = document.getElementById("typingIndicatorBubble");
+
+    if (isPeerTyping) {
+      if (!typingBubble) {
+        typingBubble = document.createElement("div");
+        typingBubble.id = "typingIndicatorBubble";
+        typingBubble.className = "typing-bubble";
+        typingBubble.innerHTML = `
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        `;
+        box.appendChild(typingBubble);
+        box.scrollTop = box.scrollHeight;
+      }
+    } else {
+      if (typingBubble) {
+        typingBubble.remove();
+      }
+    }
+  });
+
   db.collection("chats").doc(activeChatId).collection("messages")
     .where("senderId", "==", otherUserId)
     .where("read", "==", false)
@@ -641,7 +1810,19 @@ function openChatRoom(otherUserId, keepLimit) {
     .onSnapshot(snap => {
       const box = document.getElementById("messagesArea");
       const prevH = box.scrollHeight;
-      box.innerHTML = "";
+      
+      // حفظ مؤشر الكتابة مؤقتاً قبل مسح المحتوى لو كان موجوداً
+      const existingTyping = document.getElementById("typingIndicatorBubble");
+
+      // تفريغ رسائل المحادثة فقط وإبقاء المؤشر إن وجد
+      Array.from(box.children).forEach(child => {
+        if (child.id !== "typingIndicatorBubble" && !child.classList.contains("load-older-btn")) {
+          child.remove();
+        }
+      });
+
+      const oldBtn = box.querySelector(".load-older-btn");
+      if (oldBtn) oldBtn.remove();
 
       if (snap.size >= msgLimit) {
         const more = document.createElement("button");
@@ -649,7 +1830,7 @@ function openChatRoom(otherUserId, keepLimit) {
         more.className = "load-older-btn";
         more.textContent = "تحميل رسائل أقدم";
         more.onclick = () => { msgLimit += 50; loadingOlder = true; openChatRoom(currentChatOtherUserId, true); };
-        box.appendChild(more);
+        box.insertBefore(more, box.firstChild);
       }
 
       snap.docs.forEach(d => {
@@ -720,7 +1901,11 @@ function openChatRoom(otherUserId, keepLimit) {
         };
         b.onmouseup = b.onmouseleave = () => clearTimeout(pressTimer);
 
-        box.appendChild(b);
+        if (existingTyping) {
+          box.insertBefore(b, existingTyping);
+        } else {
+          box.appendChild(b);
+        }
       });
       if (loadingOlder) { box.scrollTop = Math.max(0, box.scrollHeight - prevH); loadingOlder = false; }
       else box.scrollTop = box.scrollHeight;
@@ -848,7 +2033,10 @@ function stopAndSendRecording() {
         read: false,
         createdAt: Date.now()
       }).then(() => {
-        db.collection("chats").doc(activeChatId).set({ updatedAt: Date.now() }, { merge: true });
+        db.collection("chats").doc(activeChatId).set({ 
+          updatedAt: Date.now(),
+          [`typing_${currentUser.uid}`]: false
+        }, { merge: true });
         notifyPeer(activeChatId, "🎤 بصمة صوتية");
       });
 
@@ -886,7 +2074,10 @@ function sendMessage(e) {
     if (replyingToText) msgData.replyTo = replyingToText;
 
     db.collection("chats").doc(activeChatId).collection("messages").add(msgData).then(() => {
-      db.collection("chats").doc(activeChatId).set({ updatedAt: Date.now() }, { merge: true });
+      db.collection("chats").doc(activeChatId).set({ 
+        updatedAt: Date.now(),
+        [`typing_${currentUser.uid}`]: false
+      }, { merge: true });
 
       notifyPeer(activeChatId, text);
     });
@@ -995,7 +2186,6 @@ function loadChats() {
     });
 }
 
-/* ثيمات التراث العراقي للمحادثات */
 const THEMES = {
   babylon: { name:'بابل', hero:'ic:gate', chatBg:'#0d1626', mine:'linear-gradient(135deg,#1b4d8e,#2f78cf)', other:'#263345',
     textMine:'#ffffff', textOther:'#f3f4f6', accent:'#d4af37', tick:'#ffe08a', metaOther:'#94a3b8', line:'rgba(255,255,255,0.06)',
@@ -1266,7 +2456,7 @@ function setCover(id) {
 
 hydrateIcons();
 fillGovSelect();
-/* ===== تعقيم النصوص ومزامنة الإعدادات ===== */
+
 function esc(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
@@ -1290,7 +2480,7 @@ function syncPrefsFromUser(u) {
   try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {}
   applyPrefs(true);
 }
-/* ===== رسومات SVG عراقية + إرسال الصور ===== */
+
 Object.assign(ICONS, {
   image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
   ziggurat:'<path d="M2 21h20M4 21v-4h16v4M7 17v-4h10v4M10 13V9h4v4M12 9V6"/>',
@@ -1350,7 +2540,10 @@ function sendImage(e) {
     db.collection('chats').doc(chatId).collection('messages').add({
       senderId: currentUser.uid, imageUrl: dataUrl, read: false, createdAt: Date.now()
     }).then(() => {
-      db.collection('chats').doc(chatId).set({ updatedAt: Date.now() }, { merge: true });
+      db.collection('chats').doc(chatId).set({ 
+        updatedAt: Date.now(),
+        [`typing_${currentUser.uid}`]: false
+      }, { merge: true });
       notifyPeer(chatId, '📷 صورة');
     }).catch(() => showToast('تعذر إرسال الصورة'));
   });
@@ -1370,7 +2563,7 @@ function openImageViewer(src) {
 hydrateIcons();
 buildThemeStrip();
 applyPrefs(true);
-/* ===== الإشعارات الخارجية (Push) ===== */
+
 function registerPushToken() {
   if (!messaging || !currentUser) return;
   messaging.getToken().then(token => {
@@ -1404,7 +2597,7 @@ function notifyPeer(chatId, text) {
     })
   })).catch(err => console.log('Notification fetch error:', err));
 }
-/* ===== استعادة كلمة المرور + التحقق من البريد ===== */
+
 auth.languageCode = 'ar';
 
 const DISPOSABLE_DOMAINS = ['mailinator.com','yopmail.com','guerrillamail.com','sharklasers.com','10minutemail.com','tempmail.com','temp-mail.org','trashmail.com','getnada.com','dispostable.com','maildrop.cc','throwawaymail.com','fakeinbox.com','mohmal.com'];
@@ -1493,7 +2686,6 @@ function checkVerified() {
   }).catch(() => showToast('تعذر الفحص، حاول مرة ثانية'));
 }
 
-/* جدول أسماء المستخدمين (للدخول باليوزر قبل تسجيل الدخول) */
 let usernameDocChecked = false;
 function ensureUsernameDoc(u) {
   if (usernameDocChecked || !u || !u.username || !currentUser) return;
@@ -1507,3 +2699,6 @@ function syncUsernameDoc(oldName, newName) {
     .then(() => { if (oldName) return db.collection('usernames').doc(oldName).delete(); })
     .catch(() => {});
 }
+</script>
+</body>
+</html>
