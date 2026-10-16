@@ -14,6 +14,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 
 <style>
 :root {
@@ -1038,6 +1039,13 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+
+/* Firebase App Check: ضع مفتاح reCAPTCHA v3 هنا لتفعيله (فارغ = معطل بدون أي تأثير) */
+const APP_CHECK_SITE_KEY = "";
+if (APP_CHECK_SITE_KEY && firebase.appCheck) {
+  if (location.hostname === "localhost") self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  firebase.appCheck().activate(APP_CHECK_SITE_KEY, true);
+}
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -1094,11 +1102,7 @@ function requestNotificationPermission() {
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
       showToast("تم تفعيل إشعارات الجهاز بنجاح! 🔔");
-      if (messaging && currentUser) {
-        messaging.getToken().then(token => {
-          db.collection("users").doc(currentUser.uid).set({ fcmToken: token }, { merge: true });
-        });
-      }
+      registerPushToken();
     } else {
       showToast("تم رفض إذن الإشعارات من الهاتف");
     }
@@ -1208,6 +1212,7 @@ function loadUserDataAndEnter(uid) {
       currentUserData = doc.data();
       updateProfileUI(currentUserData);
       syncPrefsFromUser(currentUserData);
+      refreshPushTokenOnce();
       
       if (!isAppInitialized) {
         isAppInitialized = true;
@@ -1862,6 +1867,7 @@ function stopAndSendRecording() {
         createdAt: Date.now()
       }).then(() => {
         db.collection("chats").doc(activeChatId).set({ updatedAt: Date.now() }, { merge: true });
+        notifyPeer(activeChatId, "🎤 بصمة صوتية");
       });
 
       cancelRecording();
@@ -1900,18 +1906,7 @@ function sendMessage(e) {
     db.collection("chats").doc(activeChatId).collection("messages").add(msgData).then(() => {
       db.collection("chats").doc(activeChatId).set({ updatedAt: Date.now() }, { merge: true });
 
-      const otherUserId = activeChatId.split('__').find(id => id !== currentUser.uid);
-      if (otherUserId) {
-        fetch('/api/index', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            recipientId: otherUserId,
-            senderName: currentUserData ? currentUserData.displayName : "رسالة جديدة",
-            messageText: text
-          })
-        }).catch(err => console.log('Notification fetch error:', err));
-      }
+      notifyPeer(activeChatId, text);
     });
     
     input.value = "";
@@ -2374,6 +2369,7 @@ function sendImage(e) {
       senderId: currentUser.uid, imageUrl: dataUrl, read: false, createdAt: Date.now()
     }).then(() => {
       db.collection('chats').doc(chatId).set({ updatedAt: Date.now() }, { merge: true });
+      notifyPeer(chatId, '📷 صورة');
     }).catch(() => showToast('تعذر إرسال الصورة'));
   });
 }
@@ -2392,6 +2388,40 @@ function openImageViewer(src) {
 hydrateIcons();
 buildThemeStrip();
 applyPrefs(true);
+/* ===== الإشعارات الخارجية (Push) ===== */
+function registerPushToken() {
+  if (!messaging || !currentUser) return;
+  messaging.getToken().then(token => {
+    if (!token) return;
+    db.collection('users').doc(currentUser.uid).set({
+      fcmToken: token,
+      fcmTokens: firebase.firestore.FieldValue.arrayUnion(token)
+    }, { merge: true });
+  }).catch(err => console.log('FCM token error:', err));
+}
+
+let pushTokenRefreshed = false;
+function refreshPushTokenOnce() {
+  if (pushTokenRefreshed) return;
+  pushTokenRefreshed = true;
+  if ('Notification' in window && Notification.permission === 'granted') registerPushToken();
+}
+
+function notifyPeer(chatId, text) {
+  if (!currentUser || !chatId) return;
+  const recipientId = chatId.split('__').find(id => id !== currentUser.uid);
+  if (!recipientId) return;
+  currentUser.getIdToken().then(idToken => fetch('/api/index', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+    body: JSON.stringify({
+      recipientId: recipientId,
+      chatId: chatId,
+      senderName: currentUserData ? currentUserData.displayName : 'رسالة جديدة',
+      messageText: text
+    })
+  })).catch(err => console.log('Notification fetch error:', err));
+}
 </script>
 </body>
 </html>
