@@ -1051,6 +1051,96 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .sx-ch svg { display: block; transform: scaleX(-1); }
 .sx-ic svg { display: block; }
 
+
+
+/* Theme consistency: all ordinary UI text, numbers, icons and controls follow the selected theme. */
+.app-container { -webkit-tap-highlight-color: transparent; }
+.app-container button, .app-container a, .app-container [role="button"], .app-container input, .app-container textarea, .app-container select {
+  -webkit-tap-highlight-color: transparent;
+}
+.app-container button:focus:not(:focus-visible),
+.app-container a:focus:not(:focus-visible),
+.app-container [role="button"]:focus:not(:focus-visible) {
+  outline: none !important;
+  box-shadow: none;
+}
+.app-container button:focus-visible, .app-container a:focus-visible,
+.app-container input:focus-visible, .app-container textarea:focus-visible {
+  outline: 2px solid var(--babylon-gold) !important;
+  outline-offset: 2px;
+}
+.app-container[data-app-theme="light"] {
+  --text-main: #17212b;
+  --text-muted: #68798d;
+  --babylon-dark: #f4f7fb;
+  --babylon-surface: #ffffff;
+  --babylon-surface-card: #ffffff;
+  --babylon-surface-hover: #eaf0f7;
+  --babylon-border: #dce4ee;
+  --babylon-gold: #9b7410;
+  --babylon-gold-hover: #805f0b;
+  --error-color: #c0392b;
+  --bubble-mine: #d8f7d2;
+  --bubble-other: #ffffff;
+  color: var(--text-main);
+}
+.app-container[data-app-theme="dark"] {
+  --text-main: #f1f5f9;
+  --text-muted: #a5b2c2;
+  --babylon-dark: #0f172a;
+  --babylon-surface: #17212b;
+  --babylon-surface-card: #1e293b;
+  --babylon-surface-hover: #263548;
+  --babylon-border: #344256;
+  --babylon-gold: #e4c45b;
+  --babylon-gold-hover: #f0d778;
+  --error-color: #fb7185;
+  --bubble-mine: #2b5278;
+  --bubble-other: #182533;
+  color: var(--text-main);
+}
+.app-container[data-app-theme="light"] #mainPage,
+.app-container[data-app-theme="light"] #mainPage :is(.set-row,.settings-section,.chat-item,.search-result,.profile-card,.profile-row,.msg-actions-card,.modal-card,.chat-settings-card,.notification-setting,.story-card,.post-card,.comment-item,.empty-state,.toast,.chat-input-container,.chat-input-bar,.recording-bar,.recording-wave-wrap,.message-input-wrap,.search-input-wrap) {
+  color: var(--text-main);
+}
+.app-container[data-app-theme="light"] #mainPage :is(p,span,label,h1,h2,h3,h4,small,strong,b,em,li,a,button,.chat-item-name,.chat-item-last,.main-header-title,.telegram-user-name,.set-row-title,.set-row-subtitle,.profile-name,.profile-bio,.message-text,.message-time,.date-separator,.empty-text,.settings-label,.settings-description,.search-result-name,.search-result-subtitle,.theme-name,.field-label,.modal-title,.modal-text,.toast,.badge-count,.unread-count,.online-status,.last-seen,.chat-preview,.nav-label,.story-name,.post-caption,.comment-text) {
+  color: var(--text-main);
+}
+.app-container[data-app-theme="dark"] #mainPage :is(p,span,label,h1,h2,h3,h4,small,strong,b,em,li,a,button,.chat-item-name,.chat-item-last,.main-header-title,.telegram-user-name,.set-row-title,.set-row-subtitle,.profile-name,.profile-bio,.message-text,.message-time,.date-separator,.empty-text,.settings-label,.settings-description,.search-result-name,.search-result-subtitle,.theme-name,.field-label,.modal-title,.modal-text,.toast,.badge-count,.unread-count,.online-status,.last-seen,.chat-preview,.nav-label,.story-name,.post-caption,.comment-text) {
+  color: var(--text-main);
+}
+.app-container[data-app-theme="light"] #mainPage :is(input,textarea,select,.babylon-input,.chat-input-bar input,.sv-reply input,.search-input,.message-input) {
+  color: #17212b !important;
+  caret-color: #9b7410;
+  background-color: #ffffff;
+  border-color: #dce4ee;
+}
+.app-container[data-app-theme="dark"] #mainPage :is(input,textarea,select,.babylon-input,.chat-input-bar input,.sv-reply input,.search-input,.message-input) {
+  color: #f1f5f9 !important;
+  caret-color: #e4c45b;
+}
+.app-container[data-app-theme="light"] #mainPage :is(.babylon-btn,.babylon-tab.active,.sc-chips button.on,.record-send-btn,.primary-btn) { color: #17212b !important; }
+.app-container[data-app-theme="light"] #mainPage :is(.chat-item,.set-row,.profile-row,.search-result,.msg-actions-card,.modal-card,.settings-card,.settings-theme-switch,.chat-input-container,.telegram-chat-header,.main-header,.telegram-bottom-nav) {
+  background-color: #ffffff;
+  border-color: #dce4ee;
+}
+.app-container[data-app-theme="dark"] #mainPage :is(.chat-item,.set-row,.profile-row,.search-result,.msg-actions-card,.modal-card,.settings-card,.settings-theme-switch,.chat-input-container,.telegram-chat-header,.main-header,.telegram-bottom-nav) {
+  background-color: var(--babylon-surface);
+  border-color: var(--babylon-border);
+}
+.app-container :is(svg,[data-ic],.icon,.pf-ico,.set-ico,.nav-icon) { color: inherit; }
+.app-container svg { stroke: currentColor; }
+.app-container[data-app-theme="light"] #mainPage :is(.unread-badge,.badge-count,.unread-count) { color: #ffffff !important; }
+.app-container[data-app-theme="light"] .auth-page { background: radial-gradient(circle at center, #ffffff 0%, #edf2f8 100%); }
+.app-container[data-app-theme="light"] .auth-title { color: #8b680e; }
+.app-container[data-app-theme="light"] .auth-subtitle { color: #68798d; }
+.app-container[data-app-theme="light"] .babylon-tabs { background: #eaf0f7; border-color: #dce4ee; }
+.app-container[data-app-theme="light"] .babylon-tab { color: #526276; }
+.app-container[data-app-theme="light"] .babylon-tab.active { background: #d9b64d; color: #17212b !important; }
+.app-container[data-app-theme="light"] .babylon-input { background: #ffffff; color: #17212b; border-color: #dce4ee; }
+.app-container[data-app-theme="light"] .input-group label { color: #8b680e; }
+.app-container[data-app-theme="light"] .babylon-btn { color: #17212b; }
+
 </style>
 </head>
 
@@ -1561,6 +1651,7 @@ if (APP_CHECK_SITE_KEY && firebase.appCheck) {
   firebase.appCheck().activate(APP_CHECK_SITE_KEY, true);
 }
 const auth = firebase.auth();
+try { auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => console.warn("Auth persistence preference:", err)); } catch (e) {}
 const db = firebase.firestore();
 
 let messaging = null;
