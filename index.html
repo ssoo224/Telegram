@@ -4232,6 +4232,64 @@ function loadUserPosts() {
     });
 }
 </script>
+
+<style id="babylon-composer-polish">
+/* Composer: remove the yellow focus rectangle and show a polished send action only when text exists. */
+#textInputBar {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  background: transparent;
+}
+#textInputBar:focus,
+#textInputBar:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+#messageInput,
+#messageInput:focus,
+#messageInput:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  -webkit-tap-highlight-color: transparent;
+}
+#textInputBar > button[type="submit"] {
+  display: none !important;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 0 !important;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #f3d66b, #d4af37) !important;
+  color: #17212b !important;
+  box-shadow: 0 4px 12px rgba(212,175,55,.25);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+#textInputBar.has-message > button[type="submit"] { display: inline-flex !important; }
+#textInputBar > button[type="submit"]:active { transform: scale(.92); box-shadow: 0 2px 6px rgba(212,175,55,.2); }
+#textInputBar > button[type="submit"] i,
+#textInputBar > button[type="submit"] svg { stroke: currentColor; }
+#textInputBar.has-message .mic-button,
+#textInputBar.has-message label[for="chatImageInput"] { display: none !important; }
+</style>
+<script id="babylon-composer-polish-js">
+(function(){
+  var form = document.getElementById('textInputBar');
+  var input = document.getElementById('messageInput');
+  if (!form || !input) return;
+  function syncSendButton(){ form.classList.toggle('has-message', input.value.trim().length > 0); }
+  input.addEventListener('input', syncSendButton);
+  input.addEventListener('change', syncSendButton);
+  form.addEventListener('submit', function(){ setTimeout(syncSendButton, 0); });
+  syncSendButton();
+})();
+</script>
+
 </body>
 </html>
 
