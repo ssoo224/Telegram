@@ -1476,6 +1476,19 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 /* SVG badge for pinned stories */
 .pinned-story-icon{width:15px;height:15px;display:inline-block;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .post-grid-item .st-badge{display:flex;align-items:center;gap:4px}
+
+/* Profile photo viewer and swipeable avatar history */
+#avatarGalleryModal{position:fixed;inset:0;z-index:12000;background:rgba(5,8,15,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;touch-action:pan-y}
+#avatarGalleryModal.hidden{display:none!important}
+#avatarGalleryModal .ag-top{position:absolute;top:16px;left:16px;right:16px;display:flex;align-items:center;justify-content:space-between;color:#fff}
+#avatarGalleryModal .ag-close{width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center}
+#avatarGalleryModal .ag-photo-wrap{width:100%;height:min(76vh,760px);display:flex;align-items:center;justify-content:center;overflow:hidden}
+#avatarGalleryModal #avatarGalleryImage{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:10px;user-select:none;-webkit-user-drag:none}
+#avatarGalleryModal .ag-caption{color:#fff;font-size:13px;margin-top:14px;opacity:.85}
+#avatarGalleryModal .ag-dots{display:flex;gap:7px;margin-top:12px;justify-content:center;flex-wrap:wrap}
+#avatarGalleryModal .ag-dot{width:7px;height:7px;border-radius:50%;background:#64748b}.ag-dot.active{background:#d4af37}
+#profileView #pAvatarImg{object-fit:cover;image-rendering:auto;cursor:zoom-in}
+
 </style>
 
 <style id="babylon-profile-buttons-and-chat-order-fix">
@@ -1751,7 +1764,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
       <div class="pf-head">
         <div id="pStoryRing" class="avatar-story-ring" onclick="handleAvatarClick()">
           <div id="pAvatarText" class="profile-large-avatar"><i data-ic="user" data-size="42"></i></div>
-          <img id="pAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
+          <img id="pAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar" onclick="openAvatarGallery(event)">
         </div>
         <div id="pHeaderName" class="pf-name">
           <span id="pHeaderNameText">ALi</span>
@@ -2852,35 +2865,74 @@ function openNotificationSettings() {
 }
 
 function uploadAvatarLive(e) {
-  const file = e.target.files[0];
+  const file = e.target.files && e.target.files[0];
   if (!file || !currentUser) return;
-
-  showToast("جاري معالجة ورفع الصورة...");
-
+  if (!file.type || !file.type.startsWith('image/')) { showToast('يرجى اختيار صورة صالحة'); return; }
+  showToast('جاري تحسين الصورة الشخصية...');
   const reader = new FileReader();
+  reader.onerror = () => showToast('تعذرت قراءة الصورة');
   reader.onload = function(evt) {
     const img = new Image();
-    img.src = evt.target.result;
+    img.onerror = () => showToast('تعذر فتح الصورة');
     img.onload = function() {
-      const canvas = document.createElement('canvas');
+      // Higher-resolution square avatar, keeping the source aspect ratio by center-cropping.
+      const size = 768;
+      const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
       const ctx = canvas.getContext('2d');
-      canvas.width = 180;
-      canvas.height = 180;
-      ctx.drawImage(img, 0, 0, 180, 180);
-
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-
-      db.collection("users").doc(currentUser.uid).set({
-        avatarUrl: compressedDataUrl
-      }, { merge: true }).then(() => {
+      const side = Math.min(img.naturalWidth, img.naturalHeight);
+      const sx = (img.naturalWidth - side) / 2, sy = (img.naturalHeight - side) / 2;
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      const previous = currentUserData && currentUserData.avatarUrl;
+      let historyList = Array.isArray(currentUserData && currentUserData.avatarHistory) ? currentUserData.avatarHistory.slice() : [];
+      if (previous && previous !== compressedDataUrl) {
+        historyList = [previous, ...historyList.filter(url => url && url !== previous && url !== compressedDataUrl)].slice(0, 4);
+      }
+      db.collection('users').doc(currentUser.uid).set({ avatarUrl: compressedDataUrl, avatarHistory: historyList }, { merge: true }).then(() => {
         currentUserData.avatarUrl = compressedDataUrl;
+        currentUserData.avatarHistory = historyList;
         updateProfileUI(currentUserData);
-        showToast("تم تحديث الصورة الشخصية بنجاح!");
-      });
+        showToast('تم تحديث الصورة الشخصية بجودة أعلى');
+      }).catch(err => { console.error(err); showToast('تعذر حفظ الصورة، جرّب صورة أصغر'); });
     };
+    img.src = evt.target.result;
   };
   reader.readAsDataURL(file);
+  e.target.value = '';
 }
+
+let avatarGalleryItems = [], avatarGalleryIndex = 0, avatarGalleryTouchX = null;
+function openAvatarGallery(ev) {
+  if (ev) { ev.stopPropagation(); }
+  const current = currentUserData && currentUserData.avatarUrl;
+  if (!current) return;
+  const old = Array.isArray(currentUserData.avatarHistory) ? currentUserData.avatarHistory : [];
+  avatarGalleryItems = [current, ...old.filter((url, i) => url && url !== current && old.indexOf(url) === i)];
+  avatarGalleryIndex = 0;
+  renderAvatarGallery();
+  const modal = document.getElementById('avatarGalleryModal');
+  modal.classList.remove('hidden');
+  const area = document.getElementById('avatarGalleryTouchArea');
+  area.ontouchstart = e => { avatarGalleryTouchX = e.changedTouches[0].clientX; };
+  area.ontouchend = e => { if (avatarGalleryTouchX == null) return; const dx=e.changedTouches[0].clientX-avatarGalleryTouchX; avatarGalleryTouchX=null; if(Math.abs(dx)>45) { if(dx>0) showAvatarGalleryIndex(avatarGalleryIndex+1); else showAvatarGalleryIndex(avatarGalleryIndex-1); } };
+  area.onpointerdown = e => { if(e.pointerType==='mouse') avatarGalleryTouchX=e.clientX; };
+  area.onpointerup = e => { if(e.pointerType!=='mouse'||avatarGalleryTouchX==null)return; const dx=e.clientX-avatarGalleryTouchX; avatarGalleryTouchX=null; if(Math.abs(dx)>55) showAvatarGalleryIndex(avatarGalleryIndex+(dx>0?1:-1)); };
+}
+function showAvatarGalleryIndex(index) {
+  if (!avatarGalleryItems.length) return;
+  avatarGalleryIndex = (index + avatarGalleryItems.length) % avatarGalleryItems.length;
+  renderAvatarGallery();
+}
+function renderAvatarGallery() {
+  const image = document.getElementById('avatarGalleryImage'); if (!image) return;
+  image.src = avatarGalleryItems[avatarGalleryIndex] || '';
+  const isCurrent = avatarGalleryIndex === 0;
+  document.getElementById('avatarGalleryTitle').textContent = isCurrent ? 'الصورة الحالية' : 'صورة سابقة';
+  document.getElementById('avatarGalleryCaption').textContent = avatarGalleryItems.length > 1 ? (isCurrent ? 'اسحب لليسار أو اليمين لاستعراض الصور السابقة' : `صورة سابقة ${avatarGalleryIndex} من ${avatarGalleryItems.length-1} — اسحب للتنقل`) : 'لا توجد صور سابقة محفوظة بعد';
+  document.getElementById('avatarGalleryDots').innerHTML = avatarGalleryItems.map((_,i)=>`<span class="ag-dot${i===avatarGalleryIndex?' active':''}"></span>`).join('');
+}
+function closeAvatarGallery() { const modal=document.getElementById('avatarGalleryModal'); if(modal) modal.classList.add('hidden'); }
 
 let searchRequestToken = 0;
 function setSearchHint(message, state = "") {
@@ -4942,6 +4994,13 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 })();
 </script>
 
+
+<div id="avatarGalleryModal" class="hidden" role="dialog" aria-modal="true" aria-label="صور الملف الشخصي" onclick="if(event.target===this)closeAvatarGallery()">
+  <div class="ag-top"><span id="avatarGalleryTitle">الصورة الشخصية</span><button class="ag-close" type="button" onclick="closeAvatarGallery()" aria-label="إغلاق"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+  <div class="ag-photo-wrap" id="avatarGalleryTouchArea"><img id="avatarGalleryImage" alt="الصورة الشخصية كاملة"></div>
+  <div id="avatarGalleryCaption" class="ag-caption">اسحب لليسار لعرض الصور السابقة</div><div id="avatarGalleryDots" class="ag-dots"></div>
+</div>
+
 </body>
 </html>
 
@@ -5519,6 +5578,7 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
   const guard = () => { try { history.pushState({babylonBackGuard:true}, '', location.href); } catch(e) {} };
   const visible = id => { const el=document.getElementById(id); return !!el && !el.classList.contains('hidden') && getComputedStyle(el).display!=='none'; };
   const closeTopLayer = () => {
+    if (visible('avatarGalleryModal')) { if(typeof closeAvatarGallery==='function') closeAvatarGallery(); else document.getElementById('avatarGalleryModal').classList.add('hidden'); return true; }
     // Close the top-most transient panel before leaving its underlying section.
     if (visible('viewersModal')) { if(typeof closeViewersList==='function') closeViewersList(); else document.getElementById('viewersModal').classList.add('hidden'); return true; }
     if (visible('msgModal')) { if(typeof closeMsgModal==='function') closeMsgModal({target:document.getElementById('msgModal')}); else document.getElementById('msgModal').classList.add('hidden'); return true; }
