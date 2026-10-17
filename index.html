@@ -1478,12 +1478,12 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 .post-grid-item .st-badge{display:flex;align-items:center;gap:4px}
 
 /* Profile photo viewer and swipeable avatar history */
-#avatarGalleryModal{position:fixed;inset:0;z-index:12000;background:rgba(5,8,15,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;touch-action:pan-y}
+#avatarGalleryModal{position:fixed;inset:0;z-index:12000;background:rgba(5,8,15,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;touch-action:pan-x}
 #avatarGalleryModal.hidden{display:none!important}
 #avatarGalleryModal .ag-top{position:absolute;top:16px;left:16px;right:16px;display:flex;align-items:center;justify-content:space-between;color:#fff}
 #avatarGalleryModal .ag-close{width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center}
 #avatarGalleryModal .ag-photo-wrap{width:100%;height:min(76vh,760px);display:flex;align-items:center;justify-content:center;overflow:hidden}
-#avatarGalleryModal #avatarGalleryImage{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:10px;user-select:none;-webkit-user-drag:none}
+#avatarGalleryModal #avatarGalleryImage{display:block;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;user-select:none;-webkit-user-drag:none;touch-action:pan-x}
 #avatarGalleryModal .ag-caption{color:#fff;font-size:13px;margin-top:14px;opacity:.85}
 #avatarGalleryModal .ag-dots{display:flex;gap:7px;margin-top:12px;justify-content:center;flex-wrap:wrap}
 #avatarGalleryModal .ag-dot{width:7px;height:7px;border-radius:50%;background:#64748b}.ag-dot.active{background:#d4af37}
@@ -2877,14 +2877,14 @@ function uploadAvatarLive(e) {
     img.onerror = () => showToast('تعذر فتح الصورة');
     img.onload = function() {
       // Higher-resolution square avatar, keeping the source aspect ratio by center-cropping.
-      const size = 768;
+      const size = 1024;
       const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
       const ctx = canvas.getContext('2d');
       const side = Math.min(img.naturalWidth, img.naturalHeight);
       const sx = (img.naturalWidth - side) / 2, sy = (img.naturalHeight - side) / 2;
       ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
       const previous = currentUserData && currentUserData.avatarUrl;
       let historyList = Array.isArray(currentUserData && currentUserData.avatarHistory) ? currentUserData.avatarHistory.slice() : [];
       if (previous && previous !== compressedDataUrl) {
@@ -2903,47 +2903,52 @@ function uploadAvatarLive(e) {
   e.target.value = '';
 }
 
-let avatarGalleryItems = [], avatarGalleryIndex = 0, avatarGalleryTouchX = null;
-let avatarPressTimer = null, avatarPressStartY = 0, avatarLongPressOpened = false;
+let avatarGalleryItems = [], avatarGalleryIndex = 0, avatarGalleryTouchX = null, avatarGalleryTouchY = null;
+let avatarPressTimer = null, avatarPressStartY = 0, avatarPressStartX = 0, avatarLongPressOpened = false;
 function bindAvatarRevealGestures() {
   const img = document.getElementById('pAvatarImg');
   if (!img || img.dataset.revealGesturesBound === '1') return;
   img.dataset.revealGesturesBound = '1';
-  img.addEventListener('pointerdown', ev => {
-    if (ev.pointerType === 'mouse' && ev.button !== 0) return;
-    avatarLongPressOpened = false;
-    avatarPressStartY = ev.clientY;
+  const start = (x, y) => {
+    avatarLongPressOpened = false; avatarPressStartY = y; avatarPressStartX = x;
     clearTimeout(avatarPressTimer);
-    avatarPressTimer = setTimeout(() => {
-      avatarLongPressOpened = true;
-      openAvatarGallery(ev);
-    }, 480);
-  });
-  img.addEventListener('pointermove', ev => {
-    if (Math.abs(ev.clientY - avatarPressStartY) > 12) clearTimeout(avatarPressTimer);
-  });
-  img.addEventListener('pointerup', ev => {
+    avatarPressTimer = setTimeout(() => { avatarLongPressOpened = true; openAvatarGallery(); }, 450);
+  };
+  const move = (x, y) => {
+    if (Math.abs(x-avatarPressStartX) > 18 || Math.abs(y-avatarPressStartY) > 18) clearTimeout(avatarPressTimer);
+  };
+  const end = (x, y) => {
     clearTimeout(avatarPressTimer);
-    // A downward swipe on the profile photo opens the full-size photo viewer.
-    if (ev.clientY - avatarPressStartY > 55) openAvatarGallery(ev);
-  });
+    if (y-avatarPressStartY > 45) { avatarLongPressOpened = true; openAvatarGallery(); }
+  };
+  img.addEventListener('pointerdown', ev => { if (ev.pointerType === 'mouse' && ev.button !== 0) return; start(ev.clientX,ev.clientY); });
+  img.addEventListener('pointermove', ev => move(ev.clientX,ev.clientY));
+  img.addEventListener('pointerup', ev => end(ev.clientX,ev.clientY));
   ['pointercancel','pointerleave'].forEach(type => img.addEventListener(type, () => clearTimeout(avatarPressTimer)));
+  // Explicit touch listeners improve reliability on mobile browsers that cancel pointer gestures while scrolling.
+  img.addEventListener('touchstart', ev => { const t=ev.touches[0]; if(t) start(t.clientX,t.clientY); }, {passive:true});
+  img.addEventListener('touchmove', ev => { const t=ev.touches[0]; if(t) move(t.clientX,t.clientY); }, {passive:true});
+  img.addEventListener('touchend', ev => { const t=ev.changedTouches[0]; if(t) end(t.clientX,t.clientY); }, {passive:true});
+  img.addEventListener('touchcancel', () => clearTimeout(avatarPressTimer), {passive:true});
 }
 function openAvatarGallery(ev) {
-  if (ev) { ev.stopPropagation(); }
+  if (ev && ev.stopPropagation) ev.stopPropagation();
+  clearTimeout(avatarPressTimer);
   const current = currentUserData && currentUserData.avatarUrl;
-  if (!current) return;
+  if (!current) { if (typeof showToast === 'function') showToast('لا توجد صورة شخصية لعرضها'); return; }
   const old = Array.isArray(currentUserData.avatarHistory) ? currentUserData.avatarHistory : [];
   avatarGalleryItems = [current, ...old.filter((url, i) => url && url !== current && old.indexOf(url) === i)];
   avatarGalleryIndex = 0;
   renderAvatarGallery();
   const modal = document.getElementById('avatarGalleryModal');
+  if (!modal) return;
   modal.classList.remove('hidden');
   const area = document.getElementById('avatarGalleryTouchArea');
-  area.ontouchstart = e => { avatarGalleryTouchX = e.changedTouches[0].clientX; };
-  area.ontouchend = e => { if (avatarGalleryTouchX == null) return; const dx=e.changedTouches[0].clientX-avatarGalleryTouchX; avatarGalleryTouchX=null; if(Math.abs(dx)>45) { if(dx>0) showAvatarGalleryIndex(avatarGalleryIndex+1); else showAvatarGalleryIndex(avatarGalleryIndex-1); } };
-  area.onpointerdown = e => { if(e.pointerType==='mouse') avatarGalleryTouchX=e.clientX; };
-  area.onpointerup = e => { if(e.pointerType!=='mouse'||avatarGalleryTouchX==null)return; const dx=e.clientX-avatarGalleryTouchX; avatarGalleryTouchX=null; if(Math.abs(dx)>55) showAvatarGalleryIndex(avatarGalleryIndex+(dx>0?1:-1)); };
+  if (!area) return;
+  area.ontouchstart = e => { const t=e.touches[0]; if(t){avatarGalleryTouchX=t.clientX;avatarGalleryTouchY=t.clientY;} };
+  area.ontouchend = e => { if (avatarGalleryTouchX == null) return; const t=e.changedTouches[0]; const dx=t.clientX-avatarGalleryTouchX; avatarGalleryTouchX=null; avatarGalleryTouchY=null; if(Math.abs(dx)>35) showAvatarGalleryIndex(avatarGalleryIndex+(dx<0?1:-1)); };
+  area.onpointerdown = e => { if(e.pointerType==='mouse'){avatarGalleryTouchX=e.clientX;avatarGalleryTouchY=e.clientY;} };
+  area.onpointerup = e => { if(e.pointerType!=='mouse'||avatarGalleryTouchX==null)return; const dx=e.clientX-avatarGalleryTouchX; avatarGalleryTouchX=null; avatarGalleryTouchY=null; if(Math.abs(dx)>45) showAvatarGalleryIndex(avatarGalleryIndex+(dx<0?1:-1)); };
 }
 function showAvatarGalleryIndex(index) {
   if (!avatarGalleryItems.length) return;
