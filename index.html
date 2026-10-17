@@ -664,7 +664,7 @@ body {
 .check-mark.read { color: var(--tick-read, #4ade80); font-weight: bold; }
 
 .reactions-row { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
-.reaction-badge { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 1px 6px; font-size: 11px; }
+.reaction-badge { background: rgba(0,0,0,0.3); border-radius: 14px; padding: 3px 9px; font-size: 20px; line-height:1.25; min-width:34px; min-height:32px; display:inline-flex; align-items:center; justify-content:center; border:1px solid rgba(212,175,55,.42); box-shadow:0 2px 7px rgba(0,0,0,.12); }
 
 .audio-player { display: flex; align-items: center; gap: 8px; width: 220px; padding: 2px 0 6px 0; }
 .audio-player audio { width: 100%; height: 36px; filter: invert(0.9) hue-rotate(180deg); }
@@ -1902,7 +1902,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
   <div class="emoji-picker-bar" id="msgEmojiPicker">
     <button type="button" class="emoji-btn emoji-plus" onclick="toggleFullEmojiPicker(event)" aria-label="عرض جميع الإيموجيات">＋</button>
     <div class="emoji-quick-row"><button class="emoji-btn" onclick="addReaction('😂')">😂</button><button class="emoji-btn" onclick="addReaction('❤️')">❤️</button><button class="emoji-btn" onclick="addReaction('👍🏻')">👍🏻</button><button class="emoji-btn" onclick="addReaction('😭')">😭</button><button class="emoji-btn" onclick="addReaction('✨')">✨</button></div>
-    <div class="emoji-full-grid hidden" id="fullEmojiGrid">😂😭😉😌🫠😡🥵🤢💩🤡😎🤧☠️🌚🙈🙉🙊✨⚡💢💤🔥💯🎉💥❤️🤍❤️‍🔥❤️‍🩹💔🫦👀🫶🏻👍🏻🖕🏻✍🏻🙏🏻💅🏻</div>
+    <div class="emoji-full-grid hidden" id="fullEmojiGrid" aria-label="اختر إيموجياً"></div>
   </div>
   <div class="msg-actions-card">
     <button onclick="actionCopy()">▤ نسخ النص</button>
@@ -2970,6 +2970,10 @@ function openMsgModal(msgId, text, senderId, reactions) {
   selectedMsgText = text;
   selectedMsgSender = senderId;
   selectedMsgReactions = reactions || {};
+  // Start each message-selection session with the expanded emoji list closed;
+  // the user must tap + whenever they want to open it.
+  const emojiGrid = document.getElementById("fullEmojiGrid");
+  if (emojiGrid) emojiGrid.classList.add("hidden");
 
   const btnEdit = document.getElementById("btnEditMsg");
   const btnDelete = document.getElementById("btnDeleteMsg");
@@ -2992,13 +2996,18 @@ function closeMsgModal(e) {
 function addReaction(emoji) {
   if (!activeChatId || !selectedMsgId) return;
 
-  let newReactions = { ...selectedMsgReactions };
-  if (newReactions[emoji]) delete newReactions[emoji];
-  else newReactions[emoji] = true;
+  // A message stores only one selected reaction at a time. Choosing another
+  // emoji replaces the previous one instead of accumulating multiple emojis.
+  const currentEmoji = Object.keys(selectedMsgReactions || {})[0];
+  const newReactions = currentEmoji === emoji ? {} : { [emoji]: true };
 
   db.collection("chats").doc(activeChatId).collection("messages").doc(selectedMsgId).update({
     reactions: newReactions
-  }).then(() => document.getElementById("msgModal").classList.add("hidden"));
+  }).then(() => {
+    document.getElementById("msgModal").classList.add("hidden");
+    const emojiGrid = document.getElementById("fullEmojiGrid");
+    if (emojiGrid) emojiGrid.classList.add("hidden");
+  });
 }
 
 function actionCopy() {
@@ -4506,5 +4515,22 @@ function seekVoicePlayback(range){var card=range.closest('.custom-voice-card'), 
 .app-container[data-app-theme="light"] .emoji-picker-bar{background:#fff;color:#17212b;border-color:#e1e7ef}
 </style>
 <script id="babylon-full-emoji-picker">
-function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.getElementById('fullEmojiGrid');if(!grid)return; if(!grid.dataset.ready){var items=['😂','😭','😉','😌','🫠','😡','🥵','🤢','💩','🤡','😎','🤧','☠️','🌚','🙈','🙉','🙊','✨','⚡','💢','💤','🔥','💯','🎉','💥','❤️','🤍','❤️‍🔥','❤️‍🩹','💔','🫦','👀','🫶🏻','👍🏻','🖕🏻','✍🏻','🙏🏻','💅🏻'];grid.textContent='';items.forEach(function(ch){var span=document.createElement('span');span.textContent=ch;span.onclick=function(e){e.stopPropagation();addReaction(ch)};grid.appendChild(span)});grid.dataset.ready='1';}grid.classList.toggle('hidden');}
+function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.getElementById('fullEmojiGrid');if(!grid)return;if(!grid.dataset.ready){var items=['😂','😭','😉','😌','🫠','😡','🥵','🤢','💩','🤡','😎','🤧','☠️','🌚','🙈','🙉','🙊','✨','⚡','💢','💤','🔥','💯','🎉','💥','❤️','🤍','❤️‍🔥','❤️‍🩹','💔','🫦','👀','🫶🏻','👍🏻','🖕🏻','✍🏻','🙏🏻','💅🏻'];grid.textContent='';items.forEach(function(ch){var span=document.createElement('span');span.textContent=ch;span.setAttribute('role','button');span.setAttribute('tabindex','0');span.setAttribute('aria-label',ch);span.onclick=function(e){e.stopPropagation();addReaction(ch)};span.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();addReaction(ch)}};grid.appendChild(span)});grid.dataset.ready='1';}grid.classList.toggle('hidden');}
 </script>
+
+<style id="babylon-reaction-modal-theme-fix">
+/* Larger, more noticeable reaction chips */
+.reactions-row { gap:7px; margin-top:7px; }
+.reaction-badge { font-size:23px !important; padding:4px 10px !important; min-height:36px; min-width:38px; border-radius:15px !important; background:var(--babylon-surface-card,rgba(0,0,0,.22)); }
+.emoji-picker-bar { width:min(390px, calc(100vw - 28px)); box-sizing:border-box; background:var(--babylon-surface); border:1px solid var(--babylon-border); box-shadow:0 12px 36px rgba(0,0,0,.2); }
+.emoji-full-grid { box-sizing:border-box; justify-content:center; }
+.emoji-full-grid span { font-size:27px; min-width:38px; min-height:38px; display:inline-flex; align-items:center; justify-content:center; }
+.emoji-plus { width:42px; height:42px; flex-basis:42px; border-radius:13px; }
+.app-container[data-app-theme="light"] #msgModal { background:rgba(30,41,59,.28); }
+.app-container[data-app-theme="light"] #msgModal .emoji-picker-bar { background:#fff !important; color:#17212b !important; border-color:#dce4ee !important; box-shadow:0 14px 38px rgba(15,23,42,.18); }
+.app-container[data-app-theme="light"] #msgModal .msg-actions-card { background:#fff !important; color:#17212b !important; border-color:#dce4ee !important; box-shadow:0 14px 38px rgba(15,23,42,.14); }
+.app-container[data-app-theme="light"] #msgModal .msg-actions-card button { color:#17212b !important; border-color:#e7edf4 !important; }
+.app-container[data-app-theme="light"] #msgModal .msg-actions-card button.danger { color:#dc2626 !important; }
+.app-container[data-app-theme="light"] #msgModal .emoji-btn { color:#17212b; }
+.app-container[data-app-theme="light"] #msgModal .emoji-full-grid span:active { background:#eaf0f7; }
+</style>
