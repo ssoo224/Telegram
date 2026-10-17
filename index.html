@@ -1451,6 +1451,21 @@ i[data-ic]{display:inline-flex;font-style:normal}
 }
 .sv-heart-btn.selected-reaction { font-size: 28px !important; color: inherit !important; line-height: 1; }
 .sv-heart-btn.selected-reaction svg { display:none !important; }
+
+/* Publish type modal: clean white surface and SVG icons in day theme */
+#publishTypeModal .viewers-card{background:var(--babylon-surface,#202d3a);color:var(--text-main,#f1f5f9);border:1px solid var(--babylon-border,rgba(255,255,255,.12));box-shadow:0 18px 55px rgba(0,0,0,.24)}
+#publishTypeModal .viewers-title{color:var(--text-main,#f1f5f9)!important}
+#publishTypeModal .story-type-btn{display:flex;align-items:center;justify-content:center;gap:10px}
+#publishTypeModal .story-type-btn .story-ui-icon{width:20px;height:20px;flex:0 0 20px;stroke:currentColor;fill:none}
+body:has(.app-container[data-app-theme="light"]) #publishTypeModal .viewers-card{background:#fff!important;color:#17212b!important;border-color:#e1e7ef;box-shadow:0 18px 55px rgba(15,23,42,.18)}
+body:has(.app-container[data-app-theme="light"]) #publishTypeModal .viewers-title{color:#17212b!important}
+body:has(.app-container[data-app-theme="light"]) #publishTypeModal .story-type-btn:first-of-type{background:#f5d76e!important;color:#17212b!important;border:1px solid #e0bd43!important}
+body:has(.app-container[data-app-theme="light"]) #publishTypeModal .story-type-btn:last-of-type{background:#fff!important;color:#9a6b00!important;border:1px solid #d4a017!important}
+body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .viewers-card{background:#202d3a!important;color:#f1f5f9!important}
+body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .viewers-title{color:#f1f5f9!important}
+/* SVG badge for pinned stories */
+.pinned-story-icon{width:15px;height:15px;display:inline-block;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.post-grid-item .st-badge{display:flex;align-items:center;gap:4px}
 </style>
 
 <style id="babylon-profile-buttons-and-chat-order-fix">
@@ -4413,8 +4428,8 @@ function renderTiles(grid, list, mine) {
     const act = isActive(s);
     const d = document.createElement('div');
     d.className = 'post-grid-item' + (!act && !s.pinned ? ' st-old' : '');
-    const badge = s.pinned ? '⌖' : act ? '⏳ ' + leftTxt(s.expiresAt) : 'أرشيف';
-    d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (s.videoUrl ? '<div class="vid-badge">▻</div>' : '') + (mine ? `<div class="st-badge">${badge}</div>` : '');
+    const badge = s.pinned ? '<svg class="pinned-story-icon" viewBox="0 0 24 24" aria-label="قصة مثبتة" role="img"><path d="m8 3 8 0-1 6 3 3v2H6v-2l3-3Z M12 14v7"/></svg><span>مثبتة</span>' : act ? '<svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>' + esc(leftTxt(s.expiresAt)) + '</span>' : 'أرشيف';
+    d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (s.videoUrl ? '<div class="vid-badge"><svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 10 6-10 6Z"/></svg></div>' : '') + (mine ? `<div class="st-badge">${badge}</div>` : '');
     d.onclick = () => {
       const play = list.slice().reverse();
       startViewer(s.userId, play, play.findIndex(x => x.id === s.id), mine);
@@ -4522,7 +4537,7 @@ function showStory() {
   cap.textContent = s.caption || '';
   cap.classList.toggle('hidden', !s.caption);
   $('svBars').innerHTML = SV.list.map(() => '<div class="sv-bar"><i></i></div>').join('');
-  $('svTime').textContent = ago(s.createdAt) + (SV.mine ? (s.pinned ? ' · ⌖ مثبتة' : isActive(s) ? ' · تنتهي بعد ' + leftTxt(s.expiresAt) : ' · أرشيف') : '');
+  $('svTime').innerHTML = esc(ago(s.createdAt)) + (SV.mine ? (s.pinned ? ' · <svg class="pinned-story-icon" viewBox="0 0 24 24" aria-label="قصة مثبتة" role="img"><path d="m8 3 8 0-1 6 3 3v2H6v-2l3-3Z M12 14v7"/></svg> مثبتة' : isActive(s) ? ' · تنتهي بعد ' + esc(leftTxt(s.expiresAt)) : ' · أرشيف') : '');
   svFooter(s);
   markSeen(SV.uid, s.createdAt);
   if (!SV.mine && currentUser) {
