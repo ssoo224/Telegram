@@ -822,8 +822,19 @@ i[data-ic]{display:inline-flex;font-style:normal}
 
 /* ===== نظام القصص الكامل ===== */
 .avatar-story-ring.has-story.seen{background:#4b5a6b;animation:none}
-.avatar.sring{box-shadow:0 0 0 2px #0f172a,0 0 0 4px var(--babylon-gold)}
-.avatar.sring.seen{box-shadow:0 0 0 2px #0f172a,0 0 0 4px #4b5a6b}
+.avatar.sring{overflow:visible;position:relative}
+.avatar.sring::after{content:'';position:absolute;inset:-5px;border-radius:50%;padding:3px;pointer-events:none;
+  background:conic-gradient(#f9ce34,#ee2a7b,#6228d7,#f9ce34);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.avatar.sring.seen::after{background:#4b5a6b}
+.avatar.sring img{border-radius:50%}
+/* شكل المحادثات */
+.chat-item{margin:6px 10px;padding:12px 14px;border-radius:18px;background:var(--babylon-surface);border:1px solid rgba(255,255,255,.04);transition:transform .12s,background .2s}
+.chat-item:active{transform:scale(.985)}
+.chat-item .avatar{width:56px;height:56px}
+.chat-item-name{font-size:16.5px}
+.unread-badge{background:linear-gradient(135deg,var(--babylon-gold),#b8912a);color:#0b1120;min-width:22px;text-align:center;padding:3px 8px;border-radius:12px}
+.sbar{padding:14px 16px 12px;gap:16px}
 .sbar{display:flex;gap:14px;overflow-x:auto;padding:12px 14px;border-bottom:1px solid var(--babylon-border);flex-shrink:0}
 .sb-item{display:flex;flex-direction:column;align-items:center;gap:6px;width:62px;flex-shrink:0;font-size:11px;color:var(--text-muted);cursor:pointer}
 .sb-item .avatar{width:54px;height:54px;font-size:20px;position:relative}
@@ -909,7 +920,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
         <input id="regName" class="babylon-input rtl" type="text" placeholder="اسمك الكريم">
       </div>
       <div class="input-group">
-        <label>اسم المستخدم (3 أحرف فأكثر)</label>
+        <label>اسم المستخدم (5 أحرف فأكثر)</label>
         <input id="regUsername" class="babylon-input" type="text" placeholder="ali" oninput="validateUsernameInput(this)">
         <span id="regUserError" class="field-error hidden"></span>
       </div>
@@ -1453,9 +1464,11 @@ function playNotificationSound() {
   } catch(e) {}
 }
 
-function isValidUsername(username) {
-  const regex = /^[a-zA-Z][a-zA-Z0-9_\.]{2,}$/;
-  return regex.test(username);
+const DEV_EMAIL = 'anldheb429@gmail.com';
+function isValidUsername(username, email) {
+  const isDev = !!email && String(email).trim().toLowerCase() === DEV_EMAIL;
+  const min = isDev ? 3 : 5;
+  return new RegExp('^[a-zA-Z][a-zA-Z0-9_\\.]{' + (min - 1) + ',}$').test(username);
 }
 
 function validateUsernameInput(inputElement) {
@@ -1618,8 +1631,8 @@ function saveProfileChanges() {
 
   if (!newName) return showToast("الرجاء أدخل اسم العرض");
 
-  if (!isValidUsername(newUsername)) {
-    showFieldError("modalUserError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 3 أحرف فأكثر");
+  if (!isValidUsername(newUsername, currentUser && currentUser.email)) {
+    showFieldError("modalUserError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 5 أحرف فأكثر");
     return;
   }
 
@@ -1687,7 +1700,7 @@ function registerUser() {
   const password = document.getElementById("regPassword").value.trim();
 
   if (!name) return showToast("الرجاء إدخال اسم العرض");
-  if (!isValidUsername(username)) return showFieldError("regUserError", "اليوزر غير صالح!");
+  if (!isValidUsername(username, email)) return showFieldError("regUserError", "اليوزر لازم يبدأ بحرف ويكون 5 أحرف أو أكثر (حروف إنجليزية وأرقام و _ .)");
   if (!email) return showFieldError("regEmailError", "الرجاء إدخال البريد الإلكتروني");
   if (isDisposableEmail(email)) return showFieldError("regEmailError", "هذا النوع من البريد غير مسموح، استخدم بريداً حقيقياً");
   if (!password || password.length < 6) return showFieldError("regPassError", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
@@ -2932,7 +2945,12 @@ function syncUsernameDoc(oldName, newName) {
 /* ================= نظام القصص الكامل ================= */
 const $ = id => document.getElementById(id);
 const SEEN_KEY = 'babylon_seen_users';
-let seenUsers = {}; try { seenUsers = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}'); } catch (e) {}
+let seenUsers = {}, seenFor = null;
+function ensureSeen() {   // المشاهدات تنحفظ لكل حساب لحاله (حتى لو أكثر من حساب بنفس المتصفح)
+  const k = SEEN_KEY + '_' + (currentUser ? currentUser.uid : '');
+  if (seenFor !== k) { seenFor = k; try { seenUsers = JSON.parse(localStorage.getItem(k) || '{}'); } catch (e) { seenUsers = {}; } }
+  return k;
+}
 const userCache = {};
 let myStories = [], storyPartnerIds = [], otherStoryUid = null, otherStories = [];
 let scData = null, scHours = 24, barTimer = null;
@@ -2948,8 +2966,8 @@ function avInner(u) { return u && u.avatarUrl ? `<img src="${esc(u.avatarUrl)}">
 function isActive(s) { return s.expiresAt > Date.now(); }
 function ago(ts) { const m = Math.floor((Date.now() - ts) / 60000); return m < 1 ? 'الآن' : m < 60 ? `قبل ${m} د` : m < 1440 ? `قبل ${Math.floor(m / 60)} س` : `قبل ${Math.floor(m / 1440)} يوم`; }
 function leftTxt(ts) { const m = Math.max(1, Math.floor((ts - Date.now()) / 60000)); return m < 60 ? `${m} د` : `${Math.floor(m / 60)} س`; }
-function isSeenUser(uid, latest) { return (seenUsers[uid] || 0) >= latest; }
-function markSeen(uid, ts) { if ((seenUsers[uid] || 0) < ts) { seenUsers[uid] = ts; try { localStorage.setItem(SEEN_KEY, JSON.stringify(seenUsers)); } catch (e) {} } }
+function isSeenUser(uid, latest) { ensureSeen(); return !!latest && (seenUsers[uid] || 0) >= latest; }
+function markSeen(uid, ts) { const k = ensureSeen(); if ((seenUsers[uid] || 0) < ts) { seenUsers[uid] = ts; try { localStorage.setItem(k, JSON.stringify(seenUsers)); } catch (e) {} } }
 function ringCls(u) {
   if (!u || !(u.storyUntil > Date.now())) return '';
   return ' sring' + (isSeenUser(u.id || '', u.storyAt || 0) ? ' seen' : '');
@@ -3182,7 +3200,7 @@ function openStories(uid) {
   const go = list => {
     const act = list.filter(isActive).reverse();
     if (!act.length) return showToast('لا توجد قصص حالياً');
-    const seen = seenUsers[uid] || 0;
+    ensureSeen(); const seen = seenUsers[uid] || 0;
     let i = mine ? 0 : act.findIndex(s => s.createdAt > seen);
     startViewer(uid, act, i < 0 ? 0 : i, mine);
   };
