@@ -1899,13 +1899,10 @@ i[data-ic]{display:inline-flex;font-style:normal}
 </div>
 
 <div id="msgModal" class="msg-actions-modal hidden" onclick="closeMsgModal(event)">
-  <div class="emoji-picker-bar">
-    <span class="emoji-btn" onclick="addReaction('＋')">＋</span>
-    <span class="emoji-btn" onclick="addReaction('♡')">♡</span>
-    <span class="emoji-btn" onclick="addReaction('☺')">☺</span>
-    <span class="emoji-btn" onclick="addReaction('○')">○</span>
-    <span class="emoji-btn" onclick="addReaction('♨')">♨</span>
-    <span class="emoji-btn" onclick="addReaction('≋')">≋</span>
+  <div class="emoji-picker-bar" id="msgEmojiPicker">
+    <button type="button" class="emoji-btn emoji-plus" onclick="toggleFullEmojiPicker(event)" aria-label="عرض جميع الإيموجيات">＋</button>
+    <div class="emoji-quick-row"><button class="emoji-btn" onclick="addReaction('😂')">😂</button><button class="emoji-btn" onclick="addReaction('❤️')">❤️</button><button class="emoji-btn" onclick="addReaction('👍🏻')">👍🏻</button><button class="emoji-btn" onclick="addReaction('😭')">😭</button><button class="emoji-btn" onclick="addReaction('✨')">✨</button></div>
+    <div class="emoji-full-grid hidden" id="fullEmojiGrid">😂😭😉😌🫠😡🥵🤢💩🤡😎🤧☠️🌚🙈🙉🙊✨⚡💢💤🔥💯🎉💥❤️🤍❤️‍🔥❤️‍🩹💔🫦👀🫶🏻👍🏻🖕🏻✍🏻🙏🏻💅🏻</div>
   </div>
   <div class="msg-actions-card">
     <button onclick="actionCopy()">▤ نسخ النص</button>
@@ -2930,7 +2927,7 @@ function openChatRoom(otherUserId, keepLimit) {
         b.ontouchstart = (e) => {
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
-          pressTimer = setTimeout(() => openMsgModal(doc.id, m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), m.senderId, m.reactions || {}), 450);
+          pressTimer = setTimeout(() => { document.querySelectorAll(".msg-bubble.selected-message").forEach(x=>x.classList.remove("selected-message")); b.classList.add("selected-message"); openMsgModal(doc.id, m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), m.senderId, m.reactions || {}); }, 450);
         };
 
         b.ontouchmove = (e) => {
@@ -2945,7 +2942,7 @@ function openChatRoom(otherUserId, keepLimit) {
         };
 
         b.onmousedown = () => {
-          pressTimer = setTimeout(() => openMsgModal(doc.id, m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), m.senderId, m.reactions || {}), 450);
+          pressTimer = setTimeout(() => { document.querySelectorAll(".msg-bubble.selected-message").forEach(x=>x.classList.remove("selected-message")); b.classList.add("selected-message"); openMsgModal(doc.id, m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), m.senderId, m.reactions || {}); }, 450);
         };
         b.onmouseup = b.onmouseleave = () => clearTimeout(pressTimer);
 
@@ -4296,7 +4293,15 @@ function loadUserPosts() {
 .record-send-btn { background:linear-gradient(145deg,#f3d66b,#d4af37)!important; color:#17212b!important; box-shadow:0 4px 12px rgba(212,175,55,.24); transition:transform .18s,box-shadow .18s; }
 .record-send-btn:active { transform:scale(.92); box-shadow:0 2px 6px rgba(212,175,55,.18); }
 .recording-hint { display:none!important; }
-.custom-voice-card { gap:11px; padding:12px 13px; border-radius:19px; }
+.custom-voice-card { gap:8px; padding:7px 9px; border-radius:14px; max-width:270px; min-height:0; }
+.custom-voice-card .voice-play-btn { width:34px;height:34px;flex-basis:34px;border-radius:11px; }
+.custom-voice-card .voice-play-btn svg {width:18px;height:18px}
+.custom-voice-card .audio-player-title {font-size:11px;margin-bottom:2px}
+.custom-voice-card .voice-wave {height:8px;margin-top:3px;gap:2px}
+.custom-voice-card .voice-wave i {width:2px;min-width:2px;height:4px}
+.custom-voice-card .voice-wave i:nth-child(3n){height:7px}.custom-voice-card .voice-wave i:nth-child(4n){height:6px}.custom-voice-card .voice-wave i:nth-child(5n){height:8px}
+.custom-voice-card .voice-progress {height:3px}
+.custom-voice-card .voice-time {font-size:9px;min-width:25px}
 .voice-audio { display:none!important; }
 .voice-play-btn { flex:0 0 44px; width:44px; height:44px; border:0; border-radius:15px; display:flex; align-items:center; justify-content:center; color:#17212b; background:linear-gradient(145deg,#f3d66b,#d4af37); box-shadow:0 4px 12px rgba(212,175,55,.2); cursor:pointer; transition:transform .18s; }
 .voice-play-btn:active { transform:scale(.94); }
@@ -4488,4 +4493,18 @@ function seekVoicePlayback(range){var card=range.closest('.custom-voice-card'), 
     });
   }
 })();
+</script>
+
+<style id="babylon-message-selection-emoji-polish">
+.msg-bubble { transition: box-shadow .16s, transform .16s, outline-color .16s; }
+.msg-bubble.selected-message { outline:2px solid var(--babylon-gold,#d4af37); outline-offset:2px; box-shadow:0 0 0 5px rgba(212,175,55,.13); transform:scale(.99); }
+.emoji-picker-bar {display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 12px;border-radius:18px 18px 0 0;}
+.emoji-btn {border:0;background:transparent;border-radius:10px;padding:4px 5px;line-height:1.2;cursor:pointer;font-family:inherit;font-size:23px;transition:background .15s,transform .15s;}
+.emoji-btn:active{transform:scale(.9)}.emoji-btn:hover{background:var(--babylon-surface-hover,#edf2f8)}
+.emoji-plus{width:35px;height:35px;flex:0 0 35px;border:1px solid var(--babylon-border);font-size:25px;font-weight:600;color:var(--text-main)}
+.emoji-quick-row{display:flex;align-items:center;gap:5px;flex:1;justify-content:space-around}.emoji-full-grid{width:100%;display:flex;flex-wrap:wrap;gap:3px;line-height:1.8;font-size:25px;max-height:170px;overflow-y:auto;padding:8px 2px;direction:ltr}.emoji-full-grid span{cursor:pointer;border-radius:8px;padding:2px 4px}.emoji-full-grid span:active{background:var(--babylon-surface-hover,#edf2f8)}
+.app-container[data-app-theme="light"] .emoji-picker-bar{background:#fff;color:#17212b;border-color:#e1e7ef}
+</style>
+<script id="babylon-full-emoji-picker">
+function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.getElementById('fullEmojiGrid');if(!grid)return; if(!grid.dataset.ready){var items=['😂','😭','😉','😌','🫠','😡','🥵','🤢','💩','🤡','😎','🤧','☠️','🌚','🙈','🙉','🙊','✨','⚡','💢','💤','🔥','💯','🎉','💥','❤️','🤍','❤️‍🔥','❤️‍🩹','💔','🫦','👀','🫶🏻','👍🏻','🖕🏻','✍🏻','🙏🏻','💅🏻'];grid.textContent='';items.forEach(function(ch){var span=document.createElement('span');span.textContent=ch;span.onclick=function(e){e.stopPropagation();addReaction(ch)};grid.appendChild(span)});grid.dataset.ready='1';}grid.classList.toggle('hidden');}
 </script>
