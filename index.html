@@ -899,34 +899,6 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .blk-row .n{flex:1;text-align:right;color:#fff;font-size:15px}
 .blk-row button{padding:7px 14px;border-radius:14px;border:1px solid var(--babylon-gold);background:transparent;color:var(--babylon-gold);font-size:13px;cursor:pointer}
 
-.pf-tabs{display:flex;gap:8px;padding:8px 14px}
-.pf-tabs button{flex:1;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:var(--babylon-surface);color:var(--text-muted);font-weight:700;font-size:14px;cursor:pointer}
-.pf-tabs .on{color:var(--babylon-gold);border-color:var(--babylon-gold);background:rgba(212,175,55,.1)}
-.gift-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 14px 90px}
-.gift-grid .empty{grid-column:1/-1;text-align:center;color:var(--text-muted);padding:24px;font-size:13px}
-.gift-tile{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:1;cursor:pointer}
-.gt-n{position:absolute;bottom:4px;left:6px;font-size:11px;background:rgba(0,0,0,.5);color:#fff;padding:1px 7px;border-radius:8px}
-.bull-svg{width:100%;height:100%;display:block}
-.bull-svg .wl{transform-origin:78px 118px;animation:flapL 1.5s ease-in-out infinite}
-.bull-svg .wr{transform-origin:122px 118px;animation:flapR 1.5s ease-in-out infinite}
-@keyframes flapL{50%{transform:rotate(-15deg)}}
-@keyframes flapR{50%{transform:rotate(15deg)}}
-.dev-menu{position:absolute;top:44px;left:0;z-index:20;background:var(--babylon-surface);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:4px;min-width:150px}
-.dev-menu button{width:100%;padding:10px 12px;background:none;border:none;color:#fde68a;font-size:14px;text-align:right;cursor:pointer}
-.star-msg{display:flex;align-items:center;gap:8px;font-weight:700;color:#fde68a;padding:4px 2px}
-.star-burst{font-size:28px;display:inline-block;animation:starJump 1.1s ease-in-out infinite}
-@keyframes starJump{0%,100%{transform:translateY(0) scale(1) rotate(0)}40%{transform:translateY(-9px) scale(1.25) rotate(-12deg)}70%{transform:translateY(0) scale(.95) rotate(8deg)}}
-.gv{padding:0 16px 24px;overflow-y:auto;flex:1}
-.gv-art{width:min(78vw,300px);aspect-ratio:1;margin:8px auto 14px;border-radius:24px;overflow:hidden;box-shadow:0 12px 36px rgba(0,0,0,.45)}
-.gv h3{text-align:center;color:#fff;font-size:20px;margin:0 0 4px}
-.gv .sub{text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:14px}
-.gv-tbl{background:var(--babylon-surface);border-radius:16px;overflow:hidden;margin-bottom:14px}
-.gv-tbl div{display:flex;justify-content:space-between;padding:12px 14px;color:#fff;font-size:14.5px}
-.gv-tbl div+div{border-top:1px solid rgba(255,255,255,.06)}
-.gv-tbl span:first-child{color:var(--text-muted)}
-.gv-btn{width:100%;padding:14px;border-radius:16px;border:none;background:linear-gradient(135deg,var(--babylon-gold),#b8912a);color:#0b1120;font-size:16px;font-weight:800;cursor:pointer}
-.gv-btn:disabled{opacity:.5}
-@keyframes gvSpin{to{transform:rotate(360deg) scale(.9)}}
 </style>
 </head>
 
@@ -1082,9 +1054,8 @@ i[data-ic]{display:inline-flex;font-style:normal}
       <div id="myStoriesEmpty" class="hidden" style="padding:14px 16px;color:var(--text-muted);font-size:13px;">ما عندك قصص. اضغط على صورتك أو زر الإضافة حتى تنشر.</div>
 
       <!-- شبكة المنشورات المدمجة -->
-      <div class="pf-tabs"><button type="button" id="tabPosts" class="on" onclick="pfTab('posts')">📸 المنشورات</button><button type="button" id="tabGifts" onclick="pfTab('gifts')">🎁 الهدايا</button></div>
+      <div class="posts-grid-header">📸 المنشورات</div>
       <div id="postsGrid" class="posts-grid"></div>
-      <div id="myGiftsGrid" class="gift-grid hidden"></div>
 
       <button class="add-post-fab" onclick="openPublishOptions()">
         <span>📷 إضافة منشور</span>
@@ -1097,7 +1068,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
         <div class="pattern-layer" id="otherCoverPattern"></div>
         <div class="pf-topbar">
           <button type="button" class="pf-round" onclick="goBackFromOtherProfile()" aria-label="رجوع"><i data-ic="chevron" data-size="22"></i></button>
-          <span style="position:relative"><button type="button" id="devMenuBtn" class="pf-round hidden" onclick="document.getElementById('devMenu').classList.toggle('hidden')" aria-label="خيارات">⋮</button><div id="devMenu" class="dev-menu hidden"><button type="button" onclick="devGiftStars()">⭐ إهداء نجوم</button></div></span>
+          <span></span>
         </div>
       </div>
 
@@ -1138,8 +1109,6 @@ i[data-ic]{display:inline-flex;font-style:normal}
         </div>
       </div>
       <div id="otherPinnedWrap" class="hidden"><div class="posts-grid-header">📌 القصص المثبتة</div><div id="otherPinnedGrid" class="posts-grid"></div></div>
-      <div class="posts-grid-header">🎁 الهدايا</div>
-      <div id="otherGiftsGrid" class="gift-grid"></div>
     </div>
 
     <!-- شاشة الإعدادات العامة -->
@@ -1154,8 +1123,6 @@ i[data-ic]{display:inline-flex;font-style:normal}
         </div>
 
         <div class="sx-group">
-          <div class="sx-item" style="cursor:default"><span class="sx-ic" style="background:#f59e0b">⭐</span><span class="sx-t">رصيد نجوم بابل</span><b id="sxStars" style="color:#fde68a;font-size:17px">0</b></div>
-          <div class="sx-item" onclick="openGiftStore()"><span class="sx-ic" style="background:#a855f7">🎁</span><span class="sx-t">متجر الهدايا</span><span class="sx-ch">‹</span></div>
         </div>
 
         <div class="sx-group">
@@ -1998,128 +1965,6 @@ openStories = function (uid) {
 };
 
 
-/* ===== النجوم والهدايا ===== */
-const GIFT_PRICE = 100, GIFT_MAX = 30;
-const GIFT_MODELS=[{n:'ذهبي',b:'#d9a441',w:'#fff1b8'},{n:'ليلي',b:'#4a5aa8',w:'#a9b8ff'},{n:'ناري',b:'#c2410c',w:'#fdba74'},{n:'زمردي',b:'#15803d',w:'#86efac'},{n:'جليدي',b:'#0e7490',w:'#cffafe'}];
-const GIFT_BGS=[{n:'نحاسي',a:'#b87333',b:'#7a4a1d'},{n:'ليلي',a:'#1e2a5a',b:'#0b1030'},{n:'غروب',a:'#f97316',b:'#9d174d'},{n:'نيلي',a:'#0ea5e9',b:'#1e3a8a'},{n:'رمادي',a:'#94a3b8',b:'#334155'}];
-const GIFT_SYMS=[{n:'هلال',e:'🌙'},{n:'نجمة',e:'⭐'},{n:'لهب',e:'🔥'},{n:'تاج',e:'👑'},{n:'معبد',e:'🏛'}];
-let myStars = 0, walletUnsub = null, walletFor = null;
-function startWalletListener() {
-  if (!currentUser || walletFor === currentUser.uid) return;
-  if (walletUnsub) walletUnsub();
-  walletFor = currentUser.uid;
-  walletUnsub = db.collection('wallets').doc(currentUser.uid).onSnapshot(d => {
-    myStars = d.exists ? (d.data().stars || 0) : 0;
-    ['sxStars', 'stBal'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = myStars; });
-  }, () => {});
-}
-function bullSvg(g) {
-  const up = !!g.upgraded, m = GIFT_MODELS[up ? g.model : 0], bg = up ? GIFT_BGS[g.bg] : { a: '#334155', b: '#111827' };
-  const id = 'b' + Math.random().toString(36).slice(2, 8);
-  let pat = '';
-  if (up) { const e = GIFT_SYMS[g.sym].e; for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) pat += `<text x="${10 + c * 48 + (r % 2) * 24}" y="${24 + r * 48}" font-size="16" opacity=".17">${e}</text>`; }
-  const wing = `<path d="M78 122 C40 104 14 82 8 44 C28 58 44 56 56 52 C46 72 66 84 78 94Z" fill="${m.w}"/><path d="M78 122 C52 112 34 98 24 76 C40 86 56 88 70 96Z" fill="${m.w}" opacity=".6"/>`;
-  return `<svg viewBox="0 0 200 200" class="bull-svg" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="${id}" cx="50%" cy="38%" r="75%"><stop offset="0" stop-color="${bg.a}"/><stop offset="1" stop-color="${bg.b}"/></radialGradient></defs><rect width="200" height="200" fill="url(#${id})"/>${pat}
-<g class="wl">${wing}</g><g class="wr"><g transform="translate(200 0) scale(-1 1)">${wing}</g></g>
-<path d="M64 82 C40 78 36 56 48 46 C50 62 62 66 74 72Z" fill="#fde68a"/><path d="M136 82 C160 78 164 56 152 46 C150 62 138 66 126 72Z" fill="#fde68a"/>
-<ellipse cx="60" cy="90" rx="13" ry="6" transform="rotate(-22 60 90)" fill="${m.b}"/><ellipse cx="140" cy="90" rx="13" ry="6" transform="rotate(22 140 90)" fill="${m.b}"/>
-<path d="M70 78 Q100 64 130 78 L126 130 Q122 162 100 166 Q78 162 74 130Z" fill="${m.b}"/>
-<circle cx="86" cy="104" r="5" fill="#fff"/><circle cx="114" cy="104" r="5" fill="#fff"/><circle cx="86" cy="105" r="2.4" fill="#111"/><circle cx="114" cy="105" r="2.4" fill="#111"/>
-<ellipse cx="100" cy="144" rx="19" ry="13" fill="rgba(0,0,0,.28)"/><circle cx="93" cy="143" r="2.6" fill="#111"/><circle cx="107" cy="143" r="2.6" fill="#111"/><circle cx="100" cy="157" r="5" fill="none" stroke="#fde68a" stroke-width="2.5"/></svg>`;
-}
-function gOverlay(id, title, body) {
-  const old = document.getElementById(id); if (old) old.remove();
-  const ov = document.createElement('div'); ov.id = id; ov.className = 'blk-ov';
-  ov.innerHTML = `<div class="sx-top"><button type="button" class="sx-back" onclick="document.getElementById('${id}').remove()" aria-label="رجوع"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><h2>${title}</h2></div><div class="gv">${body}</div>`;
-  document.body.appendChild(ov); return ov;
-}
-function pfTab(t) {
-  const g = t === 'gifts';
-  document.getElementById('tabPosts').classList.toggle('on', !g);
-  document.getElementById('tabGifts').classList.toggle('on', g);
-  document.getElementById('postsGrid').classList.toggle('hidden', g);
-  document.getElementById('myGiftsGrid').classList.toggle('hidden', !g);
-  if (g && currentUser) loadGifts(currentUser.uid, 'myGiftsGrid');
-}
-function loadGifts(uid, gridId) {
-  const grid = document.getElementById(gridId); if (!grid) return;
-  db.collection('users').doc(uid).collection('gifts').get().then(q => {
-    const list = []; q.forEach(d => list.push(d.data()));
-    list.sort((a, b) => a.number - b.number);
-    grid.innerHTML = list.length ? '' : '<div class="empty">ما كو هدايا بعد 🎁</div>';
-    list.forEach(g => {
-      const t = document.createElement('div'); t.className = 'gift-tile';
-      t.innerHTML = bullSvg(g) + `<div class="gt-n">#${g.number}</div>`;
-      t.onclick = () => openGiftView(uid, g);
-      grid.appendChild(t);
-    });
-  }).catch(() => { grid.innerHTML = '<div class="empty">تعذر تحميل الهدايا</div>'; });
-}
-function onOtherProfileOpen(u) {
-  const dm = document.getElementById('devMenuBtn'), menu = document.getElementById('devMenu');
-  if (menu) menu.classList.add('hidden');
-  if (dm) dm.classList.toggle('hidden', !(currentUser && String(currentUser.email || '').toLowerCase() === DEV_EMAIL));
-  if (u && u.id) loadGifts(u.id, 'otherGiftsGrid');
-}
-function devGiftStars() {
-  document.getElementById('devMenu').classList.add('hidden');
-  const uid = currentChatOtherUserId; if (!uid) return;
-  const n = parseInt(prompt('كم نجمة تريد تهدي؟', '100'), 10);
-  if (!n || n < 1) return;
-  const chatId = [currentUser.uid, uid].sort().join('__'), text = `⭐ أهداك المطور ${n} نجمة`;
-  db.collection('wallets').doc(uid).set({ stars: firebase.firestore.FieldValue.increment(n) }, { merge: true })
-    .then(() => db.collection('chats').doc(chatId).set({ participants: [currentUser.uid, uid], updatedAt: Date.now() }, { merge: true }))
-    .then(() => db.collection('chats').doc(chatId).collection('messages').add({ senderId: currentUser.uid, type: 'stars', amount: n, text, read: false, createdAt: Date.now() }))
-    .then(() => { showToast(`تم إهداء ${n} نجمة ⭐`); try { notifyPeer(chatId, text); } catch (e) {} })
-    .catch(e => { console.error(e); showToast('تعذر الإهداء، تأكد من القواعد'); });
-}
-function openGiftStore() {
-  const ov = gOverlay('giftStoreOv', 'متجر الهدايا', `<div class="gv-art">${bullSvg({ upgraded: false })}</div>
-    <h3>الثور المجنح 🐂</h3><div class="sub" id="stLeft">جاري التحميل...</div>
-    <div class="gv-tbl"><div><span>السعر</span><span>⭐ ${GIFT_PRICE}</span></div><div><span>رصيدك</span><span>⭐ <b id="stBal">${myStars}</b></span></div><div><span>الترقية</span><span>مجانية (صفات عشوائية)</span></div></div>
-    <button class="gv-btn" id="stBuy" disabled>شراء</button>`);
-  refreshStore();
-}
-function refreshStore() {
-  db.collection('giftSales').get().then(q => {
-    const left = Math.max(0, GIFT_MAX - q.size), l = document.getElementById('stLeft'), b = document.getElementById('stBuy');
-    if (!l || !b) return;
-    l.textContent = left > 0 ? `نسخة محدودة · المتبقي ${left} من ${GIFT_MAX}` : 'نفدت الكمية';
-    b.disabled = left === 0; b.textContent = left === 0 ? 'نفدت الكمية' : `شراء بـ ${GIFT_PRICE} نجمة`;
-    b.onclick = () => buyBull(q);
-  }).catch(() => { const l = document.getElementById('stLeft'); if (l) l.textContent = 'تعذر التحميل'; });
-}
-function buyBull(salesSnap) {
-  if (myStars < GIFT_PRICE) return showToast('رصيدك غير كافٍ ⭐');
-  const taken = new Set(); salesSnap.forEach(d => taken.add(d.id));
-  let n = null; for (let i = 1; i <= GIFT_MAX; i++) if (!taken.has(String(i))) { n = String(i); break; }
-  if (!n) return showToast('نفدت الكمية');
-  const me = currentUser.uid, b = db.batch(), inc = firebase.firestore.FieldValue.increment;
-  b.update(db.collection('wallets').doc(me), { stars: inc(-GIFT_PRICE), lastBuy: n });
-  b.set(db.collection('giftSales').doc(n), { ownerId: me, at: Date.now() });
-  b.set(db.collection('users').doc(me).collection('gifts').doc(n), { number: +n, upgraded: false, at: Date.now() });
-  const btn = document.getElementById('stBuy'); if (btn) btn.disabled = true;
-  b.commit().then(() => { showToast(`🎉 اشتريت الثور المجنح #${n}`); refreshStore(); })
-    .catch(() => { showToast('تعذر الشراء، ممكن أحد سبقك. حاول مرة ثانية'); refreshStore(); });
-}
-function openGiftView(uid, g) {
-  const own = currentUser && uid === currentUser.uid;
-  const rows = g.upgraded
-    ? `<div><span>النموذج</span><span>${GIFT_MODELS[g.model].n}</span></div><div><span>الرمز</span><span>${GIFT_SYMS[g.sym].e} ${GIFT_SYMS[g.sym].n}</span></div><div><span>الخلفية</span><span>${GIFT_BGS[g.bg].n}</span></div>`
-    : `<div><span>الحالة</span><span>غير مُرقّاة</span></div>`;
-  const ov = gOverlay('giftViewOv', 'الهدية', `<div class="gv-art" id="gvArt">${bullSvg(g)}</div><h3>الثور المجنح #${g.number}</h3><div class="sub">من أصل ${GIFT_MAX}</div><div class="gv-tbl">${rows}<div><span>الرقم</span><span>${g.number}/${GIFT_MAX}</span></div></div>${own && !g.upgraded ? '<button class="gv-btn" id="gvUp">🎲 ترقية مجانية</button>' : ''}`);
-  const up = ov.querySelector('#gvUp');
-  if (up) up.onclick = () => {
-    up.disabled = true; document.getElementById('gvArt').style.animation = 'gvSpin .7s ease-in-out';
-    const r = () => Math.floor(Math.random() * 5), nu = { number: g.number, upgraded: true, model: r(), bg: r(), sym: r() };
-    setTimeout(() => {
-      db.collection('users').doc(uid).collection('gifts').doc(String(g.number)).update({ upgraded: true, model: nu.model, bg: nu.bg, sym: nu.sym })
-        .then(() => { openGiftView(uid, nu); loadGifts(uid, 'myGiftsGrid'); showToast('✨ تمت الترقية!'); })
-        .catch(() => { up.disabled = false; showToast('تعذرت الترقية'); });
-    }, 700);
-  };
-}
-
 function openSettings() {
   renderSettingsHero();
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
@@ -2205,7 +2050,7 @@ function searchUsers() {
 }
 
 function openUserProfileDirect(u) {
-  setTimeout(updateBlockBtn, 80); onOtherProfileOpen(u);
+  setTimeout(updateBlockBtn, 80);
   currentChatOtherUserId = u.id;
   otherProfileUsername = "@" + (u.username || "user");
   document.getElementById("otherHeaderNameText").textContent = u.displayName || "مستخدم";
@@ -2403,7 +2248,7 @@ function openChatRoom(otherUserId, keepLimit) {
         if (m.audioUrl) {
           htmlContent += `<div class="audio-player"><audio controls src="${esc(m.audioUrl)}"></audio></div>`;
         } else {
-          htmlContent += m.type === 'stars' ? `<div class="star-msg"><span class="star-burst">⭐</span><span>${esc(m.text)}</span></div>` : m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${esc(m.text)}</div>`;
+          htmlContent += m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${esc(m.text)}</div>`;
         }
 
         if (m.reactions && Object.keys(m.reactions).length > 0) {
@@ -2633,7 +2478,7 @@ function sendMessage(e) {
 }
 
 function loadChats() {
-  startBlocksListener(); startWalletListener();
+  startBlocksListener();
   const container = document.getElementById("chatList");
   
   if (chatsListUnsubscribe) { chatsListUnsubscribe(); chatsListUnsubscribe = null; }
