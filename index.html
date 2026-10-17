@@ -2830,6 +2830,41 @@ function clearSearchInput() {
   searchUsers();
   input.focus();
 }
+const BABYLON_RECENT_SEARCH_KEY = "babylon_recent_search_users_v1";
+function getRecentSearchUsers() {
+  try { return JSON.parse(localStorage.getItem(BABYLON_RECENT_SEARCH_KEY) || "[]").filter(u => u && u.id); }
+  catch (_) { return []; }
+}
+function rememberSearchUser(u) {
+  if (!u || !u.id || (currentUser && u.id === currentUser.uid)) return;
+  const recent = getRecentSearchUsers().filter(x => x.id !== u.id);
+  recent.unshift({ id:u.id, displayName:u.displayName || "مستخدم", username:u.username || "", avatarUrl:u.avatarUrl || "", isVerified:!!u.isVerified });
+  try { localStorage.setItem(BABYLON_RECENT_SEARCH_KEY, JSON.stringify(recent.slice(0,30))); } catch (_) {}
+}
+function renderRecentSearchUsers(res) {
+  const recent = getRecentSearchUsers().filter(u => !(myBlocks && myBlocks[u.id]));
+  if (!recent.length) {
+    res.innerHTML = '<div class="search-state-card search-empty-state"><span class="search-empty-icon">⌕</span><strong>ابحث عن أصدقائك</strong><span>اكتب اسم المستخدم، وستظهر هنا المحادثات التي فتحتها مؤخرًا.</span></div>';
+    return;
+  }
+  const label = document.createElement("div"); label.className = "search-recent-label"; label.textContent = "المحادثات التي زرتها"; res.appendChild(label);
+  recent.forEach(u => {
+    const div = document.createElement("div"); div.className = "chat-item search-user-card search-recent-card";
+    const avatar = document.createElement("div"); avatar.className = "avatar";
+    if (u.avatarUrl) { const img = document.createElement("img"); img.src = u.avatarUrl; img.alt = ""; avatar.appendChild(img); }
+    else avatar.textContent = (u.displayName || "?").charAt(0).toUpperCase();
+    const info = document.createElement("div"); info.className = "chat-item-info";
+    const name = document.createElement("div"); name.className = "chat-item-name"; name.textContent = u.displayName || "مستخدم";
+    if (u.isVerified) { const badge = document.createElement("span"); badge.className = "verified-badge"; badge.textContent = "✓"; name.appendChild(badge); }
+    const sub = document.createElement("div"); sub.className = "chat-item-sub"; sub.textContent = "@" + (u.username || "");
+    info.append(name, sub);
+    const tag = document.createElement("span"); tag.className = "search-recent-tag"; tag.textContent = "تمت الزيارة";
+    div.append(avatar, info, tag);
+    div.onclick = () => openChatRoom(u.id);
+    res.appendChild(div);
+  });
+}
+
 function searchUsers() {
   const input = document.getElementById("searchInput");
   const res = document.getElementById("searchResults");
@@ -2841,7 +2876,8 @@ function searchUsers() {
   const token = ++searchRequestToken;
   res.innerHTML = "";
   if (q.length < 3) {
-    setSearchHint(q.length ? `باقي ${3 - q.length} أحرف لبدء البحث.` : "اكتب 3 أحرف على الأقل للبدء بالبحث.", "idle");
+    if (!q) renderRecentSearchUsers(res);
+    setSearchHint(q.length ? `باقي ${3 - q.length} أحرف لبدء البحث.` : "المحادثات التي فتحتها تظهر هنا لسهولة الوصول.", q ? "idle" : "recent");
     return;
   }
   setSearchHint("جارٍ البحث عن المستخدمين…", "loading");
@@ -2966,6 +3002,7 @@ function openChatRoom(otherUserId, keepLimit) {
   reorderChatListItems();
   if (!keepLimit) msgLimit = 50;
   currentChatOtherUserId = otherUserId;
+  db.collection("users").doc(otherUserId).get().then(doc => { if (doc.exists) rememberSearchUser({id:doc.id, ...doc.data()}); }).catch(() => {});
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
   if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
   if (chatDocUnsubscribe) { chatDocUnsubscribe(); chatDocUnsubscribe = null; }
@@ -5232,4 +5269,18 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 }
 #searchView .search-field:focus-within::before,
 #searchView .search-field:focus-within::after { box-shadow: none !important; outline: none !important; }
+</style>
+
+<style id="babylon-search-recent-polish">
+#searchView .search-screen-top{background:var(--babylon-dark);border-bottom:1px solid color-mix(in srgb,var(--babylon-border) 75%,transparent)}
+#searchView .search-heading-copy p{line-height:1.7;color:var(--text-muted)}
+#searchView .search-field{box-shadow:0 5px 18px rgba(0,0,0,.045);background:var(--babylon-surface-card);border:1px solid var(--babylon-border);}
+#searchView .search-field:focus-within{border-color:#3390ec;box-shadow:0 0 0 3px rgba(51,144,236,.10)}
+#searchView .search-recent-label{padding:8px 5px 4px;color:var(--text-muted);font-size:12px;font-weight:750;letter-spacing:.15px}
+#searchView .search-recent-card{background:var(--babylon-surface-card);border-color:var(--babylon-border);box-shadow:0 4px 14px rgba(20,35,55,.035)}
+#searchView .search-recent-card .avatar{overflow:hidden;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#2f80ed,#1558b0);color:white;font-weight:800}
+#searchView .search-recent-card .avatar img{width:100%;height:100%;object-fit:cover}
+#searchView .search-recent-tag{font-size:10px;font-weight:700;color:#3390ec;background:rgba(51,144,236,.10);padding:6px 8px;border-radius:999px;white-space:nowrap}
+#searchView .search-user-card{transition:transform .16s ease,background .16s ease,border-color .16s ease}
+#searchView .search-user-card:active{transform:scale(.985)}
 </style>
