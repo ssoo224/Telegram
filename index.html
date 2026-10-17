@@ -1374,6 +1374,47 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .app-container[data-app-theme="light"] .audio-player-card audio { color-scheme:light; }
 @media (max-width:380px) { .audio-player-card { width:min(250px, 65vw); padding:8px; gap:8px; } .audio-player-icon { flex-basis:36px; width:36px; height:36px; } }
 
+
+/* Comprehensive responsive theme coverage and full-page profile editor */
+.edit-profile-view { flex:1; min-height:0; overflow-y:auto; background:var(--babylon-dark); color:var(--text-main); }
+.edit-profile-header { position:sticky; top:0; z-index:3; display:flex; align-items:center; gap:12px; padding:17px 18px; background:var(--babylon-surface); border-bottom:1px solid var(--babylon-border); }
+.edit-profile-header h2 { margin:0; font-size:18px; color:var(--text-main); }
+.edit-profile-header p { margin:4px 0 0; font-size:12px; color:var(--text-muted); }
+.edit-profile-back { flex:0 0 42px; width:42px; height:42px; border-radius:14px; background:var(--babylon-surface-hover); color:var(--text-main); }
+.edit-profile-back i { display:inline-flex; transform:rotate(180deg); }
+.edit-profile-content { width:min(100%,650px); margin:0 auto; padding:22px 16px 34px; box-sizing:border-box; }
+.edit-profile-card { padding:22px; border:1px solid var(--babylon-border); border-radius:22px; background:var(--babylon-surface-card); box-shadow:0 10px 30px rgba(0,0,0,.08); }
+.edit-profile-card .input-group { margin-bottom:18px; }
+.edit-profile-card .input-group label { display:block; margin:0 0 8px; color:var(--text-muted); font-size:13px; font-weight:700; }
+.edit-profile-card .babylon-input { width:100%; box-sizing:border-box; min-height:46px; border-radius:12px; padding:12px 13px; border:1px solid var(--babylon-border); background:var(--babylon-dark); color:var(--text-main); outline:none; }
+.edit-profile-card textarea.babylon-input { min-height:104px; resize:vertical; }
+.edit-profile-card .babylon-input::placeholder { color:var(--text-muted); opacity:.8; }
+.edit-profile-card .babylon-input:focus { border-color:var(--babylon-gold); box-shadow:0 0 0 3px color-mix(in srgb,var(--babylon-gold) 16%,transparent); }
+.edit-profile-actions { display:flex; gap:12px; margin-top:24px; }
+.edit-profile-actions .babylon-btn { flex:1; min-height:46px; border-radius:13px; font-weight:750; }
+.edit-profile-actions .edit-profile-cancel { background:transparent; border:1px solid var(--babylon-border); color:var(--text-main); }
+.pf-actions-edit { justify-content:center !important; width:100%; }
+.pf-actions-edit .pf-btn { min-width:210px; justify-content:center; }
+/* Header brand appears only on the conversation list. */
+#mainHeader { flex-shrink:0; }
+.app-container[data-app-theme="light"] .edit-profile-view { background:#f4f7fb; color:#17212b; }
+.app-container[data-app-theme="light"] .edit-profile-header { background:#fff; border-color:#e1e7ef; }
+.app-container[data-app-theme="light"] .edit-profile-header h2 { color:#17212b; }
+.app-container[data-app-theme="light"] .edit-profile-card { background:#fff; border-color:#e1e7ef; box-shadow:0 8px 28px rgba(26,44,70,.06); }
+.app-container[data-app-theme="light"] .edit-profile-card .input-group label { color:#64748b; }
+.app-container[data-app-theme="light"] .edit-profile-card .babylon-input { background:#f5f7fb; border-color:#dce4ee; color:#17212b; }
+.app-container[data-app-theme="light"] .edit-profile-actions .edit-profile-cancel { color:#334155; background:#f5f7fb; border-color:#dce4ee; }
+/* Theme all common sheets, popovers, overlays, forms and status notifications. */
+.app-container[data-app-theme="light"] #mainPage :is(.msg-actions-modal,.viewers-modal,.story-viewer-modal,.cover-modal,.modal-overlay) { color:#17212b; }
+.app-container[data-app-theme="light"] #mainPage :is(.msg-actions-card,.viewers-card,.settings-card,.set-card,.sx-group,.sx-top,.sx-hero,.profile-card,.profile-row,.search-result,.notification-setting,.story-card,.post-card,.comment-item,.chat-settings-card) { background:#fff; color:#17212b; border-color:#e1e7ef; }
+.app-container[data-app-theme="light"] #mainPage :is(.msg-actions-card,.viewers-card,.settings-card,.set-card,.chat-settings-card) :is(h1,h2,h3,h4,p,span,label,small,strong,div) { color:inherit; }
+.app-container[data-app-theme="light"] #mainPage :is(.msg-actions-card,.viewers-card,.settings-card,.set-card,.chat-settings-card) :is(input,textarea,select) { background:#f5f7fb; color:#17212b; border-color:#dce4ee; }
+.app-container[data-app-theme="dark"] #mainPage :is(.msg-actions-card,.viewers-card,.settings-card,.set-card,.sx-group,.sx-top,.sx-hero,.profile-card,.profile-row,.search-result,.notification-setting,.story-card,.post-card,.comment-item,.chat-settings-card) { color:#f1f5f9; }
+.app-container[data-app-theme="dark"] #mainPage :is(.msg-actions-card,.viewers-card,.settings-card,.set-card,.chat-settings-card) :is(input,textarea,select) { background:#17212b; color:#f1f5f9; border-color:#334155; }
+.app-container[data-app-theme="light"] .toast { background:#fff !important; color:#17212b !important; border:1px solid #dce4ee !important; box-shadow:0 10px 28px rgba(26,44,70,.15); }
+.app-container[data-app-theme="dark"] .toast { background:#1e293b !important; color:#f8fafc !important; border:1px solid #334155 !important; }
+@media(max-width:520px) { .edit-profile-content { padding:16px 12px 28px; } .edit-profile-card { padding:17px; border-radius:18px; } .edit-profile-actions { flex-direction:column; } .edit-profile-header { padding:14px 12px; } }
+
 </style>
 </head>
 
@@ -1745,6 +1786,39 @@ i[data-ic]{display:inline-flex;font-style:normal}
       </div>
     </div>
 
+<!-- صفحة تعديل بيانات الملف الشخصي -->
+    <div id="editProfileView" class="edit-profile-view hidden" dir="rtl">
+      <div class="edit-profile-header">
+        <button type="button" class="icon-btn edit-profile-back" onclick="closeEditModalDirect()" aria-label="رجوع" title="رجوع"><i data-ic="chevron" data-size="22"></i></button>
+        <div><h2>تعديل البيانات الشخصية</h2><p>حدّث معلومات ملفك الشخصي</p></div>
+      </div>
+      <div class="edit-profile-content">
+        <div class="edit-profile-card">
+          <div class="input-group">
+            <label for="modalNameInput">اسم العرض</label>
+            <input id="modalNameInput" class="babylon-input rtl" placeholder="اسمك الكريم" autocomplete="name">
+          </div>
+          <div class="input-group">
+            <label for="modalUsernameInput">اسم المستخدم (@)</label>
+            <input id="modalUsernameInput" class="babylon-input" placeholder="username" autocomplete="username" oninput="validateUsernameInput(this)">
+            <span id="modalUserError" class="field-error hidden"></span>
+          </div>
+          <div class="input-group">
+            <label for="modalBioInput">النبذة التعريفية (البايو)</label>
+            <textarea id="modalBioInput" class="babylon-input rtl" maxlength="120" placeholder="اكتب نبذة عن نفسك..."></textarea>
+          </div>
+          <div class="input-group">
+            <label for="modalGovInput">المحافظة</label>
+            <select id="modalGovInput" class="babylon-input rtl"></select>
+          </div>
+          <div class="edit-profile-actions">
+            <button type="button" class="babylon-btn" onclick="saveProfileChanges()">حفظ التغييرات</button>
+            <button type="button" class="babylon-btn edit-profile-cancel" onclick="closeEditModalDirect()">إلغاء</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- شريط التنقل السفلي -->
     <nav id="bottomNav" class="telegram-bottom-nav">
       <button id="navChats" class="nav-item active" onclick="goHome()">
@@ -1816,38 +1890,6 @@ i[data-ic]{display:inline-flex;font-style:normal}
   </div>
 </div>
 
-<!-- نافذة تعديل بيانات الملف الشخصي -->
-<div id="editProfileModal" class="msg-actions-modal hidden" onclick="closeEditModal(event)">
-  <div class="msg-actions-card" style="width:320px; padding:20px;">
-    <h3 style="color:var(--babylon-gold); font-size:17px; margin-bottom:14px; text-align:right;">تعديل البيانات الشخصية</h3>
-    
-    <div class="input-group">
-      <label>اسم العرض</label>
-      <input id="modalNameInput" class="babylon-input rtl" placeholder="اسمك الكريم">
-    </div>
-
-    <div class="input-group">
-      <label>اسم المستخدم (@)</label>
-      <input id="modalUsernameInput" class="babylon-input" placeholder="username" oninput="validateUsernameInput(this)">
-      <span id="modalUserError" class="field-error hidden"></span>
-    </div>
-
-    <div class="input-group">
-      <label>النبذة التعريفية (البايو)</label>
-      <textarea id="modalBioInput" class="babylon-input rtl" style="height:70px; resize:none;" maxlength="120" placeholder="اكتب نبذة عن نفسك..."></textarea>
-    </div>
-
-    <div class="input-group">
-      <label>المحافظة</label>
-      <select id="modalGovInput" class="babylon-input rtl"></select>
-    </div>
-
-    <div style="display:flex; gap:10px; margin-top:10px;">
-      <button type="button" class="babylon-btn" onclick="saveProfileChanges()">حفظ التغيرات</button>
-      <button type="button" class="babylon-btn" style="background:transparent; border:1px solid var(--text-muted); color:white;" onclick="closeEditModalDirect()">إلغاء</button>
-    </div>
-  </div>
-</div>
 
 <div id="coverModal" class="msg-actions-modal hidden" onclick="closeCoverModal(event)">
   <div class="msg-actions-card" style="width:340px; padding:18px;">
@@ -2181,17 +2223,21 @@ function openEditProfileModal() {
   document.getElementById("modalBioInput").value = currentUserData.bio || "";
   document.getElementById("modalGovInput").value = currentUserData.governorate || "";
   document.getElementById("modalUserError").classList.add("hidden");
-  document.getElementById("editProfileModal").classList.remove("hidden");
+  showView("editProfileView");
 }
 
 function closeEditModal(e) {
-  if (e.target.id === "editProfileModal") {
-    document.getElementById("editProfileModal").classList.add("hidden");
-  }
+  // Kept for compatibility with older callers; editing is now a full page.
+  if (e && e.target && e.target.id === "editProfileModal") closeEditModalDirect();
 }
 
 function closeEditModalDirect() {
-  document.getElementById("editProfileModal").classList.add("hidden");
+  const editPage = document.getElementById("editProfileView");
+  if (editPage) editPage.classList.add("hidden");
+  if (document.getElementById("mainPage") && !document.getElementById("mainPage").classList.contains("hidden")) {
+    showView("profileView");
+    if (currentUserData) updateProfileUI(currentUserData);
+  }
 }
 
 function saveProfileChanges() {
@@ -2365,7 +2411,7 @@ function toggleAppTheme() {
 })();
 
 function showView(viewId) {
-  ["homeView", "searchView", "profileView", "otherUserProfileView", "settingsView", "chatSettingsView", "notificationSettingsView", "chatView"].forEach(v => {
+  ["homeView", "searchView", "profileView", "otherUserProfileView", "settingsView", "chatSettingsView", "notificationSettingsView", "chatView", "editProfileView"].forEach(v => {
     const el = document.getElementById(v);
     if (el) el.classList.add("hidden");
   });
@@ -2375,8 +2421,8 @@ function showView(viewId) {
   const bottomNav = document.getElementById("bottomNav");
   const mainSearchBtn = document.getElementById("mainSearchBtn");
 
-  const noHeader = ["chatView", "profileView", "otherUserProfileView"].includes(viewId);
-  mainHeader.classList.toggle("hidden", noHeader);
+  const showMainHeader = viewId === "homeView";
+  mainHeader.classList.toggle("hidden", !showMainHeader);
   bottomNav.classList.toggle("hidden", viewId === "chatView");
 
   if (viewId === "homeView") {
@@ -2386,7 +2432,7 @@ function showView(viewId) {
   }
 
   document.getElementById("navChats").classList.toggle("active", viewId === "homeView" || viewId === "searchView" || viewId === "otherUserProfileView");
-  document.getElementById("navProfile").classList.toggle("active", viewId === "profileView");
+  document.getElementById("navProfile").classList.toggle("active", viewId === "profileView" || viewId === "editProfileView");
   document.getElementById("navSettings").classList.toggle("active", viewId === "settingsView" || viewId === "chatSettingsView" || viewId === "notificationSettingsView");
 }
 
