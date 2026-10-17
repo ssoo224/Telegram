@@ -4321,3 +4321,132 @@ function loadUserPosts() {
   input.addEventListener('blur', function(){ document.documentElement.classList.remove('babylon-chat-keyboard-open'); });
 })();
 </script>
+
+<style id="babylon-composer-nav-refinement">
+/* Thin, rounded message field */
+#textInputBar.chat-input-bar {
+  direction: rtl;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  min-height: 54px;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+#messageInput {
+  min-height: 38px !important;
+  height: 40px !important;
+  padding: 8px 16px !important;
+  border: 1px solid var(--babylon-border, #334155) !important;
+  border-radius: 24px !important;
+  background: var(--babylon-surface-card, #202b38) !important;
+  color: var(--text-main, #f8fafc) !important;
+  font-size: 15px !important;
+  line-height: 1.4;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: border-color .18s ease, background .18s ease;
+}
+#messageInput:focus, #messageInput:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: var(--babylon-border, #334155) !important;
+}
+#messageInput::placeholder { color: var(--text-muted, #8b98a8); opacity: 1; }
+.app-container[data-app-theme="light"] #messageInput { background:#f5f7fb !important; color:#17212b !important; border-color:#e0e6ef !important; }
+.app-container[data-app-theme="dark"] #messageInput { background:#1c2734 !important; color:#f1f5f9 !important; border-color:#334155 !important; }
+
+/* A compact, professional upward send action; only shown for non-empty text */
+#textInputBar > button[type="submit"] {
+  flex: 0 0 40px !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 15px 15px 7px 15px !important;
+  background: linear-gradient(145deg,#e9c957,#c59b24) !important;
+  color: #17212b !important;
+  box-shadow: 0 3px 9px rgba(197,155,36,.22) !important;
+  margin-inline-start: 1px;
+}
+#textInputBar > button[type="submit"]:active { transform: translateY(1px) scale(.96); }
+#textInputBar > button[type="submit"] svg { width:21px; height:21px; }
+
+/* Smooth, pill-based bottom navigation */
+.telegram-bottom-nav {
+  height: 68px !important;
+  padding: 6px 10px max(6px, env(safe-area-inset-bottom, 0px)) !important;
+  gap: 7px;
+  justify-content: space-around;
+  background: var(--babylon-surface, #17212b) !important;
+  border-top: 1px solid var(--babylon-border, rgba(255,255,255,.08)) !important;
+  box-shadow: 0 -6px 22px rgba(0,0,0,.06);
+}
+.telegram-bottom-nav .nav-item {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 52px;
+  gap: 3px;
+  padding: 4px 2px;
+  border: 1px solid transparent !important;
+  border-radius: 17px !important;
+  color: var(--text-muted, #8b98a8) !important;
+  background: transparent !important;
+  font-size: 10.5px;
+  font-weight: 600;
+  transition: color .2s ease, background .2s ease, transform .2s ease, border-color .2s ease;
+}
+.telegram-bottom-nav .nav-item .nav-icon {
+  display:flex; align-items:center; justify-content:center;
+  width: 34px; height: 28px; border-radius: 12px;
+  transition: background .2s ease, transform .2s ease;
+}
+.telegram-bottom-nav .nav-item .nav-icon svg { width:21px; height:21px; }
+.telegram-bottom-nav .nav-item.active {
+  color: var(--babylon-gold, #d4af37) !important;
+  background: rgba(212,175,55,.10) !important;
+  border-color: rgba(212,175,55,.16) !important;
+}
+.telegram-bottom-nav .nav-item.active .nav-icon {
+  background: rgba(212,175,55,.17);
+  transform: translateY(-1px);
+}
+.telegram-bottom-nav .nav-item:active { transform: scale(.97); }
+.app-container[data-app-theme="light"] .telegram-bottom-nav { background:#fff !important; border-color:#e5eaf1 !important; }
+.app-container[data-app-theme="light"] .telegram-bottom-nav .nav-item { color:#748196 !important; }
+.app-container[data-app-theme="light"] .telegram-bottom-nav .nav-item.active { color:#96720d !important; background:#fbf6e5 !important; border-color:#f0e4b7 !important; }
+@media (max-width:360px) {
+  .telegram-bottom-nav { padding-inline:6px !important; gap:4px; }
+  .telegram-bottom-nav .nav-item { font-size:10px; }
+  #textInputBar.chat-input-bar { gap:5px; padding-inline:7px; }
+}
+</style>
+<script id="babylon-composer-nav-refinement-js">
+(function(){
+  var form = document.getElementById('textInputBar');
+  var input = document.getElementById('messageInput');
+  if (form) {
+    var send = form.querySelector('button[type="submit"]');
+    if (send) {
+      send.setAttribute('aria-label','إرسال الرسالة');
+      send.setAttribute('title','إرسال الرسالة');
+      send.innerHTML = '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6.5 10.5 12 5l5.5 5.5"/></svg>';
+    }
+    function syncSend(){ if(input) form.classList.toggle('has-message', input.value.trim().length > 0); }
+    if(input){ input.addEventListener('input',syncSend); input.addEventListener('change',syncSend); }
+    form.addEventListener('submit',function(){ setTimeout(syncSend,0); });
+    syncSend();
+  }
+  var nav = document.getElementById('bottomNav');
+  if(nav){
+    nav.querySelectorAll('.nav-item').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        nav.querySelectorAll('.nav-item').forEach(function(item){ item.classList.remove('active'); });
+        btn.classList.add('active');
+      });
+    });
+  }
+})();
+</script>
