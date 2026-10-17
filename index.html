@@ -3081,6 +3081,11 @@ function openMsgModal(msgId, text, senderId, reactions, isAudioMessage, anchorEl
   setVisible("btnDeleteMsg", true);
   if (modal) {
     const shell = modal.querySelector(".msg-actions-shell");
+    // The modal lives outside .app-container, so mirror the active theme onto it.
+    const themeRoot = document.querySelector(".app-container[data-app-theme]");
+    const activeTheme = themeRoot ? themeRoot.getAttribute("data-app-theme") : "dark";
+    modal.classList.toggle("theme-light", activeTheme === "light");
+    modal.classList.toggle("theme-dark", activeTheme !== "light");
     modal.classList.remove("hidden");
     // Position the emoji bar and action panel as one floating menu directly above the tapped message.
     if (shell && anchorElement) {
@@ -4924,6 +4929,16 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 .app-container[data-app-theme="light"] #msgModal .emoji-btn { color:#17212b !important; }
 .app-container[data-app-theme="dark"] #msgModal .emoji-picker-bar,
 .app-container[data-app-theme="dark"] #msgModal .msg-actions-card { background:var(--babylon-surface-card,#202d3a) !important; color:var(--text-main,#f1f5f9) !important; }
+/* Explicit theme classes work even though #msgModal is outside .app-container. */
+#msgModal.theme-light.msg-actions-modal { background:rgba(30,41,59,.12); }
+#msgModal.theme-light .emoji-picker-bar,
+#msgModal.theme-light .msg-actions-card { background:#fff !important; color:#17212b !important; border-color:#e1e7ef !important; }
+#msgModal.theme-light .msg-actions-card button { color:#17212b; border-color:#edf0f4; }
+#msgModal.theme-light .msg-actions-card button.danger { color:#dc2626 !important; }
+#msgModal.theme-light .emoji-btn { color:#17212b !important; }
+#msgModal.theme-dark .emoji-picker-bar,
+#msgModal.theme-dark .msg-actions-card { background:var(--babylon-surface-card,#202d3a) !important; color:var(--text-main,#f1f5f9) !important; border-color:#334155 !important; }
+#msgModal.theme-dark .msg-actions-card button { color:#f1f5f9; border-color:#334155; }
 @media (max-width:420px) { #msgModal .msg-actions-shell { width:calc(100vw - 24px); } #msgModal .emoji-picker-bar { padding:7px; } }
 @media (prefers-reduced-motion:reduce) { #msgModal .emoji-btn { transition:none; } }
 </style>
