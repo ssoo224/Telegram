@@ -1549,6 +1549,26 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .app-container[data-app-theme="dark"] #settingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]),
 .app-container[data-app-theme="dark"] #chatSettingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]),
 .app-container[data-app-theme="dark"] #notificationSettingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]) { color:#f5d76e !important; }
+/* إصلاح استثناء هلال زر تبديل الوضع: لون واضح في النهاري وذهبي في الليلي */
+#settingsView #settingsThemeToggle #themeSwitchIcon,
+#settingsView #settingsThemeToggle #themeSwitchIcon svg,
+#settingsView #settingsThemeToggle #themeSwitchIcon svg path {
+  color:#52657a !important;
+  stroke:#52657a !important;
+  fill:none !important;
+}
+.app-container[data-app-theme="light"] #settingsView #settingsThemeToggle #themeSwitchIcon,
+.app-container[data-app-theme="light"] #settingsView #settingsThemeToggle #themeSwitchIcon svg,
+.app-container[data-app-theme="light"] #settingsView #settingsThemeToggle #themeSwitchIcon svg path {
+  color:#52657a !important;
+  stroke:#52657a !important;
+}
+.app-container[data-app-theme="dark"] #settingsView #settingsThemeToggle #themeSwitchIcon,
+.app-container[data-app-theme="dark"] #settingsView #settingsThemeToggle #themeSwitchIcon svg,
+.app-container[data-app-theme="dark"] #settingsView #settingsThemeToggle #themeSwitchIcon svg path {
+  color:#f5d76e !important;
+  stroke:#f5d76e !important;
+}
 </style>
 </head>
 
@@ -5176,4 +5196,18 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 }
 @media (prefers-reduced-motion:reduce) { #searchView .search-user-card { transition:none; } }
 
+
+/* Remove the enclosing box around the username search field */
+#searchView .search-field {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+#searchView .search-field:focus-within {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
 </style>
