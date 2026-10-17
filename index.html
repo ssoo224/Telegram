@@ -2635,7 +2635,12 @@ function goHome() {
 
 function openSearch() { 
   showView("searchView");
-  document.getElementById("searchInput").focus();
+  const input = document.getElementById("searchInput");
+  if (input) {
+    input.value = "";
+    searchUsers(); // Show saved recent chats immediately on every entry.
+    input.focus();
+  }
 }
 
 function openProfile() {
@@ -2840,6 +2845,13 @@ function rememberSearchUser(u) {
   const recent = getRecentSearchUsers().filter(x => x.id !== u.id);
   recent.unshift({ id:u.id, displayName:u.displayName || "مستخدم", username:u.username || "", avatarUrl:u.avatarUrl || "", isVerified:!!u.isVerified });
   try { localStorage.setItem(BABYLON_RECENT_SEARCH_KEY, JSON.stringify(recent.slice(0,30))); } catch (_) {}
+  // Refresh the visible recent list immediately if the search screen is currently open.
+  const searchView = document.getElementById("searchView");
+  const searchInput = document.getElementById("searchInput");
+  if (searchView && !searchView.classList.contains("hidden") && searchInput && !searchInput.value.trim()) {
+    const results = document.getElementById("searchResults");
+    if (results) renderRecentSearchUsers(results);
+  }
 }
 function renderRecentSearchUsers(res) {
   const recent = getRecentSearchUsers().filter(u => !(myBlocks && myBlocks[u.id]));
@@ -3002,6 +3014,7 @@ function openChatRoom(otherUserId, keepLimit) {
   reorderChatListItems();
   if (!keepLimit) msgLimit = 50;
   currentChatOtherUserId = otherUserId;
+  // Persist each opened conversation so it stays in the Search screen's recent list.
   db.collection("users").doc(otherUserId).get().then(doc => { if (doc.exists) rememberSearchUser({id:doc.id, ...doc.data()}); }).catch(() => {});
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
   if (userUnsubscribe) { userUnsubscribe(); userUnsubscribe = null; }
@@ -5283,4 +5296,24 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 #searchView .search-recent-tag{font-size:10px;font-weight:700;color:#3390ec;background:rgba(51,144,236,.10);padding:6px 8px;border-radius:999px;white-space:nowrap}
 #searchView .search-user-card{transition:transform .16s ease,background .16s ease,border-color .16s ease}
 #searchView .search-user-card:active{transform:scale(.985)}
+
+/* Search screen refresh: cleaner Telegram-inspired layout and visible recent conversations */
+#searchView .search-screen-top{padding:16px 16px 14px;background:var(--babylon-surface-card);border-bottom:1px solid var(--babylon-border);box-shadow:0 2px 10px rgba(15,35,60,.045)}
+#searchView .search-screen-heading{gap:12px;margin-bottom:14px}
+#searchView .search-heading-copy h2{font-size:21px;font-weight:800;letter-spacing:-.35px}
+#searchView .search-heading-copy p{font-size:12px;opacity:.86}
+#searchView .search-field{min-height:48px;border-radius:25px;background:var(--babylon-dark);border:1px solid var(--babylon-border);padding:0 16px;box-shadow:none;gap:11px}
+#searchView .search-field:focus-within{border-color:#3390ec;box-shadow:0 0 0 2px rgba(51,144,236,.13)}
+#searchView .search-field-icon{color:#3390ec}
+#searchView .search-results{padding:10px 8px 22px;background:var(--babylon-dark)}
+#searchView .search-recent-label{margin:7px 12px 10px;font-size:12px;font-weight:800;letter-spacing:.1px;color:var(--text-muted)}
+#searchView .search-user-card{margin:5px 4px;padding:11px 12px;border-radius:14px;border:1px solid transparent;background:var(--babylon-surface-card);box-shadow:none;min-height:72px}
+#searchView .search-user-card:hover{background:var(--babylon-surface-hover);border-color:var(--babylon-border)}
+#searchView .search-user-card .avatar{width:48px;height:48px;min-width:48px;border-radius:50%;overflow:hidden}
+#searchView .search-user-card .chat-item-name{font-size:14px;font-weight:750;color:var(--text-main)}
+#searchView .search-user-card .chat-item-sub{font-size:12px;color:var(--text-muted)}
+#searchView .search-recent-tag{font-size:10px;font-weight:750;color:#2388df;background:rgba(51,144,236,.12);padding:6px 9px;border-radius:999px;white-space:nowrap}
+#searchView .search-state-card{border-radius:16px;background:var(--babylon-surface-card);border-color:var(--babylon-border)}
+@media(max-width:480px){#searchView .search-screen-top{padding:13px 12px}#searchView .search-results{padding-inline:7px}#searchView .search-user-card{padding:10px;min-height:68px}}
+
 </style>
