@@ -1530,6 +1530,25 @@ i[data-ic]{display:inline-flex;font-style:normal}
 #notificationSettingsView .sx-back {
   color:#fff !important;
 }
+/* استثناء أيقونة الهلال الخاصة بالوضع الليلي من فرض اللون الأبيض */
+#settingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]),
+#chatSettingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]),
+#notificationSettingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]) {
+  color:inherit !important;
+  stroke:currentColor !important;
+}
+#settingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]) path,
+#chatSettingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]) path,
+#notificationSettingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]) path {
+  stroke:currentColor !important;
+  fill:none !important;
+}
+.app-container[data-app-theme="light"] #settingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]),
+.app-container[data-app-theme="light"] #chatSettingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]),
+.app-container[data-app-theme="light"] #notificationSettingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]) { color:#52657a !important; }
+.app-container[data-app-theme="dark"] #settingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]),
+.app-container[data-app-theme="dark"] #chatSettingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]),
+.app-container[data-app-theme="dark"] #notificationSettingsView svg:has(path[d^="M20.9 13A8.5 8.5 0 0 1 11 3.1"]) { color:#f5d76e !important; }
 </style>
 </head>
 
