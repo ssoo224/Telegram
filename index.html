@@ -2984,9 +2984,15 @@ function openChatRoom(otherUserId, keepLimit) {
         b.onmouseup = b.onmouseleave = () => clearTimeout(pressTimer);
         b.onclick = (e) => {
           if (suppressNextMessageClick) { suppressNextMessageClick = false; return; }
-          if (!messageSelectionMode) return;
-          if (e.target.closest('button,input,audio,.msg-image img')) return;
-          e.preventDefault(); e.stopPropagation(); toggleMessageSelection(doc.id);
+          // Keep media controls interactive; a normal tap on the message opens its actions,
+          // while a long press enters multi-select mode.
+          if (e.target.closest('button,input,audio,.msg-image img,a')) return;
+          if (messageSelectionMode) {
+            e.preventDefault(); e.stopPropagation(); toggleMessageSelection(doc.id);
+            return;
+          }
+          e.preventDefault(); e.stopPropagation();
+          openMsgModal(doc.id, m.text || (m.imageUrl ? 'صورة' : ''), m.senderId, m.reactions || {}, !!m.audioUrl);
         };
 
         if (existingTyping) {
