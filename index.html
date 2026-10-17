@@ -1614,7 +1614,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
 
   <!-- شاشة الدخول والتسجيل -->
   <section id="authPage" class="auth-page">
-    <div class="babylon-logo">🏛</div>
+    <div class="babylon-logo"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M8 54h48M12 48h40M16 48V28h32v20M12 24h40L32 10 12 24Zm8 4v20m8-20v20m8-20v20m8-20v20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <h1 class="auth-title">Babylon Chat</h1>
     <p class="auth-subtitle">تواصل عبر البريد أو اسم المستخدم بنكهة بابلية أصيلة</p>
 
@@ -1678,7 +1678,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
 
   <!-- صفحة التحقق من البريد -->
   <section id="verifyPage" class="auth-page hidden">
-    <div class="babylon-logo">✉</div>
+    <div class="babylon-logo"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <h1 class="auth-title">تحقق من بريدك</h1>
     <p class="auth-subtitle">أرسلنا رابط التحقق إلى<br><b id="verifyEmail" style="direction:ltr;unicode-bidi:isolate;color:var(--babylon-gold);"></b><br>افتح الرابط ثم ارجع واضغط "تم التحقق". إذا ما وصل شيّك مجلد السبام.</p>
     <div style="width:100%;">
@@ -2747,20 +2747,20 @@ function applyChatBlockState() {
   if (!chatOpen) { chatBlockedNow = false; bn.classList.add('hidden'); return; }
   if (myBlocks[uid]) {
     chatBlockedNow = true; chatBlockedMsg = 'أنت حاظر هذا المستخدم، ألغِ الحظر حتى تراسله';
-    bn.innerHTML = '⊘ أنت حظرت هذا المستخدم<br><button onclick="unblockUser(currentChatOtherUserId)">إلغاء الحظر</button>';
+    bn.innerHTML = ' أنت حظرت هذا المستخدم<br><button onclick="unblockUser(currentChatOtherUserId)">إلغاء الحظر</button>';
     bn.classList.remove('hidden'); setBars(true); return;
   }
   blockedByThem(uid).then(b => {
     if (currentChatOtherUserId !== uid) return;
     chatBlockedNow = b; chatBlockedMsg = 'تم حظرك من قبل هذا المستخدم';
-    if (b) { bn.textContent = '⊘ تم حظرك من قبل هذا المستخدم، ما تكدر ترسل له رسائل'; bn.classList.remove('hidden'); setBars(true); }
+    if (b) { bn.textContent = ' تم حظرك من قبل هذا المستخدم، ما تكدر ترسل له رسائل'; bn.classList.remove('hidden'); setBars(true); }
     else { bn.classList.add('hidden'); setBars(false); }
   });
 }
 function blockUser(uid) {
   if (!currentUser || !uid || uid === currentUser.uid) return;
   db.collection('users').doc(currentUser.uid).collection('blocks').doc(uid).set({ at: Date.now() })
-    .then(() => showToast('تم حظر المستخدم ⊘')).catch(() => showToast('تعذر الحظر'));
+    .then(() => showToast('تم حظر المستخدم ')).catch(() => showToast('تعذر الحظر'));
 }
 function unblockUser(uid) {
   db.collection('users').doc(currentUser.uid).collection('blocks').doc(uid).delete()
@@ -2773,7 +2773,7 @@ function toggleBlockCurrent() {
 }
 function updateBlockBtn() {
   const b = document.getElementById('otherBlockBtn'); if (!b) return;
-  b.querySelector('span').textContent = myBlocks[currentChatOtherUserId] ? '✓ إلغاء الحظر' : '⊘ حظر';
+  b.querySelector('span').innerHTML = myBlocks[currentChatOtherUserId] ? '<i data-ic="ban" aria-hidden="true"></i> إلغاء الحظر' : '<i data-ic="ban" aria-hidden="true"></i> حظر';
 }
 function sxOpenBlocked(refresh) {
   let ov = document.getElementById('blkOverlay');
@@ -5478,4 +5478,11 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 .posts-grid-header [data-ic]{display:inline-flex;align-items:center;justify-content:center;}
 .posts-grid-header [data-ic] svg{width:18px;height:18px;}
 #otherBlockBtn [data-ic] svg{width:18px;height:18px;}
+</style>
+
+<style id="auth-gold-buttons-white-text-fix">
+/* Gold authentication actions keep readable white Arabic labels in both themes. */
+#authPage .babylon-btn, #verifyPage .babylon-btn, #authPage .babylon-tab.active, #verifyPage button.babylon-btn { color:#fff !important; -webkit-text-fill-color:#fff !important; }
+#authPage .babylon-logo svg, #verifyPage .babylon-logo svg { width:42px; height:42px; display:block; }
+#otherBlockBtn span [data-ic] svg, #otherBlockBtn span i svg { width:16px; height:16px; vertical-align:middle; }
 </style>
