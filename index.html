@@ -5210,4 +5210,26 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
   outline: 0 !important;
   box-shadow: none !important;
 }
+
+/* Definitive fix: disable the gold focus ring only for the username search field */
+#searchView .search-field,
+#searchView .search-field:focus,
+#searchView .search-field:focus-within,
+#searchView .search-field:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: var(--babylon-border, #d7dee7) !important;
+}
+#searchView .search-field input,
+#searchView .search-field input:focus,
+#searchView .search-field input:focus-visible,
+#searchView .search-field input:active {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+#searchView .search-field:focus-within::before,
+#searchView .search-field:focus-within::after { box-shadow: none !important; outline: none !important; }
 </style>
