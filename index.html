@@ -726,21 +726,10 @@ body {
 
 .recording-indicator { color: #f87171; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
 
- .msg-actions-modal {
+.msg-actions-modal {
   position: fixed; inset: 0; background: rgba(0,0,0,0.65);
   display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
-  opacity: 1; backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
 }
-/* Smooth, premium pop-in for the message action sheet. */
-#msgModal:not(.hidden) { animation: msgBackdropIn 220ms ease-out both; }
-#msgModal:not(.hidden) .msg-actions-shell { animation: msgActionsPop 360ms cubic-bezier(.2,.85,.25,1.18) both; transform-origin: center center; }
-#msgModal:not(.hidden) .emoji-picker-bar { animation: msgEmojiRise 330ms cubic-bezier(.2,.8,.2,1) 35ms both; }
-#msgModal:not(.hidden) .msg-actions-card { animation: msgCardRise 360ms cubic-bezier(.2,.85,.25,1.12) 55ms both; }
-@keyframes msgBackdropIn { from { opacity: 0; backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); } to { opacity: 1; backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); } }
-@keyframes msgActionsPop { 0% { opacity: 0; transform: translateY(16px) scale(.88); filter: blur(3px); } 72% { opacity: 1; transform: translateY(-2px) scale(1.015); filter: blur(0); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
-@keyframes msgEmojiRise { from { opacity: 0; transform: translateY(10px) scale(.92); } to { opacity: 1; transform: translateY(0) scale(1); } }
-@keyframes msgCardRise { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
-@media (prefers-reduced-motion: reduce) { #msgModal:not(.hidden), #msgModal:not(.hidden) .msg-actions-shell, #msgModal:not(.hidden) .emoji-picker-bar, #msgModal:not(.hidden) .msg-actions-card { animation: none !important; } }
 .emoji-picker-bar {
   background: var(--babylon-surface); border: 1px solid var(--babylon-border);
   border-radius: 30px; padding: 8px 14px; display: flex; gap: 12px; margin-bottom: 12px;
@@ -1931,7 +1920,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
       <button id="btnCopyMsg" type="button" onclick="actionCopy()"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg><span>نسخ النص</span></button>
       <button id="btnEditMsg" type="button" class="hidden" onclick="actionEdit()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16.5-.8 4.3 4.3-.8L19.8 7.7a2.1 2.1 0 0 0-3-3Z"/><path d="m15.5 6 3 3"/></svg><span>تعديل الرسالة</span></button>
       <button id="btnDeleteMsg" type="button" class="danger hidden" onclick="openMessageDeleteOptions()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7"/></svg><span>حذف الرسالة</span></button>
-      <button id="btnCloseMsg" type="button" class="msg-action-cancel" onclick="document.getElementById('msgModal').classList.add('hidden')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>إلغاء</span></button>
+      <button id="btnCloseMsg" type="button" class="msg-action-cancel" onclick="closeMsgModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>إلغاء</span></button>
     </div>
   </div>
 </div>
@@ -3003,7 +2992,7 @@ function openChatRoom(otherUserId, keepLimit) {
             return;
           }
           e.preventDefault(); e.stopPropagation();
-          openMsgModal(doc.id, m.text || (m.imageUrl ? 'صورة' : ''), m.senderId, m.reactions || {}, !!m.audioUrl);
+          openMsgModal(doc.id, m.text || (m.imageUrl ? 'صورة' : ''), m.senderId, m.reactions || {}, !!m.audioUrl, b);
         };
 
         if (existingTyping) {
@@ -3071,7 +3060,7 @@ function triggerSwipeReply(text) {
   showToast("تم تفعيل الرد على الرسالة");
 }
 
-function openMsgModal(msgId, text, senderId, reactions, isAudioMessage) {
+function openMsgModal(msgId, text, senderId, reactions, isAudioMessage, anchorElement) {
   selectedMsgId = msgId;
   selectedMsgText = text || "";
   selectedMsgSender = senderId;
@@ -3090,12 +3079,51 @@ function openMsgModal(msgId, text, senderId, reactions, isAudioMessage) {
   setVisible("btnCopyMsg", !isAudioMessage && !!String(selectedMsgText).trim());
   setVisible("btnEditMsg", owned && !isAudioMessage);
   setVisible("btnDeleteMsg", true);
-  if (modal) modal.classList.remove("hidden");
+  if (modal) {
+    const shell = modal.querySelector(".msg-actions-shell");
+    modal.classList.remove("hidden");
+    // Position the emoji bar and action panel as one floating menu directly above the tapped message.
+    if (shell && anchorElement) {
+      shell.style.position = "fixed";
+      shell.style.left = "0px";
+      shell.style.top = "0px";
+      shell.style.margin = "0";
+      shell.style.maxHeight = "calc(100vh - 24px)";
+      shell.style.overflowY = "auto";
+      shell.style.transformOrigin = "center bottom";
+      const anchor = anchorElement.getBoundingClientRect();
+      const panel = shell.getBoundingClientRect();
+      const gap = 10;
+      const margin = 12;
+      let left = anchor.left + anchor.width / 2 - panel.width / 2;
+      left = Math.max(margin, Math.min(left, window.innerWidth - panel.width - margin));
+      let top = anchor.top - panel.height - gap;
+      if (top < margin) top = Math.min(window.innerHeight - panel.height - margin, anchor.bottom + gap);
+      top = Math.max(margin, Math.min(top, window.innerHeight - panel.height - margin));
+      shell.style.left = `${left}px`;
+      shell.style.top = `${top}px`;
+      shell.style.transformOrigin = `center ${top + panel.height < anchor.top ? "bottom" : "top"}`;
+    } else if (shell) {
+      shell.style.position = "relative";
+      shell.style.left = "auto";
+      shell.style.top = "auto";
+      shell.style.margin = "auto";
+      shell.style.maxHeight = "calc(100vh - 36px)";
+      shell.style.overflowY = "auto";
+      shell.style.transformOrigin = "center center";
+    }
+    // Restart the entrance motion on every opening.
+    modal.classList.remove("msg-modal-animate-in");
+    void modal.offsetWidth;
+    modal.classList.add("msg-modal-animate-in");
+  }
 }
 
 function closeMsgModal(e) {
   if (!e || e.target.id === "msgModal") {
-    document.getElementById("msgModal")?.classList.add("hidden");
+    const modal = document.getElementById("msgModal");
+    modal?.classList.add("hidden");
+    modal?.classList.remove("msg-modal-animate-in");
     document.getElementById("fullEmojiGrid")?.classList.add("hidden");
   }
 }
@@ -4802,6 +4830,44 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 .message-delete-card button:disabled{opacity:.65;cursor:wait}
 </style>
 
+
+<style id="babylon-message-modal-premium-animation">
+/* Smooth, premium entrance for the message actions, with a subtle origin from the tapped message area. */
+#msgModal.msg-actions-modal.msg-modal-animate-in {
+  animation: babylonMsgBackdropIn .22s cubic-bezier(.2,.75,.25,1) both;
+}
+#msgModal.msg-actions-modal.msg-modal-animate-in .msg-actions-shell {
+  transform-origin: center center;
+  animation: babylonMsgPanelIn .38s cubic-bezier(.16,1,.3,1) both;
+  will-change: transform, opacity, filter;
+}
+#msgModal.msg-actions-modal.msg-modal-animate-in .emoji-picker-bar {
+  animation: babylonMsgItemIn .34s .045s cubic-bezier(.16,1,.3,1) both;
+}
+#msgModal.msg-actions-modal.msg-modal-animate-in .msg-actions-card {
+  animation: babylonMsgItemIn .36s .075s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes babylonMsgBackdropIn {
+  from { opacity: 0; backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); }
+  to { opacity: 1; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+}
+@keyframes babylonMsgPanelIn {
+  0% { opacity: 0; transform: translateY(18px) scale(.92); filter: blur(3px); }
+  68% { opacity: 1; transform: translateY(-2px) scale(1.012); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes babylonMsgItemIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #msgModal.msg-actions-modal.msg-modal-animate-in,
+  #msgModal.msg-actions-modal.msg-modal-animate-in .msg-actions-shell,
+  #msgModal.msg-actions-modal.msg-modal-animate-in .emoji-picker-bar,
+  #msgModal.msg-actions-modal.msg-modal-animate-in .msg-actions-card { animation: none !important; }
+}
+</style>
+
 <!-- Babylon Chat: consistent message bubble sizing for short text -->
 <style id="babylon-consistent-message-bubbles">
 .msg-bubble {
@@ -4836,4 +4902,28 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 .multi-select-bar button:first-of-type{background:var(--babylon-gold,#d4af37);color:#171717}
 .msg-bubble.selected-message{outline:2px solid var(--babylon-gold,#d4af37);outline-offset:2px;box-shadow:0 0 0 5px rgba(212,175,55,.16)}
 #messagesArea .msg-bubble[aria-selected="true"]{position:relative}
+</style>
+
+
+<style id="babylon-message-actions-floating-redesign">
+/* Floating message menu: anchored above the selected bubble, including its reaction strip. */
+#msgModal.msg-actions-modal { align-items:flex-start; justify-content:flex-start; padding:0; background:rgba(5,12,22,.16); backdrop-filter:blur(1.5px); -webkit-backdrop-filter:blur(1.5px); }
+#msgModal .msg-actions-shell { width:min(360px,calc(100vw - 24px)); gap:8px; z-index:2; }
+#msgModal .emoji-picker-bar { order:0; border-radius:18px; padding:8px 10px; gap:7px; box-shadow:0 10px 28px rgba(0,0,0,.18); }
+#msgModal .msg-actions-card { order:1; border-radius:18px; padding:6px; box-shadow:0 14px 34px rgba(0,0,0,.22); }
+#msgModal .msg-actions-card button { min-height:43px; }
+#msgModal .emoji-quick-row { gap:4px; }
+#msgModal .emoji-btn { min-width:38px; min-height:38px; font-size:23px; transition:transform .16s ease,background .16s ease; }
+#msgModal .emoji-btn:active { transform:scale(.88); }
+#msgModal .emoji-full-grid { border-top:1px solid var(--babylon-border); margin-top:5px; padding-top:8px; }
+.app-container[data-app-theme="light"] #msgModal.msg-actions-modal { background:rgba(30,41,59,.12); }
+.app-container[data-app-theme="light"] #msgModal .emoji-picker-bar,
+.app-container[data-app-theme="light"] #msgModal .msg-actions-card { background:#fff !important; color:#17212b !important; border-color:#e1e7ef !important; }
+.app-container[data-app-theme="light"] #msgModal .msg-actions-card button { color:#17212b; border-color:#edf0f4; }
+.app-container[data-app-theme="light"] #msgModal .msg-actions-card button.danger { color:#dc2626 !important; }
+.app-container[data-app-theme="light"] #msgModal .emoji-btn { color:#17212b !important; }
+.app-container[data-app-theme="dark"] #msgModal .emoji-picker-bar,
+.app-container[data-app-theme="dark"] #msgModal .msg-actions-card { background:var(--babylon-surface-card,#202d3a) !important; color:var(--text-main,#f1f5f9) !important; }
+@media (max-width:420px) { #msgModal .msg-actions-shell { width:calc(100vw - 24px); } #msgModal .emoji-picker-bar { padding:7px; } }
+@media (prefers-reduced-motion:reduce) { #msgModal .emoji-btn { transition:none; } }
 </style>
