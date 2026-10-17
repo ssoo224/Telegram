@@ -2870,8 +2870,7 @@ function renderRecentSearchUsers(res) {
     if (u.isVerified) { const badge = document.createElement("span"); badge.className = "verified-badge"; badge.textContent = "✓"; name.appendChild(badge); }
     const sub = document.createElement("div"); sub.className = "chat-item-sub"; sub.textContent = "@" + (u.username || "");
     info.append(name, sub);
-    const tag = document.createElement("span"); tag.className = "search-recent-tag"; tag.textContent = "تمت الزيارة";
-    div.append(avatar, info, tag);
+    div.append(avatar, info);
     div.onclick = () => openChatRoom(u.id);
     res.appendChild(div);
   });
@@ -5316,4 +5315,17 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 #searchView .search-state-card{border-radius:16px;background:var(--babylon-surface-card);border-color:var(--babylon-border)}
 @media(max-width:480px){#searchView .search-screen-top{padding:13px 12px}#searchView .search-results{padding-inline:7px}#searchView .search-user-card{padding:10px;min-height:68px}}
 
+
+/* Profile message action: keep its label and SVG icon white in every theme */
+#otherProfileModal .pf-actions .pf-btn.primary,
+#otherProfileModal .pf-actions .pf-btn.primary span,
+#otherProfileModal .pf-actions .pf-btn.primary i,
+#otherProfileModal .pf-actions .pf-btn.primary svg,
+#otherProfileModal .pf-actions .pf-btn.primary svg * {
+  color: #fff !important;
+  fill: none !important;
+  stroke: #fff !important;
+}
+#otherProfileModal .pf-actions .pf-btn.primary { color: #fff !important; }
+#otherProfileModal .pf-actions .pf-btn.primary i { color: #fff !important; }
 </style>
