@@ -2927,7 +2927,7 @@ function openChatRoom(otherUserId, keepLimit) {
         b.ontouchstart = (e) => {
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
-          pressTimer = setTimeout(() => { document.querySelectorAll(".msg-bubble.selected-message").forEach(x=>x.classList.remove("selected-message")); b.classList.add("selected-message"); openMsgModal(doc.id, m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), m.senderId, m.reactions || {}); }, 450);
+          pressTimer = setTimeout(() => { document.querySelectorAll(".msg-bubble.selected-message").forEach(x=>x.classList.remove("selected-message")); b.classList.add("selected-message"); openMsgModal(doc.id, m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), m.senderId, m.reactions || {}, !!m.audioUrl); }, 450);
         };
 
         b.ontouchmove = (e) => {
@@ -2942,7 +2942,7 @@ function openChatRoom(otherUserId, keepLimit) {
         };
 
         b.onmousedown = () => {
-          pressTimer = setTimeout(() => { document.querySelectorAll(".msg-bubble.selected-message").forEach(x=>x.classList.remove("selected-message")); b.classList.add("selected-message"); openMsgModal(doc.id, m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), m.senderId, m.reactions || {}); }, 450);
+          pressTimer = setTimeout(() => { document.querySelectorAll(".msg-bubble.selected-message").forEach(x=>x.classList.remove("selected-message")); b.classList.add("selected-message"); openMsgModal(doc.id, m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), m.senderId, m.reactions || {}, !!m.audioUrl); }, 450);
         };
         b.onmouseup = b.onmouseleave = () => clearTimeout(pressTimer);
 
@@ -2965,7 +2965,7 @@ function triggerSwipeReply(text) {
   showToast("تم تفعيل الرد على الرسالة");
 }
 
-function openMsgModal(msgId, text, senderId, reactions) {
+function openMsgModal(msgId, text, senderId, reactions, isAudioMessage) {
   selectedMsgId = msgId;
   selectedMsgText = text;
   selectedMsgSender = senderId;
@@ -2985,6 +2985,8 @@ function openMsgModal(msgId, text, senderId, reactions) {
     btnEdit.classList.add("hidden");
     btnDelete.classList.add("hidden");
   }
+  // لا نعرض خيار تعديل الرسالة للصوتيات حتى لو كانت الرسالة للمستخدم الحالي.
+  if (isAudioMessage) btnEdit.classList.add("hidden");
 
   document.getElementById("msgModal").classList.remove("hidden");
 }
@@ -4533,4 +4535,27 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 .app-container[data-app-theme="light"] #msgModal .msg-actions-card button.danger { color:#dc2626 !important; }
 .app-container[data-app-theme="light"] #msgModal .emoji-btn { color:#17212b; }
 .app-container[data-app-theme="light"] #msgModal .emoji-full-grid span:active { background:#eaf0f7; }
+</style>
+
+
+<style id="babylon-light-modal-and-reaction-size-fix">
+/* حجم متوسط وواضح للتفاعل أسفل الرسالة */
+.reactions-row { gap:6px !important; margin-top:6px !important; }
+.reaction-badge { font-size:18px !important; line-height:1.15 !important; padding:3px 8px !important; min-width:30px !important; min-height:29px !important; border-radius:13px !important; }
+/* في الوضع النهاري تكون نافذة تحديد الرسالة بيضاء وحدودها بلون هوية Babylon */
+.app-container[data-app-theme="light"] #msgModal .emoji-picker-bar,
+.app-container[data-app-theme="light"] #msgModal .msg-actions-card {
+  background:#fff !important;
+  color:#17212b !important;
+  border:1.5px solid var(--babylon-gold, #d4af37) !important;
+  box-shadow:0 12px 34px rgba(15,23,42,.16) !important;
+}
+.app-container[data-app-theme="light"] #msgModal .msg-actions-card button {
+  background:#fff !important;
+  color:#17212b !important;
+  border-color:rgba(212,175,55,.28) !important;
+}
+.app-container[data-app-theme="light"] #msgModal .msg-actions-card button.danger { color:#dc2626 !important; }
+.app-container[data-app-theme="light"] #msgModal .emoji-btn { color:#17212b !important; }
+.app-container[data-app-theme="light"] #msgModal .emoji-full-grid span:active { background:#fff8dc !important; }
 </style>
