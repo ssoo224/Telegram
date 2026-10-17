@@ -4722,3 +4722,29 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 .app-container[data-app-theme="light"] .message-delete-card button:not(.danger){background:#f7f8fb;color:#202733;border-color:#e4e7ed}
 .message-delete-card button:disabled{opacity:.65;cursor:wait}
 </style>
+
+<!-- Babylon Chat: consistent message bubble sizing for short text -->
+<style id="babylon-consistent-message-bubbles">
+.msg-bubble {
+  box-sizing: border-box;
+  min-width: 64px;
+  max-width: min(82%, 560px);
+}
+.msg-bubble .msg-text {
+  box-sizing: border-box;
+  padding: 0 2px 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.msg-bubble .msg-meta {
+  align-self: flex-end;
+  max-width: 100%;
+  white-space: nowrap;
+}
+/* Keep media messages natural while short text messages retain a consistent shape. */
+.msg-bubble:has(.msg-image),
+.msg-bubble:has(.audio-player-card) {
+  min-width: 0;
+}
+</style>
