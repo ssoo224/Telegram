@@ -1474,6 +1474,63 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .app-container[data-app-theme="dark"] #profileView .pf-head .pf-actions-edit .pf-btn { color:#fff !important; }
 </style>
 
+
+<style id="babylon-post-and-settings-white-svg-fix">
+/* زر إضافة منشور: النص والأيقونة SVG باللون الأبيض في كلا النمطين */
+#profileView .add-post-fab {
+  color:#fff !important;
+}
+#profileView .add-post-fab .add-post-fab-content {
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:9px !important;
+  color:#fff !important;
+}
+#profileView .add-post-fab .add-post-fab-content > span {
+  color:#fff !important;
+}
+#profileView .add-post-fab .add-post-fab-icon {
+  display:block !important;
+  width:20px !important;
+  height:20px !important;
+  flex:0 0 20px !important;
+  fill:none !important;
+  stroke:#fff !important;
+  stroke-width:2 !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+}
+/* أيقونات SVG داخل صفحات الإعدادات تبقى بيضاء في النهاري والليلي */
+#settingsView svg,
+#chatSettingsView svg,
+#notificationSettingsView svg,
+#settingsView i[data-ic] svg,
+#chatSettingsView i[data-ic] svg,
+#notificationSettingsView i[data-ic] svg {
+  color:#fff !important;
+  stroke:#fff !important;
+}
+#settingsView svg [stroke],
+#chatSettingsView svg [stroke],
+#notificationSettingsView svg [stroke] {
+  stroke:#fff !important;
+}
+#settingsView svg [fill]:not([fill="none"]),
+#chatSettingsView svg [fill]:not([fill="none"]),
+#notificationSettingsView svg [fill]:not([fill="none"]) {
+  fill:#fff !important;
+}
+/* أيقونات الإعدادات المرسومة عبر currentColor */
+#settingsView .sx-ic,
+#settingsView .sx-ch,
+#settingsView .sx-back,
+#settingsView .theme-switch-icon,
+#chatSettingsView .sx-back,
+#notificationSettingsView .sx-back {
+  color:#fff !important;
+}
+</style>
 </head>
 
 <body>
@@ -1643,8 +1700,8 @@ i[data-ic]{display:inline-flex;font-style:normal}
       <div class="posts-grid-header">▧ المنشورات</div>
       <div id="postsGrid" class="posts-grid"></div>
 
-      <button class="add-post-fab" onclick="openPublishOptions()">
-        <span>▧ إضافة منشور</span>
+      <button class="add-post-fab" onclick="openPublishOptions()" aria-label="إضافة منشور">
+        <span class="add-post-fab-content"><svg class="add-post-fab-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M12 8v8M8 12h8"></path></svg><span>إضافة منشور</span></span>
       </button>
     </div>
 
