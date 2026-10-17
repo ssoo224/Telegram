@@ -1770,9 +1770,12 @@ i[data-ic]{display:inline-flex;font-style:normal}
       <div id="multiSelectBar" class="multi-select-bar hidden" role="toolbar" aria-label="إجراءات الرسائل المحددة"><span id="multiSelectCount">تم تحديد 0</span><button type="button" onclick="deleteMultipleMessagesForMe()">حذف لدي فقط</button><button type="button" onclick="clearMessageSelection()" aria-label="إلغاء التحديد">إلغاء</button></div>
 
       <div class="chat-input-container">
-        <div id="replyPreviewBar" class="reply-preview-bar hidden">
-          <div id="replyPreviewText">الرد على: ...</div>
-          <button class="icon-btn" style="width:24px;height:24px;font-size:14px;" onclick="cancelReply()">×</button>
+        <div id="replyPreviewBar" class="reply-preview-bar hidden" role="status" aria-live="polite">
+          <div class="reply-preview-content">
+            <div class="reply-preview-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 10 4 15l5 5M4 15h9a7 7 0 0 0 7-7V5"/></svg><span>الرد على الرسالة</span></div>
+            <div id="replyPreviewText" class="reply-preview-message">...</div>
+          </div>
+          <button class="reply-preview-cancel" type="button" onclick="cancelReply()" aria-label="إلغاء الرد" title="إلغاء الرد"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
         </div>
         
         <div id="blockBanner" class="block-banner hidden"></div>
@@ -3054,7 +3057,8 @@ function deleteMultipleMessagesForMe() {
 
 function triggerSwipeReply(text) {
   replyingToText = text;
-  document.getElementById("replyPreviewText").textContent = "الرد على: " + replyingToText;
+  const previewText = document.getElementById("replyPreviewText");
+  if (previewText) previewText.textContent = replyingToText || "رسالة";
   document.getElementById("replyPreviewBar").classList.remove("hidden");
   document.getElementById("messageInput").focus();
   showToast("تم تفعيل الرد على الرسالة");
@@ -4817,6 +4821,40 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 .app-container[data-app-theme="dark"] #msgModal .msg-actions-card button { color:#f1f5f9; border-color:#334155; }
 #chatDeletePanel button:disabled { opacity:.6; cursor:wait; }
 @media (prefers-reduced-motion:reduce) { #msgModal .msg-actions-card button { transition:none; } }
+</style>
+
+<style id="babylon-delete-reply-theme-fix">
+/* Keep the delete dialog aligned with the selected app theme. */
+.app-container[data-app-theme="light"] .message-delete-card {
+  background:#fff !important; color:#17212b !important; border-color:#e2e8f0 !important;
+}
+.app-container[data-app-theme="light"] .message-delete-heading { color:#17212b !important; }
+.app-container[data-app-theme="light"] .message-delete-description { color:#64748b !important; }
+.app-container[data-app-theme="light"] .message-delete-card button:not(.danger) {
+  background:#f8fafc !important; color:#17212b !important; border-color:#e2e8f0 !important;
+}
+.app-container[data-app-theme="light"] .message-delete-card button.cancel { color:#64748b !important; }
+.app-container[data-app-theme="dark"] .message-delete-card {
+  background:var(--babylon-surface,#171b24) !important; color:var(--babylon-text,#f5f6f8) !important;
+  border-color:var(--babylon-border,rgba(196,155,72,.35)) !important;
+}
+.app-container[data-app-theme="dark"] .message-delete-card button:not(.danger) {
+  background:var(--babylon-card,#222733) !important; color:var(--babylon-text,#f5f6f8) !important;
+}
+/* Reply preview clearly highlights the exact message being replied to. */
+.reply-preview-bar { gap:12px; padding:9px 12px 8px; border-top:1px solid var(--babylon-border,rgba(148,163,184,.18)); }
+.reply-preview-content { min-width:0; flex:1; padding:7px 11px; border-right:3px solid var(--babylon-gold,#c9a45c); border-radius:8px 0 0 8px; background:rgba(201,164,92,.10); }
+.reply-preview-label { display:flex; align-items:center; gap:6px; margin-bottom:4px; color:var(--babylon-gold,#c9a45c); font-size:11px; font-weight:750; }
+.reply-preview-label svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.reply-preview-message { color:var(--text-main,#f4f7fb); font-size:13px; font-weight:650; line-height:1.45; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.reply-preview-cancel { width:32px; height:32px; flex:0 0 32px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--babylon-border,rgba(148,163,184,.25)); border-radius:50%; background:transparent; color:var(--text-muted,#94a3b8); cursor:pointer; }
+.reply-preview-cancel svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.reply-preview-cancel:hover { background:rgba(148,163,184,.13); color:var(--text-main,#f4f7fb); }
+.app-container[data-app-theme="light"] .reply-preview-content { background:#f1f5f9; border-right-color:#b58b2a; }
+.app-container[data-app-theme="light"] .reply-preview-label { color:#8a6818; }
+.app-container[data-app-theme="light"] .reply-preview-message { color:#17212b; }
+.app-container[data-app-theme="light"] .reply-preview-cancel { color:#64748b; border-color:#dbe2ea; }
+.app-container[data-app-theme="dark"] .reply-preview-content { background:rgba(201,164,92,.10); }
 </style>
 
 <style>
