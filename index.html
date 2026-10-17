@@ -1416,6 +1416,19 @@ i[data-ic]{display:inline-flex;font-style:normal}
 @media(max-width:520px) { .edit-profile-content { padding:16px 12px 28px; } .edit-profile-card { padding:17px; border-radius:18px; } .edit-profile-actions { flex-direction:column; } .edit-profile-header { padding:14px 12px; } }
 
 </style>
+
+<style id="babylon-profile-buttons-and-chat-order-fix">
+/* توحيد مقاسات أزرار الملف الشخصي */
+#profileView .pf-actions{display:flex;align-items:stretch;gap:10px;width:100%;}
+#profileView .pf-actions .pf-btn{flex:1 1 0 !important;width:0;min-width:0;height:46px;min-height:46px;padding:0 10px;box-sizing:border-box;border-radius:13px;white-space:nowrap;line-height:1.2;}
+#profileView .pf-actions .pf-btn.primary{flex:1 1 0 !important;}
+#profileView .pf-actions .pf-btn svg{width:18px;height:18px;flex:0 0 18px;}
+#profileView .pf-actions-edit .pf-btn{width:auto;min-width:0;}
+@media(max-width:360px){#profileView .pf-actions{gap:7px}#profileView .pf-actions .pf-btn{font-size:12px;padding:0 6px;gap:5px}}
+/* المحادثة النشطة في الأعلى، والبقية أسفلها حسب آخر نشاط */
+#chatList .chat-item.is-active-chat{order:-1!important;background:var(--babylon-surface-hover);border-inline-start:3px solid var(--babylon-gold);}
+</style>
+
 </head>
 
 <body>
@@ -2809,6 +2822,7 @@ let msgLimit = 50;
 let loadingOlder = false;
 
 function openChatRoom(otherUserId, keepLimit) {
+  reorderChatListItems();
   if (!keepLimit) msgLimit = 50;
   currentChatOtherUserId = otherUserId;
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
@@ -3323,6 +3337,14 @@ function sendMessage(e) {
   }
 }
 
+function reorderChatListItems(){
+  const list=document.getElementById("chatList"); if(!list) return;
+  const items=Array.from(list.querySelectorAll('.chat-item[id^="chat_item_"]'));
+  items.forEach(el=>{const isActive=!!activeChatId && el.dataset.chatid===activeChatId;el.classList.toggle('is-active-chat',isActive);});
+  items.sort((a,b)=>{const aa=a.dataset.chatid===activeChatId?1:0,bb=b.dataset.chatid===activeChatId?1:0;if(aa!==bb)return bb-aa;return (Number(b.dataset.updatedat)||0)-(Number(a.dataset.updatedat)||0);});
+  items.forEach(el=>list.appendChild(el));
+}
+
 function loadChats() {
   startBlocksListener();
   const container = document.getElementById("chatList");
@@ -3348,7 +3370,7 @@ function loadChats() {
         chatDocsList.push({ id: doc.id, data: doc.data() });
       });
 
-      chatDocsList.sort((a, b) => (b.data.updatedAt || 0) - (a.data.updatedAt || 0));
+      chatDocsList.sort((a, b) => { const aa = a.id === activeChatId ? 1 : 0, bb = b.id === activeChatId ? 1 : 0; return aa !== bb ? bb - aa : (b.data.updatedAt || 0) - (a.data.updatedAt || 0); });
       storyPartnerIds = chatDocsList.map(c => (c.data.participants || []).find(id => id !== currentUser.uid)).filter(Boolean);
       renderStoriesBar();
 
@@ -3375,6 +3397,8 @@ function loadChats() {
           container.appendChild(existingItem);
         }
         existingItem.dataset.other = otherId;
+        existingItem.dataset.chatid = chatId;
+        existingItem.dataset.updatedat = String(chatData.updatedAt || 0);
         existingItem.style.display = myBlocks[otherId] ? 'none' : '';
 
         db.collection("users").doc(otherId).get().then(userDoc => {
@@ -3421,6 +3445,7 @@ function loadChats() {
                         ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
                       </div>
                     </div>`;
+                  reorderChatListItems();
                 });
             });
         });
