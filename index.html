@@ -1231,6 +1231,74 @@ i[data-ic]{display:inline-flex;font-style:normal}
   .search-screen-top { padding:14px 12px 12px; }
   .pf-actions-edit .pf-btn { min-width:190px; }
 }
+
+
+/* ===== Final visual consistency and complete theme support ===== */
+.main-header-title::before { content:none !important; display:none !important; }
+.main-header { justify-content:space-between; direction:rtl; }
+.main-header-title { direction:ltr; }
+.main-header-actions { margin-inline-start:auto; }
+
+/* Profile actions: equal, aligned message/block buttons */
+.pf-actions { display:grid !important; grid-template-columns:1fr 1fr; gap:10px; align-items:stretch; }
+.pf-actions .pf-btn,
+.pf-actions .pf-btn.primary { width:100%; min-width:0; min-height:46px; height:46px; flex:initial; border-radius:13px; font-size:14px; font-weight:750; box-shadow:none; }
+.pf-actions .pf-btn.primary { background:var(--babylon-gold); color:#17212b; border:1px solid var(--babylon-gold); }
+.pf-actions #otherBlockBtn { background:transparent; border:1px solid var(--error-color, #e35d6a); color:var(--error-color, #e35d6a); }
+.pf-actions .pf-btn:active { transform:scale(.98); }
+
+/* Simple Telegram-inspired user search */
+.search-view { background:var(--babylon-dark); }
+.search-screen-top { padding:14px 14px 12px; box-shadow:none; }
+.search-screen-heading { gap:10px; margin-bottom:14px; }
+.search-heading-copy h2 { font-size:18px; letter-spacing:-.2px; }
+.search-heading-copy p { font-size:12px; }
+.search-back-btn { border:0; background:transparent; box-shadow:none; }
+.search-field { min-height:48px; border-radius:24px; padding:0 15px; background:var(--babylon-surface-card); border:1px solid var(--babylon-border); box-shadow:none; }
+.search-field:focus-within { border-color:#3390ec; box-shadow:0 0 0 2px rgba(51,144,236,.12); }
+.search-field-icon { color:var(--text-muted); flex-shrink:0; }
+.search-input { color:var(--text-main); background:transparent; min-width:0; font-size:15px; }
+.search-input::placeholder { color:var(--text-muted); opacity:.9; }
+.search-clear-btn { border:0; background:transparent; color:var(--text-muted); border-radius:50%; width:28px; height:28px; font-size:22px; line-height:1; }
+.search-hint { color:var(--text-muted); font-size:12px; padding:10px 4px 0; }
+.search-results { padding:4px 8px 14px; background:var(--babylon-dark); }
+.search-results .chat-item { margin:2px 0; padding:10px 12px; border-radius:12px; border-bottom:0; background:transparent; }
+.search-results .chat-item:active { background:var(--babylon-surface-hover); }
+.search-results .chat-item-name { color:var(--text-main); }
+
+/* Make all modal/sheet/notification surfaces follow current theme */
+.toast { background:var(--babylon-surface-card) !important; color:var(--text-main) !important; border:1px solid var(--babylon-border) !important; box-shadow:0 8px 28px rgba(0,0,0,.16); }
+.msg-actions-card, .viewers-card, .emoji-picker-bar, .set-card { background:var(--babylon-surface-card); color:var(--text-main); border-color:var(--babylon-border); }
+.msg-actions-card button, .set-row { color:var(--text-main); border-color:var(--babylon-border); }
+.pf-card, .pf-row, .pf-val, .pf-row .pf-val { color:var(--text-main); }
+.pf-val { color:var(--text-main) !important; }
+.set-row, .set-card { background:var(--babylon-surface-card); }
+.blk-ov { background:var(--babylon-dark, #0b1120) !important; color:var(--text-main, #f8fafc); }
+.blk-ov .sx-top { background:var(--babylon-surface, #17212b); color:var(--text-main, #f8fafc); border-bottom:1px solid var(--babylon-border, #2e3b4e); }
+.blk-ov .sx-top h2, .blk-row .n { color:var(--text-main, #f8fafc) !important; }
+.blk-row { background:var(--babylon-surface-card, #1e293b) !important; border:1px solid var(--babylon-border, #2e3b4e); }
+.blk-row button { border-color:var(--babylon-border, #2e3b4e); color:var(--text-main, #f8fafc); background:var(--babylon-surface-hover, transparent); }
+.app-container[data-app-theme="light"] .msg-actions-card button,
+.app-container[data-app-theme="light"] .set-row,
+.app-container[data-app-theme="light"] .pf-val,
+.app-container[data-app-theme="light"] .pf-row .pf-val { color:#17212b !important; }
+.app-container[data-app-theme="light"] .toast { background:#fff !important; color:#17212b !important; border-color:#dce4ee !important; }
+.app-container[data-app-theme="light"] .msg-actions-card,
+.app-container[data-app-theme="light"] .viewers-card,
+.app-container[data-app-theme="light"] .set-card,
+.app-container[data-app-theme="light"] .emoji-picker-bar { background:#fff; color:#17212b; border-color:#e1e7ef; }
+.app-container[data-app-theme="light"] .search-view,
+.app-container[data-app-theme="light"] .search-results { background:#f5f7fb; }
+.app-container[data-app-theme="light"] .search-screen-top { background:#fff; border-color:#e1e7ef; }
+.app-container[data-app-theme="light"] .search-field { background:#f1f4f8; border-color:#e1e7ef; }
+.blk-ov[data-app-theme="light"] { --babylon-dark:#f5f7fb; --babylon-surface:#fff; --babylon-surface-card:#fff; --babylon-surface-hover:#edf2f8; --babylon-border:#e1e7ef; --text-main:#17212b; --text-muted:#708094; background:#f5f7fb !important; color:#17212b !important; }
+.blk-ov[data-app-theme="light"] .sx-top { background:#fff; color:#17212b; border-color:#e1e7ef; }
+.blk-ov[data-app-theme="light"] .sx-top h2,
+.blk-ov[data-app-theme="light"] .blk-row .n { color:#17212b !important; }
+.blk-ov[data-app-theme="light"] .blk-row { background:#fff !important; border-color:#e1e7ef; }
+.blk-ov[data-app-theme="light"] .blk-row button { color:#334155; background:#f5f7fb; border-color:#d8e1eb; }
+@media (max-width:380px) { .pf-actions { gap:8px; } .pf-actions .pf-btn, .pf-actions .pf-btn.primary { font-size:13px; } .search-screen-top { padding:12px 10px; } }
+
 </style>
 </head>
 
@@ -2368,6 +2436,8 @@ function sxOpenBlocked(refresh) {
   let ov = document.getElementById('blkOverlay');
   if (!ov) { ov = document.createElement('div'); ov.id = 'blkOverlay'; ov.className = 'blk-ov'; document.body.appendChild(ov); }
   else if (!refresh) return;
+  const themeRoot = document.querySelector('.app-container');
+  if (themeRoot && themeRoot.dataset.appTheme) ov.dataset.appTheme = themeRoot.dataset.appTheme;
   ov.innerHTML = '<div class="sx-top"><button type="button" class="sx-back" onclick="document.getElementById(\'blkOverlay\').remove()" aria-label="رجوع"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><h2>المستخدمون المحظورون</h2></div><div class="bl" id="blkList"></div>';
   const ids = Object.keys(myBlocks), list = ov.querySelector('#blkList');
   if (!ids.length) { list.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:30px">ما عندك مستخدمين محظورين</div>'; return; }
