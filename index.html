@@ -5486,3 +5486,35 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 #authPage .babylon-logo svg, #verifyPage .babylon-logo svg { width:42px; height:42px; display:block; }
 #otherBlockBtn span [data-ic] svg, #otherBlockBtn span i svg { width:16px; height:16px; vertical-align:middle; }
 </style>
+
+<script id="babylon-android-back-button-support">
+(function(){
+  if (window.__babylonBackSupportInstalled) return;
+  window.__babylonBackSupportInstalled = true;
+  const guard = () => { try { history.pushState({babylonBackGuard:true}, '', location.href); } catch(e) {} };
+  const visible = id => { const el=document.getElementById(id); return !!el && !el.classList.contains('hidden') && getComputedStyle(el).display!=='none'; };
+  const closeTopLayer = () => {
+    // Close the top-most transient panel before leaving its underlying section.
+    if (visible('viewersModal')) { if(typeof closeViewersList==='function') closeViewersList(); else document.getElementById('viewersModal').classList.add('hidden'); return true; }
+    if (visible('msgModal')) { if(typeof closeMsgModal==='function') closeMsgModal({target:document.getElementById('msgModal')}); else document.getElementById('msgModal').classList.add('hidden'); return true; }
+    if (visible('coverModal')) { if(typeof closeCoverModalDirect==='function') closeCoverModalDirect(); else document.getElementById('coverModal').classList.add('hidden'); return true; }
+    if (visible('editModal')) { if(typeof closeEditModalDirect==='function') closeEditModalDirect(); else document.getElementById('editModal').classList.add('hidden'); return true; }
+    if (visible('storyComposerModal')) { document.getElementById('storyComposerModal').classList.add('hidden'); return true; }
+    if (visible('chatSearchPanel')) { if(typeof closeChatSearch==='function') closeChatSearch(); else document.getElementById('chatSearchPanel').classList.add('hidden'); return true; }
+    if (visible('chatMoreMenu')) { if(typeof closeChatMenus==='function') closeChatMenus(); else document.getElementById('chatMoreMenu').classList.add('hidden'); return true; }
+    if (visible('storyViewer')) { if(typeof closeStoryViewer==='function') closeStoryViewer(); else document.getElementById('storyViewer').classList.add('hidden'); return true; }
+    return false;
+  };
+  const currentView = () => ['chatView','editProfileView','chatSettingsView','notificationSettingsView','settingsView','otherUserProfileView','profileView','searchView','homeView'].find(id=>visible(id));
+  window.addEventListener('popstate', function(){
+    if (closeTopLayer()) { guard(); return; }
+    const view=currentView();
+    if (view==='chatView') { if(typeof goHome==='function') goHome(); else if(typeof showView==='function') showView('homeView'); guard(); return; }
+    if (view==='editProfileView') { if(typeof openProfile==='function') openProfile(); else showView('profileView'); guard(); return; }
+    if (view==='chatSettingsView' || view==='notificationSettingsView') { showView('settingsView'); guard(); return; }
+    if (view==='settingsView' || view==='profileView' || view==='otherUserProfileView' || view==='searchView') { if(typeof goHome==='function') goHome(); else showView('homeView'); guard(); return; }
+    // On the home screen, allow the browser/app to handle Back normally.
+  });
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',guard,{once:true}); else guard();
+})();
+</script>
