@@ -1463,6 +1463,16 @@ body:has(.app-container[data-app-theme="light"]) #publishTypeModal .story-type-b
 body:has(.app-container[data-app-theme="light"]) #publishTypeModal .story-type-btn:last-of-type{background:#fff!important;color:#9a6b00!important;border:1px solid #d4a017!important}
 body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .viewers-card{background:#202d3a!important;color:#f1f5f9!important}
 body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .viewers-title{color:#f1f5f9!important}
+
+/* وضوح زر القصة محدودة الوقت وأيقونته في نافذة اختيار نوع المنشور */
+#publishTypeModal .story-type-limited,
+#publishTypeModal .story-type-limited:focus,
+#publishTypeModal .story-type-limited:hover{color:#fff!important;-webkit-text-fill-color:#fff!important;}
+#publishTypeModal .story-type-limited svg{stroke:#fff!important;color:#fff!important;}
+body:has(.app-container[data-app-theme="light"]) #publishTypeModal .story-type-limited{color:#fff!important;-webkit-text-fill-color:#fff!important;background:linear-gradient(135deg,#c49a16,#e2bd43)!important;border-color:#d4a017!important;}
+body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-limited{color:#fff!important;-webkit-text-fill-color:#fff!important;}
+.pinned-stories-heading-icon{width:19px;height:19px;display:inline-block;vertical-align:-4px;margin-inline-end:5px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
 /* SVG badge for pinned stories */
 .pinned-story-icon{width:15px;height:15px;display:inline-block;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .post-grid-item .st-badge{display:flex;align-items:center;gap:4px}
@@ -1840,7 +1850,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .viewers-title
           <div class="pf-row-body"><div id="otherJoinDisplay" class="pf-val"></div><div class="pf-lbl">تاريخ الانضمام</div></div>
         </div>
       </div>
-      <div id="otherPinnedWrap" class="hidden"><div class="posts-grid-header">⌖ القصص المثبتة</div><div id="otherPinnedGrid" class="posts-grid"></div></div>
+      <div id="otherPinnedWrap" class="hidden"><div class="posts-grid-header"><svg class="pinned-stories-heading-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg> القصص المثبتة</div><div id="otherPinnedGrid" class="posts-grid"></div></div>
     </div>
 
     <!-- شاشة الإعدادات العامة -->
@@ -2061,7 +2071,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .viewers-title
 <div id="publishTypeModal" class="viewers-modal hidden" onclick="if(event.target.id==='publishTypeModal')this.classList.add('hidden')">
   <div class="viewers-card" style="padding:20px; gap:12px;">
     <div class="viewers-title" style="display:flex;align-items:center;justify-content:center;gap:8px">اختر نوع المنشور <svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
-    <button class="babylon-btn story-type-btn" onclick="selectPublishType('story')"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> قصة (بوقت تحدده)</button>
+    <button class="babylon-btn story-type-btn story-type-limited" onclick="selectPublishType('story')"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17M8 13h3M8 16h6"/></svg> قصة (بوقت محدود)</button>
     <button class="babylon-btn story-type-btn" style="background:transparent; border:1px solid var(--babylon-gold); color:var(--babylon-gold);" onclick="selectPublishType('post')"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg> منشور دائم بالبروفايل</button>
   </div>
 </div>
@@ -2075,7 +2085,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .viewers-title
     <div class="sc-caption-wrap"><label for="scCaption" class="sc-caption-label"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h6"/></svg> وصف القصة <span>اختياري</span></label><textarea id="scCaption" class="babylon-input rtl sc-caption-input" maxlength="200" rows="3" placeholder="اكتب وصفًا جميلًا لقصتك..." oninput="updateStoryCaptionCount()" style="resize:vertical;user-select:text;"></textarea><div class="sc-caption-foot"><span>أضف تفاصيل تساعد أصدقاءك على فهم القصة</span><span id="scCaptionCount">0/200</span></div></div>
     <div class="sc-section-label"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> مدة ظهور القصة</div>
     <div id="scDur" class="sc-chips"></div>
-    <label class="sc-pin-label"><input type="checkbox" id="scPin"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 3 8 0-1 6 3 3v2H6v-2l3-3Z M12 14v7"/></svg><span>تثبيت بالملف الشخصي <small>تبقى ظاهرة دائمًا</small></span></label>
+    <label class="sc-pin-label"><input type="checkbox" id="scPin"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg><span>تثبيت بالملف الشخصي <small>تبقى ظاهرة دائمًا</small></span></label>
     <button id="scPublish" class="babylon-btn" onclick="publishStory()">نشر القصة</button>
     <button class="babylon-btn" style="background:transparent;border:1px solid var(--babylon-border);color:var(--text-muted);margin-top:0" onclick="closeComposer()">إلغاء</button>
   </div>
@@ -4428,7 +4438,7 @@ function renderTiles(grid, list, mine) {
     const act = isActive(s);
     const d = document.createElement('div');
     d.className = 'post-grid-item' + (!act && !s.pinned ? ' st-old' : '');
-    const badge = s.pinned ? '<svg class="pinned-story-icon" viewBox="0 0 24 24" aria-label="قصة مثبتة" role="img"><path d="m8 3 8 0-1 6 3 3v2H6v-2l3-3Z M12 14v7"/></svg><span>مثبتة</span>' : act ? '<svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>' + esc(leftTxt(s.expiresAt)) + '</span>' : 'أرشيف';
+    const badge = s.pinned ? '<svg class="pinned-story-icon" viewBox="0 0 24 24" aria-label="قصة مثبتة" role="img"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg><span>مثبتة</span>' : act ? '<svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>' + esc(leftTxt(s.expiresAt)) + '</span>' : 'أرشيف';
     d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (s.videoUrl ? '<div class="vid-badge"><svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 10 6-10 6Z"/></svg></div>' : '') + (mine ? `<div class="st-badge">${badge}</div>` : '');
     d.onclick = () => {
       const play = list.slice().reverse();
@@ -4537,7 +4547,7 @@ function showStory() {
   cap.textContent = s.caption || '';
   cap.classList.toggle('hidden', !s.caption);
   $('svBars').innerHTML = SV.list.map(() => '<div class="sv-bar"><i></i></div>').join('');
-  $('svTime').innerHTML = esc(ago(s.createdAt)) + (SV.mine ? (s.pinned ? ' · <svg class="pinned-story-icon" viewBox="0 0 24 24" aria-label="قصة مثبتة" role="img"><path d="m8 3 8 0-1 6 3 3v2H6v-2l3-3Z M12 14v7"/></svg> مثبتة' : isActive(s) ? ' · تنتهي بعد ' + esc(leftTxt(s.expiresAt)) : ' · أرشيف') : '');
+  $('svTime').innerHTML = esc(ago(s.createdAt)) + (SV.mine ? (s.pinned ? ' · <svg class="pinned-story-icon" viewBox="0 0 24 24" aria-label="قصة مثبتة" role="img"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg> مثبتة' : isActive(s) ? ' · تنتهي بعد ' + esc(leftTxt(s.expiresAt)) : ' · أرشيف') : '');
   svFooter(s);
   markSeen(SV.uid, s.createdAt);
   if (!SV.mine && currentUser) {
@@ -4554,7 +4564,7 @@ function showStory() {
 function svFooter(s) {
   const f = $('svFoot');
   if (SV.mine) {
-    f.innerHTML = `<div class="sv-own"><button class="sv-pill" onclick="openViewersList()"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg> <span id="svViews">0</span></button><button class="sv-pill" onclick="svPin()"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 3 8 0-1 6 3 3v2H6v-2l3-3Z M12 14v7"/></svg> ${s.pinned ? 'إلغاء التثبيت' : 'تثبيت'}</button><button class="sv-pill" onclick="svDelete()"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-10 0 1 14h10l1-14M10 10v6m4-6v6"/></svg> حذف</button></div>`;
+    f.innerHTML = `<div class="sv-own"><button class="sv-pill" onclick="openViewersList()"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg> <span id="svViews">0</span></button><button class="sv-pill" onclick="svPin()"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg> ${s.pinned ? 'إلغاء التثبيت' : 'تثبيت'}</button><button class="sv-pill" onclick="svDelete()"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-10 0 1 14h10l1-14M10 10v6m4-6v6"/></svg> حذف</button></div>`;
     db.collection('stories').doc(s.id).collection('views').get().then(q => {
       if (SV.list[SV.i] !== s) return;
       SV.views = q.docs.map(d => d.data());
