@@ -5197,16 +5197,16 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 @media (prefers-reduced-motion:reduce) { #searchView .search-user-card { transition:none; } }
 
 
-/* Remove the enclosing box around the username search field */
+/* Keep the search field; remove only the gold focus rectangle */
 #searchView .search-field {
-  border: 0 !important;
+  border: 1px solid var(--babylon-border) !important;
   outline: 0 !important;
   box-shadow: none !important;
-  background: transparent !important;
-  border-radius: 0 !important;
+  background: var(--babylon-surface-card, var(--babylon-surface)) !important;
+  border-radius: 15px !important;
 }
 #searchView .search-field:focus-within {
-  border: 0 !important;
+  border-color: var(--babylon-border) !important;
   outline: 0 !important;
   box-shadow: none !important;
 }
