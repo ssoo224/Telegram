@@ -906,7 +906,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
       <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px;text-align:right;">اكتب بريدك الإلكتروني وراح نرسل لك رابط لتعيين كلمة مرور جديدة.</p>
       <div class="input-group">
         <label>البريد الإلكتروني</label>
-        <input id="forgotEmail" class="babylon-input" type="email" placeholder="name@domain.com">
+        <input id="forgotEmail" class="babylon-input" type="text" inputmode="email" autocapitalize="off" placeholder="name@domain.com أو اسم المستخدم">
         <span id="forgotEmailError" class="field-error hidden"></span>
       </div>
       <button type="button" class="babylon-btn" onclick="sendReset()">إرسال رابط الاستعادة</button>
@@ -2863,33 +2863,54 @@ function closeForgotPassword() {
 }
 function sendReset() {
   clearErrors();
-  const email = document.getElementById('forgotEmail').value.trim();
-  if (!email || !email.includes('@')) return showFieldError('forgotEmailError', 'اكتب بريدك الإلكتروني');
-  auth.sendPasswordResetEmail(email).then(() => {
-    showToast('إذا البريد مسجل عندنا، وصلك رابط الاستعادة. شيّك السبام');
-    closeForgotPassword();
-  }).catch(err => {
-    if (err.code === 'auth/invalid-email') showFieldError('forgotEmailError', 'البريد الإلكتروني غير صالح');
-    else if (err.code === 'auth/too-many-requests') showFieldError('forgotEmailError', 'محاولات كثيرة، جرّب بعد قليل');
-    else { showToast('إذا البريد مسجل عندنا، وصلك رابط الاستعادة. شيّك السبام'); closeForgotPassword(); }
+  const btn = document.querySelector('#formForgot button[onclick*="sendReset"]');
+  let input = document.getElementById('forgotEmail').value.trim().replace(/^@/, '');
+  if (!input) return showFieldError('forgotEmailError', 'اكتب بريدك الإلكتروني أو اسم المستخدم');
+  if (btn) btn.disabled = true;
+  const done = () => { if (btn) btn.disabled = false; };
+  // إذا كتب يوزر بدل الإيميل نجيب إيميله من جدول usernames
+  const getEmail = input.includes('@')
+    ? Promise.resolve(input.toLowerCase())
+    : db.collection('usernames').doc(input.toLowerCase()).get().then(d => d.exists ? d.data().email : null).catch(() => null);
+  getEmail.then(email => {
+    if (!email) { done(); return showFieldError('forgotEmailError', 'ما لقينا حساب بهذا اليوزر، جرّب كتابة البريد الإلكتروني'); }
+    return auth.sendPasswordResetEmail(email).then(() => {
+      done();
+      showToast('تم إرسال رابط الاستعادة إلى ' + email + ' (شيّك السبام)');
+      closeForgotPassword();
+    }).catch(err => {
+      done(); console.error('reset error', err);
+      if (err.code === 'auth/invalid-email') showFieldError('forgotEmailError', 'البريد الإلكتروني غير صالح');
+      else if (err.code === 'auth/user-not-found') showFieldError('forgotEmailError', 'هذا البريد غير مسجل عندنا');
+      else if (err.code === 'auth/too-many-requests') showFieldError('forgotEmailError', 'محاولات كثيرة، جرّب بعد قليل');
+      else showFieldError('forgotEmailError', 'تعذر إرسال الرابط (' + (err.code || 'unknown') + ')');
+    });
   });
 }
 
 function sendVerification(u) {
-  return u.sendEmailVerification({ url: location.origin }).catch(err => {
-    if (err && /continue-uri/.test(err.code || '')) return u.sendEmailVerification();
-    throw err;
-  });
+  // بدون رابط رجوع (continue URL) حتى ما يفشل بسبب إعدادات الدومين
+  return u.sendEmailVerification();
+}
+function verifyErrMsg(e) {
+  const c = (e && e.code) || 'unknown';
+  if (c === 'auth/too-many-requests') return 'محاولات كثيرة، انتظر دقائق وجرّب مرة ثانية';
+  return 'تعذر إرسال رابط التحقق (' + c + ')';
 }
 function showVerifyPage(user) {
   document.getElementById('authPage').classList.add('hidden');
   document.getElementById('mainPage').classList.add('hidden');
   document.getElementById('verifyPage').classList.remove('hidden');
   document.getElementById('verifyEmail').textContent = user.email || '';
-  try {
-    const k = 'vsent_' + user.uid;
-    if (!sessionStorage.getItem(k)) { sessionStorage.setItem(k, '1'); sendVerification(user).catch(() => {}); }
-  } catch (e) {}
+  // نرسل الرابط تلقائياً عند التسجيل وعند الدخول (مرة كل 60 ثانية كحد أقصى)
+  const k = 'vsent_ts_' + user.uid;
+  let last = 0; try { last = +localStorage.getItem(k) || 0; } catch (e) {}
+  if (Date.now() - last > 60000) {
+    try { localStorage.setItem(k, String(Date.now())); } catch (e) {}
+    sendVerification(user).then(() => {
+      showToast('أرسلنا رابط التحقق إلى ' + (user.email || 'بريدك') + ' (شيّك السبام)');
+    }).catch(e => { console.error('verify send error', e); try { localStorage.removeItem(k); } catch (x) {} showToast(verifyErrMsg(e)); });
+  }
 }
 
 let resendCooldown = false;
@@ -2899,13 +2920,9 @@ function resendVerification() {
   resendCooldown = true;
   
   sendVerification(u).then(() => {
-    showToast('أرسلنا الرابط من جديد');
+    showToast('أرسلنا الرابط من جديد إلى ' + (u.email || 'بريدك') + ' (شيّك السبام)');
   }).catch(e => {
-    if (e && e.code === 'auth/too-many-requests') {
-      showToast('محاولات كثيرة، يرجى الانتظار قليلاً');
-    } else {
-      showToast('تعذر الإرسال');
-    }
+    console.error('resend error', e); showToast(verifyErrMsg(e));
   });
 
   let n = 60;
