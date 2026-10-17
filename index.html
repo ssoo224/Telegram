@@ -2456,6 +2456,7 @@ function updateProfileUI(u) {
 
   const avatarBox = document.getElementById("pAvatarImg");
   const avatarText = document.getElementById("pAvatarText");
+  bindAvatarRevealGestures();
 
   if (u.avatarUrl) {
     avatarBox.src = u.avatarUrl;
@@ -2903,6 +2904,31 @@ function uploadAvatarLive(e) {
 }
 
 let avatarGalleryItems = [], avatarGalleryIndex = 0, avatarGalleryTouchX = null;
+let avatarPressTimer = null, avatarPressStartY = 0, avatarLongPressOpened = false;
+function bindAvatarRevealGestures() {
+  const img = document.getElementById('pAvatarImg');
+  if (!img || img.dataset.revealGesturesBound === '1') return;
+  img.dataset.revealGesturesBound = '1';
+  img.addEventListener('pointerdown', ev => {
+    if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+    avatarLongPressOpened = false;
+    avatarPressStartY = ev.clientY;
+    clearTimeout(avatarPressTimer);
+    avatarPressTimer = setTimeout(() => {
+      avatarLongPressOpened = true;
+      openAvatarGallery(ev);
+    }, 480);
+  });
+  img.addEventListener('pointermove', ev => {
+    if (Math.abs(ev.clientY - avatarPressStartY) > 12) clearTimeout(avatarPressTimer);
+  });
+  img.addEventListener('pointerup', ev => {
+    clearTimeout(avatarPressTimer);
+    // A downward swipe on the profile photo opens the full-size photo viewer.
+    if (ev.clientY - avatarPressStartY > 55) openAvatarGallery(ev);
+  });
+  ['pointercancel','pointerleave'].forEach(type => img.addEventListener(type, () => clearTimeout(avatarPressTimer)));
+}
 function openAvatarGallery(ev) {
   if (ev) { ev.stopPropagation(); }
   const current = currentUserData && currentUserData.avatarUrl;
