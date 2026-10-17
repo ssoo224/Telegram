@@ -887,6 +887,15 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .sx-ch{color:var(--text-muted);font-size:20px}
 .sx-danger{color:#f87171;font-weight:600}
 .sx-foot{text-align:center;color:var(--text-muted);font-size:12px;margin-top:6px;opacity:.7}
+
+.block-banner{padding:12px 14px;text-align:center;font-size:13.5px;color:#fca5a5;background:rgba(220,38,38,.12);border-top:1px solid rgba(220,38,38,.3)}
+.block-banner button{margin-top:8px;padding:7px 18px;border-radius:16px;border:1px solid #fca5a5;background:transparent;color:#fca5a5;font-size:13px;cursor:pointer}
+.blk-ov{position:fixed;inset:0;z-index:9999;background:var(--babylon-dark,#0b1120);display:flex;flex-direction:column}
+.blk-ov .bt{display:flex;flex-direction:row-reverse;align-items:center;justify-content:space-between;padding:16px;font-size:18px;font-weight:800;color:#fff}
+.blk-ov .bl{flex:1;overflow-y:auto;padding:0 14px 20px}
+.blk-row{display:flex;align-items:center;gap:12px;padding:10px 12px;margin-bottom:8px;border-radius:14px;background:var(--babylon-surface)}
+.blk-row .n{flex:1;text-align:right;color:#fff;font-size:15px}
+.blk-row button{padding:7px 14px;border-radius:14px;border:1px solid var(--babylon-gold);background:transparent;color:var(--babylon-gold);font-size:13px;cursor:pointer}
 </style>
 </head>
 
@@ -1074,6 +1083,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
         <div class="pf-actions">
           <button type="button" class="pf-btn primary" onclick="startChatFromProfile()"><i data-ic="chat"></i><span>رسالة</span></button>
           <button type="button" class="pf-btn" onclick="copyText(otherProfileUsername, 'تم نسخ اسم المستخدم')"><i data-ic="copy"></i><span>نسخ اليوزر</span></button>
+          <button type="button" class="pf-btn" id="otherBlockBtn" onclick="toggleBlockCurrent()"><span>🚫 حظر</span></button>
         </div>
       </div>
 
@@ -1116,6 +1126,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
         </div>
 
         <div class="sx-group">
+          <div class="sx-item" onclick="sxOpenBlocked()"><span class="sx-ic" style="background:#64748b">🚫</span><span class="sx-t">المستخدمون المحظورون</span><span class="sx-ch">‹</span></div>
           <div class="sx-item" onclick="sxChangePassword()"><span class="sx-ic" style="background:#10b981">🔒</span><span class="sx-t">تغيير كلمة المرور</span><span class="sx-ch">‹</span></div>
           <div class="sx-item" onclick="sxClearCache()"><span class="sx-ic" style="background:#8b5cf6">🧹</span><span class="sx-t">مسح الذاكرة المؤقتة</span><span class="sx-ch">‹</span></div>
           <div class="sx-item" onclick="sxAbout()"><span class="sx-ic" style="background:#f59e0b">ℹ️</span><span class="sx-t">حول Babylon Chat</span><span class="sx-ch">‹</span></div>
@@ -1220,6 +1231,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
           <button class="icon-btn" style="width:24px;height:24px;font-size:14px;" onclick="cancelReply()">✕</button>
         </div>
         
+        <div id="blockBanner" class="block-banner hidden"></div>
         <div id="recordingBar" class="chat-input-bar hidden">
           <div class="recording-indicator">🔴 جاري تسجيل بصمة صوتية... <span id="recordTimer">00:00</span></div>
           <button class="icon-btn" style="color:var(--error-color)" onclick="cancelRecording()">✕</button>
@@ -1869,6 +1881,90 @@ function sxClearCache() {
 }
 function sxAbout() { showToast('Babylon Chat ✨ تطبيق محادثات بغدادي'); }
 
+
+/* ===== حظر المستخدمين ===== */
+let myBlocks = {}, blocksUnsub = null, blocksFor = null, chatBlockedNow = false, chatBlockedMsg = '';
+const blockedByCache = {};
+function startBlocksListener() {
+  if (!currentUser || blocksFor === currentUser.uid) return;
+  if (blocksUnsub) blocksUnsub();
+  blocksFor = currentUser.uid; myBlocks = {};
+  blocksUnsub = db.collection('users').doc(currentUser.uid).collection('blocks').onSnapshot(q => {
+    myBlocks = {}; q.forEach(d => { myBlocks[d.id] = true; });
+    document.querySelectorAll('.chat-item[data-other]').forEach(el => { el.style.display = myBlocks[el.dataset.other] ? 'none' : ''; });
+    updateBlockBtn(); applyChatBlockState(); renderStoriesBar();
+    if (document.getElementById('blkOverlay')) sxOpenBlocked(true);
+  }, () => {});
+}
+function blockedByThem(uid) {
+  const c = blockedByCache[uid];
+  if (c && Date.now() - c.t < 20000) return Promise.resolve(c.v);
+  if (!currentUser) return Promise.resolve(false);
+  return db.collection('users').doc(uid).collection('blocks').doc(currentUser.uid).get()
+    .then(d => d.exists).catch(() => false).then(v => { blockedByCache[uid] = { v, t: Date.now() }; return v; });
+}
+function applyChatBlockState() {
+  const uid = currentChatOtherUserId, bn = document.getElementById('blockBanner');
+  if (!bn) return;
+  const chatOpen = uid && activeChatId && !document.getElementById('chatView').classList.contains('hidden');
+  const setBars = blocked => { ['textInputBar', 'recordingBar'].forEach(id => { const el = document.getElementById(id); if (el && blocked) el.classList.add('hidden'); else if (el && id === 'textInputBar') el.classList.remove('hidden'); }); };
+  if (!chatOpen) { chatBlockedNow = false; bn.classList.add('hidden'); return; }
+  if (myBlocks[uid]) {
+    chatBlockedNow = true; chatBlockedMsg = 'أنت حاظر هذا المستخدم، ألغِ الحظر حتى تراسله';
+    bn.innerHTML = '🚫 أنت حظرت هذا المستخدم<br><button onclick="unblockUser(currentChatOtherUserId)">إلغاء الحظر</button>';
+    bn.classList.remove('hidden'); setBars(true); return;
+  }
+  blockedByThem(uid).then(b => {
+    if (currentChatOtherUserId !== uid) return;
+    chatBlockedNow = b; chatBlockedMsg = 'تم حظرك من قبل هذا المستخدم';
+    if (b) { bn.textContent = '🚫 تم حظرك من قبل هذا المستخدم، ما تكدر ترسل له رسائل'; bn.classList.remove('hidden'); setBars(true); }
+    else { bn.classList.add('hidden'); setBars(false); }
+  });
+}
+function blockUser(uid) {
+  if (!currentUser || !uid || uid === currentUser.uid) return;
+  db.collection('users').doc(currentUser.uid).collection('blocks').doc(uid).set({ at: Date.now() })
+    .then(() => showToast('تم حظر المستخدم 🚫')).catch(() => showToast('تعذر الحظر'));
+}
+function unblockUser(uid) {
+  db.collection('users').doc(currentUser.uid).collection('blocks').doc(uid).delete()
+    .then(() => showToast('تم إلغاء الحظر ✅')).catch(() => showToast('تعذر إلغاء الحظر'));
+}
+function toggleBlockCurrent() {
+  const uid = currentChatOtherUserId; if (!uid) return;
+  if (myBlocks[uid]) return unblockUser(uid);
+  if (confirm('تحظر هذا المستخدم؟ ما راح يكدر يراسلك، وراح تظهر له رسالة إنك حظرته.')) blockUser(uid);
+}
+function updateBlockBtn() {
+  const b = document.getElementById('otherBlockBtn'); if (!b) return;
+  b.querySelector('span').textContent = myBlocks[currentChatOtherUserId] ? '✅ إلغاء الحظر' : '🚫 حظر';
+}
+function sxOpenBlocked(refresh) {
+  let ov = document.getElementById('blkOverlay');
+  if (!ov) { ov = document.createElement('div'); ov.id = 'blkOverlay'; ov.className = 'blk-ov'; document.body.appendChild(ov); }
+  else if (!refresh) return;
+  ov.innerHTML = '<div class="bt"><span>المستخدمون المحظورون</span><button class="icon-btn" onclick="document.getElementById(\'blkOverlay\').remove()">✕</button></div><div class="bl" id="blkList"></div>';
+  const ids = Object.keys(myBlocks), list = ov.querySelector('#blkList');
+  if (!ids.length) { list.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:30px">ما عندك مستخدمين محظورين</div>'; return; }
+  Promise.all(ids.map(id => fetchUser(id))).then(us => {
+    list.innerHTML = '';
+    us.forEach((u, i) => {
+      const row = document.createElement('div'); row.className = 'blk-row';
+      row.innerHTML = '<div class="avatar" style="width:42px;height:42px;font-size:16px">' + avInner(u || {}) + '</div><div class="n">' + esc((u && u.displayName) || 'مستخدم') + '</div><button>إلغاء الحظر</button>';
+      row.querySelector('button').onclick = () => unblockUser(ids[i]);
+      list.appendChild(row);
+    });
+  });
+}
+const _openStoriesOrig = openStories;
+openStories = function (uid) {
+  if (currentUser && uid !== currentUser.uid) {
+    if (myBlocks[uid]) return showToast('أنت حاظر هذا المستخدم');
+    return blockedByThem(uid).then(b => b ? showToast('تم حظرك من قبل هذا المستخدم') : _openStoriesOrig(uid));
+  }
+  return _openStoriesOrig(uid);
+};
+
 function openSettings() {
   renderSettingsHero();
   if (messagesUnsubscribe) { messagesUnsubscribe(); messagesUnsubscribe = null; }
@@ -1934,7 +2030,7 @@ function searchUsers() {
     .get().then(snap => {
       snap.forEach(doc => {
         const u = doc.data();
-        if (u.id === currentUser.uid) return;
+        if (u.id === currentUser.uid || myBlocks[doc.id]) return;
 
         const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
         const verifiedBadge = isUVerified ? `<span class="verified-badge" style="width:14px;height:14px;font-size:9px;">✓</span>` : '';
@@ -1954,6 +2050,7 @@ function searchUsers() {
 }
 
 function openUserProfileDirect(u) {
+  setTimeout(updateBlockBtn, 80);
   currentChatOtherUserId = u.id;
   otherProfileUsername = "@" + (u.username || "user");
   document.getElementById("otherHeaderNameText").textContent = u.displayName || "مستخدم";
@@ -2033,6 +2130,7 @@ function openChatRoom(otherUserId, keepLimit) {
   if (chatDocUnsubscribe) { chatDocUnsubscribe(); chatDocUnsubscribe = null; }
   
   showView("chatView");
+  applyChatBlockState();
 
   userUnsubscribe = db.collection("users").doc(otherUserId).onSnapshot(doc => {
     if (doc.exists) {
@@ -2345,6 +2443,7 @@ function sendMessage(e) {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
   if (!text || !activeChatId) return;
+  if (chatBlockedNow) return showToast(chatBlockedMsg);
 
   if (editingMsgId) {
     db.collection("chats").doc(activeChatId).collection("messages").doc(editingMsgId).update({
@@ -2379,6 +2478,7 @@ function sendMessage(e) {
 }
 
 function loadChats() {
+  startBlocksListener();
   const container = document.getElementById("chatList");
   
   if (chatsListUnsubscribe) { chatsListUnsubscribe(); chatsListUnsubscribe = null; }
@@ -2427,6 +2527,8 @@ function loadChats() {
           };
           container.appendChild(existingItem);
         }
+        existingItem.dataset.other = otherId;
+        existingItem.style.display = myBlocks[otherId] ? 'none' : '';
 
         db.collection("users").doc(otherId).get().then(userDoc => {
           if (!userDoc.exists) return;
@@ -3219,8 +3321,10 @@ function renderStoriesBar() {
     const mySeen = act.length && isSeenUser(currentUser.uid, Math.max(...act.map(s => s.createdAt)));
     let html = `<div class="sb-item" onclick="myStoryClick()"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''}">${avInner(me)}${act.length ? '' : '<div class="sb-plus">+</div>'}</div><span>قصتي</span></div>`;
     const us = await Promise.all(storyPartnerIds.map(id => fetchUser(id, true)));
+    const bm = await Promise.all(storyPartnerIds.map(id => myBlocks[id] ? true : blockedByThem(id)));
     us.forEach((u, i) => {
       if (!u || !(u.storyUntil > Date.now())) return;
+      if (bm[i]) return;
       const id = storyPartnerIds[i]; u.id = id;
       html += `<div class="sb-item" onclick="openStories('${id}')"><div class="avatar${ringCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
     });
