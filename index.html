@@ -4804,6 +4804,35 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 #messageDeleteModal[data-app-theme="dark"] .message-delete-card button.danger { background:rgba(220,65,65,.12) !important; color:#f87171 !important; border-color:rgba(248,113,113,.35) !important; }
 </style>
 
+
+<style id="babylon-profile-message-white-fix-v2">
+/* Keep the profile Message action and its SVG white in every theme. */
+.pf-actions .pf-btn.primary:has([data-ic="chat"]),
+.pf-actions .pf-btn.primary:has([data-ic="chat"]) span,
+.pf-actions .pf-btn.primary:has([data-ic="chat"]) i,
+.pf-actions .pf-btn.primary:has([data-ic="chat"]) svg,
+.pf-actions .pf-btn.primary:has([data-ic="chat"]) svg * {
+  color:#fff !important; fill:#fff !important; stroke:#fff !important;
+}
+</style>
+<script id="babylon-remove-visited-badge-fix-v2">
+(function(){
+  const cleanVisitedBadge = () => {
+    const root = document.getElementById('mainPage') || document.body;
+    root.querySelectorAll('*').forEach(el => {
+      if (el.children.length) return;
+      const t = (el.textContent || '').trim();
+      if (t === 'تمت الزيارة' || t === 'تمت زيارة' || t === 'تمت زيارته') {
+        const target = el.closest('button, .badge, .tag, .chip, .visit-badge, .visited-badge') || el;
+        target.remove();
+      }
+    });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cleanVisitedBadge); else cleanVisitedBadge();
+  new MutationObserver(cleanVisitedBadge).observe(document.documentElement, {childList:true, subtree:true});
+})();
+</script>
+
 </body>
 </html>
 
