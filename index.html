@@ -933,6 +933,76 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .blk-row .n{flex:1;text-align:right;color:#fff;font-size:15px}
 .blk-row button{padding:7px 14px;border-radius:14px;border:1px solid var(--babylon-gold);background:transparent;color:var(--babylon-gold);font-size:13px;cursor:pointer}
 
+
+
+/* مظهر التطبيق: الوضع النهاري افتراضي، مع وضع ليلي قابل للتبديل */
+.app-container[data-app-theme="light"] {
+  --babylon-dark: #f5f7fb;
+  --babylon-surface: #ffffff;
+  --babylon-surface-card: #ffffff;
+  --babylon-surface-hover: #edf2f8;
+  --babylon-border: #e1e7ef;
+  --text-main: #17212b;
+  --text-muted: #708094;
+  --bubble-mine: #d9fdd3;
+  --bubble-other: #ffffff;
+  background: #f5f7fb;
+  color: #17212b;
+}
+.app-container[data-app-theme="light"] #mainPage { background: #f5f7fb; color: #17212b; }
+.app-container[data-app-theme="light"] .main-header,
+.app-container[data-app-theme="light"] .telegram-bottom-nav,
+.app-container[data-app-theme="light"] .telegram-chat-header,
+.app-container[data-app-theme="light"] .chat-input-container {
+  background: #ffffff;
+  border-color: #e5eaf1;
+  box-shadow: 0 2px 12px rgba(28,45,70,.045);
+}
+.app-container[data-app-theme="light"] .main-header-title,
+.app-container[data-app-theme="light"] .chat-item-name,
+.app-container[data-app-theme="light"] .telegram-user-name { color: #17212b; }
+.app-container[data-app-theme="light"] .chat-list,
+.app-container[data-app-theme="light"] #searchView,
+.app-container[data-app-theme="light"] .settings-view,
+.app-container[data-app-theme="light"] .profile-view { background: #f5f7fb !important; color: #17212b; }
+.app-container[data-app-theme="light"] .chat-item {
+  background: #ffffff;
+  border: 1px solid #edf0f5;
+  box-shadow: 0 2px 8px rgba(28,45,70,.035);
+}
+.app-container[data-app-theme="light"] .chat-item:hover { background: #f8fafc; }
+.app-container[data-app-theme="light"] .chat-item-name { color: #17212b; }
+.app-container[data-app-theme="light"] .chat-item-sub,
+.app-container[data-app-theme="light"] .chat-item-time,
+.app-container[data-app-theme="light"] .telegram-user-status { color: #718096; }
+.app-container[data-app-theme="light"] .icon-btn { color: #536579; }
+.app-container[data-app-theme="light"] .icon-btn:hover { background: #edf2f8; color: #17212b; }
+.app-container[data-app-theme="light"] .nav-item { color: #7b899a; }
+.app-container[data-app-theme="light"] .nav-item.active { color: #2485d0; }
+.app-container[data-app-theme="light"] .chat-room { background: #eaf0f5 !important; }
+.app-container[data-app-theme="light"] .chat-room .pattern-layer { opacity: .045; }
+.app-container[data-app-theme="light"] .msg-bubble:not(.mine),
+.app-container[data-app-theme="light"] .typing-bubble {
+  background: #ffffff !important; color: #17212b !important;
+  border-color: #e3e9f0 !important; box-shadow: 0 1px 2px rgba(22,34,50,.08);
+}
+.app-container[data-app-theme="light"] .msg-bubble.mine {
+  background: #d9fdd3 !important; color: #17212b !important;
+  border-color: transparent !important;
+}
+.app-container[data-app-theme="light"] .msg-bubble:not(.mine) .msg-meta { color: #7c8b9c; }
+.app-container[data-app-theme="light"] .chat-input-bar input { color: #17212b; }
+.app-container[data-app-theme="light"] .chat-input-bar input::placeholder { color: #8b98a8; }
+.app-container[data-app-theme="light"] .recording-bar { background: #ffffff; border-color: #e5eaf1; }
+.app-container[data-app-theme="light"] .empty-chats { color: #708094; }
+.app-container[data-app-theme="light"] .empty-chats-icon { background: #ffffff; border-color: #e1e7ef; }
+.app-container[data-app-theme="light"] .babylon-input { background: #ffffff; border-color: #dbe3ed; color: #17212b; }
+.app-container[data-app-theme="light"] .babylon-tabs { background: #edf2f8; border-color: #e1e7ef; }
+.app-container[data-app-theme="light"] .babylon-tab.active { background: var(--babylon-gold); }
+.theme-toggle-btn { flex: 0 0 38px; width: 38px; height: 38px; border-radius: 12px; font-size: 19px; }
+.app-container[data-app-theme="light"] .theme-toggle-btn { background: #f0f4f8; color: #52657a; }
+.app-container[data-app-theme="dark"] .theme-toggle-btn { background: rgba(255,255,255,.06); color: #f5d76e; }
+
 </style>
 </head>
 
@@ -1021,7 +1091,10 @@ i[data-ic]{display:inline-flex;font-style:normal}
     
     <header id="mainHeader" class="main-header">
       <div class="main-header-title">Babylon Chat</div>
-      <button id="mainSearchBtn" class="icon-btn" onclick="openSearch()" title="بحث عن مستخدم باليوزر">⌕</button>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <button id="mainThemeToggle" class="icon-btn theme-toggle-btn" onclick="toggleAppTheme()" title="تفعيل الوضع الليلي" aria-label="تبديل الوضع النهاري والليلي">☾</button>
+        <button id="mainSearchBtn" class="icon-btn" onclick="openSearch()" title="بحث عن مستخدم باليوزر">⌕</button>
+      </div>
     </header>
 
     <div id="homeView" class="chat-list" style="flex:1; overflow-y:auto;">
@@ -1242,7 +1315,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
       <div class="pattern-layer" id="chatPattern"></div>
 
       <header class="telegram-chat-header">
-        <button class="icon-btn" onclick="goHome()">‹</button>
+        <button class="icon-btn" onclick="goHome()" title="العودة للمحادثات">‹</button>
         
         <div class="telegram-user-info" onclick="openCurrentChatUserProfile()">
           <div id="chatAvatar" class="telegram-avatar">؟</div>
@@ -1254,6 +1327,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
             <div id="chatSub" class="telegram-user-status">غير متصل</div>
           </div>
         </div>
+        <button id="chatThemeToggle" class="icon-btn theme-toggle-btn" onclick="toggleAppTheme()" title="تفعيل الوضع الليلي" aria-label="تبديل الوضع النهاري والليلي">☾</button>
       </header>
 
       <div id="messagesArea" class="messages-area"></div>
@@ -1867,6 +1941,34 @@ function logout() {
     auth.signOut().then(() => location.reload());
   }
 }
+
+const APP_THEME_KEY = 'babylon_chat_app_theme';
+function applyAppTheme(theme) {
+  const app = document.querySelector('.app-container');
+  if (!app) return;
+  const safeTheme = theme === 'dark' ? 'dark' : 'light';
+  app.setAttribute('data-app-theme', safeTheme);
+  try { localStorage.setItem(APP_THEME_KEY, safeTheme); } catch (e) {}
+  const icon = safeTheme === 'light' ? '☾' : '☀';
+  const title = safeTheme === 'light' ? 'تفعيل الوضع الليلي' : 'تفعيل الوضع النهاري';
+  ['mainThemeToggle', 'chatThemeToggle'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) { btn.textContent = icon; btn.title = title; btn.setAttribute('aria-label', title); }
+  });
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) metaTheme.setAttribute('content', safeTheme === 'light' ? '#ffffff' : '#17212b');
+}
+function toggleAppTheme() {
+  const app = document.querySelector('.app-container');
+  applyAppTheme(app && app.getAttribute('data-app-theme') === 'light' ? 'dark' : 'light');
+}
+(function initAppTheme() {
+  let theme = 'light';
+  try { const saved = localStorage.getItem(APP_THEME_KEY); if (saved === 'dark' || saved === 'light') theme = saved; } catch (e) {}
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => applyAppTheme(theme), { once: true });
+  } else applyAppTheme(theme);
+})();
 
 function showView(viewId) {
   ["homeView", "searchView", "profileView", "otherUserProfileView", "settingsView", "chatSettingsView", "notificationSettingsView", "chatView"].forEach(v => {
