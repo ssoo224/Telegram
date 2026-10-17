@@ -2408,6 +2408,9 @@ function applyAppTheme(theme) {
   if (!app) return;
   const safeTheme = theme === 'dark' ? 'dark' : 'light';
   app.setAttribute('data-app-theme', safeTheme);
+  /* The delete dialog is mounted directly under body, so mirror the theme onto it. */
+  const deleteDialog = document.getElementById('messageDeleteModal');
+  if (deleteDialog) deleteDialog.setAttribute('data-app-theme', safeTheme);
   try { localStorage.setItem(APP_THEME_KEY, safeTheme); } catch (e) {}
   const isLight = safeTheme === 'light';
   const btn = document.getElementById('settingsThemeToggle');
@@ -4568,6 +4571,23 @@ function searchChatMessages() { clearTimeout(chatSearchTimer); chatSearchTimer=s
 async function runChatMessageSearch() { const input=document.getElementById('chatMessageSearchInput'), results=document.getElementById('chatMessageSearchResults'); if(!input||!results||!activeChatId)return; const q=input.value.trim().toLocaleLowerCase(); if(q.length<2){results.innerHTML='<div class="chat-search-empty">اكتب حرفين على الأقل للبحث.</div>';return;} results.innerHTML='<div class="chat-search-empty">جارٍ البحث…</div>'; try { const snap=await db.collection('chats').doc(activeChatId).collection('messages').orderBy('createdAt','desc').limit(1000).get(); if(!input.value.trim().toLocaleLowerCase().includes(q))return; const hits=snap.docs.filter(d=>String(d.data().text||'').toLocaleLowerCase().includes(q)); if(!hits.length){results.innerHTML='<div class="chat-search-empty">لا توجد رسائل مطابقة.</div>';return;} results.innerHTML=''; hits.slice(0,100).forEach(d=>{const m=d.data(), el=document.createElement('div');el.className='chat-search-result';const text=String(m.text|| (m.imageUrl?'▧ صورة':m.audioUrl?'♬ رسالة صوتية':''));el.textContent=text;const small=document.createElement('small');small.textContent=(m.senderId===currentUser.uid?'أنت':'الطرف الآخر')+' · '+new Date(m.createdAt||Date.now()).toLocaleString();el.appendChild(small);el.onclick=()=>{closeChatSearch();let target=document.getElementById('message_'+d.id);if(!target){showToast('الرسالة موجودة ضمن الرسائل الأقدم؛ حمّل رسائل أقدم ثم ابحث عنها.');return;}target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.add('search-match');setTimeout(()=>target.classList.remove('search-match'),3500);};results.appendChild(el);}); } catch(e){console.error(e);results.innerHTML='<div class="chat-search-empty">تعذر البحث في الرسائل.</div>';} }
 document.addEventListener('click',function(e){const menu=document.getElementById('chatMoreMenu'), del=document.getElementById('chatDeletePanel');if(menu&&!menu.contains(e.target)&&!e.target.closest('.chat-more-btn'))menu.classList.add('hidden');if(del&&!del.contains(e.target)&&!e.target.closest('.chat-more-btn'))del.classList.add('hidden');});
 </script>
+
+
+<style id="babylon-delete-dialog-theme-final-fix">
+/* The dialog is outside .app-container: theme it using its own mirrored data attribute. */
+#messageDeleteModal[data-app-theme="light"] .message-delete-card { background:#fff !important; color:#17212b !important; border-color:#e1e7ef !important; }
+#messageDeleteModal[data-app-theme="light"] .message-delete-heading { color:#17212b !important; }
+#messageDeleteModal[data-app-theme="light"] .message-delete-description { color:#64748b !important; }
+#messageDeleteModal[data-app-theme="light"] .message-delete-card button:not(.danger) { background:#f7f9fc !important; color:#17212b !important; border-color:#e1e7ef !important; }
+#messageDeleteModal[data-app-theme="light"] .message-delete-card button.cancel { background:transparent !important; color:#64748b !important; }
+#messageDeleteModal[data-app-theme="light"] .message-delete-card button.danger { background:#fff1f2 !important; color:#dc2626 !important; border-color:#fecaca !important; }
+#messageDeleteModal[data-app-theme="dark"] .message-delete-card { background:#171b24 !important; color:#f5f6f8 !important; border-color:rgba(196,155,72,.35) !important; }
+#messageDeleteModal[data-app-theme="dark"] .message-delete-heading { color:#c9a45c !important; }
+#messageDeleteModal[data-app-theme="dark"] .message-delete-description { color:#9ca3af !important; }
+#messageDeleteModal[data-app-theme="dark"] .message-delete-card button:not(.danger) { background:#222733 !important; color:#f5f6f8 !important; border-color:rgba(255,255,255,.12) !important; }
+#messageDeleteModal[data-app-theme="dark"] .message-delete-card button.cancel { background:transparent !important; color:#9ca3af !important; }
+#messageDeleteModal[data-app-theme="dark"] .message-delete-card button.danger { background:rgba(220,65,65,.12) !important; color:#f87171 !important; border-color:rgba(248,113,113,.35) !important; }
+</style>
 
 </body>
 </html>
