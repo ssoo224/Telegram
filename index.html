@@ -1429,6 +1429,51 @@ i[data-ic]{display:inline-flex;font-style:normal}
 #chatList .chat-item.is-active-chat{order:-1!important;background:var(--babylon-surface-hover);border-inline-start:3px solid var(--babylon-gold);}
 </style>
 
+
+<style id="babylon-profile-buttons-final-fix">
+/* Final profile action alignment and readable edit-profile button */
+#profileView .pf-head .pf-actions {
+  display:flex !important; align-items:stretch !important; justify-content:center !important;
+  gap:10px !important; width:100% !important; box-sizing:border-box !important;
+}
+#profileView .pf-head .pf-actions-edit { margin:0 0 10px !important; }
+#profileView .pf-head .pf-actions-edit .pf-btn {
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  gap:9px !important; width:100% !important; max-width:380px !important; min-width:0 !important;
+  flex:1 1 100% !important; height:48px !important; min-height:48px !important;
+  padding:0 16px !important; box-sizing:border-box !important; border-radius:14px !important;
+  white-space:normal !important; line-height:1.25 !important;
+  background:#263f60 !important; border:1px solid #263f60 !important;
+  color:#fff !important; font-weight:750 !important;
+}
+#profileView .pf-head .pf-actions-edit .pf-btn span,
+#profileView .pf-head .pf-actions-edit .pf-btn i,
+#profileView .pf-head .pf-actions-edit .pf-btn svg,
+#profileView .pf-head .pf-actions-edit .pf-btn svg * {
+  color:#fff !important; fill:currentColor !important; stroke:currentColor !important;
+}
+#profileView .pf-head .pf-actions-edit .pf-btn i { display:inline-flex !important; align-items:center; justify-content:center; flex:0 0 19px; }
+#profileView .pf-head .pf-actions-edit .pf-btn svg { width:19px !important; height:19px !important; }
+#profileView .pf-head .pf-actions-media { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px !important; max-width:380px !important; margin:0 auto 16px !important; }
+#profileView .pf-head .pf-actions-media > .pf-btn,
+#profileView .pf-head .pf-actions-media > label.pf-btn {
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  gap:8px !important; width:100% !important; min-width:0 !important; height:46px !important; min-height:46px !important;
+  margin:0 !important; padding:0 10px !important; box-sizing:border-box !important; border-radius:14px !important;
+  font-size:14px !important; font-weight:700 !important; white-space:nowrap !important; line-height:1.2 !important;
+}
+#profileView .pf-head .pf-actions-media .pf-btn i { display:inline-flex; align-items:center; justify-content:center; flex:0 0 18px; }
+#profileView .pf-head .pf-actions-media .pf-btn svg { width:18px !important; height:18px !important; flex:0 0 18px !important; }
+@media(max-width:360px) {
+ #profileView .pf-head .pf-actions { gap:7px !important; }
+ #profileView .pf-head .pf-actions-media { gap:7px !important; }
+ #profileView .pf-head .pf-actions-media .pf-btn { font-size:12px !important; gap:5px !important; padding:0 6px !important; }
+ #profileView .pf-head .pf-actions-edit .pf-btn { font-size:13px !important; }
+}
+.app-container[data-app-theme="light"] #profileView .pf-head .pf-actions-edit .pf-btn,
+.app-container[data-app-theme="dark"] #profileView .pf-head .pf-actions-edit .pf-btn { color:#fff !important; }
+</style>
+
 </head>
 
 <body>
