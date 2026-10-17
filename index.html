@@ -2503,4 +2503,876 @@ function buildThemeStrip() {
       '<div class="pattern-layer"></div>' +
       '<div class="th-mine" style="background:' + t.mine + '"></div>' +
       '<div class="th-other" style="background:' + t.other + '"></div>' +
-      '<div class="th-hero" style="color:' + t.pattern + '">' + glyphHtml(t
+      '<div class="th-hero" style="color:' + t.pattern + '">' + glyphHtml(t.hero, 40) + '</div></div>' +
+      '<div class="theme-name">' + t.name + '</div>';
+    renderPattern(c.querySelector('.pattern-layer'), t, 24);
+    c.onclick = () => setTheme(id);
+    strip.appendChild(c);
+  });
+  markSelectedTheme(false);
+}
+
+function markSelectedTheme(scroll) {
+  document.querySelectorAll('#themeStrip .theme-card').forEach(c => {
+    const on = c.dataset.id === prefs.theme;
+    c.classList.toggle('sel', on);
+    if (on && scroll) c.scrollIntoView({ inline: 'center', block: 'nearest' });
+  });
+}
+
+function setTheme(id) {
+  if (!THEMES[id]) return;
+  prefs.theme = id;
+  applyPrefs(true);
+  markSelectedTheme(false);
+  savePrefs();
+}
+
+function setFont(v) {
+  prefs.font = Number(v);
+  document.getElementById('fontVal').textContent = prefs.font;
+  applyPrefs(false);
+  savePrefs();
+}
+
+function setRadius(v) {
+  prefs.radius = Number(v);
+  document.getElementById('radiusVal').textContent = prefs.radius;
+  applyPrefs(false);
+  savePrefs();
+}
+
+buildThemeStrip();
+applyPrefs(true);
+
+const ICONS = {
+  chat:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  pencil:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3Z"/><circle cx="12" cy="13" r="3"/>',
+  palette:'<circle cx="13.5" cy="6.5" r=".6"/><circle cx="17.5" cy="10.5" r=".6"/><circle cx="8.5" cy="7.5" r=".6"/><circle cx="6.5" cy="12.5" r=".6"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.8.7-1.5 1.5-1.5H16c3.3 0 6-2.7 6-6 0-4.9-4.5-9-10-9Z"/>',
+  copy:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  chevron:'<path d="m9 18 6-6-6-6"/>',
+  at:'<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>',
+  text:'<path d="M4 6h16M4 12h16M4 18h10"/>',
+  pin:'<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>'
+};
+function svgIcon(name, size) {
+  const n = size || 20;
+  return '<svg viewBox="0 0 24 24" width="' + n + '" height="' + n + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[name] || '') + '</svg>';
+}
+function hydrateIcons() {
+  document.querySelectorAll('[data-ic]').forEach(el => {
+    el.innerHTML = svgIcon(el.dataset.ic, el.dataset.size);
+  });
+}
+
+const GOVERNORATES = ['بغداد','البصرة','نينوى','أربيل','السليمانية','دهوك','كركوك','الأنبار','ديالى','صلاح الدين','بابل','كربلاء','النجف','واسط','ذي قار','ميسان','المثنى','القادسية'];
+const COVER_RING = { babylon:'#d4af37', ashur:'#e0b36a', sumer:'#cc7b49', samarra:'#c9a24a', baghdad:'#25aaa3', ahwar:'#5fb98f' };
+let otherProfileUsername = '';
+
+function fillGovSelect() {
+  const sel = document.getElementById('modalGovInput');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— غير محددة —</option>' + GOVERNORATES.map(g => '<option value="' + g + '">' + g + '</option>').join('');
+}
+
+function applyCover(prefix, id) {
+  const themeId = THEMES[id] ? id : 'babylon';
+  const t = THEMES[themeId];
+  const cover = document.getElementById(prefix + 'Cover');
+  if (!cover) return;
+  cover.closest('.profile-view').style.setProperty('--ring', COVER_RING[themeId] || '#d4af37');
+  if (cover.dataset.id === themeId) return;
+  cover.dataset.id = themeId;
+  cover.style.background = t.mine;
+  renderPattern(document.getElementById(prefix + 'CoverPattern'), t, 24);
+}
+
+function setProfileRow(rowId, valId, text) {
+  document.getElementById(rowId).classList.toggle('hidden', !text);
+  document.getElementById(valId).textContent = text || '';
+}
+
+function arCount(n, one, two, few, many) {
+  if (n === 1) return one;
+  if (n === 2) return two;
+  if (n >= 3 && n <= 10) return n + ' ' + few;
+  return n + ' ' + many;
+}
+
+function formatLastSeen(ts) {
+  if (!ts) return 'غير متصل';
+  const sec = Math.floor((Date.now() - ts) / 1000);
+  if (sec < 60) return 'آخر ظهور قبل لحظات';
+  const m = Math.floor(sec / 60);
+  if (m < 60) return 'آخر ظهور قبل ' + arCount(m, 'دقيقة', 'دقيقتين', 'دقائق', 'دقيقة');
+  const h = Math.floor(m / 60);
+  if (h < 24) return 'آخر ظهور قبل ' + arCount(h, 'ساعة', 'ساعتين', 'ساعات', 'ساعة');
+  const d = Math.floor(h / 24);
+  if (d < 7) return 'آخر ظهور قبل ' + arCount(d, 'يوم', 'يومين', 'أيام', 'يوم');
+  return 'آخر ظهور ' + new Date(ts).toLocaleDateString('ar-IQ', { day: 'numeric', month: 'long' });
+}
+
+function formatJoinDate(ts) {
+  return new Date(ts).toLocaleDateString('ar-IQ', { year: 'numeric', month: 'long' });
+}
+
+function setPfStatus(el, online, lastSeen) {
+  const live = !!online && (Date.now() - (lastSeen || 0) < 45000);
+  el.classList.toggle('online', live);
+  el.querySelector('span:last-child').textContent = live ? 'متصل الآن' : formatLastSeen(lastSeen);
+}
+
+function copyText(text, msg) {
+  if (!text) return;
+  const done = () => showToast(msg || 'تم النسخ');
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;user-select:text;';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) {}
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+
+function buildCoverGrid() {
+  const grid = document.getElementById('coverGrid');
+  const current = (currentUserData && currentUserData.cover) || 'babylon';
+  grid.innerHTML = '';
+  Object.keys(THEMES).forEach(id => {
+    const t = THEMES[id];
+    const d = document.createElement('div');
+    d.className = 'cover-opt' + (id === current ? ' sel' : '');
+    d.style.background = t.mine;
+    d.innerHTML = '<div class="pattern-layer"></div><b>' + t.name + '</b>';
+    renderPattern(d.querySelector('.pattern-layer'), t, 12);
+    d.onclick = () => setCover(id);
+    grid.appendChild(d);
+  });
+}
+
+function openCoverPicker() {
+  buildCoverGrid();
+  document.getElementById('coverModal').classList.remove('hidden');
+}
+function closeCoverModal(e) {
+  if (e.target.id === 'coverModal') closeCoverModalDirect();
+}
+function closeCoverModalDirect() {
+  document.getElementById('coverModal').classList.add('hidden');
+}
+
+function setCover(id) {
+  if (!THEMES[id] || !currentUser) return;
+  if (currentUserData) currentUserData.cover = id;
+  applyCover('p', id);
+  closeCoverModalDirect();
+  db.collection('users').doc(currentUser.uid).set({ cover: id }, { merge: true })
+    .then(() => showToast('تم تغيير الغلاف ✨'))
+    .catch(() => showToast('تعذر حفظ الغلاف'));
+}
+
+hydrateIcons();
+fillGovSelect();
+
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+let prefsSyncTimer = null;
+let prefsFromCloudDone = false;
+function syncPrefsToCloud() {
+  clearTimeout(prefsSyncTimer);
+  prefsSyncTimer = setTimeout(() => {
+    if (currentUser) db.collection('users').doc(currentUser.uid).set({ chatPrefs: prefs }, { merge: true }).catch(() => {});
+  }, 800);
+}
+function syncPrefsFromUser(u) {
+  if (prefsFromCloudDone || !u) return;
+  prefsFromCloudDone = true;
+  const c = u.chatPrefs;
+  if (!c) { syncPrefsToCloud(); return; }
+  if (THEMES[c.theme]) prefs.theme = c.theme;
+  if (c.font >= 12 && c.font <= 22) prefs.font = Number(c.font);
+  if (c.radius >= 0 && c.radius <= 20) prefs.radius = Number(c.radius);
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {}
+  applyPrefs(true);
+}
+
+Object.assign(ICONS, {
+  image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
+  ziggurat:'<path d="M2 21h20M4 21v-4h16v4M7 17v-4h10v4M10 13V9h4v4M12 9V6"/>',
+  gate:'<path d="M4 21V8h3V5h2v3h6V5h2v3h3v13M9 21v-6a3 3 0 0 1 6 0v6M4 12h5M15 12h5"/>',
+  star8:'<path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/><circle cx="12" cy="12" r="3"/>',
+  crescent:'<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
+  palm:'<path d="M12 22V10M12 10c-1-3-4-4-7-3M12 10c1-3 4-4 7-3M12 10c-3 0-5 2-6 5M12 10c3 0 5 2 6 5M12 10V4"/>',
+  minaret:'<path d="M12 2v3M12 5c-2.5 0-4 .8-4 2s1.500 2 4 2 4 .8 4 2-1.500 2-4 2-5 .8-5 2 2 2 5 2 5 .8 5 2M5 22h14"/>',
+  tablet:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="m9 8 2 1-2 1M13 8l2 1-2 1M9 14l2 1-2 1M13 14l2 1-2 1"/>',
+  jar:'<path d="M10 3h4M10.500 3v3C7 7 5.500 10 5.500 14c0 4 2.500 7 6.500 7s6.500-3 6.500-7c0-4-1.500-7-5-8V3M7 12h10"/>',
+  boat:'<path d="M2 15c4 4 16 4 20 0M5 15 3 9M19 15l2-6M8 11c1-2 3-3 4-3s3 1 4 3"/>',
+  reeds:'<path d="M8 22V8M8 8c-1-2 0-4 0-6 1 2 1 4 0 6M13 22V5M13 5c-1-2 0-3 0-4 1 1 1 3 0 4M18 22V10M18 10c-1-2 0-3 0-5 1 2 1 3 0 5"/>',
+  bull:'<path d="M3 5c0 5 3 7 5 7M21 5c0 5-3 7-5 7M8 12c-1 3 0 7 4 9 4-2 5-6 4-9M10 15.500h.01M14 15.500h.01"/>',
+  arch:'<path d="M5 22V11a7 7 0 0 1 14 0v11M9 22V12a3 3 0 0 1 6 0v10M3 22h18"/>',
+  fish:'<path d="M3 12c3-5 9-6 13-2l5-3v10l-5-3c-4 4-10 3-13-2zM8 11h.01"/>',
+  lyre:'<path d="M6 3c-2 6 0 12 6 14 6-2 8-8 6-14M6 3h12M10 6v13M14 6v13M8 21h8"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
+  wave:'<path d="M2 9c3-3 5 3 8 0s5 3 8 0 3 0 4-1M2 16c3-3 5 3 8 0s5 3 8 0 3 0 4-1"/>'
+});
+function glyphHtml(sym, size) {
+  if (sym.indexOf('ic:') !== 0) return esc(sym);
+  try { return svgIcon(sym.slice(3), size || 24); } catch (e) { return ''; }
+}
+
+function compressImage(file, cb) {
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    let dim = 1024, q = 0.72, out = '';
+    for (let i = 0; i < 6; i++) {
+      const sc = Math.min(1, dim / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * sc);
+      c.height = Math.round(img.height * sc);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      out = c.toDataURL('image/jpeg', q);
+      if (out.length < 850000) break;
+      dim *= 0.8; q = Math.max(0.5, q - 0.08);
+    }
+    cb(out.length < 900000 ? out : null);
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); cb(null); };
+  img.src = url;
+}
+
+function sendImage(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file || !activeChatId) return;
+  if (!file.type.startsWith('image/')) return showToast('اختر ملف صورة فقط');
+  if (file.size > 15 * 1024 * 1024) return showToast('الصورة كبيرة جداً');
+  showToast('جاري تجهيز الصورة...');
+  compressImage(file, dataUrl => {
+    if (!dataUrl) return showToast('تعذر تجهيز الصورة، جرب صورة أخرى');
+    const chatId = activeChatId;
+    db.collection('chats').doc(chatId).collection('messages').add({
+      senderId: currentUser.uid, imageUrl: dataUrl, read: false, createdAt: Date.now()
+    }).then(() => {
+      db.collection('chats').doc(chatId).set({ 
+        updatedAt: Date.now(),
+        [`typing_${currentUser.uid}`]: false
+      }, { merge: true });
+      notifyPeer(chatId, '📷 صورة');
+    }).catch(() => showToast('تعذر إرسال الصورة'));
+  });
+}
+
+function openImageViewer(src) {
+  const v = document.createElement('div');
+  v.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;padding:12px;';
+  const im = document.createElement('img');
+  im.src = src;
+  im.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;';
+  v.appendChild(im);
+  v.onclick = () => v.remove();
+  document.body.appendChild(v);
+}
+
+hydrateIcons();
+buildThemeStrip();
+applyPrefs(true);
+
+function registerPushToken() {
+  if (!messaging || !currentUser) return;
+  messaging.getToken().then(token => {
+    if (!token) return;
+    db.collection('users').doc(currentUser.uid).set({
+      fcmToken: token,
+      fcmTokens: firebase.firestore.FieldValue.arrayUnion(token)
+    }, { merge: true });
+  }).catch(err => console.log('FCM token error:', err));
+}
+
+let pushTokenRefreshed = false;
+function refreshPushTokenOnce() {
+  if (pushTokenRefreshed) return;
+  pushTokenRefreshed = true;
+  if ('Notification' in window && Notification.permission === 'granted') registerPushToken();
+}
+
+function notifyPeer(chatId, text) {
+  if (!currentUser || !chatId) return;
+  const recipientId = chatId.split('__').find(id => id !== currentUser.uid);
+  if (!recipientId) return;
+  currentUser.getIdToken().then(idToken => fetch('/api/index', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+    body: JSON.stringify({
+      recipientId: recipientId,
+      chatId: chatId,
+      senderName: currentUserData ? currentUserData.displayName : 'رسالة جديدة',
+      messageText: text
+    })
+  })).catch(err => console.log('Notification fetch error:', err));
+}
+
+auth.languageCode = 'ar';
+
+const DISPOSABLE_DOMAINS = ['mailinator.com','yopmail.com','guerrillamail.com','sharklasers.com','10minutemail.com','tempmail.com','temp-mail.org','trashmail.com','getnada.com','dispostable.com','maildrop.cc','throwawaymail.com','fakeinbox.com','mohmal.com'];
+function isDisposableEmail(e) {
+  return DISPOSABLE_DOMAINS.includes(((e.split('@')[1]) || '').toLowerCase());
+}
+
+const _switchTab = switchTab;
+switchTab = function (t) { document.getElementById('formForgot').classList.add('hidden'); _switchTab(t); };
+
+function openForgotPassword() {
+  clearErrors();
+  document.getElementById('formLogin').classList.add('hidden');
+  document.getElementById('formForgot').classList.remove('hidden');
+  const v = document.getElementById('loginEmail').value.trim().replace(/^@/, '');
+  if (v.includes('@')) document.getElementById('forgotEmail').value = v;
+}
+function closeForgotPassword() {
+  document.getElementById('formForgot').classList.add('hidden');
+  document.getElementById('formLogin').classList.remove('hidden');
+}
+function sendReset() {
+  clearErrors();
+  const email = document.getElementById('forgotEmail').value.trim();
+  if (!email || !email.includes('@')) return showFieldError('forgotEmailError', 'اكتب بريدك الإلكتروني');
+  auth.sendPasswordResetEmail(email).then(() => {
+    showToast('إذا البريد مسجل عندنا، وصلك رابط الاستعادة. شيّك السبام');
+    closeForgotPassword();
+  }).catch(err => {
+    if (err.code === 'auth/invalid-email') showFieldError('forgotEmailError', 'البريد الإلكتروني غير صالح');
+    else if (err.code === 'auth/too-many-requests') showFieldError('forgotEmailError', 'محاولات كثيرة، جرّب بعد قليل');
+    else { showToast('إذا البريد مسجل عندنا، وصلك رابط الاستعادة. شيّك السبام'); closeForgotPassword(); }
+  });
+}
+
+function sendVerification(u) {
+  return u.sendEmailVerification({ url: location.origin }).catch(err => {
+    if (err && /continue-uri/.test(err.code || '')) return u.sendEmailVerification();
+    throw err;
+  });
+}
+function showVerifyPage(user) {
+  document.getElementById('authPage').classList.add('hidden');
+  document.getElementById('mainPage').classList.add('hidden');
+  document.getElementById('verifyPage').classList.remove('hidden');
+  document.getElementById('verifyEmail').textContent = user.email || '';
+  try {
+    const k = 'vsent_' + user.uid;
+    if (!sessionStorage.getItem(k)) { sessionStorage.setItem(k, '1'); sendVerification(user).catch(() => {}); }
+  } catch (e) {}
+}
+
+let resendCooldown = false;
+function resendVerification() {
+  const u = auth.currentUser, btn = document.getElementById('resendBtn');
+  if (!u || resendCooldown) return;
+  resendCooldown = true;
+  
+  sendVerification(u).then(() => {
+    showToast('أرسلنا الرابط من جديد');
+  }).catch(e => {
+    if (e && e.code === 'auth/too-many-requests') {
+      showToast('محاولات كثيرة، يرجى الانتظار قليلاً');
+    } else {
+      showToast('تعذر الإرسال');
+    }
+  });
+
+  let n = 60;
+  const t = setInterval(() => {
+    btn.textContent = 'إعادة الإرسال (' + n + ')';
+    if (--n < 0) {
+      clearInterval(t);
+      resendCooldown = false;
+      btn.textContent = 'إعادة إرسال الرابط';
+    }
+  }, 1000);
+}
+
+function checkVerified() {
+  const u = auth.currentUser;
+  if (!u) return;
+  u.reload().then(() => u.getIdToken(true)).then(() => {
+    if (u.emailVerified) location.reload();
+    else showToast('لم يتم التحقق بعد، افتح الرابط من بريدك أولاً');
+  }).catch(() => showToast('تعذر الفحص، حاول مرة ثانية'));
+}
+
+let usernameDocChecked = false;
+function ensureUsernameDoc(u) {
+  if (usernameDocChecked || !u || !u.username || !currentUser) return;
+  usernameDocChecked = true;
+  const ref = db.collection('usernames').doc(u.username);
+  ref.get().then(d => { if (!d.exists) ref.set({ uid: currentUser.uid, email: u.email || currentUser.email }); }).catch(() => {});
+}
+function syncUsernameDoc(oldName, newName) {
+  if (!currentUser || !newName || oldName === newName) return;
+  db.collection('usernames').doc(newName).set({ uid: currentUser.uid, email: currentUser.email })
+    .then(() => { if (oldName) return db.collection('usernames').doc(oldName).delete(); })
+    .catch(() => {});
+}
+
+/* ================= نظام القصص الكامل ================= */
+const $ = id => document.getElementById(id);
+const SEEN_KEY = 'babylon_seen_users';
+let seenUsers = {}; try { seenUsers = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}'); } catch (e) {}
+const userCache = {};
+let myStories = [], storyPartnerIds = [], otherStoryUid = null, otherStories = [];
+let scData = null, scHours = 24, barTimer = null;
+let SV = { uid: null, list: [], i: 0, mine: false, paused: false, hold: false, t: 0, iv: null, react: null, views: [] };
+const SDUR = 5000;
+const DURS = [6, 12, 24, 48];
+
+function fetchUser(uid, fresh) {
+  if (!fresh && userCache[uid]) return Promise.resolve(userCache[uid]);
+  return db.collection('users').doc(uid).get().then(d => d.exists ? (userCache[uid] = d.data()) : null).catch(() => null);
+}
+function avInner(u) { return u && u.avatarUrl ? `<img src="${esc(u.avatarUrl)}">` : esc(((u && u.displayName) || '?').charAt(0).toUpperCase()); }
+function isActive(s) { return s.expiresAt > Date.now(); }
+function ago(ts) { const m = Math.floor((Date.now() - ts) / 60000); return m < 1 ? 'الآن' : m < 60 ? `قبل ${m} د` : m < 1440 ? `قبل ${Math.floor(m / 60)} س` : `قبل ${Math.floor(m / 1440)} يوم`; }
+function leftTxt(ts) { const m = Math.max(1, Math.floor((ts - Date.now()) / 60000)); return m < 60 ? `${m} د` : `${Math.floor(m / 60)} س`; }
+function isSeenUser(uid, latest) { return (seenUsers[uid] || 0) >= latest; }
+function markSeen(uid, ts) { if ((seenUsers[uid] || 0) < ts) { seenUsers[uid] = ts; try { localStorage.setItem(SEEN_KEY, JSON.stringify(seenUsers)); } catch (e) {} } }
+function ringCls(u) {
+  if (!u || !(u.storyUntil > Date.now())) return '';
+  return ' sring' + (isSeenUser(u.id || '', u.storyAt || 0) ? ' seen' : '');
+}
+function loadStories(uid) {
+  return db.collection('stories').where('userId', '==', uid).get()
+    .then(snap => { const a = []; snap.forEach(d => a.push({ id: d.id, ...d.data() })); return a.sort((x, y) => y.createdAt - x.createdAt); })
+    .catch(() => []);
+}
+
+/* ---------- النشر ---------- */
+function openPublishOptions() { $('publishTypeModal').classList.remove('hidden'); }
+function selectPublishType(type) {
+  selectedPublishType = type;
+  $('publishTypeModal').classList.add('hidden');
+  $('storyMediaPicker').click();
+}
+function onStoryMediaSelected(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  if (file.type.startsWith('video/')) return handleStoryVideo(file);
+  if (!file.type.startsWith('image/')) return showToast('اختر صورة أو مقطع فيديو');
+  showToast('جاري تجهيز الصورة...');
+  compressImage(file, data => {
+    if (!data) return showToast('تعذر تجهيز الصورة، جرب صورة ثانية');
+    if (selectedPublishType === 'story') return openComposer(data);
+    db.collection('posts').add({ userId: currentUser.uid, imageUrl: data, createdAt: Date.now(), likes: [] })
+      .then(() => { showToast('تم إضافة المنشور للبروفايل 📸'); loadUserPosts(); })
+      .catch(() => showToast('تعذر النشر'));
+  });
+}
+const MAX_STORY_VIDEO = 30;            // الحد الأقصى بالثواني
+const MAX_STORY_VIDEO_MB = 100;        // الحد الأقصى للحجم
+/* ====== إعدادات Cloudinary (املأ القيمتين) ====== */
+const CLD_CLOUD  = 'xuljmnmh';   // مثال: 'dxxxxxxx'  (Cloud name)
+const CLD_PRESET = 'stories_unsigned';   // مثال: 'stories_unsigned'  (Upload preset من نوع Unsigned)
+let scVid = null;
+function handleStoryVideo(file) {
+  if (selectedPublishType !== 'story') return showToast('المنشور الدائم يقبل الصور فقط، المقاطع للقصص');
+  if (file.size > MAX_STORY_VIDEO_MB * 1024 * 1024) return showToast('حجم المقطع كبير (الأقصى ' + MAX_STORY_VIDEO_MB + ' ميجا)');
+  showToast('جاري فحص المقطع...');
+  const url = URL.createObjectURL(file);
+  const v = document.createElement('video');
+  v.preload = 'metadata'; v.muted = true; v.playsInline = true;
+  const fail = m => { URL.revokeObjectURL(url); showToast(m); };
+  v.onerror = () => fail('تعذر قراءة المقطع، جرب مقطع ثاني');
+  v.onloadedmetadata = () => {
+    const dur = v.duration;
+    if (!isFinite(dur) || dur <= 0) return fail('تعذر قراءة مدة المقطع');
+    if (dur > MAX_STORY_VIDEO + 0.5) return fail('المقطع أطول من ' + MAX_STORY_VIDEO + ' ثانية (مدته ' + Math.round(dur) + ' ث). قصّه وجرب مرة ثانية');
+    v.onseeked = () => {
+      let poster = '';
+      try {
+        const sc = Math.min(1, 480 / Math.max(v.videoWidth || 480, v.videoHeight || 480));
+        const c = document.createElement('canvas');
+        c.width = Math.round((v.videoWidth || 480) * sc); c.height = Math.round((v.videoHeight || 480) * sc);
+        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+        poster = c.toDataURL('image/jpeg', 0.6);
+      } catch (e) {}
+      if (!poster) poster = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      openComposer(poster, { file, url, duration: Math.min(dur, MAX_STORY_VIDEO) });
+    };
+    try { v.currentTime = Math.min(0.1, dur / 2); } catch (e) { v.onseeked(); }
+  };
+  v.src = url;
+}
+function openComposer(data, vid) {
+  scData = data; scHours = 24; scVid = vid || null;
+  const pv = $('scPreviewVid');
+  if (scVid) { pv.src = scVid.url; pv.classList.remove('hidden'); $('scPreview').classList.add('hidden'); }
+  else { pv.pause(); pv.removeAttribute('src'); pv.classList.add('hidden'); $('scPreview').classList.remove('hidden'); }
+  $('scPublish').textContent = 'نشر القصة';
+  $('scPreview').src = data;
+  $('scCaption').value = ''; $('scPin').checked = false;
+  $('scDur').innerHTML = DURS.map(h => `<button type="button" data-h="${h}" class="${h === 24 ? 'on' : ''}" onclick="setDur(${h})">${h} ساعة</button>`).join('');
+  $('scPublish').disabled = false;
+  $('storyComposer').classList.remove('hidden');
+}
+function setDur(h) { scHours = h; document.querySelectorAll('#scDur button').forEach(b => b.classList.toggle('on', +b.dataset.h === h)); }
+function closeComposer() {
+  $('storyComposer').classList.add('hidden'); scData = null;
+  const pv = $('scPreviewVid'); pv.pause(); pv.removeAttribute('src'); pv.load();
+  if (scVid) { try { URL.revokeObjectURL(scVid.url); } catch (e) {} scVid = null; }
+}
+function publishStory() {
+  if (!scData || !currentUser) return;
+  const btn = $('scPublish');
+  btn.disabled = true;
+  const caption = $('scCaption').value.trim(), pinned = $('scPin').checked, hours = scHours, poster = scData;
+  const save = extra => {
+    const now = Date.now();
+    return db.collection('stories').add(Object.assign({
+      userId: currentUser.uid, imageUrl: poster, caption,
+      createdAt: now, expiresAt: now + hours * 3600000, pinned
+    }, extra || {}));
+  };
+  const done = () => { closeComposer(); btn.textContent = 'نشر القصة'; showToast('تم نشر القصة 🌟'); checkUserStories(true); };
+  const fail = m => { btn.disabled = false; btn.textContent = 'نشر القصة'; showToast(m || 'تعذر نشر القصة'); };
+  if (!scVid) return save().then(done).catch(() => fail());
+  const f = scVid.file, dur = scVid.duration;
+  const saveVid = (url, path) => save({ mediaType: 'video', videoUrl: url, videoPath: path || '', duration: dur }).then(done).catch(() => fail());
+  // ===== الرفع عبر Cloudinary (مجاني بدون بطاقة) =====
+  if (CLD_CLOUD && CLD_PRESET) {
+    const xhr = new XMLHttpRequest();
+    const fd = new FormData();
+    fd.append('file', f); fd.append('upload_preset', CLD_PRESET); fd.append('folder', 'stories');
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/video/upload`);
+    xhr.upload.onprogress = e => { if (e.lengthComputable) btn.textContent = 'جاري الرفع ' + Math.round(e.loaded / e.total * 100) + '%'; };
+    xhr.onerror = () => fail('تعذر رفع المقطع: فشل الاتصال');
+    xhr.onload = () => {
+      let r = {}; try { r = JSON.parse(xhr.responseText); } catch (e) {}
+      if (xhr.status >= 200 && xhr.status < 300 && r.secure_url) return saveVid(r.secure_url, '');
+      console.error('cloudinary', xhr.responseText);
+      fail('تعذر رفع المقطع: ' + ((r.error && r.error.message) || xhr.status));
+    };
+    return xhr.send(fd);
+  }
+  // ===== أو Firebase Storage (يحتاج خطة Blaze) =====
+  if (!firebase.storage) return fail('خدمة رفع الفيديو غير متوفرة');
+  const ext = (f.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'mp4';
+  const path = `stories/${currentUser.uid}/${Date.now()}.${ext}`;
+  const ref = firebase.storage().ref(path);
+  try { firebase.storage().setMaxUploadRetryTime(20000); firebase.storage().setMaxOperationRetryTime(20000); } catch (e) {}
+  const task = ref.put(f, { contentType: f.type || 'video/mp4' });
+  task.on('state_changed',
+    sn => { btn.textContent = 'جاري الرفع ' + Math.round(sn.bytesTransferred / sn.totalBytes * 100) + '%'; },
+    err => { console.error('upload error', err); fail('تعذر رفع المقطع: ' + ((err && err.code) || 'unknown')); },
+    () => ref.getDownloadURL().then(u => saveVid(u, path)).catch(() => fail()));
+}
+
+/* ---------- قصصي + الحلقات ---------- */
+function syncStoryMeta() {
+  const act = myStories.filter(isActive);
+  const until = act.length ? Math.max(...act.map(s => s.expiresAt)) : 0;
+  const at = act.length ? Math.max(...act.map(s => s.createdAt)) : 0;
+  const cur = currentUserData || {};
+  if ((cur.storyUntil || 0) !== until || (cur.storyAt || 0) !== at) {
+    db.collection('users').doc(currentUser.uid).set({ storyUntil: until, storyAt: at }, { merge: true }).catch(() => {});
+  }
+}
+function checkUserStories(forceSync) {
+  if (!currentUser) return;
+  loadStories(currentUser.uid).then(list => {
+    myStories = list;
+    const act = list.filter(isActive);
+    const ring = $('pStoryRing');
+    if (ring) {
+      ring.classList.toggle('has-story', act.length > 0);
+      ring.classList.toggle('seen', act.length > 0 && isSeenUser(currentUser.uid, Math.max(...act.map(s => s.createdAt))));
+    }
+    renderTiles($('myStoriesGrid'), list, true);
+    $('myStoriesEmpty').classList.toggle('hidden', list.length > 0);
+    syncStoryMeta();
+    renderStoriesBar();
+  });
+}
+function renderTiles(grid, list, mine) {
+  if (!grid) return;
+  grid.innerHTML = '';
+  list.forEach(s => {
+    const act = isActive(s);
+    const d = document.createElement('div');
+    d.className = 'post-grid-item' + (!act && !s.pinned ? ' st-old' : '');
+    const badge = s.pinned ? '📌' : act ? '⏳ ' + leftTxt(s.expiresAt) : 'أرشيف';
+    d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (s.videoUrl ? '<div class="vid-badge">🎬</div>' : '') + (mine ? `<div class="st-badge">${badge}</div>` : '');
+    d.onclick = () => {
+      const play = list.slice().reverse();
+      startViewer(s.userId, play, play.findIndex(x => x.id === s.id), mine);
+    };
+    grid.appendChild(d);
+  });
+}
+function renderStoriesBar() {
+  clearTimeout(barTimer);
+  barTimer = setTimeout(async () => {
+    const bar = $('storiesBar');
+    if (!bar || !currentUser) return;
+    const act = myStories.filter(isActive);
+    const me = currentUserData || {};
+    const mySeen = act.length && isSeenUser(currentUser.uid, Math.max(...act.map(s => s.createdAt)));
+    let html = `<div class="sb-item" onclick="myStoryClick()"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''}">${avInner(me)}${act.length ? '' : '<div class="sb-plus">+</div>'}</div><span>قصتي</span></div>`;
+    const us = await Promise.all(storyPartnerIds.map(id => fetchUser(id, true)));
+    us.forEach((u, i) => {
+      if (!u || !(u.storyUntil > Date.now())) return;
+      const id = storyPartnerIds[i]; u.id = id;
+      html += `<div class="sb-item" onclick="openStories('${id}')"><div class="avatar${ringCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
+    });
+    bar.innerHTML = html;
+    bar.classList.remove('hidden');
+  }, 350);
+}
+function myStoryClick() { myStories.some(isActive) ? openStories(currentUser.uid) : (selectedPublishType = 'story', $('storyMediaPicker').click()); }
+function handleAvatarClick() { myStories.some(isActive) ? openStories(currentUser.uid) : openPublishOptions(); }
+function chatAvatarStory(ev, uid) {
+  const el = ev.currentTarget;
+  if (!el.classList.contains('sring')) return;
+  ev.stopPropagation();
+  openStories(uid);
+}
+
+/* ---------- بروفايل شخص آخر ---------- */
+function loadOtherStories(uid) {
+  otherStoryUid = uid; otherStories = [];
+  $('otherStoryRing').classList.remove('has-story', 'seen');
+  $('otherPinnedWrap').classList.add('hidden');
+  loadStories(uid).then(list => {
+    if (otherStoryUid !== uid) return;
+    otherStories = list;
+    const act = list.filter(isActive);
+    $('otherStoryRing').classList.toggle('has-story', act.length > 0);
+    $('otherStoryRing').classList.toggle('seen', act.length > 0 && isSeenUser(uid, Math.max(...act.map(s => s.createdAt))));
+    const pins = list.filter(s => s.pinned);
+    $('otherPinnedWrap').classList.toggle('hidden', !pins.length);
+    const grid = $('otherPinnedGrid'); grid.innerHTML = '';
+    pins.forEach(s => {
+      const d = document.createElement('div');
+      d.className = 'post-grid-item';
+      d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (s.videoUrl ? '<div class="vid-badge">🎬</div>' : '');
+      d.onclick = () => { const play = pins.slice().reverse(); startViewer(uid, play, play.findIndex(x => x.id === s.id), false); };
+      grid.appendChild(d);
+    });
+  });
+}
+function openOtherStories() { if (otherStoryUid) openStories(otherStoryUid); }
+
+/* ---------- العارض ---------- */
+function openStories(uid) {
+  const mine = uid === currentUser.uid;
+  const go = list => {
+    const act = list.filter(isActive).reverse();
+    if (!act.length) return showToast('لا توجد قصص حالياً');
+    const seen = seenUsers[uid] || 0;
+    let i = mine ? 0 : act.findIndex(s => s.createdAt > seen);
+    startViewer(uid, act, i < 0 ? 0 : i, mine);
+  };
+  mine ? go(myStories) : loadStories(uid).then(go);
+}
+function startViewer(uid, list, i, mine) {
+  if (!list.length) return;
+  SV = { uid, list, i: Math.max(0, i), mine, paused: false, hold: false, t: 0, iv: null, react: null, views: [] };
+  $('storyViewer').classList.remove('hidden');
+  fetchUser(uid).then(u => {
+    if (!u) return;
+    $('storyUserAvatar').innerHTML = avInner(u);
+    $('storyUserName').textContent = mine ? 'قصتي' : (u.displayName || 'مستخدم');
+  });
+  clearInterval(SV.iv);
+  SV.iv = setInterval(tick, 50);
+  showStory();
+}
+function showStory() {
+  const s = SV.list[SV.i];
+  if (!s) return closeStoryViewer();
+  SV.t = 0; SV.react = null; SV.views = [];
+  const vEl = $('storyVid');
+  SV.dur = SDUR;
+  if (s.videoUrl) {
+    SV.dur = Math.min(30, s.duration || 30) * 1000;
+    $('storyImg').classList.add('hidden'); vEl.classList.remove('hidden');
+    vEl.onloadedmetadata = () => { if (isFinite(vEl.duration) && vEl.duration > 0) SV.dur = Math.min(30, vEl.duration) * 1000; };
+    vEl.src = s.videoUrl; vEl.currentTime = 0; vEl.muted = false;
+    const pl = vEl.play(); if (pl && pl.catch) pl.catch(() => { vEl.muted = true; vEl.play().catch(() => {}); });
+  } else {
+    vEl.pause(); vEl.removeAttribute('src'); vEl.classList.add('hidden');
+    $('storyImg').classList.remove('hidden'); $('storyImg').src = s.imageUrl;
+  }
+  const cap = $('svCap');
+  cap.textContent = s.caption || '';
+  cap.classList.toggle('hidden', !s.caption);
+  $('svBars').innerHTML = SV.list.map(() => '<div class="sv-bar"><i></i></div>').join('');
+  $('svTime').textContent = ago(s.createdAt) + (SV.mine ? (s.pinned ? ' · 📌 مثبتة' : isActive(s) ? ' · تنتهي بعد ' + leftTxt(s.expiresAt) : ' · أرشيف') : '');
+  svFooter(s);
+  markSeen(SV.uid, s.createdAt);
+  if (!SV.mine) db.collection('stories').doc(s.id).collection('views').doc(currentUser.uid).set({ uid: currentUser.uid, at: Date.now() }, { merge: true }).catch(() => {});
+  updateBars();
+}
+function svFooter(s) {
+  const f = $('svFoot');
+  if (SV.mine) {
+    f.innerHTML = `<div class="sv-own"><button class="sv-pill" onclick="openViewersList()">👁 <span id="svViews">0</span></button><button class="sv-pill" onclick="svPin()">${s.pinned ? '📍 إلغاء التثبيت' : '📌 تثبيت'}</button><button class="sv-pill" onclick="svDelete()">🗑 حذف</button></div>`;
+    db.collection('stories').doc(s.id).collection('views').get().then(q => {
+      if (SV.list[SV.i] !== s) return;
+      SV.views = q.docs.map(d => d.data());
+      const r = SV.views.filter(v => v.reaction).length;
+      const el = $('svViews'); if (el) el.textContent = SV.views.length + (r ? ` · ${r} تفاعل` : '');
+    }).catch(() => {});
+  } else {
+    f.innerHTML = `<div class="sv-reacts">${['❤️', '🔥', '😂', '😮', '😢', '👏'].map(e => `<span data-e="${e}" onclick="svReact('${e}')">${e}</span>`).join('')}</div><div class="sv-reply"><input id="svReplyInput" placeholder="رد على القصة..." autocomplete="off" onfocus="svPause(true)" onblur="svPause(false)" onkeydown="if(event.key==='Enter')sendStoryReply()"><button class="sv-pill" onmousedown="event.preventDefault()" onclick="sendStoryReply()">إرسال</button></div>`;
+    db.collection('stories').doc(s.id).collection('views').doc(currentUser.uid).get().then(d => {
+      if (SV.list[SV.i] !== s || !d.exists) return;
+      SV.react = d.data().reaction || null; markReact();
+    }).catch(() => {});
+  }
+}
+function markReact() { document.querySelectorAll('.sv-reacts span').forEach(x => x.classList.toggle('on', x.dataset.e === SV.react)); }
+function updateBars() {
+  document.querySelectorAll('#svBars .sv-bar i').forEach((el, k) => {
+    el.style.width = k < SV.i ? '100%' : k === SV.i ? Math.min(100, SV.t / (SV.dur || SDUR) * 100) + '%' : '0%';
+  });
+}
+function tick() {
+  if ($('storyViewer').classList.contains('hidden')) return;
+  const cur = SV.list[SV.i], v = $('storyVid'), isVid = cur && cur.videoUrl;
+  if (SV.paused || SV.hold) { if (isVid && !v.paused) v.pause(); return; }
+  if (isVid) {
+    if (v.paused && !v.ended) v.play().catch(() => {});
+    if (v.readyState >= 2 && !v.paused) SV.t = v.currentTime * 1000;
+    updateBars();
+    if (v.ended || SV.t >= (SV.dur || SDUR) - 50) storyNav(1);
+    return;
+  }
+  SV.t += 50; updateBars();
+  if (SV.t >= SDUR) storyNav(1);
+}
+function storyNav(d) {
+  const n = SV.i + d;
+  if (n < 0) { SV.t = 0; const vv = $('storyVid'); if (vv && !vv.classList.contains('hidden')) vv.currentTime = 0; updateBars(); return; }
+  if (n >= SV.list.length) return closeStoryViewer();
+  SV.i = n; showStory();
+}
+let svDownAt = 0;
+function svDown() { svDownAt = Date.now(); SV.hold = true; }
+function svCancel() { SV.hold = false; }
+function svUp(dir) { SV.hold = false; if (Date.now() - svDownAt < 250) storyNav(dir); }
+function svPause(b) { SV.paused = b; }
+function closeStoryViewer() {
+  clearInterval(SV.iv);
+  $('storyViewer').classList.add('hidden');
+  $('storyImg').src = '';
+  { const v = $('storyVid'); v.pause(); v.removeAttribute('src'); v.classList.add('hidden'); $('storyImg').classList.remove('hidden'); }
+  checkUserStories();
+  renderStoriesBar();
+  if (otherStoryUid && !$('otherUserProfileView').classList.contains('hidden')) loadOtherStories(otherStoryUid);
+}
+
+/* ---------- التفاعل والرد ---------- */
+function svReact(e) {
+  const s = SV.list[SV.i]; if (!s) return;
+  const off = SV.react === e;
+  SV.react = off ? null : e; markReact();
+  db.collection('stories').doc(s.id).collection('views').doc(currentUser.uid)
+    .set({ uid: currentUser.uid, at: Date.now(), reaction: off ? firebase.firestore.FieldValue.delete() : e }, { merge: true })
+    .catch(() => showToast('تعذر إرسال التفاعل'));
+}
+function sendStoryReply() {
+  const inp = $('svReplyInput'); if (!inp) return;
+  const text = inp.value.trim(); if (!text) return;
+  const me = currentUser.uid, chatId = [me, SV.uid].sort().join('__');
+  db.collection('chats').doc(chatId).set({ participants: [me, SV.uid], updatedAt: Date.now() }, { merge: true })
+    .then(() => db.collection('chats').doc(chatId).collection('messages').add({ senderId: me, text, storyReply: true, read: false, createdAt: Date.now() }))
+    .then(() => { notifyPeer(chatId, '↩ رد على قصتك: ' + text); inp.value = ''; inp.blur(); showToast('تم إرسال ردك ✅'); })
+    .catch(() => showToast('تعذر إرسال الرد'));
+}
+
+/* ---------- إدارة قصتي: تثبيت / حذف / مشاهدون ---------- */
+function svPin() {
+  const s = SV.list[SV.i]; if (!s) return;
+  db.collection('stories').doc(s.id).update({ pinned: !s.pinned }).then(() => {
+    s.pinned = !s.pinned;
+    showToast(s.pinned ? 'تم التثبيت بالملف الشخصي 📌' : 'تم إلغاء التثبيت');
+    showStory(); checkUserStories();
+  }).catch(() => showToast('تعذر التنفيذ'));
+}
+function svDelete() {
+  const s = SV.list[SV.i]; if (!s) return;
+  svPause(true);
+  if (!confirm('تحذف هذه القصة نهائياً؟')) return svPause(false);
+  db.collection('stories').doc(s.id).collection('views').get()
+    .then(q => Promise.all(q.docs.map(d => d.ref.delete().catch(() => {}))))
+    .catch(() => {})
+    .then(() => { if (s.videoPath && firebase.storage) return firebase.storage().ref(s.videoPath).delete().catch(() => {}); })
+    .then(() => db.collection('stories').doc(s.id).delete())
+    .then(() => {
+      showToast('تم حذف القصة 🗑');
+      SV.list.splice(SV.i, 1); SV.paused = false;
+      myStories = myStories.filter(x => x.id !== s.id);
+      if (!SV.list.length) return closeStoryViewer();
+      if (SV.i >= SV.list.length) SV.i = SV.list.length - 1;
+      showStory(); checkUserStories();
+    }).catch(() => { svPause(false); showToast('تعذر الحذف'); });
+}
+function openViewersList() {
+  const s = SV.list[SV.i]; if (!s) return;
+  svPause(true);
+  const list = $('viewersList');
+  const views = SV.views.slice().sort((a, b) => (b.at || 0) - (a.at || 0));
+  $('viewersTitle').textContent = `المشاهدون (${views.length})`;
+  list.innerHTML = views.length ? '' : '<div style="color:var(--text-muted);text-align:center;padding:10px;">لا توجد مشاهدات بعد</div>';
+  views.forEach(v => {
+    fetchUser(v.uid).then(u => {
+      if (!u) return;
+      const it = document.createElement('div');
+      it.className = 'viewer-item';
+      it.innerHTML = `<div class="viewer-info"><div class="story-avatar" style="color:#000">${avInner(u)}</div><div style="text-align:right;"><div style="color:white;font-weight:600;font-size:14px;">${esc(u.displayName || 'مستخدم')}</div><div style="color:var(--text-muted);font-size:11px;">@${esc(u.username || '')} · ${ago(v.at || 0)}</div></div></div>${v.reaction ? `<span class="vw-react">${esc(v.reaction)}</span>` : ''}`;
+      list.appendChild(it);
+    });
+  });
+  $('viewersModal').classList.remove('hidden');
+}
+function closeViewersList() { $('viewersModal').classList.add('hidden'); svPause(false); }
+
+function loadUserPosts() {
+  if (!currentUser) return;
+  const grid = document.getElementById("postsGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  db.collection("posts")
+    .where("userId", "==", currentUser.uid)
+    .get().then(snap => {
+      snap.forEach(doc => {
+        const post = doc.data();
+        const item = document.createElement("div");
+        item.className = "post-grid-item";
+        item.innerHTML = `
+          <img src="${post.imageUrl}">
+          <div class="post-grid-stats">❤️ ${post.likes ? post.likes.length : 0}</div>
+        `;
+        grid.appendChild(item);
+      });
+    });
+}
+</script>
+</body>
+</html>
