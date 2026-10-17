@@ -1767,6 +1767,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
       </div>
 
       <div id="messagesArea" class="messages-area"></div>
+      <div id="multiSelectBar" class="multi-select-bar hidden" role="toolbar" aria-label="إجراءات الرسائل المحددة"><span id="multiSelectCount">تم تحديد 0</span><button type="button" onclick="deleteMultipleMessagesForMe()">حذف لدي فقط</button><button type="button" onclick="clearMessageSelection()" aria-label="إلغاء التحديد">إلغاء</button></div>
 
       <div class="chat-input-container">
         <div id="replyPreviewBar" class="reply-preview-bar hidden">
@@ -2954,7 +2955,11 @@ function openChatRoom(otherUserId, keepLimit) {
         b.ontouchstart = (e) => {
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
-          pressTimer = setTimeout(() => { document.querySelectorAll(".msg-bubble.selected-message").forEach(x=>x.classList.remove("selected-message")); b.classList.add("selected-message"); openMsgModal(doc.id, m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), m.senderId, m.reactions || {}, !!m.audioUrl); }, 450);
+          pressTimer = setTimeout(() => {
+            suppressNextMessageClick = true;
+            if (messageSelectionMode) toggleMessageSelection(doc.id);
+            else { enterMessageSelection(doc.id); }
+          }, 450);
         };
 
         b.ontouchmove = (e) => {
@@ -2968,10 +2973,21 @@ function openChatRoom(otherUserId, keepLimit) {
           if (touchStartX - e.changedTouches[0].clientX > 50) triggerSwipeReply(m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"));
         };
 
-        b.onmousedown = () => {
-          pressTimer = setTimeout(() => { document.querySelectorAll(".msg-bubble.selected-message").forEach(x=>x.classList.remove("selected-message")); b.classList.add("selected-message"); openMsgModal(doc.id, m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), m.senderId, m.reactions || {}, !!m.audioUrl); }, 450);
+        b.onmousedown = (e) => {
+          if (e.button !== 0) return;
+          pressTimer = setTimeout(() => {
+            suppressNextMessageClick = true;
+            if (messageSelectionMode) toggleMessageSelection(doc.id);
+            else enterMessageSelection(doc.id);
+          }, 450);
         };
         b.onmouseup = b.onmouseleave = () => clearTimeout(pressTimer);
+        b.onclick = (e) => {
+          if (suppressNextMessageClick) { suppressNextMessageClick = false; return; }
+          if (!messageSelectionMode) return;
+          if (e.target.closest('button,input,audio,.msg-image img')) return;
+          e.preventDefault(); e.stopPropagation(); toggleMessageSelection(doc.id);
+        };
 
         if (existingTyping) {
           box.insertBefore(b, existingTyping);
@@ -2979,9 +2995,55 @@ function openChatRoom(otherUserId, keepLimit) {
           box.appendChild(b);
         }
       });
+      if (messageSelectionMode) refreshMessageSelectionUI();
       if (loadingOlder) { box.scrollTop = Math.max(0, box.scrollHeight - prevH); loadingOlder = false; }
       else box.scrollTop = box.scrollHeight;
     });
+}
+
+let messageSelectionMode = false;
+let suppressNextMessageClick = false;
+const selectedMessageIds = new Set();
+function enterMessageSelection(id) {
+  messageSelectionMode = true;
+  selectedMessageIds.clear();
+  selectedMessageIds.add(id);
+  refreshMessageSelectionUI();
+}
+function toggleMessageSelection(id) {
+  if (!messageSelectionMode) { enterMessageSelection(id); return; }
+  if (selectedMessageIds.has(id)) selectedMessageIds.delete(id);
+  else selectedMessageIds.add(id);
+  if (!selectedMessageIds.size) { clearMessageSelection(); return; }
+  refreshMessageSelectionUI();
+}
+function refreshMessageSelectionUI() {
+  document.querySelectorAll('#messagesArea .msg-bubble').forEach(b => {
+    const id = b.id.startsWith('message_') ? b.id.slice(8) : '';
+    b.classList.toggle('selected-message', selectedMessageIds.has(id));
+    b.setAttribute('aria-selected', selectedMessageIds.has(id) ? 'true' : 'false');
+  });
+  const bar = document.getElementById('multiSelectBar');
+  const count = document.getElementById('multiSelectCount');
+  if (count) count.textContent = `تم تحديد ${selectedMessageIds.size} ${selectedMessageIds.size === 1 ? 'رسالة' : 'رسائل'}`;
+  if (bar) bar.classList.toggle('hidden', !messageSelectionMode);
+}
+function clearMessageSelection() {
+  messageSelectionMode = false;
+  selectedMessageIds.clear();
+  document.querySelectorAll('#messagesArea .msg-bubble.selected-message').forEach(b => {
+    b.classList.remove('selected-message'); b.setAttribute('aria-selected','false');
+  });
+  document.getElementById('multiSelectBar')?.classList.add('hidden');
+}
+function deleteMultipleMessagesForMe() {
+  if (!activeChatId || !selectedMessageIds.size) return showToast('حدد رسالة واحدة على الأقل');
+  const hidden = getLocalChatSet('babylon_hidden_messages_' + activeChatId);
+  const ids = Array.from(selectedMessageIds);
+  ids.forEach(id => { hidden.add(id); document.getElementById('message_' + id)?.remove(); });
+  saveLocalChatSet('babylon_hidden_messages_' + activeChatId, hidden);
+  clearMessageSelection();
+  showToast(`تم إخفاء ${ids.length} رسالة لديك فقط`);
 }
 
 function triggerSwipeReply(text) {
@@ -4747,4 +4809,14 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 .msg-bubble:has(.audio-player-card) {
   min-width: 0;
 }
+</style>
+
+<style id="babylon-multi-message-selection">
+.multi-select-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--babylon-gold,#d4af37);background:var(--chat-panel-bg,var(--app-panel,#17212b));color:var(--text-primary,#fff);}
+.multi-select-bar.hidden{display:none!important}
+.multi-select-bar span{font-weight:700;margin-inline-end:auto}
+.multi-select-bar button{border:1px solid var(--babylon-gold,#d4af37);border-radius:10px;padding:8px 12px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.multi-select-bar button:first-of-type{background:var(--babylon-gold,#d4af37);color:#171717}
+.msg-bubble.selected-message{outline:2px solid var(--babylon-gold,#d4af37);outline-offset:2px;box-shadow:0 0 0 5px rgba(212,175,55,.16)}
+#messagesArea .msg-bubble[aria-selected="true"]{position:relative}
 </style>
