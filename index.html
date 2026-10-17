@@ -1777,7 +1777,7 @@ i[data-ic]{display:inline-flex;font-style:normal}
         </div>
 
         <form id="textInputBar" class="chat-input-bar" onsubmit="sendMessage(event)">
-          <input id="messageInput" placeholder="اكتب رسالتك..." autocomplete="off">
+          <input id="messageInput" name="chat-message" placeholder="اكتب رسالتك..." autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" data-form-type="other" inputmode="text">
           <label class="icon-btn" for="chatImageInput" style="color:var(--text-muted); cursor:pointer;" title="إرسال صورة"><i data-ic="image" data-size="22"></i></label>
           <input type="file" id="chatImageInput" accept="image/*" class="hidden" onchange="sendImage(event)">
           <button type="button" class="icon-btn mic-button" style="color:var(--text-muted)" onclick="startRecording()" title="تسجيل صوت" aria-label="تسجيل صوت"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1M12 18v3M8.5 21h7"></path></svg></button>
@@ -4234,3 +4234,32 @@ function loadUserPosts() {
 </script>
 </body>
 </html>
+
+<style id="babylon-mobile-keyboard-fix">
+/* Keep the chat composer aligned to the chat view while the Android keyboard is open. */
+#chatRoomView, .chat-room { min-height: 0; }
+#chatRoomView { height: 100%; }
+.chat-input-container { flex-shrink: 0; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); }
+#textInputBar { min-width: 0; }
+#messageInput { min-width: 0; -webkit-appearance: none; appearance: none; }
+#messageInput:-webkit-autofill, #messageInput:-webkit-autofill:hover, #messageInput:-webkit-autofill:focus { -webkit-text-fill-color: var(--text-main); transition: background-color 9999s ease-out; }
+</style>
+<script id="babylon-mobile-keyboard-fix-js">
+(function(){
+  var input = document.getElementById('messageInput');
+  if (!input) return;
+  // Ask mobile browsers not to offer address/payment/password autofill for the chat composer.
+  input.setAttribute('autocomplete','off');
+  input.setAttribute('autocorrect','off');
+  input.setAttribute('data-lpignore','true');
+  input.setAttribute('data-1p-ignore','true');
+  input.addEventListener('focus', function(){
+    document.documentElement.classList.add('babylon-chat-keyboard-open');
+    setTimeout(function(){
+      var area = document.getElementById('messagesArea');
+      if (area) area.scrollTop = area.scrollHeight;
+    }, 120);
+  });
+  input.addEventListener('blur', function(){ document.documentElement.classList.remove('babylon-chat-keyboard-open'); });
+})();
+</script>
