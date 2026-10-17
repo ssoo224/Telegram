@@ -873,8 +873,10 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .sb-item{display:flex;flex-direction:column;align-items:center;gap:6px;width:62px;flex-shrink:0;font-size:11px;color:var(--text-muted);cursor:pointer}
 .sb-item .avatar{width:54px;height:54px;font-size:20px;position:relative}
 .sb-item span{max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sb-plus{position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:#2AABEE;color:#fff;display:flex;align-items:center;justify-content:center;border:2px solid var(--babylon-surface,#0f172a);box-sizing:border-box;z-index:2;box-shadow:0 1px 4px rgba(0,0,0,.22)}
-.sb-plus svg{display:block;width:13px;height:13px;stroke:#fff;stroke-width:2.6;stroke-linecap:round;fill:none}
+.sb-plus{position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:#2AABEE;color:#fff;display:flex;align-items:center;justify-content:center;border:2px solid var(--babylon-surface,#0f172a);box-sizing:border-box;z-index:2;box-shadow:0 1px 4px rgba(0,0,0,.22);overflow:visible}
+.sb-plus svg{display:block;width:19px;height:19px;flex-shrink:0;overflow:visible;stroke:#fff;stroke-width:2.8;stroke-linecap:round;fill:none;transform:translate(2px,-2px)}
+/* In the daytime theme, the plus symbol is gold; the plus strokes remain white at night. */
+[data-theme="light"] .sb-plus svg,[data-theme="day"] .sb-plus svg,.theme-light .sb-plus svg,body.light .sb-plus svg{stroke:#D4A017}
 .story-viewer-modal{align-items:center}
 .sv-stage{position:relative;width:100%;max-width:480px;height:100%;margin:0 auto;background:#000;display:flex;flex-direction:column;overflow:hidden}
 .sv-bars{display:flex;gap:3px;padding:10px 10px 0;position:absolute;top:0;left:0;right:0;z-index:6}
