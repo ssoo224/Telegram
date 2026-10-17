@@ -1909,16 +1909,20 @@ i[data-ic]{display:inline-flex;font-style:normal}
   </div>
 </div>
 
-<div id="msgModal" class="msg-actions-modal hidden" onclick="closeMsgModal(event)">
-  <div class="emoji-picker-bar" id="msgEmojiPicker">
-    <button type="button" class="emoji-btn emoji-plus" onclick="toggleFullEmojiPicker(event)" aria-label="عرض جميع الإيموجيات">＋</button>
-    <div class="emoji-quick-row"><button class="emoji-btn" onclick="addReaction('😂')">😂</button><button class="emoji-btn" onclick="addReaction('❤️')">❤️</button><button class="emoji-btn" onclick="addReaction('👍🏻')">👍🏻</button><button class="emoji-btn" onclick="addReaction('😭')">😭</button><button class="emoji-btn" onclick="addReaction('✨')">✨</button></div>
-    <div class="emoji-full-grid hidden" id="fullEmojiGrid" aria-label="اختر إيموجياً"></div>
-  </div>
-  <div class="msg-actions-card">
-    <button onclick="actionCopy()">▤ نسخ النص</button>
-    <button id="btnEditMsg" class="hidden" onclick="actionEdit()">✎ تعديل الرسالة</button>
-    <button id="btnDeleteMsg" class="danger hidden" onclick="actionDelete()">⌫ حذف الرسالة</button>
+<div id="msgModal" class="msg-actions-modal hidden" onclick="closeMsgModal(event)" role="dialog" aria-modal="true" aria-label="خيارات الرسالة">
+  <div class="msg-actions-shell" onclick="event.stopPropagation()">
+    <div class="emoji-picker-bar" id="msgEmojiPicker">
+      <button type="button" class="emoji-btn emoji-plus" onclick="toggleFullEmojiPicker(event)" aria-label="عرض جميع التفاعلات"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <div class="emoji-quick-row"><button type="button" class="emoji-btn" onclick="addReaction('😂')" aria-label="ضحك">😂</button><button type="button" class="emoji-btn" onclick="addReaction('❤️')" aria-label="قلب">❤️</button><button type="button" class="emoji-btn" onclick="addReaction('👍🏻')" aria-label="إعجاب">👍🏻</button><button type="button" class="emoji-btn" onclick="addReaction('😭')" aria-label="حزن">😭</button><button type="button" class="emoji-btn" onclick="addReaction('✨')" aria-label="نجوم">✨</button></div>
+      <div class="emoji-full-grid hidden" id="fullEmojiGrid" aria-label="اختر تفاعلاً"></div>
+    </div>
+    <div class="msg-actions-card">
+      <button id="btnReplyMsg" type="button" onclick="actionReply()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 10 4 15l5 5M4 15h9a7 7 0 0 0 7-7V5"/></svg><span>رد على الرسالة</span></button>
+      <button id="btnCopyMsg" type="button" onclick="actionCopy()"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg><span>نسخ النص</span></button>
+      <button id="btnEditMsg" type="button" class="hidden" onclick="actionEdit()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16.5-.8 4.3 4.3-.8L19.8 7.7a2.1 2.1 0 0 0-3-3Z"/><path d="m15.5 6 3 3"/></svg><span>تعديل الرسالة</span></button>
+      <button id="btnDeleteMsg" type="button" class="danger hidden" onclick="actionDelete()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7"/></svg><span>حذف الرسالة</span></button>
+      <button id="btnCloseMsg" type="button" class="msg-action-cancel" onclick="document.getElementById('msgModal').classList.add('hidden')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg><span>إلغاء</span></button>
+    </div>
   </div>
 </div>
 
@@ -2980,32 +2984,38 @@ function triggerSwipeReply(text) {
 
 function openMsgModal(msgId, text, senderId, reactions, isAudioMessage) {
   selectedMsgId = msgId;
-  selectedMsgText = text;
+  selectedMsgText = text || "";
   selectedMsgSender = senderId;
   selectedMsgReactions = reactions || {};
-  // Start each message-selection session with the expanded emoji list closed;
-  // the user must tap + whenever they want to open it.
+  const modal = document.getElementById("msgModal");
   const emojiGrid = document.getElementById("fullEmojiGrid");
   if (emojiGrid) emojiGrid.classList.add("hidden");
 
-  const btnEdit = document.getElementById("btnEditMsg");
-  const btnDelete = document.getElementById("btnDeleteMsg");
-
-  if (senderId === currentUser.uid) {
-    btnEdit.classList.remove("hidden");
-    btnDelete.classList.remove("hidden");
-  } else {
-    btnEdit.classList.add("hidden");
-    btnDelete.classList.add("hidden");
-  }
-  // لا نعرض خيار تعديل الرسالة للصوتيات حتى لو كانت الرسالة للمستخدم الحالي.
-  if (isAudioMessage) btnEdit.classList.add("hidden");
-
-  document.getElementById("msgModal").classList.remove("hidden");
+  const owned = !!currentUser && senderId === currentUser.uid;
+  const setVisible = (id, visible) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle("hidden", !visible);
+  };
+  // Every action is configured on each opening, preventing state leaking from the previous message.
+  setVisible("btnReplyMsg", true);
+  setVisible("btnCopyMsg", !isAudioMessage && !!String(selectedMsgText).trim());
+  setVisible("btnEditMsg", owned && !isAudioMessage);
+  setVisible("btnDeleteMsg", owned);
+  if (modal) modal.classList.remove("hidden");
 }
 
 function closeMsgModal(e) {
-  if (e.target.id === "msgModal") document.getElementById("msgModal").classList.add("hidden");
+  if (!e || e.target.id === "msgModal") {
+    document.getElementById("msgModal")?.classList.add("hidden");
+    document.getElementById("fullEmojiGrid")?.classList.add("hidden");
+  }
+}
+
+function actionReply() {
+  if (!selectedMsgId) return showToast("حدد رسالة أولاً");
+  const text = selectedMsgText || "رسالة";
+  document.getElementById("msgModal")?.classList.add("hidden");
+  triggerSwipeReply(text);
 }
 
 function addReaction(emoji) {
@@ -4399,8 +4409,47 @@ function closeChatMenus() { ['chatMoreMenu','chatDeletePanel'].forEach(id=>docum
 function refreshMuteLabel() { const b=document.getElementById('chatMuteAction'); if(!b||!currentChatOtherUserId)return; const muted=getLocalChatSet('babylon_muted_users').has(currentChatOtherUserId); b.innerHTML=muted?'<svg class="chat-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span>إلغاء كتم المحادثة</span>':'<svg class="chat-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/><path d="m3 3 18 18"/></svg><span>كتم المحادثة</span>'; }
 function toggleChatMute() { if(!currentChatOtherUserId)return; const set=getLocalChatSet('babylon_muted_users'); const muted=set.has(currentChatOtherUserId); muted?set.delete(currentChatOtherUserId):set.add(currentChatOtherUserId); saveLocalChatSet('babylon_muted_users',set); closeChatMenus(); refreshMuteLabel(); showToast(muted?'تم إلغاء كتم المحادثة':'تم كتم هذا الشخص على جهازك'); }
 function openChatDeleteOptions() { document.getElementById('chatMoreMenu')?.classList.add('hidden'); document.getElementById('chatDeletePanel')?.classList.remove('hidden'); }
-function deleteChatForMe() { if(!activeChatId)return; const set=getLocalChatSet('babylon_hidden_chats'); set.add(activeChatId); saveLocalChatSet('babylon_hidden_chats',set); closeChatMenus(); showToast('حُذفت المحادثة من قائمتك فقط'); goHome(); }
-async function deleteChatForEveryone() { if(!activeChatId||!currentUser)return; if(!confirm('سيتم حذف سجل المحادثة والرسائل للطرفين. هل تريد المتابعة؟'))return; const cid=activeChatId; try { const ref=db.collection('chats').doc(cid); const snap=await ref.collection('messages').get(); let batch=db.batch(), n=0; for(const d of snap.docs){batch.delete(d.ref);n++; if(n===400){await batch.commit();batch=db.batch();n=0;}} if(n)await batch.commit(); await ref.delete(); closeChatMenus(); showToast('تم حذف المحادثة لدى الكل'); goHome(); } catch(e) { console.error(e); showToast('تعذر الحذف لدى الكل: تحقق من الصلاحيات'); } }
+function deleteChatForMe() {
+  const cid = activeChatId;
+  if (!cid) { showToast('تعذر تحديد المحادثة الحالية'); return; }
+  const hidden = getLocalChatSet('babylon_hidden_chats');
+  hidden.add(cid);
+  saveLocalChatSet('babylon_hidden_chats', hidden);
+  // Remove the item immediately; the local hidden list keeps it hidden after reload on this device.
+  const item = document.getElementById('chat_item_' + cid);
+  if (item) item.remove();
+  closeChatMenus();
+  document.getElementById('chatDeletePanel')?.classList.add('hidden');
+  showToast('تم إخفاء المحادثة من قائمتك على هذا الجهاز');
+  goHome();
+}
+async function deleteChatForEveryone() {
+  const cid = activeChatId;
+  if (!cid || !currentUser || !db) { showToast('تعذر تحديد المحادثة أو الاتصال'); return; }
+  if (!confirm('سيتم حذف رسائل المحادثة وسجلها للطرفين. هل تريد المتابعة؟')) return;
+  const button = document.querySelector('#chatDeletePanel button.danger');
+  if (button) { button.disabled = true; button.textContent = 'جارٍ الحذف…'; }
+  try {
+    const ref = db.collection('chats').doc(cid);
+    const snap = await ref.collection('messages').get();
+    // Firestore allows up to 500 writes per batch; keep a safe margin.
+    let batch = db.batch(), count = 0;
+    for (const doc of snap.docs) {
+      batch.delete(doc.ref); count++;
+      if (count === 400) { await batch.commit(); batch = db.batch(); count = 0; }
+    }
+    if (count) await batch.commit();
+    await ref.delete();
+    closeChatMenus();
+    showToast('تم حذف سجل المحادثة؛ قد تمنع قواعد Firestore الحذف لدى الكل');
+    goHome();
+  } catch (err) {
+    console.error('deleteChatForEveryone failed:', err);
+    showToast(err && err.code === 'permission-denied' ? 'تعذر الحذف: قواعد Firestore لا تسمح بهذه العملية' : 'تعذر حذف المحادثة. تحقق من الاتصال والصلاحيات.');
+  } finally {
+    if (button) { button.disabled = false; button.textContent = 'حذف لدى الكل'; }
+  }
+}
 function openChatSearch() { closeChatMenus(); const p=document.getElementById('chatSearchPanel'); p?.classList.remove('hidden'); const i=document.getElementById('chatMessageSearchInput'); if(i){i.value='';i.focus();} const r=document.getElementById('chatMessageSearchResults'); if(r)r.innerHTML='<div class="chat-search-empty">اكتب كلمة أو حرفين للبحث في رسائل هذه المحادثة.</div>'; }
 function closeChatSearch() { document.getElementById('chatSearchPanel')?.classList.add('hidden'); document.querySelectorAll('.msg-bubble.search-match').forEach(x=>x.classList.remove('search-match')); }
 let chatSearchTimer=null;
@@ -4632,4 +4681,33 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 .chat-more-menu button:hover .chat-action-icon{transform:scale(1.04)}
 .chat-action-icon{transition:transform .15s ease}
 @media(prefers-reduced-motion:reduce){.chat-action-icon{transition:none}}
+</style>
+
+<style id="babylon-message-actions-rebuild-v2">
+/* Rebuilt long-press actions: coherent in both app themes. */
+#msgModal.msg-actions-modal { background:rgba(5,12,22,.58); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); padding:18px; box-sizing:border-box; }
+#msgModal .msg-actions-shell { width:min(390px,100%); display:flex; flex-direction:column; gap:10px; color:var(--text-main,#f4f7fb); }
+#msgModal .emoji-picker-bar { width:100%; box-sizing:border-box; margin:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px; border:1px solid var(--babylon-border,#344454); border-radius:18px; background:var(--babylon-surface-card,#202d3a); color:var(--text-main,#f4f7fb); box-shadow:0 12px 35px rgba(0,0,0,.16); }
+#msgModal .emoji-btn { border:0; background:transparent; color:inherit; border-radius:11px; min-width:34px; min-height:34px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+#msgModal .emoji-btn svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+#msgModal .emoji-quick-row { display:flex; flex:1; justify-content:space-around; gap:3px; }
+#msgModal .msg-actions-card { width:100%; box-sizing:border-box; padding:7px; border:1px solid var(--babylon-border,#344454); border-radius:18px; overflow:hidden; background:var(--babylon-surface-card,#202d3a); color:var(--text-main,#f4f7fb); box-shadow:0 16px 42px rgba(0,0,0,.22); }
+#msgModal .msg-actions-card button { min-height:46px; padding:11px 12px; display:flex; flex-direction:row; align-items:center; gap:12px; border:0; border-bottom:1px solid var(--babylon-border,#344454); border-radius:10px; background:transparent; color:inherit; font:500 14px/1.35 inherit; text-align:right; cursor:pointer; transition:background .15s ease,transform .15s ease; }
+#msgModal .msg-actions-card button:last-child { border-bottom:0; }
+#msgModal .msg-actions-card button:hover { background:rgba(193,157,63,.13); }
+#msgModal .msg-actions-card button:active { transform:scale(.99); }
+#msgModal .msg-actions-card button svg { flex:0 0 20px; width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; opacity:.92; }
+#msgModal .msg-actions-card button span { flex:1; }
+#msgModal .msg-actions-card button.danger { color:#ef6464 !important; }
+#msgModal .msg-actions-card button.msg-action-cancel { color:var(--text-muted,#94a3b8); justify-content:center; }
+#msgModal .msg-actions-card button.hidden { display:none !important; }
+.app-container[data-app-theme="light"] #msgModal .emoji-picker-bar,
+.app-container[data-app-theme="light"] #msgModal .msg-actions-card { background:#fff !important; color:#17212b !important; border-color:#e0e6ee !important; }
+.app-container[data-app-theme="light"] #msgModal .msg-actions-card button { color:#17212b; border-color:#edf0f4; }
+.app-container[data-app-theme="light"] #msgModal .msg-actions-card button.danger { color:#dc2626 !important; }
+.app-container[data-app-theme="dark"] #msgModal .emoji-picker-bar,
+.app-container[data-app-theme="dark"] #msgModal .msg-actions-card { background:#17212b !important; color:#f1f5f9 !important; border-color:#334155 !important; }
+.app-container[data-app-theme="dark"] #msgModal .msg-actions-card button { color:#f1f5f9; border-color:#334155; }
+#chatDeletePanel button:disabled { opacity:.6; cursor:wait; }
+@media (prefers-reduced-motion:reduce) { #msgModal .msg-actions-card button { transition:none; } }
 </style>
