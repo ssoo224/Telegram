@@ -8,7 +8,7 @@
 .app-container[data-app-theme="light"] .splash-page{background:radial-gradient(circle at center,#ffffff 0%,#edf2f8 100%)}
 .splash-page.leaving{opacity:0;visibility:hidden;pointer-events:none}
 .splash-page.gone{display:none!important}
-.splash-logo{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0f172a;
+.splash-logo{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ffffff;
   background:linear-gradient(135deg,#d4af37,#b38f27);border:2px solid #fff5c0;box-shadow:0 10px 28px rgba(212,175,55,.32);animation:splashBreath 2.2s ease-in-out infinite}
 .splash-logo svg{width:46px;height:46px;display:block}
 .splash-title{margin-top:20px;font-size:25px;font-weight:800;letter-spacing:-.3px;color:#d4af37}
@@ -125,7 +125,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 38px;
-  color: #ffffff;
+  color: var(--babylon-dark);
   margin-bottom: 20px;
   box-shadow: 0 10px 25px rgba(212, 175, 55, 0.3);
   border: 2px solid #fff5c0;
@@ -1677,13 +1677,6 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
   color:#f5d76e !important;
   stroke:#f5d76e !important;
 }
-</style>
-
-<style id="force-login-logo-white">
-/* Force the Babylon emblem itself to stay white in both themes. */
-#authPage .babylon-logo { color:#fff !important; }
-#authPage .babylon-logo svg, #authPage .babylon-logo svg path { color:#fff !important; }
-#authPage .babylon-logo svg path { stroke:#fff !important; }
 </style>
 </head>
 
