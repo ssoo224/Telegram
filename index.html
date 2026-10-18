@@ -5775,3 +5775,15 @@ function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-ite
 .app-container #homeView#homeView .empty-chats{padding:60px 28px!important}
 .app-container #homeView#homeView .empty-chats-icon{width:92px!important;height:92px!important;font-size:38px!important;border:0!important;background:linear-gradient(145deg,rgba(228,196,91,.22),rgba(228,196,91,.06))!important;color:var(--cl-gold)!important;box-shadow:0 10px 30px rgba(201,154,28,.15)}
 </style>
+<style id="babylon-chatlist-tweaks-2">
+/* stories: one step further from the header */
+.app-container #homeView#homeView .sbar{padding-top:12px!important}
+/* filter chips: white label when pressed, readable deep gold in both themes */
+.app-container #homeView#homeView .cl-chip.active{background:linear-gradient(145deg,#d9ad34,#b8861b)!important;color:#fff!important;-webkit-text-fill-color:#fff}
+/* count circle on the unread chip: gold + white number, flips when the chip is pressed */
+.app-container #homeView#homeView .cl-chip b{background:linear-gradient(145deg,#e2b83f,#b8861b)!important;color:#fff!important;border:2px solid var(--cl-bg);box-shadow:0 2px 6px rgba(184,134,27,.4)}
+.app-container #homeView#homeView .cl-chip.active b{background:#fff!important;color:#b8861b!important;border-color:#b8861b}
+/* unread-message number inside each row: white */
+.app-container #homeView#homeView #chatList .unread-badge{color:#fff!important;background:linear-gradient(145deg,#e2b83f,#b8861b)!important;text-shadow:0 1px 1px rgba(0,0,0,.18)}
+</style>
+<style id="babylon-chatlist-tweaks-3">.app-container #homeView#homeView .cl-chip b{-webkit-text-fill-color:currentColor}</style>
