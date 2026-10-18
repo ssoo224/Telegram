@@ -1798,6 +1798,11 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 @keyframes emFade{from{opacity:0}to{opacity:1}}
 @keyframes emPop{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
 </style>
+<style id="editable-composer-style">
+#messageInput.msg-editable{flex:1 1 auto;min-width:0;display:block;box-sizing:border-box;line-height:22px!important;white-space:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-user-select:text;user-select:text;cursor:text;caret-color:var(--babylon-gold,#d4af37);-webkit-tap-highlight-color:transparent}
+#messageInput.msg-editable::-webkit-scrollbar{display:none}
+#messageInput.msg-editable:empty::before{content:attr(data-placeholder);color:var(--text-muted,#8b98a8);pointer-events:none}
+</style>
 </head>
 
 <body>
@@ -2204,12 +2209,44 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
         </div>
 
         <form id="textInputBar" class="chat-input-bar" onsubmit="sendMessage(event)" autocomplete="off" novalidate data-form-type="other">
-          <input id="messageInput" type="text" name="babylon_msg_body" placeholder="اكتب رسالتك..." autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false" inputmode="text" enterkeyhint="send" role="textbox" aria-autocomplete="none" aria-label="اكتب رسالتك" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-gramm="false">
+          <div id="messageInput" class="msg-editable" contenteditable="plaintext-only" role="textbox" aria-multiline="false" aria-label="اكتب رسالتك" data-placeholder="اكتب رسالتك..." dir="auto" spellcheck="false" autocorrect="off" autocapitalize="sentences" inputmode="text" enterkeyhint="send" tabindex="0"></div>
           <label class="icon-btn" for="chatImageInput" style="color:var(--text-muted); cursor:pointer;" title="إرسال صورة"><i data-ic="image" data-size="22"></i></label>
           <input type="file" id="chatImageInput" accept="image/*" class="hidden" onchange="sendImage(event)">
           <button type="button" class="icon-btn mic-button" style="color:var(--text-muted)" onclick="startRecording()" title="تسجيل صوت" aria-label="تسجيل صوت"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1M12 18v3M8.5 21h7"></path></svg></button>
           <button class="icon-btn" style="color:var(--babylon-gold)" type="submit" aria-label="إرسال"><i data-ic="send" data-size="22"></i></button>
         </form>
+<script id="babylon-editable-composer">
+/* حقل الرسالة عنصر قابل للتحرير (وليس input) كي لا يعرض المتصفح شريط الإكمال التلقائي (مفاتيح/بطاقات/مواقع) */
+(function(){
+  var el = document.getElementById('messageInput'); if (!el) return;
+  var form = document.getElementById('textInputBar');
+  try { el.contentEditable = 'plaintext-only'; if (el.contentEditable !== 'plaintext-only') el.contentEditable = 'true'; } catch(e) { el.contentEditable = 'true'; }
+  Object.defineProperty(el, 'value', {
+    get: function(){ return (el.textContent || '').replace(/\u00a0/g, ' '); },
+    set: function(v){ el.textContent = v == null ? '' : String(v); }
+  });
+  function caretToEnd(){
+    try { var r = document.createRange(); r.selectNodeContents(el); r.collapse(false); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); } catch(e) {}
+  }
+  var nativeFocus = el.focus.bind(el);
+  el.focus = function(opts){ try { nativeFocus(opts); } catch(e) { nativeFocus(); } caretToEnd(); };
+  el.addEventListener('input', function(){ if (!el.textContent) el.innerHTML = ''; });
+  el.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+      e.preventDefault();
+      if (form && form.requestSubmit) form.requestSubmit();
+      else if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    }
+  });
+  el.addEventListener('paste', function(e){
+    e.preventDefault();
+    var t = ((e.clipboardData || window.clipboardData).getData('text') || '').replace(/[\r\n]+/g, ' ');
+    document.execCommand('insertText', false, t);
+  });
+  el.addEventListener('drop', function(e){ e.preventDefault(); });
+})();
+</script>
+
       </div>
     </div>
 
