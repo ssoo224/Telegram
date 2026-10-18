@@ -1482,8 +1482,8 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 #avatarGalleryModal.hidden{display:none!important}
 #avatarGalleryModal .ag-top{position:absolute;top:16px;left:16px;right:16px;display:flex;align-items:center;justify-content:space-between;color:#fff}
 #avatarGalleryModal .ag-close{width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center}
-#avatarGalleryModal .ag-photo-wrap{width:100%;height:min(76vh,760px);display:flex;align-items:center;justify-content:center;overflow:hidden}
-#avatarGalleryModal #avatarGalleryImage{display:block;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;user-select:none;-webkit-user-drag:none;touch-action:pan-x}
+#avatarGalleryModal .ag-photo-wrap{width:100%;height:calc(100vh - 150px);max-height:900px;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:pan-y}
+#avatarGalleryModal #avatarGalleryImage{display:block;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;user-select:none;-webkit-user-drag:none;touch-action:pan-y;image-rendering:auto}
 #avatarGalleryModal .ag-caption{color:#fff;font-size:13px;margin-top:14px;opacity:.85}
 #avatarGalleryModal .ag-dots{display:flex;gap:7px;margin-top:12px;justify-content:center;flex-wrap:wrap}
 #avatarGalleryModal .ag-dot{width:7px;height:7px;border-radius:50%;background:#64748b}.ag-dot.active{background:#d4af37}
@@ -2876,15 +2876,16 @@ function uploadAvatarLive(e) {
     const img = new Image();
     img.onerror = () => showToast('تعذر فتح الصورة');
     img.onload = function() {
-      // Higher-resolution square avatar, keeping the source aspect ratio by center-cropping.
-      const size = 1024;
-      const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
+      // Preserve the entire original image (no square crop) and retain high detail.
+      const maxSide = 1600;
+      const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+      const width = Math.max(1, Math.round(img.naturalWidth * scale));
+      const height = Math.max(1, Math.round(img.naturalHeight * scale));
+      const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
       const ctx = canvas.getContext('2d');
-      const side = Math.min(img.naturalWidth, img.naturalHeight);
-      const sx = (img.naturalWidth - side) / 2, sy = (img.naturalHeight - side) / 2;
       ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      ctx.drawImage(img, 0, 0, width, height);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.96);
       const previous = currentUserData && currentUserData.avatarUrl;
       let historyList = Array.isArray(currentUserData && currentUserData.avatarHistory) ? currentUserData.avatarHistory.slice() : [];
       if (previous && previous !== compressedDataUrl) {
@@ -2907,29 +2908,33 @@ let avatarGalleryItems = [], avatarGalleryIndex = 0, avatarGalleryTouchX = null,
 let avatarPressTimer = null, avatarPressStartY = 0, avatarPressStartX = 0, avatarLongPressOpened = false;
 function bindAvatarRevealGestures() {
   const img = document.getElementById('pAvatarImg');
-  if (!img || img.dataset.revealGesturesBound === '1') return;
-  img.dataset.revealGesturesBound = '1';
+  const ring = document.getElementById('pStoryRing');
+  const target = img || ring;
+  if (!target || target.dataset.revealGesturesBound === '1') return;
+  target.dataset.revealGesturesBound = '1';
   const start = (x, y) => {
     avatarLongPressOpened = false; avatarPressStartY = y; avatarPressStartX = x;
     clearTimeout(avatarPressTimer);
-    avatarPressTimer = setTimeout(() => { avatarLongPressOpened = true; openAvatarGallery(); }, 450);
+    avatarPressTimer = setTimeout(() => { avatarLongPressOpened = true; openAvatarGallery(); }, 500);
   };
   const move = (x, y) => {
-    if (Math.abs(x-avatarPressStartX) > 18 || Math.abs(y-avatarPressStartY) > 18) clearTimeout(avatarPressTimer);
+    const dx = x-avatarPressStartX, dy = y-avatarPressStartY;
+    // Keep the timer alive for a deliberate downward pull; cancel horizontal/accidental movement.
+    if (Math.abs(dx) > 28 || (dy < -25) || (Math.abs(dy) > 28 && dy <= 0)) clearTimeout(avatarPressTimer);
   };
   const end = (x, y) => {
     clearTimeout(avatarPressTimer);
-    if (y-avatarPressStartY > 45) { avatarLongPressOpened = true; openAvatarGallery(); }
+    if (!avatarLongPressOpened && y-avatarPressStartY > 35) { avatarLongPressOpened = true; openAvatarGallery(); }
   };
-  img.addEventListener('pointerdown', ev => { if (ev.pointerType === 'mouse' && ev.button !== 0) return; start(ev.clientX,ev.clientY); });
-  img.addEventListener('pointermove', ev => move(ev.clientX,ev.clientY));
-  img.addEventListener('pointerup', ev => end(ev.clientX,ev.clientY));
-  ['pointercancel','pointerleave'].forEach(type => img.addEventListener(type, () => clearTimeout(avatarPressTimer)));
-  // Explicit touch listeners improve reliability on mobile browsers that cancel pointer gestures while scrolling.
-  img.addEventListener('touchstart', ev => { const t=ev.touches[0]; if(t) start(t.clientX,t.clientY); }, {passive:true});
-  img.addEventListener('touchmove', ev => { const t=ev.touches[0]; if(t) move(t.clientX,t.clientY); }, {passive:true});
-  img.addEventListener('touchend', ev => { const t=ev.changedTouches[0]; if(t) end(t.clientX,t.clientY); }, {passive:true});
-  img.addEventListener('touchcancel', () => clearTimeout(avatarPressTimer), {passive:true});
+  // Avoid competing pointer + touch events on Android; use native touch events for touchscreens.
+  target.addEventListener('touchstart', ev => { const t=ev.changedTouches[0]; if(t) start(t.clientX,t.clientY); }, {passive:true});
+  target.addEventListener('touchmove', ev => { const t=ev.changedTouches[0]; if(t) move(t.clientX,t.clientY); }, {passive:true});
+  target.addEventListener('touchend', ev => { const t=ev.changedTouches[0]; if(t) end(t.clientX,t.clientY); }, {passive:true});
+  target.addEventListener('touchcancel', () => clearTimeout(avatarPressTimer), {passive:true});
+  target.addEventListener('pointerdown', ev => { if(ev.pointerType==='mouse' && ev.button===0) start(ev.clientX,ev.clientY); });
+  target.addEventListener('pointermove', ev => { if(ev.pointerType==='mouse') move(ev.clientX,ev.clientY); });
+  target.addEventListener('pointerup', ev => { if(ev.pointerType==='mouse') end(ev.clientX,ev.clientY); });
+  target.addEventListener('pointercancel', () => clearTimeout(avatarPressTimer));
 }
 function openAvatarGallery(ev) {
   if (ev && ev.stopPropagation) ev.stopPropagation();
@@ -2945,7 +2950,7 @@ function openAvatarGallery(ev) {
   modal.classList.remove('hidden');
   const area = document.getElementById('avatarGalleryTouchArea');
   if (!area) return;
-  area.ontouchstart = e => { const t=e.touches[0]; if(t){avatarGalleryTouchX=t.clientX;avatarGalleryTouchY=t.clientY;} };
+  area.ontouchstart = e => { const t=e.changedTouches[0]; if(t){avatarGalleryTouchX=t.clientX;avatarGalleryTouchY=t.clientY;} };
   area.ontouchend = e => { if (avatarGalleryTouchX == null) return; const t=e.changedTouches[0]; const dx=t.clientX-avatarGalleryTouchX; avatarGalleryTouchX=null; avatarGalleryTouchY=null; if(Math.abs(dx)>35) showAvatarGalleryIndex(avatarGalleryIndex+(dx<0?1:-1)); };
   area.onpointerdown = e => { if(e.pointerType==='mouse'){avatarGalleryTouchX=e.clientX;avatarGalleryTouchY=e.clientY;} };
   area.onpointerup = e => { if(e.pointerType!=='mouse'||avatarGalleryTouchX==null)return; const dx=e.clientX-avatarGalleryTouchX; avatarGalleryTouchX=null; avatarGalleryTouchY=null; if(Math.abs(dx)>45) showAvatarGalleryIndex(avatarGalleryIndex+(dx<0?1:-1)); };
@@ -4639,7 +4644,7 @@ function showStory() {
     viewRef.get().then(d => {
       if (SV.list[SV.i] !== s || !d.exists) return;
       const saved = d.data().reaction;
-      if (saved) { SV.react = saved; markReact(); svApplySelectedReaction(saved); }
+      if (saved) { SV.react = saved; markReact(); svApplySelectedReaction(saved); const rp=$('svReactPicker'); if(rp) rp.classList.add('hidden'); }
     }).catch(() => {});
   }
   updateBars();
@@ -4659,7 +4664,7 @@ function svFooter(s) {
     svReplyInputChanged();
     db.collection('stories').doc(s.id).collection('views').doc(currentUser.uid).get().then(d => {
       if (SV.list[SV.i] !== s || !d.exists) return;
-      SV.react = d.data().reaction || null; markReact(); const hb=$('svHeartBtn'); if(hb) hb.classList.toggle('liked', SV.react==='❤️');
+      SV.react = d.data().reaction || null; markReact(); if(SV.react) svApplySelectedReaction(SV.react); const rp=$('svReactPicker'); if(rp) rp.classList.add('hidden'); const hb=$('svHeartBtn'); if(hb) hb.classList.toggle('liked', SV.react==='❤️');
     }).catch(() => {});
   }
 }
@@ -4721,7 +4726,7 @@ function svApplySelectedReaction(e) {
     hb.classList.remove('liked');
     hb.innerHTML = `<span aria-hidden="true">${e}</span>`;
     hb.setAttribute('aria-label', `تفاعلك المحدد ${e}`);
-    hb.onpointerdown = null; hb.onpointerup = null; hb.onpointercancel = null; hb.onpointerleave = null; hb.oncontextmenu = null;
+    hb.onpointerdown = svHeartDown; hb.onpointerup = svHeartUp; hb.onpointercancel = svHeartCancel; hb.onpointerleave = svHeartCancel; hb.oncontextmenu = ev => { ev.preventDefault(); svOpenReactPicker(); };
   } else {
     hb.classList.remove('selected-reaction');
     hb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>';
@@ -4729,24 +4734,30 @@ function svApplySelectedReaction(e) {
     hb.onpointerdown = svHeartDown; hb.onpointerup = svHeartUp; hb.onpointercancel = svHeartCancel; hb.onpointerleave = svHeartCancel; hb.oncontextmenu = ev => { ev.preventDefault(); svOpenReactPicker(); };
   }
 }
+const svReactionPending = new Set();
 function svReact(e) {
-  const s = SV.list[SV.i]; if (!s || !currentUser) return;
-  SV.react = e;
-  markReact();
-  const rp = $('svReactPicker'); if (rp) rp.classList.add('hidden');
-  svApplySelectedReaction(e);
-  db.collection('stories').doc(s.id).collection('views').doc(currentUser.uid)
-    .set({ uid: currentUser.uid, at: Date.now(), reaction: e }, { merge: true })
-    .then(() => {
-      if (SV.mine) {
-        db.collection('stories').doc(s.id).collection('views').get().then(q => {
-          SV.views = q.docs.map(d => d.data());
-          const el = $('svViews'); const r = SV.views.filter(v => v.reaction).length;
-          if (el) el.textContent = SV.views.length + (r ? ` · ${r} تفاعل` : '');
-        }).catch(() => {});
+  const s = SV.list[SV.i];
+  if (!s || !currentUser || SV.mine) return;
+  const storyId = s.id, uid = currentUser.uid;
+  const key = storyId + ':' + uid;
+  // امنع الطلبات المتزامنة فقط؛ يمكن للمستخدم تغيير تفاعله لاحقًا.
+  if (svReactionPending.has(key)) {
+    const rp = $('svReactPicker'); if (rp) rp.classList.add('hidden');
+    return;
+  }
+  svReactionPending.add(key);
+  const ref = db.collection('stories').doc(storyId).collection('views').doc(uid);
+  ref.set({ uid, at: Date.now(), reaction: e }, { merge: true }).then(() => {
+      if (SV.list[SV.i] === s) {
+        SV.react = e;
+        markReact();
+        const rp = $('svReactPicker'); if (rp) rp.classList.add('hidden');
+        svApplySelectedReaction(e);
       }
-    })
-    .catch(() => showToast('تعذر حفظ التفاعل'));
+      showToast('تم تحديث تفاعلك ✓');
+  }).catch(() => {
+    showToast('تعذر حفظ التفاعل، حاول مرة أخرى');
+  }).finally(() => svReactionPending.delete(key));
 }
 function sendStoryReply() {
   const inp = $('svReplyInput'); if (!inp) return;
