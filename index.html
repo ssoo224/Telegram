@@ -5811,7 +5811,7 @@ function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-ite
   if(!bar||!home)return;
   window.setStoriesCollapsed=function(c){bar.classList.toggle('collapsed',!!c);syncHandle();};
   function syncHandle(){if(handle)handle.classList.toggle('hidden',bar.classList.contains('collapsed')||bar.classList.contains('hidden'));}
-  function sync(){var n=bar.querySelectorAll('.sb-item').length,more=Math.max(0,n-3);bar.dataset.label=(more?'+'+more+' ':'')+'\u2304';syncHandle();}
+  function sync(){var n=bar.querySelectorAll('.sb-item').length,more=Math.max(0,n-3);bar.dataset.label=more?'+'+more:'';syncHandle();}
   new MutationObserver(sync).observe(bar,{childList:true,attributes:true,attributeFilter:['class']});sync();
   // tapping a collapsed bar expands it instead of opening a story
   bar.addEventListener('click',function(e){if(bar.classList.contains('collapsed')){e.preventDefault();e.stopPropagation();setStoriesCollapsed(false);}},true);
@@ -5825,3 +5825,16 @@ function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-ite
   bar.addEventListener('touchend',function(e){if(by!=null&&by-e.changedTouches[0].clientY>40)setStoriesCollapsed(true);by=null;},{passive:true});
 })();
 </script>
+
+<style id="babylon-stories-chevron-svg">
+.app-container #homeView#homeView #storiesBar.collapsed::after{
+  content:attr(data-label);display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
+  min-width:44px;height:30px;padding-inline:11px 28px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23708094' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat,var(--cl-chip);background-size:16px 16px,auto;background-position:calc(100% - 9px) center,0 0;
+  direction:ltr;
+}
+.app-container[data-app-theme="dark"] #homeView#homeView #storiesBar.collapsed::after{
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238798aa' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat,var(--cl-chip);background-size:16px 16px,auto;background-position:calc(100% - 9px) center,0 0;
+}
+.app-container #homeView#homeView #storiesBar.collapsed[data-label=""]::after{padding-inline:0 0;width:44px}
+</style>
