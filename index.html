@@ -1678,6 +1678,52 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
   stroke:#f5d76e !important;
 }
 </style>
+<style id="settings-redesign">
+/* ===== تصميم صفحة الإعدادات الجديد ===== */
+#settingsView{background:var(--babylon-dark)}
+#settingsView .sx-scroll{padding:16px 16px 40px;max-width:640px;width:100%;margin:0 auto;box-sizing:border-box}
+#settingsView .sx-hero{position:relative;overflow:hidden;padding:0 16px 22px;margin-bottom:22px;border-radius:28px;cursor:pointer;
+  background:var(--babylon-surface);border:1px solid rgba(255,255,255,.07);box-shadow:0 10px 30px rgba(0,0,0,.18);transition:transform .15s}
+#settingsView .sx-hero:active{transform:scale(.99)}
+#settingsView .sx-hero::before{content:"";display:block;height:92px;margin:0 -16px 0;
+  background:linear-gradient(135deg,#d4af37 0%,#f0c94d 35%,#2aabee 100%);opacity:.92}
+#settingsView .sx-hero::after{content:"";position:absolute;top:-40px;left:-30px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.16);filter:blur(2px)}
+#settingsView .sx-av{margin-top:-48px;position:relative;z-index:1;box-shadow:0 0 0 4px var(--babylon-surface),0 0 0 6px rgba(212,175,55,.7),0 10px 26px rgba(0,0,0,.3)!important}
+#settingsView .sx-name{font-size:21px;letter-spacing:.2px}
+#settingsView .sx-sub{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;background:rgba(212,175,55,.14);font-size:13px;font-weight:600}
+#settingsView .sx-sub:empty,#settingsView .sx-bio:empty{display:none}
+#settingsView .sx-bio{margin-top:10px;line-height:1.7;font-size:13.5px}
+#settingsView .sx-label{margin:0 8px 8px;font-size:12.5px;font-weight:700;color:var(--text-muted);letter-spacing:.3px;text-align:right}
+#settingsView .sx-group{border-radius:20px;margin-bottom:22px;border:1px solid rgba(255,255,255,.07);box-shadow:0 4px 16px rgba(0,0,0,.10)}
+#settingsView .sx-item{padding:14px 16px;gap:14px;min-height:60px;box-sizing:border-box;transition:background .15s}
+#settingsView .sx-item+.sx-item{border-top:1px solid rgba(255,255,255,.06);margin-right:64px;padding-right:0}
+#settingsView .sx-item+.sx-item{margin-right:0;border-top:none;position:relative}
+#settingsView .sx-item+.sx-item::before{content:"";position:absolute;top:0;left:16px;right:70px;height:1px;background:rgba(255,255,255,.07)}
+#settingsView .sx-ic{width:40px;height:40px;border-radius:13px;box-shadow:0 4px 10px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.25)}
+#settingsView .sx-t{font-size:15.5px;font-weight:600}
+#settingsView .sx-ch{display:flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;background:rgba(255,255,255,.06);color:var(--text-muted)!important}
+#settingsView .sx-ch svg,#settingsView .sx-ch svg *{stroke:currentColor!important;color:inherit!important}
+#settingsView .sx-ch svg{width:16px;height:16px}
+#settingsView .appearance-setting-row{cursor:default}
+#settingsView .appearance-main-icon{background:linear-gradient(135deg,#8b5cf6,#3b82f6)!important}
+#settingsView .settings-theme-switch{min-height:38px;min-width:86px;border-radius:20px;font-weight:700}
+#settingsView .sx-group-danger{margin-top:6px;background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.28)}
+#settingsView .sx-danger{justify-content:flex-start}
+#settingsView .sx-danger .sx-t{color:#ef4444!important;font-weight:700}
+#settingsView .sx-foot{margin-top:4px;font-size:12px;letter-spacing:1.5px;opacity:.55}
+@media (hover:hover){#settingsView .sx-item:hover{background:var(--babylon-surface-hover)}}
+/* الوضع النهاري */
+.app-container[data-app-theme="light"] #settingsView .sx-hero,
+.app-container[data-app-theme="light"] #settingsView .sx-group{border-color:#e3e9f1;box-shadow:0 6px 20px rgba(30,50,80,.07)}
+.app-container[data-app-theme="light"] #settingsView .sx-av{box-shadow:0 0 0 4px #fff,0 0 0 6px rgba(212,175,55,.8),0 10px 26px rgba(30,50,80,.18)!important}
+.app-container[data-app-theme="light"] #settingsView .sx-item+.sx-item::before{background:#e9eef4}
+.app-container[data-app-theme="light"] #settingsView .sx-ch{background:#eef2f7;color:#718096!important}
+.app-container[data-app-theme="light"] #settingsView .sx-label{color:#718096}
+.app-container[data-app-theme="light"] #settingsView .sx-group-danger{background:#fff5f5;border-color:#fecaca}
+.app-container[data-app-theme="light"] #settingsView .sx-danger .sx-t{color:#dc2626!important}
+.app-container[data-app-theme="light"] #settingsView .settings-theme-switch #themeSwitchLabel{color:#344256}
+.app-container[data-app-theme="dark"] #settingsView .sx-hero{border-color:rgba(255,255,255,.08)}
+</style>
 </head>
 
 <body>
@@ -1915,7 +1961,6 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 
     <!-- شاشة الإعدادات العامة -->
     <div id="settingsView" class="settings-view hidden" style="flex:1; display:flex; flex-direction:column;">
-      <div class="sx-top"><h2>الإعدادات</h2></div>
       <div class="sx-scroll">
         <div class="sx-hero" onclick="openProfile && openProfile()">
           <div id="sxAvatar" class="avatar sx-av"></div>
@@ -1924,9 +1969,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
           <div id="sxBio" class="sx-bio"></div>
         </div>
 
-        <div class="sx-group">
-        </div>
-
+        <div class="sx-label">التخصيص</div>
         <div class="sx-group appearance-setting-card">
           <div class="sx-item appearance-setting-row">
             <span class="sx-ic appearance-main-icon"><i data-ic="palette" data-size="20"></i></span>
@@ -1940,6 +1983,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
           <div class="sx-item" onclick="openNotificationSettings()"><span class="sx-ic" style="background:#ef4444"><i data-ic="bell" data-size="19"></i></span><span class="sx-t">الإشعارات والأصوات</span><span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span></div>
         </div>
 
+        <div class="sx-label">الحساب والخصوصية</div>
         <div class="sx-group">
           <div class="sx-item" onclick="sxOpenBlocked()"><span class="sx-ic" style="background:#64748b"><i data-ic="shield" data-size="19"></i></span><span class="sx-t">المستخدمون المحظورون</span><span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span></div>
           <div class="sx-item" onclick="sxChangePassword()"><span class="sx-ic" style="background:#10b981"><i data-ic="key" data-size="19"></i></span><span class="sx-t">تغيير كلمة المرور</span><span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span></div>
@@ -1947,7 +1991,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
           <div class="sx-item" onclick="sxAbout()"><span class="sx-ic" style="background:#f59e0b"><i data-ic="info" data-size="19"></i></span><span class="sx-t">حول Babylon Chat</span><span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span></div>
         </div>
 
-        <div class="sx-group">
+        <div class="sx-group sx-group-danger">
           <div class="sx-item sx-danger" onclick="logout()"><span class="sx-ic" style="background:#dc2626"><i data-ic="logout" data-size="19"></i></span><span class="sx-t">تسجيل الخروج</span></div>
         </div>
         <div class="sx-foot">Babylon Chat</div>
