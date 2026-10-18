@@ -6109,6 +6109,18 @@ function openMention(username){
   });
 })();
 </script>
+<style id="babylon-slim-one-step">
+/* One step slimmer: bottom navigation bar + chat rows */
+.app-container #bottomNav.telegram-bottom-nav{height:66px!important;padding:6px 10px max(6px,env(safe-area-inset-bottom,0px))!important}
+.app-container[data-app-theme] #bottomNav .nav-item{gap:3px;padding:3px 2px}
+.app-container[data-app-theme] #bottomNav .nav-item .nav-icon{height:28px}
+.app-container[data-app-theme] #bottomNav .nav-item svg{width:21px;height:21px}
+.app-container #homeView#homeView #chatList .chat-item{padding:9px 12px!important;min-height:70px!important;margin-bottom:7px!important;gap:12px!important;border-radius:18px!important}
+.app-container #homeView#homeView #chatList .chat-item .avatar{width:52px!important;height:52px!important;flex:0 0 52px!important;font-size:20px}
+.app-container #homeView#homeView #chatList .chat-item-name{font-size:16px!important}
+.app-container #homeView#homeView #chatList .chat-item-sub{font-size:13.5px!important}
+.app-container #homeView#homeView #chatList .cl-online{width:14px;height:14px}
+</style>
 <script id="babylon-splash-js">
 (function(){
   var splash=document.getElementById('splashPage');if(!splash)return;
