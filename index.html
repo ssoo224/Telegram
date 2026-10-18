@@ -1827,7 +1827,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 #chatView .msg-bubble:not(.mine){background:var(--cr-card)!important;color:var(--cr-ink)!important}
 #chatView .msg-bubble:not(.mine) .msg-text{color:var(--cr-ink)!important}
 #chatView .msg-bubble.mine{background:linear-gradient(145deg,#f3d66b,#d9b64f)!important;color:#1b232d!important}
-.app-container[data-app-theme="dark"] #chatView .msg-bubble.mine{background:linear-gradient(145deg,#a98a35,#7d6322)!important;color:#fff!important}
+.app-container[data-app-theme="dark"] #chatView .msg-bubble.mine{background:linear-gradient(145deg,#96782a,#6b531a)!important;color:#fff!important}
 .app-container[data-app-theme="dark"] #chatView .msg-bubble.mine .msg-text,.app-container[data-app-theme="dark"] #chatView .msg-bubble.mine .msg-meta{color:#fff!important}
 #chatView .msg-bubble .msg-meta{font-size:10.5px;bottom:4px;left:12px;opacity:.85}
 #chatView .msg-bubble:not(.mine) .msg-meta{color:var(--cr-muted)!important}
@@ -1856,6 +1856,23 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 #chatView #textInputBar > button[type="submit"] svg,
 #chatView #textInputBar > button[type="submit"] svg *,
 #chatView #textInputBar > button[type="submit"] i[data-ic] svg{color:#fff!important;stroke:#fff!important}
+</style>
+<style id="chat-room-tweaks-2">
+/* اتجاه الرسائل: رسائلي يميناً ورسائل الطرف الآخر يساراً */
+#chatView #messagesArea .msg-bubble.mine{align-self:flex-start!important;border-radius:20px 20px 6px 20px!important}
+#chatView #messagesArea .msg-bubble:not(.mine){align-self:flex-end!important;border-radius:20px 20px 20px 6px!important}
+#chatView #messagesArea .typing-bubble{align-self:flex-end!important}
+/* نص رسائلي أبيض */
+#chatView .msg-bubble.mine,
+#chatView .msg-bubble.mine .msg-text,
+#chatView .msg-bubble.mine .msg-meta,
+#chatView .msg-bubble.mine .msg-text *:not(.mention),
+#chatView .msg-bubble.mine .reply-quote{color:#fff!important;-webkit-text-fill-color:#fff}
+#chatView .msg-bubble.mine .msg-meta{opacity:.9}
+.app-container[data-app-theme="light"] #chatView .msg-bubble.mine{background:linear-gradient(145deg,#d3a42f,#a97a1a)!important;box-shadow:0 4px 12px rgba(169,122,26,.30)!important}
+/* نقوش خفيفة */
+#chatView .pattern-layer{opacity:.06!important}
+.app-container[data-app-theme="light"] #chatView .pattern-layer{opacity:.07!important}
 </style>
 </head>
 
