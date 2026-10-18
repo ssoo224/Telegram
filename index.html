@@ -4615,10 +4615,21 @@ function startViewer(uid, list, i, mine) {
   SV.iv = setInterval(tick, 50);
   showStory();
 }
+function svReactionCacheKey(storyId, uid) { return `babylon_story_reaction:${uid}:${storyId}`; }
+function svReadCachedReaction(storyId, uid) {
+  try { return localStorage.getItem(svReactionCacheKey(storyId, uid)) || null; } catch (_) { return null; }
+}
+function svCacheReaction(storyId, uid, emoji) {
+  try { if (emoji) localStorage.setItem(svReactionCacheKey(storyId, uid), emoji); else localStorage.removeItem(svReactionCacheKey(storyId, uid)); } catch (_) {}
+}
 function showStory() {
   const s = SV.list[SV.i];
   if (!s) return closeStoryViewer();
   SV.t = 0; SV.react = null; SV.views = [];
+  if (!SV.mine && currentUser) {
+    const cachedReaction = svReadCachedReaction(s.id, currentUser.uid);
+    if (cachedReaction) { SV.react = cachedReaction; svApplySelectedReaction(cachedReaction); }
+  }
   const vEl = $('storyVid');
   SV.dur = SDUR;
   if (s.videoUrl) {
@@ -4660,12 +4671,15 @@ function svFooter(s) {
       const el = $('svViews'); if (el) el.textContent = SV.views.length + (r ? ` · ${r} تفاعل` : '');
     }).catch(() => {});
   } else {
-    f.innerHTML = `<div class="sv-reacts" aria-label="إرسال إيموجي في المحادثة">${['😂','❤️','👍🏻','😭','✨'].map(e => `<span role="button" tabindex="0" aria-label="إرسال ${e}" onclick="sendStoryEmoji('${e}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sendStoryEmoji('${e}')}">${e}</span>`).join('')}</div><div id="svReactPicker" class="sv-react-picker hidden">${['😂','❤️','👍🏻','😭','✨','😍','😮','😢','🙏','🔥'].map(e=>`<button type="button" onclick="event.preventDefault();event.stopPropagation();svReact('${e}')" aria-label="تفاعل ${e}">${e}</button>`).join('')}</div><div class="sv-reply"><button id="svHeartBtn" class="sv-heart-btn" aria-label="تفاعل مع القصة" onpointerdown="svHeartDown(event)" onpointerup="svHeartUp(event)" onpointercancel="svHeartCancel()" onpointerleave="svHeartCancel()" oncontextmenu="event.preventDefault();svOpenReactPicker()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg></button><input id="svReplyInput" placeholder="رد على القصة..." autocomplete="off" oninput="svReplyInputChanged()" onfocus="svPause(true)" onblur="svPause(false)" onkeydown="if(event.key==='Enter'){event.preventDefault();sendStoryReply()}"><button id="svReplySend" class="sv-pill hidden" aria-label="إرسال" onmousedown="event.preventDefault()" onclick="sendStoryReply()"><svg class="sv-send-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></button></div>`;
+    f.innerHTML = `<div class="sv-reacts" aria-label="إرسال إيموجي في المحادثة">${['😂','❤️','👍🏻','😭','✨'].map(e => `<span data-e="${e}" role="button" tabindex="0" aria-label="إرسال ${e}" onclick="sendStoryEmoji('${e}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sendStoryEmoji('${e}')}">${e}</span>`).join('')}</div><div id="svReactPicker" class="sv-react-picker hidden">${['😂','❤️','👍🏻','😭','✨','😍','😮','😢','🙏','🔥'].map(e=>`<button type="button" onclick="event.preventDefault();event.stopPropagation();svReact('${e}')" aria-label="تفاعل ${e}">${e}</button>`).join('')}</div><div class="sv-reply"><button id="svHeartBtn" class="sv-heart-btn" aria-label="تفاعل مع القصة" onpointerdown="svHeartDown(event)" onpointerup="svHeartUp(event)" onpointercancel="svHeartCancel()" onpointerleave="svHeartCancel()" oncontextmenu="event.preventDefault();svOpenReactPicker()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg></button><input id="svReplyInput" placeholder="رد على القصة..." autocomplete="off" oninput="svReplyInputChanged()" onfocus="svPause(true)" onblur="svPause(false)" onkeydown="if(event.key==='Enter'){event.preventDefault();sendStoryReply()}"><button id="svReplySend" class="sv-pill hidden" aria-label="إرسال" onmousedown="event.preventDefault()" onclick="sendStoryReply()"><svg class="sv-send-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></button></div>`;
     svReplyInputChanged();
     db.collection('stories').doc(s.id).collection('views').doc(currentUser.uid).get().then(d => {
       if (SV.list[SV.i] !== s || !d.exists) return;
-      SV.react = d.data().reaction || null; markReact(); if(SV.react) svApplySelectedReaction(SV.react); const rp=$('svReactPicker'); if(rp) rp.classList.add('hidden'); const hb=$('svHeartBtn'); if(hb) hb.classList.toggle('liked', SV.react==='❤️');
-    }).catch(() => {});
+      const cloudReaction = d.data().reaction || null;
+      if (cloudReaction) { SV.react = cloudReaction; svCacheReaction(s.id, currentUser.uid, cloudReaction); svApplySelectedReaction(cloudReaction); }
+      else if (!SV.react) { svApplySelectedReaction(null); }
+      markReact(); const rp=$('svReactPicker'); if(rp) rp.classList.add('hidden'); const hb=$('svHeartBtn'); if(hb) hb.classList.toggle('liked', SV.react==='❤️');
+    }).catch(() => { /* حافظ على التفاعل المحلي إن تعذر الاتصال */ });
   }
 }
 let svHeartTimer = null, svHeartLong = false;
@@ -4676,7 +4690,7 @@ function svOpenReactPicker(){const p=$('svReactPicker');if(p)p.classList.remove(
 function svHeartTap(){const p=$('svReactPicker');if(p&&!p.classList.contains('hidden'))return;svReact('❤️');}
 function svReplyInputChanged(){const inp=$('svReplyInput'),btn=$('svReplySend'),heart=$('svHeartBtn');if(!inp||!btn||!heart)return;const typed=!!inp.value.trim();btn.classList.toggle('hidden',!typed);heart.classList.toggle('hidden',typed);if(typed){const p=$('svReactPicker');if(p)p.classList.add('hidden');}}
 function sendStoryEmoji(emoji){const me=currentUser&&currentUser.uid;if(!me||!SV.uid||SV.uid===me){showToast('لا يمكن إرسال رسالة إلى نفسك');return;}const chatId=[me,SV.uid].sort().join('__');db.collection('chats').doc(chatId).set({participants:[me,SV.uid],updatedAt:Date.now()},{merge:true}).then(()=>db.collection('chats').doc(chatId).collection('messages').add({senderId:me,text:emoji,storyReply:true,read:false,createdAt:Date.now()})).then(()=>{notifyPeer(chatId,'↩ تفاعل على قصتك: '+emoji);showToast('تم إرسال الإيموجي ✓');}).catch(()=>showToast('تعذر إرسال الإيموجي'));}
-function markReact() { document.querySelectorAll('.sv-reacts span').forEach(x => x.classList.toggle('on', x.dataset.e === SV.react)); }
+function markReact() { document.querySelectorAll('.sv-reacts span').forEach(x => x.classList.toggle('on', x.dataset.e === SV.react || x.textContent.trim() === SV.react)); }
 function updateBars() {
   document.querySelectorAll('#svBars .sv-bar i').forEach((el, k) => {
     el.style.width = k < SV.i ? '100%' : k === SV.i ? Math.min(100, SV.t / (SV.dur || SDUR) * 100) + '%' : '0%';
@@ -4740,23 +4754,23 @@ function svReact(e) {
   if (!s || !currentUser || SV.mine) return;
   const storyId = s.id, uid = currentUser.uid;
   const key = storyId + ':' + uid;
-  // امنع الطلبات المتزامنة فقط؛ يمكن للمستخدم تغيير تفاعله لاحقًا.
-  if (svReactionPending.has(key)) {
-    const rp = $('svReactPicker'); if (rp) rp.classList.add('hidden');
-    return;
-  }
-  svReactionPending.add(key);
+  if (svReactionPending.has(key)) return;
+  // حدّث الواجهة فورًا، واحفظ نسخة محلية حتى لا يعود القلب فارغًا عند إعادة فتح القصة.
+  SV.react = e;
+  svCacheReaction(storyId, uid, e);
+  markReact();
+  const rp = $('svReactPicker'); if (rp) rp.classList.add('hidden');
+  svApplySelectedReaction(e);
   const ref = db.collection('stories').doc(storyId).collection('views').doc(uid);
+  svReactionPending.add(key);
   ref.set({ uid, at: Date.now(), reaction: e }, { merge: true }).then(() => {
-      if (SV.list[SV.i] === s) {
-        SV.react = e;
-        markReact();
-        const rp = $('svReactPicker'); if (rp) rp.classList.add('hidden');
-        svApplySelectedReaction(e);
-      }
-      showToast('تم تحديث تفاعلك ✓');
-  }).catch(() => {
-    showToast('تعذر حفظ التفاعل، حاول مرة أخرى');
+    svCacheReaction(storyId, uid, e);
+    if (SV.list[SV.i] === s) { SV.react = e; markReact(); svApplySelectedReaction(e); }
+    showToast('تم حفظ التفاعل ✓');
+  }).catch(err => {
+    console.error('Story reaction save failed:', err);
+    // يبقى التفاعل ظاهرًا ومحفوظًا على هذا الجهاز، مع توضيح أن مزامنة Firebase فشلت.
+    showToast('ظهر التفاعل، لكن تعذّر حفظه في الحساب. تحقق من اتصالك وصلاحيات Firebase.');
   }).finally(() => svReactionPending.delete(key));
 }
 function sendStoryReply() {
