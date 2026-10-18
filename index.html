@@ -637,6 +637,21 @@ body {
   }
 }
 
+.story-reply-preview {
+  display:flex; align-items:center; justify-content:space-between; gap:9px;
+  width:100%; box-sizing:border-box; padding:6px 8px; margin:0 0 6px;
+  border-right:3px solid var(--accent-chat, #d4af37); border-radius:7px;
+  background:var(--story-reply-bg, rgba(0,0,0,.12)); text-align:right; overflow:hidden;
+}
+.story-reply-copy { display:flex; flex:1; min-width:0; flex-direction:column; gap:2px; }
+.story-reply-label { font-size:11px; line-height:1.35; font-weight:700; color:var(--accent-chat, #d4af37); }
+.story-reply-caption { font-size:12px; line-height:1.4; color:var(--text-primary, inherit); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.story-reply-thumb,.story-reply-video { flex:0 0 42px; width:42px; height:48px; border-radius:5px; object-fit:cover; background:var(--surface-secondary, rgba(127,127,127,.18)); }
+.story-reply-video { display:grid; place-items:center; }
+.story-reply-video svg { width:20px; height:20px; fill:currentColor; }
+[data-theme="light"] .story-reply-preview, .light-mode .story-reply-preview { --story-reply-bg:rgba(30,90,150,.07); }
+[data-theme="dark"] .story-reply-preview, .dark-mode .story-reply-preview { --story-reply-bg:rgba(255,255,255,.07); }
+
 .reply-quote {
   background: rgba(0, 0, 0, 0.25);
   border-right: 3px solid var(--accent-chat, #d4af37);
@@ -3286,7 +3301,12 @@ function openChatRoom(otherUserId, keepLimit) {
         
         let htmlContent = "";
         if (m.replyTo) htmlContent += `<div class="reply-quote">${esc(m.replyTo)}</div>`;
-        if (m.storyReply) htmlContent += `<div class="reply-quote">${m.senderId === currentUser.uid ? "↩ رديت على قصة" : "↩ رد على قصتك"}</div>`;
+        if (m.storyReply) {
+          const sr = m.storyReplyData || {};
+          const previewText = sr.caption || (sr.videoUrl ? 'قصة فيديو' : 'قصة');
+          const previewMedia = sr.imageUrl ? `<img class="story-reply-thumb" src="${esc(sr.imageUrl)}" alt="معاينة القصة" loading="lazy">` : (sr.videoUrl ? `<span class="story-reply-video" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>` : '');
+          htmlContent += `<div class="story-reply-preview"><div class="story-reply-copy"><span class="story-reply-label">${m.senderId === currentUser.uid ? 'ردك على القصة' : 'رد على قصتك'}</span><span class="story-reply-caption">${esc(previewText)}</span></div>${previewMedia}</div>`;
+        }
 
         if (m.audioUrl) {
           htmlContent += `<div class="audio-player-card custom-voice-card" aria-label="رسالة صوتية"><audio class="voice-audio" preload="metadata" src="${esc(m.audioUrl)}"></audio><button type="button" class="voice-play-btn" onclick="toggleVoicePlayback(this)" aria-label="تشغيل الرسالة الصوتية"><svg class="voice-play-icon" viewBox="0 0 24 24" width="23" height="23" fill="currentColor" aria-hidden="true"><path d="M8 5.8c0-.8.9-1.3 1.6-.8l9.2 6.2a1 1 0 0 1 0 1.6l-9.2 6.2c-.7.5-1.6 0-1.6-.8z"/></svg></button><div class="audio-player-content"><div class="audio-player-title">رسالة صوتية</div><div class="voice-progress-row"><input class="voice-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="تقدم الصوت" oninput="seekVoicePlayback(this)"><span class="voice-time">0:00</span></div><div class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>`;
@@ -4786,9 +4806,10 @@ function svReact(e) {
 function sendStoryReply() {
   const inp = $('svReplyInput'); if (!inp) return;
   const text = inp.value.trim(); if (!text) return;
+  const s = SV.list[SV.i]; if (!s) return;
   const me = currentUser.uid, chatId = [me, SV.uid].sort().join('__');
   db.collection('chats').doc(chatId).set({ participants: [me, SV.uid], updatedAt: Date.now() }, { merge: true })
-    .then(() => db.collection('chats').doc(chatId).collection('messages').add({ senderId: me, text, storyReply: true, read: false, createdAt: Date.now() }))
+    .then(() => db.collection('chats').doc(chatId).collection('messages').add({ senderId: me, text, storyReply: true, storyReplyData: { imageUrl: s.imageUrl || '', videoUrl: s.videoUrl || '', caption: s.caption || '', storyId: s.id || '' }, read: false, createdAt: Date.now() }))
     .then(() => { notifyPeer(chatId, '↩ رد على قصتك: ' + text); inp.value = ''; svReplyInputChanged(); inp.blur(); showToast('تم إرسال ردك ✓'); })
     .catch(() => showToast('تعذر إرسال الرد'));
 }
