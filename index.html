@@ -1883,6 +1883,18 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView .telegram-avatar{box-shadow:0 0 0 2px var(--bubble-other),0 0 0 4px var(--accent-chat)}
 html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView .pattern-layer{opacity:.08!important}
 </style>
+<style id="chat-voice-name-theme">
+/* زر تشغيل الصوتية يتبع ثيم المحادثة (الافتراضي يبقى ذهبياً) */
+html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView .voice-play-btn{background:var(--accent-chat)!important;color:var(--chat-bg)!important;box-shadow:0 4px 12px rgba(0,0,0,.22)!important}
+html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView .voice-play-btn svg,html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView .voice-play-btn svg *{color:inherit!important;stroke:currentColor}
+html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView .voice-progress{accent-color:var(--accent-chat)!important}
+html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView .custom-voice-card.is-playing .voice-wave i{background:var(--accent-chat)!important}
+/* اسم الشخص: أبيض مع حدّ أسود خفيف */
+#chatView .telegram-user-name,
+#chatView #chatTitleText,
+.app-container #chatView .telegram-user-name,
+.app-container[data-app-theme] #chatView #chatTitleText{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:-.5px 0 0 #000,.5px 0 0 #000,0 -.5px 0 #000,0 .5px 0 #000,0 0 3px rgba(0,0,0,.55)!important}
+</style>
 </head>
 
 <body>
