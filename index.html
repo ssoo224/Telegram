@@ -2475,7 +2475,7 @@ function updateProfileUI(u) {
   applyCover("p", u.cover || "babylon");
 
   const avatarBox = document.getElementById("pAvatarImg");
-  const avatarText = document.getElementById("pAvatarText");
+  const avatarText = document.getElementById("pAvatarText"); setTone(avatarText, u);
   bindAvatarRevealGestures();
 
   if (u.avatarUrl) {
@@ -2756,7 +2756,7 @@ function renderSettingsHero() {
   const u = currentUserData || {};
   const av = document.getElementById('sxAvatar');
   if (!av) return;
-  av.innerHTML = avInner(u);
+  av.innerHTML = avInner(u); setTone(av, u);
   document.getElementById('sxName').textContent = u.displayName || 'مستخدم';
   document.getElementById('sxUser').textContent = u.username ? '@' + u.username : '';
   document.getElementById('sxBio').textContent = u.bio || '';
@@ -3031,7 +3031,7 @@ function renderRecentSearchUsers(res) {
   const label = document.createElement("div"); label.className = "search-recent-label"; label.textContent = "المحادثات التي زرتها"; res.appendChild(label);
   recent.forEach(u => {
     const div = document.createElement("div"); div.className = "chat-item search-user-card search-recent-card";
-    const avatar = document.createElement("div"); avatar.className = "avatar";
+    const avatar = document.createElement("div"); avatar.className = "avatar " + toneCls(u);
     if (u.avatarUrl) { const img = document.createElement("img"); img.src = u.avatarUrl; img.alt = ""; avatar.appendChild(img); }
     else avatar.textContent = (u.displayName || "?").charAt(0).toUpperCase();
     const info = document.createElement("div"); info.className = "chat-item-info";
@@ -3080,7 +3080,7 @@ function searchUsers() {
         const div = document.createElement("div");
         div.className = "chat-item search-user-card";
         div.innerHTML = `
-          <div class="avatar">${u.avatarUrl ? `<img src="${esc(u.avatarUrl)}" alt="">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>
+          <div class="avatar ${toneCls(u)}">${u.avatarUrl ? `<img src="${esc(u.avatarUrl)}" alt="">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>
           <div class="chat-item-info">
             <div class="chat-item-name">${esc(u.displayName || "مستخدم")} ${verifiedBadge}</div>
             <div class="chat-item-sub">@${esc(u.username || "")}</div>
@@ -3125,7 +3125,7 @@ function openUserProfileDirect(u) {
   applyCover("other", u.cover || "babylon");
 
   const avatarBox = document.getElementById("otherAvatarImg");
-  const avatarText = document.getElementById("otherAvatarText");
+  const avatarText = document.getElementById("otherAvatarText"); setTone(avatarText, u);
 
   if (u.avatarUrl) {
     avatarBox.src = u.avatarUrl;
@@ -3201,7 +3201,7 @@ function openChatRoom(otherUserId, keepLimit) {
       
       const sub = document.getElementById("chatSub");
       
-      const avatarBox = document.getElementById("chatAvatar");
+      const avatarBox = document.getElementById("chatAvatar"); avatarBox.className = "telegram-avatar " + toneCls({id: otherUserId, avatarTone: u.avatarTone});
       if (u.avatarUrl) {
         avatarBox.innerHTML = `<img src="${esc(u.avatarUrl)}">`;
       } else {
@@ -3809,7 +3809,7 @@ function loadChats() {
                   const verifiedBadge = isUVerified ? `<span class="verified-badge" style="width:13px;height:13px;font-size:8px;">✓</span>` : '';
 
                   existingItem.innerHTML = `
-                    <div class="cl-av"><div class="avatar${ringCls(u)}" onclick="chatAvatarStory(event,'${otherId}')">${u.avatarUrl ? `<img src="${esc(u.avatarUrl)}">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>${(u.online && Date.now() - (u.lastSeen || 0) < 45000) ? '<span class="cl-online"></span>' : ''}</div>
+                    <div class="cl-av"><div class="avatar${ringCls(u)} ${toneCls(u)}" onclick="chatAvatarStory(event,'${otherId}')">${u.avatarUrl ? `<img src="${esc(u.avatarUrl)}">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>${(u.online && Date.now() - (u.lastSeen || 0) < 45000) ? '<span class="cl-online"></span>' : ''}</div>
                     <div class="chat-item-info">
                       <div class="chat-item-header-row">
                         <div class="chat-item-name">${esc(u.displayName || "مستخدم")} ${verifiedBadge}</div>
@@ -4581,14 +4581,14 @@ function renderStoriesBar() {
     const act = myStories.filter(isActive);
     const me = currentUserData || {};
     const mySeen = act.length && isSeenUser(currentUser.uid, Math.max(...act.map(s => s.createdAt)));
-    let html = `<div class="sb-item" onclick="myStoryClick()"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''}">${avInner(me)}${act.length ? '' : '<div class="sb-plus" aria-label="إضافة قصة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>'}</div><span>قصتي</span></div>`;
+    let html = `<div class="sb-item" onclick="myStoryClick()"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''} ${toneCls(me)}">${avInner(me)}${act.length ? '' : '<div class="sb-plus" aria-label="إضافة قصة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>'}</div><span>قصتي</span></div>`;
     const us = await Promise.all(storyPartnerIds.map(id => fetchUser(id, true)));
     const bm = await Promise.all(storyPartnerIds.map(id => myBlocks[id] ? true : blockedByThem(id)));
     us.forEach((u, i) => {
       if (!u || !(u.storyUntil > Date.now())) return;
       if (bm[i]) return;
       const id = storyPartnerIds[i]; u.id = id;
-      html += `<div class="sb-item" onclick="openStories('${id}')"><div class="avatar${ringCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
+      html += `<div class="sb-item" onclick="openStories('${id}')"><div class="avatar${ringCls(u)} ${toneCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
     });
     bar.innerHTML = html;
     bar.classList.remove('hidden');
@@ -4646,7 +4646,7 @@ function startViewer(uid, list, i, mine) {
   $('storyViewer').classList.remove('hidden');
   fetchUser(uid).then(u => {
     if (!u) return;
-    $('storyUserAvatar').innerHTML = avInner(u);
+    $('storyUserAvatar').innerHTML = avInner(u); setTone($('storyUserAvatar'), {id: uid, avatarTone: u.avatarTone});
     $('storyUserName').textContent = mine ? 'قصتي' : (u.displayName || 'مستخدم');
   });
   clearInterval(SV.iv);
@@ -4860,7 +4860,7 @@ function openViewersList() {
       if (!u) return;
       const it = document.createElement('div');
       it.className = 'viewer-item';
-      it.innerHTML = `<div class="viewer-info"><div class="story-avatar" style="color:#000">${avInner(u)}</div><div style="text-align:right;"><div style="color:white;font-weight:600;font-size:14px;">${esc(u.displayName || 'مستخدم')}</div><div style="color:var(--text-muted);font-size:11px;">@${esc(u.username || '')} · ${ago(v.at || 0)}</div></div></div>${v.reaction ? `<span class="vw-react">${esc(v.reaction)}</span>` : ''}`;
+      it.innerHTML = `<div class="viewer-info"><div class="story-avatar ${toneCls({id: v.uid, avatarTone: u.avatarTone})}" style="color:#000">${avInner(u)}</div><div style="text-align:right;"><div style="color:white;font-weight:600;font-size:14px;">${esc(u.displayName || 'مستخدم')}</div><div style="color:var(--text-muted);font-size:11px;">@${esc(u.username || '')} · ${ago(v.at || 0)}</div></div></div>${v.reaction ? `<span class="vw-react">${esc(v.reaction)}</span>` : ''}`;
       list.appendChild(it);
     });
   });
@@ -5837,4 +5837,26 @@ function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-ite
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238798aa' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat,var(--cl-chip);background-size:16px 16px,auto;background-position:calc(100% - 9px) center,0 0;
 }
 .app-container #homeView#homeView #storiesBar.collapsed[data-label=""]::after{padding-inline:0 0;width:44px}
+</style>
+
+<script id="babylon-account-tones-js">
+/* Each account gets one fixed colour family, derived from its id: sky-blue->blue or gold gradient. */
+function toneOf(u){
+  var id=u&&(u.id||u.uid);
+  if(!id&&u&&typeof currentUserData!=='undefined'&&u===currentUserData&&typeof currentUser!=='undefined'&&currentUser)id=currentUser.uid;
+  if(!id)return 'gold';
+  var h=2166136261,i;for(i=0;i<id.length;i++)h=Math.imul(h^id.charCodeAt(i),16777619);
+  h^=h>>>15;h=Math.imul(h,2246822507);h^=h>>>13;
+  return ((h>>>7)&1)?'blue':'gold';
+}
+function toneCls(u){return 'tone-'+toneOf(u);}
+function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold');el.classList.add(toneCls(u));}
+</script>
+<style id="babylon-account-tones">
+.app-container #mainPage#mainPage#mainPage [class].tone-gold,
+.story-avatar.tone-gold,.telegram-avatar.tone-gold{background:linear-gradient(145deg,#f2d268,#b8861b)!important;color:#fff!important;box-shadow:0 3px 10px rgba(184,134,27,.28)}
+.app-container #mainPage#mainPage#mainPage [class].tone-blue,
+.story-avatar.tone-blue,.telegram-avatar.tone-blue{background:linear-gradient(145deg,#59cdf8,#1f63d8)!important;color:#fff!important;box-shadow:0 3px 10px rgba(31,99,216,.28)}
+.app-container #mainPage#mainPage#mainPage .profile-large-avatar.tone-gold,.app-container #mainPage#mainPage#mainPage .profile-large-avatar.tone-blue{box-shadow:none}
+.story-avatar.tone-gold,.story-avatar.tone-blue,.story-avatar.tone-gold *{color:#fff!important}
 </style>
