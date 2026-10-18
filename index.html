@@ -1803,6 +1803,60 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 #messageInput.msg-editable::-webkit-scrollbar{display:none}
 #messageInput.msg-editable:empty::before{content:attr(data-placeholder);color:var(--text-muted,#8b98a8);pointer-events:none}
 </style>
+<style id="chat-room-redesign">
+/* ===== تصميم المحادثة الداخلية الجديد ===== */
+.app-container #chatView{--cr-radius:20px;--cr-surface:#17212b;--cr-card:#1e2a38;--cr-line:rgba(255,255,255,.08);--cr-ink:#f4f7fb;--cr-muted:#8a9aab;--cr-shadow:0 6px 18px rgba(0,0,0,.28)}
+.app-container[data-app-theme="light"] #chatView{--cr-surface:#eef2f8;--cr-card:#ffffff;--cr-line:#e1e8f1;--cr-ink:#17212b;--cr-muted:#718096;--cr-shadow:0 6px 18px rgba(30,50,80,.10)}
+.app-container #chatView{background:var(--cr-surface)!important}
+#chatView .pattern-layer{opacity:.3}
+
+/* الرأس */
+#chatView .telegram-chat-header{height:66px;padding:0 10px;gap:10px;margin:0;background:var(--cr-card)!important;border:none!important;border-bottom:1px solid var(--cr-line)!important;border-radius:0 0 22px 22px;box-shadow:var(--cr-shadow);z-index:12}
+#chatView .telegram-chat-header .icon-btn{width:40px;height:40px;min-width:40px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;background:rgba(127,140,160,.12);color:var(--cr-ink)!important;font-size:24px;line-height:1;transition:background .15s,transform .1s}
+#chatView .telegram-chat-header .icon-btn:active{transform:scale(.94);background:rgba(127,140,160,.24)}
+#chatView .telegram-avatar{width:44px;height:44px;box-shadow:0 0 0 2px var(--cr-card),0 0 0 4px rgba(212,175,55,.65)}
+#chatView .telegram-user-name{font-size:16.5px;font-weight:800;color:var(--cr-ink)!important}
+#chatView .telegram-user-status{font-size:12px;margin-top:2px;color:var(--cr-muted)}
+
+/* منطقة الرسائل */
+#chatView .messages-area{padding:16px 14px 12px;gap:7px}
+
+/* الفقاعات */
+#chatView .msg-bubble{border-radius:20px 20px 20px 6px!important;padding:9px 13px 20px!important;border:1px solid var(--cr-line)!important;box-shadow:0 2px 8px rgba(0,0,0,.10)!important;line-height:1.55}
+#chatView .msg-bubble.mine{border-radius:20px 20px 6px 20px!important;border-color:transparent!important;box-shadow:0 4px 12px rgba(197,155,36,.25)!important}
+#chatView .msg-bubble:not(.mine){background:var(--cr-card)!important;color:var(--cr-ink)!important}
+#chatView .msg-bubble:not(.mine) .msg-text{color:var(--cr-ink)!important}
+#chatView .msg-bubble.mine{background:linear-gradient(145deg,#f3d66b,#d9b64f)!important;color:#1b232d!important}
+.app-container[data-app-theme="dark"] #chatView .msg-bubble.mine{background:linear-gradient(145deg,#a98a35,#7d6322)!important;color:#fff!important}
+.app-container[data-app-theme="dark"] #chatView .msg-bubble.mine .msg-text,.app-container[data-app-theme="dark"] #chatView .msg-bubble.mine .msg-meta{color:#fff!important}
+#chatView .msg-bubble .msg-meta{font-size:10.5px;bottom:4px;left:12px;opacity:.85}
+#chatView .msg-bubble:not(.mine) .msg-meta{color:var(--cr-muted)!important}
+#chatView .reply-quote{background:rgba(127,140,160,.14)!important;border-radius:10px;padding:5px 9px;border-right-width:3px}
+#chatView .msg-bubble.mine .reply-quote{background:rgba(0,0,0,.10)!important;color:inherit}
+#chatView .typing-bubble{border-radius:20px 20px 20px 6px;background:var(--cr-card);border-color:var(--cr-line)}
+#chatView .reaction-badge{border-radius:14px;background:rgba(127,140,160,.18)}
+
+/* الحاوية السفلية */
+#chatView .chat-input-container{background:transparent!important;border:none!important;padding:8px 10px max(10px,env(safe-area-inset-bottom,0px))!important;gap:8px}
+#chatView .reply-preview-bar{border-radius:14px!important;background:var(--cr-card)!important;border:1px solid var(--cr-line)!important;box-shadow:var(--cr-shadow)}
+#chatView .block-banner{border-radius:14px;border:1px solid rgba(220,38,38,.3)}
+
+/* الحقل الرئيسي (فيه الصوتية وحقل الكتابة): انحناء بسيط */
+#chatView #textInputBar{padding:6px 8px!important;gap:6px!important;border-radius:14px!important;background:var(--cr-card)!important;border:1px solid var(--cr-line)!important;box-shadow:var(--cr-shadow)}
+/* حقل الكتابة نفسه: انحناء بسيط */
+#chatView #messageInput.msg-editable{height:42px!important;min-height:42px!important;padding:10px 12px!important;border-radius:10px!important;background:rgba(127,140,160,.10)!important;border:1px solid transparent!important;color:var(--cr-ink)!important;transition:background .15s,border-color .15s}
+#chatView #messageInput.msg-editable:focus{background:rgba(127,140,160,.16)!important;border-color:rgba(212,175,55,.55)!important}
+.app-container[data-app-theme="light"] #chatView #messageInput.msg-editable{background:#f1f5fa!important;color:#17212b!important}
+.app-container[data-app-theme="light"] #chatView #messageInput.msg-editable:focus{background:#fff!important}
+.app-container[data-app-theme="dark"] #chatView #messageInput.msg-editable{color:#f1f5f9!important}
+#chatView #textInputBar label[for="chatImageInput"]{width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center}
+
+/* زر الإرسال: نفس التصميم، والسهم أبيض */
+#chatView #textInputBar > button[type="submit"]{color:#fff!important}
+#chatView #textInputBar > button[type="submit"] svg,
+#chatView #textInputBar > button[type="submit"] svg *,
+#chatView #textInputBar > button[type="submit"] i[data-ic] svg{color:#fff!important;stroke:#fff!important}
+</style>
 </head>
 
 <body>
