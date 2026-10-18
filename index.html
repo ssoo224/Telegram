@@ -1752,7 +1752,8 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
     </header>
 
     <div id="homeView" class="chat-list" style="flex:1; overflow-y:auto;">
-      <div id="storiesBar" class="sbar hidden"></div>
+      <div id="storiesBar" class="sbar collapsed hidden" role="button" aria-label="القصص"></div>
+      <button type="button" id="sbHandle" class="sb-handle hidden" aria-label="إخفاء القصص" onclick="setStoriesCollapsed(true)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg></button>
       <div id="chatFilters" class="cl-filters hidden" role="tablist">
         <button type="button" class="cl-chip active" data-f="all" onclick="setChatFilter('all')">الكل</button>
         <button type="button" class="cl-chip" data-f="unread" onclick="setChatFilter('unread')">غير المقروءة <b id="clUnreadCount" class="hidden"></b></button>
@@ -5787,3 +5788,40 @@ function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-ite
 .app-container #homeView#homeView #chatList .unread-badge{color:#fff!important;background:linear-gradient(145deg,#e2b83f,#b8861b)!important;text-shadow:0 1px 1px rgba(0,0,0,.18)}
 </style>
 <style id="babylon-chatlist-tweaks-3">.app-container #homeView#homeView .cl-chip b{-webkit-text-fill-color:currentColor}</style>
+
+<style id="babylon-stories-collapse">
+.app-container #homeView#homeView .cl-chip{font-weight:800!important}
+.sb-handle{display:flex;align-items:center;justify-content:center;width:100%;height:22px;border:0;background:transparent;color:var(--cl-sub);cursor:pointer;padding:0;margin:-6px 0 2px;-webkit-tap-highlight-color:transparent;flex-shrink:0}
+.sb-handle.hidden{display:none!important}
+.app-container #homeView#homeView #storiesBar{transition:max-height .32s cubic-bezier(.2,.8,.2,1),padding .32s ease;max-height:120px}
+.app-container #homeView#homeView #storiesBar .avatar,.app-container #homeView#homeView #storiesBar .sb-item span{transition:width .28s ease,height .28s ease,font-size .28s ease,opacity .2s ease}
+/* collapsed: 3 small stories + count */
+.app-container #homeView#homeView #storiesBar.collapsed{max-height:56px;padding:9px 16px!important;gap:16px!important;overflow:hidden!important;align-items:center;cursor:pointer}
+.app-container #homeView#homeView #storiesBar.collapsed .sb-item{width:auto;gap:0;flex:0 0 auto}
+.app-container #homeView#homeView #storiesBar.collapsed .sb-item:nth-child(n+4){display:none}
+.app-container #homeView#homeView #storiesBar.collapsed .sb-item span,.app-container #homeView#homeView #storiesBar.collapsed .sb-plus{display:none}
+.app-container #homeView#homeView #storiesBar.collapsed .sb-item .avatar{width:34px!important;height:34px!important;font-size:14px!important}
+.app-container #homeView#homeView #storiesBar.collapsed .avatar.sring::after{inset:-3px;padding:2px}
+.app-container #homeView#homeView #storiesBar.collapsed::after{content:attr(data-label);margin-inline-start:auto;font-size:13px;font-weight:800;color:var(--cl-sub);background:var(--cl-chip);padding:6px 12px;border-radius:14px;white-space:nowrap}
+@media(prefers-reduced-motion:reduce){.app-container #homeView#homeView #storiesBar,.app-container #homeView#homeView #storiesBar .avatar{transition:none}}
+</style>
+<script id="babylon-stories-collapse-js">
+(function(){
+  var bar=document.getElementById('storiesBar'),home=document.getElementById('homeView'),handle=document.getElementById('sbHandle');
+  if(!bar||!home)return;
+  window.setStoriesCollapsed=function(c){bar.classList.toggle('collapsed',!!c);syncHandle();};
+  function syncHandle(){if(handle)handle.classList.toggle('hidden',bar.classList.contains('collapsed')||bar.classList.contains('hidden'));}
+  function sync(){var n=bar.querySelectorAll('.sb-item').length,more=Math.max(0,n-3);bar.dataset.label=(more?'+'+more+' ':'')+'\u2304';syncHandle();}
+  new MutationObserver(sync).observe(bar,{childList:true,attributes:true,attributeFilter:['class']});sync();
+  // tapping a collapsed bar expands it instead of opening a story
+  bar.addEventListener('click',function(e){if(bar.classList.contains('collapsed')){e.preventDefault();e.stopPropagation();setStoriesCollapsed(false);}},true);
+  // pull the screen down to expand
+  var y0=null,done=false;
+  home.addEventListener('touchstart',function(e){y0=home.scrollTop<=0?e.touches[0].clientY:null;done=false;},{passive:true});
+  home.addEventListener('touchmove',function(e){if(y0==null||done)return;if(e.touches[0].clientY-y0>45&&bar.classList.contains('collapsed')){done=true;setStoriesCollapsed(false);}},{passive:true});
+  home.addEventListener('touchend',function(){y0=null;},{passive:true});
+  // swipe up on the open bar to fold it
+  var by=null;bar.addEventListener('touchstart',function(e){by=e.touches[0].clientY;},{passive:true});
+  bar.addEventListener('touchend',function(e){if(by!=null&&by-e.changedTouches[0].clientY>40)setStoriesCollapsed(true);by=null;},{passive:true});
+})();
+</script>
