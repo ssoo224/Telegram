@@ -1753,7 +1753,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 
     <div id="homeView" class="chat-list" style="flex:1; overflow-y:auto;">
       <div id="storiesBar" class="sbar hidden"></div>
-      <div id="chatFilters" class="cl-filters" role="tablist">
+      <div id="chatFilters" class="cl-filters hidden" role="tablist">
         <button type="button" class="cl-chip active" data-f="all" onclick="setChatFilter('all')">الكل</button>
         <button type="button" class="cl-chip" data-f="unread" onclick="setChatFilter('unread')">غير المقروءة <b id="clUnreadCount" class="hidden"></b></button>
       </div>
@@ -5706,7 +5706,8 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 <script id="babylon-chatlist-js">
 function clTick(s){return '<svg class="cl-tick '+s+'" viewBox="0 0 24 24" aria-hidden="true">'+(s==='read'?'<path d="m2 13 4 4L14 8M10 15l2 2 9-10"/>':'<path d="m5 13 4 4L19 7"/>')+'</svg>';}
 function setChatFilter(f){var l=document.getElementById('chatList');if(!l)return;l.classList.toggle('only-unread',f==='unread');document.querySelectorAll('#chatFilters .cl-chip').forEach(function(b){b.classList.toggle('active',b.dataset.f===f);});}
-function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-item.has-unread').length,b=document.getElementById('clUnreadCount');if(!b)return;b.textContent=n;b.classList.toggle('hidden',!n);}
+function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-item.has-unread').length,b=document.getElementById('clUnreadCount'),f=document.getElementById('chatFilters');if(b){b.textContent=n;b.classList.toggle('hidden',!n);}if(f)f.classList.toggle('hidden',!n);if(!n)setChatFilter('all');}
+(function(){var t=null,l=document.getElementById('chatList');if(!l)return;new MutationObserver(function(){clearTimeout(t);t=setTimeout(updateUnreadChip,120);}).observe(l,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});})();
 </script>
 <style id="babylon-chatlist-redesign">
 /* ===== Chat LIST only (home screen). Chat room & its buttons untouched. ===== */
@@ -5728,16 +5729,15 @@ function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-ite
 .app-container #homeView#homeView .sbar{background:transparent!important;border:0!important;padding:4px 14px 10px!important;gap:14px!important;scrollbar-width:none}
 .app-container #homeView#homeView .sbar::-webkit-scrollbar{display:none}
 .app-container #homeView#homeView .sb-item{width:64px;gap:7px;font-size:11.5px;font-weight:600;color:var(--cl-sub)}
-.app-container #homeView#homeView .sb-item .avatar{width:58px!important;height:58px!important}
+.app-container #homeView#homeView .sb-item .avatar{width:54px!important;height:54px!important}
 
 /* filter chips */
-.cl-filters{display:flex;gap:8px;padding:2px 16px 12px;flex-shrink:0}
-.cl-chip{border:0;cursor:pointer;font:600 13px/1 inherit;padding:9px 16px;border-radius:20px;background:var(--cl-chip);color:var(--cl-sub);display:inline-flex;align-items:center;gap:7px;transition:background .18s,color .18s,transform .15s;-webkit-tap-highlight-color:transparent}
+.cl-filters{display:flex;gap:8px;padding:12px 16px 12px;flex-shrink:0}
+.cl-chip{position:relative;border:0;cursor:pointer;font:600 13px/1 inherit;padding:9px 16px;border-radius:20px;background:var(--cl-chip);color:var(--cl-sub);display:inline-flex;align-items:center;gap:7px;transition:background .18s,color .18s,transform .15s;-webkit-tap-highlight-color:transparent}
 .cl-chip:active{transform:scale(.95)}
 .cl-chip.active{background:var(--cl-gold);color:#fff}
 .app-container[data-app-theme="dark"] .cl-chip.active{color:#1b1b1b}
-.cl-chip b{min-width:18px;height:18px;border-radius:9px;background:rgba(127,140,155,.28);font-size:11px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
-.cl-chip.active b{background:rgba(255,255,255,.3)}
+.cl-chip b{position:absolute;top:-8px;inset-inline-end:-5px;min-width:20px;height:20px;border-radius:10px;background:#e5484d;color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;box-shadow:0 2px 6px rgba(229,72,77,.4);border:2px solid var(--cl-bg)}
 .cl-chip b.hidden{display:none}
 
 /* rows as soft cards */
