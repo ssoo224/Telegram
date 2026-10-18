@@ -1826,9 +1826,9 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 #chatView .msg-bubble.mine{border-radius:20px 20px 6px 20px!important;border-color:transparent!important;box-shadow:0 4px 12px rgba(197,155,36,.25)!important}
 #chatView .msg-bubble:not(.mine){background:var(--cr-card)!important;color:var(--cr-ink)!important}
 #chatView .msg-bubble:not(.mine) .msg-text{color:var(--cr-ink)!important}
-#chatView .msg-bubble.mine{background:linear-gradient(145deg,#f3d66b,#d9b64f)!important;color:#1b232d!important}
-.app-container[data-app-theme="dark"] #chatView .msg-bubble.mine{background:linear-gradient(145deg,#96782a,#6b531a)!important;color:#fff!important}
-.app-container[data-app-theme="dark"] #chatView .msg-bubble.mine .msg-text,.app-container[data-app-theme="dark"] #chatView .msg-bubble.mine .msg-meta{color:#fff!important}
+#chatView .msg-bubble.mine{background:linear-gradient(145deg,#f3d66b,#d9b64f)!important;color:#292216!important}
+.app-container[data-app-theme="dark"] #chatView .msg-bubble.mine{background:linear-gradient(145deg,#f3d66b,#c99a24)!important;color:#292216!important}
+.app-container[data-app-theme="dark"] #chatView .msg-bubble.mine .msg-text,.app-container[data-app-theme="dark"] #chatView .msg-bubble.mine .msg-meta{color:#292216!important}
 #chatView .msg-bubble .msg-meta{font-size:10.5px;bottom:4px;left:12px;opacity:.85}
 #chatView .msg-bubble:not(.mine) .msg-meta{color:var(--cr-muted)!important}
 #chatView .reply-quote{background:rgba(127,140,160,.14)!important;border-radius:10px;padding:5px 9px;border-right-width:3px}
@@ -1869,7 +1869,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 #chatView .msg-bubble.mine .msg-text *:not(.mention),
 #chatView .msg-bubble.mine .reply-quote{color:#fff!important;-webkit-text-fill-color:#fff}
 #chatView .msg-bubble.mine .msg-meta{opacity:.9}
-.app-container[data-app-theme="light"] #chatView .msg-bubble.mine{background:linear-gradient(145deg,#d3a42f,#a97a1a)!important;box-shadow:0 4px 12px rgba(169,122,26,.30)!important}
+.app-container[data-app-theme="light"] #chatView .msg-bubble.mine{background:linear-gradient(145deg,#f3d66b,#d9b64f)!important;color:#292216!important;box-shadow:0 4px 12px rgba(169,122,26,.30)!important}
 /* نقوش خفيفة */
 #chatView .pattern-layer{opacity:.06!important}
 .app-container[data-app-theme="light"] #chatView .pattern-layer{opacity:.07!important}
@@ -4243,7 +4243,7 @@ function loadChats() {
 }
 
 const THEMES = {
-  babylon: { name:'بابل', hero:'ic:gate', chatBg:'#0d1626', mine:'linear-gradient(135deg,#1b4d8e,#2f78cf)', other:'#263345',
+  babylon: { name:'بابل', hero:'ic:gate', chatBg:'#0d1626', mine:'linear-gradient(145deg,#f3d66b,#d9b64f)', other:'#263345',
     textMine:'#ffffff', textOther:'#f3f4f6', accent:'#d4af37', tick:'#ffe08a', metaOther:'#94a3b8', line:'rgba(255,255,255,0.06)',
     pattern:'#d4af37', patternOp:0.11, symbols:['ic:gate','ic:star8','ic:bull','ic:tablet','ic:crescent','ic:jar'] },
   ashur: { name:'آشور', hero:'ic:bull', chatBg:'#1f1710', mine:'linear-gradient(135deg,#8a5a2b,#c48b47)', other:'#3a2c1d',
