@@ -6493,3 +6493,20 @@ function openMention(username){
   check();
 })();
 </script>
+
+<style id="babylon-radius-slider-fix">
+/* إصلاح ربط منزلق زوايا الرسائل: لا تسمح للقواعد الثابتة بتجاوز قيمة --r */
+#chatView #messagesArea .msg-bubble.mine,
+#chatView #messagesArea .msg-bubble:not(.mine) {
+  border-radius: var(--r, 12px) var(--r, 12px) 6px var(--r, 12px) !important;
+}
+#chatView #messagesArea .msg-bubble:not(.mine) {
+  border-radius: var(--r, 12px) var(--r, 12px) var(--r, 12px) 6px !important;
+}
+#chatSettingsView .pv .msg-bubble {
+  border-radius: var(--r, 12px) var(--r, 12px) 6px var(--r, 12px) !important;
+}
+#chatSettingsView .pv .msg-bubble.mine {
+  border-radius: var(--r, 12px) var(--r, 12px) var(--r, 12px) 6px !important;
+}
+</style>
