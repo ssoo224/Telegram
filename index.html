@@ -3643,6 +3643,15 @@ function sendMessage(e) {
   const text = input.value.trim();
   if (!text || !activeChatId) return;
   if (chatBlockedNow) return showToast(chatBlockedMsg);
+  // Keep the composer focused after sending so the mobile keyboard stays open.
+  const keepChatKeyboardOpen = () => {
+    setTimeout(() => {
+      const field = document.getElementById("messageInput");
+      if (field && activeChatId && document.getElementById("chatRoomView") && !document.getElementById("chatRoomView").classList.contains("hidden")) {
+        try { field.focus({ preventScroll: true }); } catch (_) { field.focus(); }
+      }
+    }, 80);
+  };
 
   if (editingMsgId) {
     db.collection("chats").doc(activeChatId).collection("messages").doc(editingMsgId).update({
@@ -3650,6 +3659,7 @@ function sendMessage(e) {
     }).then(() => {
       editingMsgId = null;
       input.value = "";
+      keepChatKeyboardOpen();
       showToast("تم تعديل الرسالة بنجاح");
     });
   } else {
@@ -3673,6 +3683,7 @@ function sendMessage(e) {
     
     input.value = "";
     cancelReply();
+    keepChatKeyboardOpen();
   }
 }
 
@@ -4766,7 +4777,6 @@ function svReact(e) {
   ref.set({ uid, at: Date.now(), reaction: e }, { merge: true }).then(() => {
     svCacheReaction(storyId, uid, e);
     if (SV.list[SV.i] === s) { SV.react = e; markReact(); svApplySelectedReaction(e); }
-    showToast('تم حفظ التفاعل ✓');
   }).catch(err => {
     console.error('Story reaction save failed:', err);
     // يبقى التفاعل ظاهرًا ومحفوظًا على هذا الجهاز، مع توضيح أن مزامنة Firebase فشلت.
@@ -5086,6 +5096,11 @@ document.addEventListener('click',function(e){const menu=document.getElementById
     }, 120);
   });
   input.addEventListener('blur', function(){ document.documentElement.classList.remove('babylon-chat-keyboard-open'); });
+  var sendButton = document.querySelector('#textInputBar button[type="submit"]');
+  if (sendButton) {
+    sendButton.addEventListener('pointerdown', function(ev){ ev.preventDefault(); });
+    sendButton.addEventListener('mousedown', function(ev){ ev.preventDefault(); });
+  }
 })();
 </script>
 
