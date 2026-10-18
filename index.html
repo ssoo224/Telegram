@@ -1755,6 +1755,21 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 .app-container[data-app-theme="light"] .sx-t .appearance-description{color:#718096!important}
 .app-container[data-app-theme="dark"] .sx-t .appearance-description{color:#8696a7!important}
 </style>
+<style id="settings-arrows-theme">
+/* الأسهم (الشيفرون وزر الرجوع) تتبع الوضع النهاري/الليلي */
+.app-container #settingsView .sx-ch,.app-container #privacySettingsView .sx-ch{color:#8696a7!important}
+.app-container #settingsView .sx-ch svg,.app-container #privacySettingsView .sx-ch svg,
+.app-container #settingsView .sx-ch i[data-ic] svg,.app-container #privacySettingsView .sx-ch i[data-ic] svg{color:inherit!important;stroke:currentColor!important}
+.app-container #settingsView .sx-ch svg *,.app-container #privacySettingsView .sx-ch svg *{stroke:currentColor!important}
+.app-container[data-app-theme="light"] #settingsView .sx-ch,.app-container[data-app-theme="light"] #privacySettingsView .sx-ch{color:#52657a!important;background:#eef2f7!important}
+.app-container[data-app-theme="dark"] #settingsView .sx-ch,.app-container[data-app-theme="dark"] #privacySettingsView .sx-ch{color:#e2e8f0!important;background:rgba(255,255,255,.08)!important}
+/* زر الرجوع */
+.app-container #privacySettingsView .sx-back,.app-container #chatSettingsView .sx-back,.app-container #notificationSettingsView .sx-back{color:#52657a!important}
+.app-container #privacySettingsView .sx-back svg,.app-container #chatSettingsView .sx-back svg,.app-container #notificationSettingsView .sx-back svg,
+.app-container #privacySettingsView .sx-back svg *,.app-container #chatSettingsView .sx-back svg *,.app-container #notificationSettingsView .sx-back svg *{color:inherit!important;stroke:currentColor!important}
+.app-container[data-app-theme="light"] #privacySettingsView .sx-back,.app-container[data-app-theme="light"] #chatSettingsView .sx-back,.app-container[data-app-theme="light"] #notificationSettingsView .sx-back{color:#52657a!important;background:#edf2f8!important}
+.app-container[data-app-theme="dark"] #privacySettingsView .sx-back,.app-container[data-app-theme="dark"] #chatSettingsView .sx-back,.app-container[data-app-theme="dark"] #notificationSettingsView .sx-back{color:#f5d76e!important;background:rgba(255,255,255,.08)!important}
+</style>
 </head>
 
 <body>
