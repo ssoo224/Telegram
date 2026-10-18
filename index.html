@@ -3133,6 +3133,8 @@ function searchUsers() {
     });
 }
 function openUserProfileDirect(u) {
+  if (!window.__mentionPending) window.__mentionReturn = null;
+  window.__mentionPending = false;
   setTimeout(updateBlockBtn, 80);
   currentChatOtherUserId = u.id;
   otherProfileUsername = "@" + (u.username || "user");
@@ -3178,6 +3180,10 @@ function openCurrentChatUserProfile() {
 }
 
 function goBackFromOtherProfile() {
+  if (window.__mentionReturn) {
+    const ret = window.__mentionReturn; window.__mentionReturn = null;
+    activeChatId = ret.chatId; openChatRoom(ret.otherId); return;
+  }
   if (activeChatId && currentChatOtherUserId) {
     openChatRoom(currentChatOtherUserId);
   } else {
@@ -3343,7 +3349,7 @@ function openChatRoom(otherUserId, keepLimit) {
         if (m.audioUrl) {
           htmlContent += `<div class="audio-player-card custom-voice-card" aria-label="رسالة صوتية"><audio class="voice-audio" preload="metadata" src="${esc(m.audioUrl)}"></audio><button type="button" class="voice-play-btn" onclick="toggleVoicePlayback(this)" aria-label="تشغيل الرسالة الصوتية"><svg class="voice-play-icon" viewBox="0 0 24 24" width="23" height="23" fill="currentColor" aria-hidden="true"><path d="M8 5.8c0-.8.9-1.3 1.6-.8l9.2 6.2a1 1 0 0 1 0 1.6l-9.2 6.2c-.7.5-1.6 0-1.6-.8z"/></svg></button><div class="audio-player-content"><div class="audio-player-title">رسالة صوتية</div><div class="voice-progress-row"><input class="voice-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="تقدم الصوت" oninput="seekVoicePlayback(this)"><span class="voice-time">0:00</span></div><div class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>`;
         } else {
-          htmlContent += m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${esc(m.text)}</div>`;
+          htmlContent += m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`;
         }
 
         if (m.reactions && Object.keys(m.reactions).length > 0) {
@@ -5924,6 +5930,56 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
 .app-container #homeView#homeView .top-stories::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;pointer-events:none;
   background:linear-gradient(90deg,transparent,rgba(212,175,55,.65) 20%,rgba(246,223,134,.9) 50%,rgba(212,175,55,.65) 80%,transparent)}
 </style>
+<style id="babylon-mentions">
+.msg-text .mention{color:#1a73e8;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app-container[data-app-theme="dark"] .msg-text .mention{color:#6cb6ff}
+.app-container[data-app-theme="dark"] .msg-bubble.mine .msg-text .mention{color:#d6ebff}
+.msg-text .mention:active{opacity:.7}
+@keyframes babylonChatShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-9px)}30%{transform:translateX(8px)}45%{transform:translateX(-7px)}60%{transform:translateX(6px)}75%{transform:translateX(-3px)}90%{transform:translateX(2px)}}
+#chatView.chat-shake{animation:babylonChatShake .5s ease-in-out}
+@media(prefers-reduced-motion:reduce){#chatView.chat-shake{animation:none}}
+</style>
+<script id="babylon-mentions-js">
+/* @username in a message: blue + tappable. Tap opens that person's profile; unknown username shakes the chat. */
+function renderMsgText(text){
+  var safe = esc(text);
+  return safe.replace(/(^|[^A-Za-z0-9_.@])@([A-Za-z][A-Za-z0-9_.]{2,})/g, function(all, pre, name){
+    var tail = '', m = name.match(/\.+$/);
+    if (m) { tail = m[0]; name = name.slice(0, -tail.length); }
+    if (name.length < 3) return all;
+    return pre + '<span class="mention" data-user="' + name.toLowerCase() + '">@' + name + '</span>' + tail;
+  });
+}
+function shakeChat(){
+  var v = document.getElementById('chatView'); if (!v) return;
+  v.classList.remove('chat-shake'); void v.offsetWidth; v.classList.add('chat-shake');
+  try { if (navigator.vibrate) navigator.vibrate(120); } catch (e) {}
+  setTimeout(function(){ v.classList.remove('chat-shake'); }, 600);
+}
+function openMention(username){
+  db.collection('usernames').doc(username).get().then(function(d){
+    if (!d.exists) { shakeChat(); showToast('لا يوجد مستخدم بهذا الاسم'); return; }
+    var uid = d.data().uid;
+    if (currentUser && uid === currentUser.uid) { openProfile(); return; }
+    if (myBlocks && myBlocks[uid]) { showToast('أنت حاظر هذا المستخدم'); return; }
+    return db.collection('users').doc(uid).get().then(function(ud){
+      if (!ud.exists) { shakeChat(); showToast('لا يوجد مستخدم بهذا الاسم'); return; }
+      window.__mentionReturn = { chatId: activeChatId, otherId: currentChatOtherUserId };
+      window.__mentionPending = true;
+      openUserProfileDirect(Object.assign({ id: ud.id }, ud.data()));
+    });
+  }).catch(function(){ showToast('تعذر فتح الملف الشخصي'); });
+}
+(function(){
+  var area = document.getElementById('messagesArea'); if (!area) return;
+  area.addEventListener('click', function(e){
+    var el = e.target.closest && e.target.closest('.mention'); if (!el) return;
+    if (typeof messageSelectionMode !== 'undefined' && messageSelectionMode) return;
+    e.preventDefault(); e.stopPropagation();
+    openMention(el.getAttribute('data-user'));
+  }, true);
+})();
+</script>
 <script id="babylon-splash-js">
 (function(){
   var splash=document.getElementById('splashPage');if(!splash)return;
