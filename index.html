@@ -1874,6 +1874,15 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 #chatView .pattern-layer{opacity:.06!important}
 .app-container[data-app-theme="light"] #chatView .pattern-layer{opacity:.07!important}
 </style>
+<style id="chat-theme-per-user">
+/* ثيم المحادثة يُطبَّق محلياً على حساب صاحبه فقط، ويغيّر ألوان المحادثة عنده وحده */
+html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView{--cr-surface:var(--chat-bg);--cr-card:var(--bubble-other);--cr-ink:var(--text-other);--cr-muted:var(--meta-other);--cr-line:var(--bubble-line)}
+html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView .msg-bubble.mine{background:var(--bubble-mine)!important;box-shadow:0 4px 12px rgba(0,0,0,.18)!important}
+html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView #messageInput.msg-editable{background:rgba(127,140,160,.16)!important;color:var(--text-other)!important}
+html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView #messageInput.msg-editable:focus{background:rgba(127,140,160,.24)!important;border-color:var(--accent-chat)!important}
+html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView .telegram-avatar{box-shadow:0 0 0 2px var(--bubble-other),0 0 0 4px var(--accent-chat)}
+html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView .pattern-layer{opacity:.08!important}
+</style>
 </head>
 
 <body>
@@ -4288,6 +4297,13 @@ function applyPrefs(rebuildPattern) {
   r.setProperty('--pattern-opacity', t.patternOp);
   r.setProperty('--msg-font', prefs.font + 'px');
   r.setProperty('--r', prefs.radius + 'px');
+  document.documentElement.setAttribute('data-chat-theme', prefs.theme);
+  // متغيرات الثيم تُثبَّت على حاوية التطبيق لأن وضع النهار/الليل يعرّف بعضها هناك ويطغى عليها
+  (function(){
+    var app = document.querySelector('.app-container'); if (!app) return;
+    var map = {'--bubble-mine':t.mine,'--bubble-other':t.other,'--text-mine':t.textMine,'--text-other':t.textOther,'--accent-chat':t.accent,'--tick-read':t.tick,'--meta-other':t.metaOther,'--bubble-line':t.line,'--chat-bg':t.chatBg};
+    Object.keys(map).forEach(function(k){ if (prefs.theme === 'babylon') app.style.removeProperty(k); else app.style.setProperty(k, map[k]); });
+  })();
   if (rebuildPattern) {
     renderPattern(document.getElementById('chatPattern'), t, 80);
     renderPattern(document.getElementById('pvPattern'), t, 30);
