@@ -5913,6 +5913,20 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
 @keyframes babylonTitleGlow{0%,100%{box-shadow:0 0 6px rgba(212,175,55,.12)}50%{box-shadow:0 0 14px rgba(212,175,55,.34)}}
 @media(prefers-reduced-motion:reduce){.app-container #mainHeader#mainHeader .main-header-title,.app-container #mainHeader#mainHeader .main-header-title::after{animation:none}}
 </style>
+<style id="babylon-search-ring">
+/* Search button: same slow shimmering gold ring as the title */
+.app-container #mainHeader#mainHeader .header-search-btn{position:relative;border-radius:10px!important;animation:babylonTitleGlow 4.8s ease-in-out infinite}
+.app-container #mainHeader#mainHeader .header-search-btn::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  background:linear-gradient(110deg,#a97c14 0%,#f6df86 22%,#fff5c0 36%,#d4af37 52%,#a97c14 100%);
+  background-size:200% 100%;background-repeat:repeat-x;animation:babylonTitleShine 5.5s linear infinite;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+/* Divider between the top header and the stories / chats */
+.app-container #mainHeader#mainHeader{position:relative}
+.app-container #mainHeader#mainHeader::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(212,175,55,.65) 20%,rgba(246,223,134,.9) 50%,rgba(212,175,55,.65) 80%,transparent)}
+@media(prefers-reduced-motion:reduce){.app-container #mainHeader#mainHeader .header-search-btn,.app-container #mainHeader#mainHeader .header-search-btn::after{animation:none}}
+</style>
 <script id="babylon-splash-js">
 (function(){
   var splash=document.getElementById('splashPage');if(!splash)return;
