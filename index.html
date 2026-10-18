@@ -1770,6 +1770,34 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 .app-container[data-app-theme="light"] #privacySettingsView .sx-back,.app-container[data-app-theme="light"] #chatSettingsView .sx-back,.app-container[data-app-theme="light"] #notificationSettingsView .sx-back{color:#52657a!important;background:#edf2f8!important}
 .app-container[data-app-theme="dark"] #privacySettingsView .sx-back,.app-container[data-app-theme="dark"] #chatSettingsView .sx-back,.app-container[data-app-theme="dark"] #notificationSettingsView .sx-back{color:#f5d76e!important;background:rgba(255,255,255,.08)!important}
 </style>
+<style id="email-modal-style">
+.em-ov{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(8,12,20,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:emFade .18s ease}
+.em-card{width:100%;max-width:380px;box-sizing:border-box;padding:24px 20px 18px;border-radius:24px;text-align:right;background:#17212b;color:#f1f5f9;border:1px solid rgba(255,255,255,.08);box-shadow:0 24px 60px rgba(0,0,0,.45);animation:emPop .22s ease}
+.em-icon{width:54px;height:54px;margin:0 auto 12px;border-radius:17px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#3b82f6,#6366f1);box-shadow:0 8px 20px rgba(59,130,246,.35)}
+.em-title{margin:0;text-align:center;font-size:19px;font-weight:800;color:inherit}
+.em-sub{margin:6px 0 16px;text-align:center;font-size:12.5px;color:#8696a7}
+.em-lbl{display:block;margin:10px 4px 6px;font-size:12.5px;font-weight:700;color:#8696a7}
+.em-input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1px solid #334155;background:#0f1722;color:#f1f5f9;font:inherit;font-size:15px;outline:none;text-align:left;transition:border-color .15s,box-shadow .15s}
+.em-input::placeholder{color:#64748b}
+.em-input:focus{border-color:#d4af37;box-shadow:0 0 0 3px rgba(212,175,55,.2)}
+.em-err{min-height:18px;margin:10px 4px 0;font-size:12.5px;color:#f87171;text-align:center}
+.em-actions{display:flex;gap:10px;margin-top:12px}
+.em-btn{flex:1;padding:12px;border:none;border-radius:14px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:transform .1s,opacity .15s}
+.em-btn:active{transform:scale(.97)}
+.em-btn:disabled{opacity:.6;cursor:default}
+.em-cancel{background:rgba(255,255,255,.08);color:#e2e8f0}
+.em-ok{background:linear-gradient(135deg,#d4af37,#f0c94d);color:#1b1500;box-shadow:0 4px 14px rgba(212,175,55,.35)}
+.app-container[data-app-theme="light"] .em-ov{background:rgba(30,45,70,.35)}
+.app-container[data-app-theme="light"] .em-card{background:#fff;color:#17212b;border-color:#e1e7ef;box-shadow:0 24px 60px rgba(30,50,80,.22)}
+.app-container[data-app-theme="light"] .em-sub,.app-container[data-app-theme="light"] .em-lbl{color:#718096}
+.app-container[data-app-theme="light"] .em-input{background:#f5f7fb;border-color:#dce4ee;color:#17212b}
+.app-container[data-app-theme="light"] .em-input::placeholder{color:#9aa8b8}
+.app-container[data-app-theme="light"] .em-cancel{background:#edf2f8;color:#344256}
+.app-container[data-app-theme="light"] .em-err{color:#dc2626}
+.app-container[data-app-theme="light"] .em-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.18)}
+@keyframes emFade{from{opacity:0}to{opacity:1}}
+@keyframes emPop{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+</style>
 </head>
 
 <body>
@@ -2956,22 +2984,50 @@ function setPrivacy(key, val){
 }
 function sxChangeEmail(){
   if (!currentUser) return;
-  const ne = (prompt('اكتب الإيميل الجديد') || '').trim();
-  if (!ne) return;
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ne)) return showToast('صيغة الإيميل غير صحيحة');
-  if (ne.toLowerCase() === (currentUser.email || '').toLowerCase()) return showToast('هذا هو إيميلك الحالي');
-  const pw = prompt('للتأكيد، اكتب كلمة المرور الحالية');
-  if (!pw) return;
-  const cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, pw);
-  currentUser.reauthenticateWithCredential(cred)
-    .then(() => currentUser.verifyBeforeUpdateEmail(ne))
-    .then(() => showToast('أرسلنا رابط تأكيد إلى ' + ne + ' — افتحه لإتمام التغيير'))
-    .catch(e => {
-      const c = (e && e.code) || '';
-      showToast(c === 'auth/wrong-password' || c === 'auth/invalid-credential' ? 'كلمة المرور غير صحيحة'
-        : c === 'auth/email-already-in-use' ? 'هذا الإيميل مستخدم مسبقاً'
-        : 'تعذر التغيير (' + (c || 'unknown') + ')');
-    });
+  const old = document.getElementById('emailModal'); if (old) old.remove();
+  const root = document.querySelector('.app-container') || document.body;
+  const ov = document.createElement('div');
+  ov.id = 'emailModal'; ov.className = 'em-ov';
+  ov.innerHTML = '<div class="em-card" role="dialog" aria-modal="true" aria-labelledby="emTitle">'
+    + '<div class="em-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 8 8 6 8-6"/></svg></div>'
+    + '<h3 id="emTitle" class="em-title">تغيير الإيميل</h3>'
+    + '<p class="em-sub">إيميلك الحالي: <span dir="ltr">' + esc(currentUser.email || '') + '</span></p>'
+    + '<label class="em-lbl" for="emNew">الإيميل الجديد</label>'
+    + '<input id="emNew" class="em-input" type="email" dir="ltr" inputmode="email" autocomplete="email" placeholder="name@example.com">'
+    + '<label class="em-lbl" for="emPass">كلمة المرور الحالية</label>'
+    + '<input id="emPass" class="em-input" type="password" dir="ltr" autocomplete="current-password" placeholder="••••••••">'
+    + '<div id="emErr" class="em-err"></div>'
+    + '<div class="em-actions"><button type="button" class="em-btn em-cancel" id="emCancel">إلغاء</button><button type="button" class="em-btn em-ok" id="emOk">تغيير</button></div>'
+    + '</div>';
+  root.appendChild(ov);
+  const close = () => ov.remove();
+  const err = m => { ov.querySelector('#emErr').textContent = m || ''; };
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  ov.querySelector('#emCancel').onclick = close;
+  const okBtn = ov.querySelector('#emOk');
+  const submit = () => {
+    const ne = ov.querySelector('#emNew').value.trim();
+    const pw = ov.querySelector('#emPass').value;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ne)) return err('صيغة الإيميل غير صحيحة');
+    if (ne.toLowerCase() === (currentUser.email || '').toLowerCase()) return err('هذا هو إيميلك الحالي');
+    if (!pw) return err('اكتب كلمة المرور الحالية للتأكيد');
+    err(''); okBtn.disabled = true; okBtn.textContent = 'جاري الإرسال...';
+    const cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, pw);
+    currentUser.reauthenticateWithCredential(cred)
+      .then(() => currentUser.verifyBeforeUpdateEmail(ne))
+      .then(() => { close(); showToast('أرسلنا رابط تأكيد إلى ' + ne + ' — افتحه لإتمام التغيير'); })
+      .catch(e => {
+        const c = (e && e.code) || '';
+        okBtn.disabled = false; okBtn.textContent = 'تغيير';
+        err(c === 'auth/wrong-password' || c === 'auth/invalid-credential' ? 'كلمة المرور غير صحيحة'
+          : c === 'auth/email-already-in-use' ? 'هذا الإيميل مستخدم مسبقاً'
+          : c === 'auth/too-many-requests' ? 'محاولات كثيرة، حاول لاحقاً'
+          : 'تعذر التغيير (' + (c || 'unknown') + ')');
+      });
+  };
+  okBtn.onclick = submit;
+  ov.querySelectorAll('.em-input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); }));
+  setTimeout(() => { const i = ov.querySelector('#emNew'); if (i) i.focus(); }, 60);
 }
 function sxChangePassword() {
   const em = currentUser && currentUser.email;
