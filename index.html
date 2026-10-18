@@ -1753,6 +1753,10 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 
     <div id="homeView" class="chat-list" style="flex:1; overflow-y:auto;">
       <div id="storiesBar" class="sbar hidden"></div>
+      <div id="chatFilters" class="cl-filters" role="tablist">
+        <button type="button" class="cl-chip active" data-f="all" onclick="setChatFilter('all')">الكل</button>
+        <button type="button" class="cl-chip" data-f="unread" onclick="setChatFilter('unread')">غير المقروءة <b id="clUnreadCount" class="hidden"></b></button>
+      </div>
       <div id="chatList" style="display:flex; flex-direction:column;"></div>
     </div>
 
@@ -3780,12 +3784,12 @@ function loadChats() {
             .limit(1)
             .get().then(msgSnap => {
               let lastMsgText = "لا توجد رسائل بعد";
-              let lastMsgTime = "";
+              let lastMsgTime = ""; let lastTick = "";
 
               if (!msgSnap.empty) {
                 const m = msgSnap.docs[0].data();
                 const isMine = (m.senderId === currentUser.uid);
-                const prefix = isMine ? "أنت: " : "";
+                const prefix = isMine ? "أنت: " : ""; if (isMine) lastTick = m.read ? 'read' : 'sent';
                 lastMsgText = prefix + (m.audioUrl ? "♬ بصمة صوتية" : (m.imageUrl ? "▧ صورة" : (m.text || "")));
                 
                 let tStr = new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
@@ -3804,17 +3808,19 @@ function loadChats() {
                   const verifiedBadge = isUVerified ? `<span class="verified-badge" style="width:13px;height:13px;font-size:8px;">✓</span>` : '';
 
                   existingItem.innerHTML = `
-                    <div class="avatar${ringCls(u)}" onclick="chatAvatarStory(event,'${otherId}')">${u.avatarUrl ? `<img src="${esc(u.avatarUrl)}">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>
+                    <div class="cl-av"><div class="avatar${ringCls(u)}" onclick="chatAvatarStory(event,'${otherId}')">${u.avatarUrl ? `<img src="${esc(u.avatarUrl)}">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>${(u.online && Date.now() - (u.lastSeen || 0) < 45000) ? '<span class="cl-online"></span>' : ''}</div>
                     <div class="chat-item-info">
                       <div class="chat-item-header-row">
                         <div class="chat-item-name">${esc(u.displayName || "مستخدم")} ${verifiedBadge}</div>
-                        <div class="chat-item-time">${lastMsgTime}</div>
+                        <div class="chat-item-time">${lastTick ? clTick(lastTick) : ''}<span>${lastMsgTime}</span></div>
                       </div>
                       <div class="chat-item-sub-row">
                         <div class="chat-item-sub">${esc(lastMsgText)}</div>
                         ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
                       </div>
                     </div>`;
+                  existingItem.classList.toggle('has-unread', unreadCount > 0);
+                  updateUnreadChip();
                   reorderChatListItems();
                 });
             });
@@ -5697,179 +5703,75 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 </script>
 
 
-<style id="babylon-telegram-redesign">
-/* ============================================================
-   Babylon Chat — Telegram-style redesign layer
-   (visual only: no change to Firebase / app logic)
-   ============================================================ */
-.app-container{
-  --tg-blue:#3390ec;
-  --tg-blue-dark:#2b7fd1;
-  --tg-green:#4fae4e;
-  --tg-sep:rgba(127,140,155,.16);
-}
-.app-container[data-app-theme="light"]{
-  --tg-bg:#ffffff; --tg-chat-bg:#c9dbc0; --tg-bubble-in:#ffffff; --tg-bubble-out:#effdde;
-  --tg-text:#000; --tg-sub:#707579; --tg-time-in:#a0acb6; --tg-time-out:#5ca85a; --tg-bar:#ffffff;
-}
-.app-container[data-app-theme="dark"]{
-  --tg-bg:#17212b; --tg-chat-bg:#0e1621; --tg-bubble-in:#182533; --tg-bubble-out:#2b5278;
-  --tg-text:#f5f5f5; --tg-sub:#7f91a4; --tg-time-in:#6d7f8f; --tg-time-out:#7da8d3; --tg-bar:#17212b;
-}
+<script id="babylon-chatlist-js">
+function clTick(s){return '<svg class="cl-tick '+s+'" viewBox="0 0 24 24" aria-hidden="true">'+(s==='read'?'<path d="m2 13 4 4L14 8M10 15l2 2 9-10"/>':'<path d="m5 13 4 4L19 7"/>')+'</svg>';}
+function setChatFilter(f){var l=document.getElementById('chatList');if(!l)return;l.classList.toggle('only-unread',f==='unread');document.querySelectorAll('#chatFilters .cl-chip').forEach(function(b){b.classList.toggle('active',b.dataset.f===f);});}
+function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-item.has-unread').length,b=document.getElementById('clUnreadCount');if(!b)return;b.textContent=n;b.classList.toggle('hidden',!n);}
+</script>
+<style id="babylon-chatlist-redesign">
+/* ===== Chat LIST only (home screen). Chat room & its buttons untouched. ===== */
+.app-container[data-app-theme="light"]{--cl-bg:#f4f6fa;--cl-card:#ffffff;--cl-text:#16202b;--cl-sub:#6b7a8c;--cl-sep:rgba(22,32,43,.07);--cl-chip:#e8edf4;--cl-gold:#c99a1c;--cl-shadow:0 1px 2px rgba(20,35,55,.05),0 6px 18px rgba(20,35,55,.05)}
+.app-container[data-app-theme="dark"]{--cl-bg:#0e1621;--cl-card:#17212b;--cl-text:#f1f5f9;--cl-sub:#8798aa;--cl-sep:rgba(255,255,255,.06);--cl-chip:#1d2a38;--cl-gold:#e4c45b;--cl-shadow:0 1px 2px rgba(0,0,0,.25),0 8px 22px rgba(0,0,0,.18)}
 
-/* ---------- Main header ---------- */
-.app-container #mainPage#mainPage #mainHeader.main-header{
-  height:56px!important;min-height:56px!important;padding:0 14px!important;
-  background:var(--tg-bar)!important;border-bottom:0!important;box-shadow:0 1px 0 var(--tg-sep)!important;
-}
-.app-container #mainPage#mainPage .main-header-title{font-size:20px!important;font-weight:700!important;letter-spacing:0!important;color:var(--tg-text)!important}
-.app-container #mainPage#mainPage .header-search-btn{border:0!important;background:transparent!important;width:40px!important;height:40px!important;color:var(--tg-sub)!important}
-.app-container #mainPage#mainPage .header-search-btn:active{background:var(--tg-sep)!important}
+/* header */
+.app-container #mainHeader#mainHeader{height:62px!important;min-height:62px!important;padding:0 16px!important;background:var(--cl-bg)!important;border:0!important;box-shadow:none!important}
+.app-container #mainHeader#mainHeader .main-header-title{font-size:23px!important;font-weight:800!important;letter-spacing:-.4px!important;
+  background:linear-gradient(120deg,var(--cl-gold),#f3d66b 55%,var(--cl-gold));-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}
+.app-container #mainHeader#mainHeader .header-search-btn{width:42px!important;height:42px!important;border-radius:14px!important;border:0!important;background:var(--cl-card)!important;color:var(--cl-text)!important;box-shadow:var(--cl-shadow)}
+.app-container #mainHeader#mainHeader .header-search-btn:active{transform:scale(.93)}
 
-/* ---------- Stories bar (flat) ---------- */
-.app-container #mainPage#mainPage .sbar{background:var(--tg-bg)!important;padding:10px 12px 8px!important;gap:12px!important;border-bottom:1px solid var(--tg-sep)!important}
-.app-container #mainPage#mainPage .sb-item{width:60px;font-size:11px;color:var(--tg-sub)}
+/* container */
+.app-container #homeView#homeView{background:var(--cl-bg)!important}
+.app-container #homeView#homeView #chatList{background:transparent!important;padding:0 12px 24px;gap:0}
 
-/* ---------- Chat list: flat Telegram rows ---------- */
-.app-container #mainPage#mainPage #homeView,.app-container #mainPage#mainPage #chatList{background:var(--tg-bg)!important}
-.app-container #mainPage#mainPage #chatList .chat-item,
-.app-container #mainPage#mainPage .chat-item:not(.search-user-card){
-  margin:0!important;padding:9px 14px!important;border-radius:0!important;border:0!important;
-  background:transparent!important;box-shadow:none!important;gap:12px!important;position:relative;min-height:72px;
-  transition:background .12s ease;
-}
-.app-container #mainPage#mainPage #chatList .chat-item::after{
-  content:"";position:absolute;bottom:0;inset-inline-start:80px;inset-inline-end:0;height:1px;background:var(--tg-sep);
-}
-.app-container #mainPage#mainPage #chatList .chat-item:last-child::after{display:none}
-.app-container #mainPage#mainPage #chatList .chat-item:hover{background:rgba(127,140,155,.07)!important}
-.app-container #mainPage#mainPage #chatList .chat-item:active{background:rgba(127,140,155,.14)!important;transform:none!important}
-.app-container #mainPage#mainPage #chatList .chat-item.is-active-chat{background:rgba(51,144,236,.10)!important;border-inline-start:0!important}
-.app-container #mainPage#mainPage #chatList .chat-item .avatar{width:54px!important;height:54px!important;font-size:21px;flex:0 0 54px;
-  background:linear-gradient(135deg,#e0b84a,#b8912a);color:#fff}
-.app-container #mainPage#mainPage .chat-item-info{display:flex;flex-direction:column;justify-content:center;gap:3px}
-.app-container #mainPage#mainPage .chat-item-header-row{margin:0!important}
-.app-container #mainPage#mainPage .chat-item-name{font-size:16px!important;font-weight:600!important;color:var(--tg-text)!important}
-.app-container #mainPage#mainPage .chat-item-time{font-size:12.5px!important;color:var(--tg-sub)!important}
-.app-container #mainPage#mainPage .chat-item-sub{font-size:14.5px!important;color:var(--tg-sub)!important}
-.app-container #mainPage#mainPage .chat-item .unread-badge{
-  background:var(--tg-blue)!important;color:#fff!important;min-width:21px!important;height:21px;
-  padding:0 6px!important;border-radius:11px!important;display:inline-flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:600;line-height:1;margin-right:8px;
-}
-.app-container #mainPage#mainPage .verified-badge{width:15px!important;height:15px!important;background:var(--tg-blue)!important;color:#fff!important;box-shadow:none!important}
-.app-container #mainPage#mainPage .empty-chats-icon{background:var(--tg-sep)!important;border:0!important}
+/* stories */
+.app-container #homeView#homeView .sbar{background:transparent!important;border:0!important;padding:4px 14px 10px!important;gap:14px!important;scrollbar-width:none}
+.app-container #homeView#homeView .sbar::-webkit-scrollbar{display:none}
+.app-container #homeView#homeView .sb-item{width:64px;gap:7px;font-size:11.5px;font-weight:600;color:var(--cl-sub)}
+.app-container #homeView#homeView .sb-item .avatar{width:58px!important;height:58px!important}
 
-/* ---------- Chat room ---------- */
-.app-container #mainPage#mainPage .chat-room{background:var(--tg-chat-bg)!important}
-.app-container[data-app-theme="light"] #mainPage#mainPage .chat-room .pattern-layer{opacity:.06!important}
-.app-container #mainPage#mainPage .telegram-chat-header{
-  height:56px!important;background:var(--tg-bar)!important;border-bottom:0!important;box-shadow:0 1px 0 var(--tg-sep)!important;padding:0 6px!important;gap:4px!important;
-}
-.app-container #mainPage#mainPage .telegram-chat-header>.icon-btn:first-child{font-size:34px;line-height:1;color:var(--tg-blue)!important;width:42px;height:42px;padding-bottom:4px}
-.app-container #mainPage#mainPage .telegram-avatar{width:40px!important;height:40px!important;background:linear-gradient(135deg,#e0b84a,#b8912a);color:#fff}
-.app-container #mainPage#mainPage .telegram-user-name{font-size:16px!important;font-weight:600!important;color:var(--tg-text)!important}
-.app-container #mainPage#mainPage .telegram-user-status{font-size:13px!important;line-height:1.3}
-.app-container #mainPage#mainPage .chat-more-btn{color:var(--tg-sub)!important}
+/* filter chips */
+.cl-filters{display:flex;gap:8px;padding:2px 16px 12px;flex-shrink:0}
+.cl-chip{border:0;cursor:pointer;font:600 13px/1 inherit;padding:9px 16px;border-radius:20px;background:var(--cl-chip);color:var(--cl-sub);display:inline-flex;align-items:center;gap:7px;transition:background .18s,color .18s,transform .15s;-webkit-tap-highlight-color:transparent}
+.cl-chip:active{transform:scale(.95)}
+.cl-chip.active{background:var(--cl-gold);color:#fff}
+.app-container[data-app-theme="dark"] .cl-chip.active{color:#1b1b1b}
+.cl-chip b{min-width:18px;height:18px;border-radius:9px;background:rgba(127,140,155,.28);font-size:11px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+.cl-chip.active b{background:rgba(255,255,255,.3)}
+.cl-chip b.hidden{display:none}
 
-/* ---------- Messages ---------- */
-.app-container #mainPage#mainPage .messages-area{padding:10px 10px 8px!important;gap:3px!important}
-.app-container #mainPage#mainPage .chat-room .msg-bubble{
-  --tail:7px;
-  max-width:min(80%,420px);min-width:58px;padding:6px 9px 17px!important;
-  border:0!important;box-shadow:0 1px 1px rgba(16,35,47,.13)!important;
-  font-size:var(--msg-font,15px);line-height:1.38;transform:none;
-  background:var(--tg-bubble-in)!important;color:var(--tg-text)!important;
-  border-radius:14px 14px 4px 14px!important;align-self:flex-start!important;margin-bottom:1px;
-}
-/* own messages on the right (RTL start), peer messages on the left */
-.app-container #mainPage#mainPage .chat-room .msg-bubble.mine{
-  align-self:flex-end!important;background:var(--tg-bubble-out)!important;color:var(--tg-text)!important;
-  border-radius:14px 14px 14px 4px!important;
-}
-.app-container #mainPage#mainPage .chat-room .msg-bubble .msg-text,
-.app-container #mainPage#mainPage .chat-room .msg-bubble.mine .msg-text{color:var(--tg-text)!important;padding:0 0 2px!important}
-/* tails */
-.app-container #mainPage#mainPage .chat-room .msg-bubble::after{
-  content:"";position:absolute;bottom:0;width:var(--tail);height:var(--tail);background:inherit;
-}
-.app-container #mainPage#mainPage .chat-room .msg-bubble:not(.mine)::after{right:calc(var(--tail) * -1 + 1px);clip-path:polygon(0 0,0 100%,100% 100%);}
-.app-container #mainPage#mainPage .chat-room .msg-bubble.mine::after{left:calc(var(--tail) * -1 + 1px);clip-path:polygon(100% 0,100% 100%,0 100%);}
-/* time + ticks inside the bubble bottom */
-.app-container #mainPage#mainPage .chat-room .msg-meta{left:auto!important;right:9px;bottom:3px!important;font-size:11px!important;gap:3px;color:var(--tg-time-in)!important;direction:ltr}
-.app-container #mainPage#mainPage .chat-room .msg-bubble.mine .msg-meta{color:var(--tg-time-out)!important}
-.app-container #mainPage#mainPage .chat-room .msg-bubble.mine .msg-meta,
-.app-container #mainPage#mainPage .chat-room .msg-bubble .msg-meta{unicode-bidi:isolate}
-.app-container #mainPage#mainPage .check-mark{color:var(--tg-time-out)!important;font-size:12px}
-.app-container #mainPage#mainPage .check-mark.read{color:var(--tg-green)!important}
-.app-container[data-app-theme="dark"] #mainPage#mainPage .check-mark.read{color:#7fd0ff!important}
-/* reply quote */
-.app-container #mainPage#mainPage .reply-quote{background:rgba(51,144,236,.10)!important;border-right:2px solid var(--tg-blue)!important;border-radius:4px 8px 8px 4px!important;
-  color:var(--tg-blue)!important;font-size:13px;padding:3px 8px;margin-bottom:5px}
-.app-container #mainPage#mainPage .msg-bubble.mine .reply-quote{background:rgba(79,174,78,.14)!important;border-right-color:var(--tg-green)!important;color:var(--tg-green)!important}
-.app-container[data-app-theme="dark"] #mainPage#mainPage .msg-bubble.mine .reply-quote{background:rgba(255,255,255,.08)!important;border-right-color:#7fd0ff!important;color:#7fd0ff!important}
-.app-container #mainPage#mainPage .story-reply-preview{border-right-color:var(--tg-blue)!important}
-/* images */
-.app-container #mainPage#mainPage .msg-bubble:has(.msg-image){padding:3px 3px 3px!important}
-.app-container #mainPage#mainPage .msg-image img{border-radius:11px!important;max-width:260px}
-.app-container #mainPage#mainPage .msg-bubble:has(.msg-image) .msg-meta{background:rgba(0,0,0,.45);color:#fff!important;border-radius:10px;padding:1px 7px;bottom:8px!important;right:10px}
-.app-container #mainPage#mainPage .msg-bubble:has(.msg-image) .check-mark{color:#fff!important}
-/* reactions */
-.app-container #mainPage#mainPage .reactions-row{margin-top:4px!important}
-.app-container #mainPage#mainPage .reaction-badge{background:rgba(51,144,236,.14)!important;border:0!important;box-shadow:none!important;font-size:16px!important;min-height:26px!important;padding:2px 8px!important;border-radius:13px!important}
-/* typing */
-.app-container #mainPage#mainPage .typing-bubble{background:var(--tg-bubble-in)!important;border:0!important;align-self:flex-start}
-.app-container #mainPage#mainPage .typing-dot{background:var(--tg-sub)}
+/* rows as soft cards */
+.app-container #homeView#homeView #chatList .chat-item{
+  margin:0 0 8px!important;padding:11px 13px!important;gap:13px!important;min-height:78px;border-radius:20px!important;
+  background:var(--cl-card)!important;border:0!important;box-shadow:var(--cl-shadow)!important;
+  transition:transform .14s ease,box-shadow .14s ease;position:relative;overflow:hidden}
+.app-container #homeView#homeView #chatList .chat-item:hover{background:var(--cl-card)!important}
+.app-container #homeView#homeView #chatList .chat-item:active{transform:scale(.985)!important}
+.app-container #homeView#homeView #chatList .chat-item.is-active-chat{border-inline-start:0!important;background:var(--cl-card)!important;box-shadow:inset 0 0 0 1.5px var(--cl-gold),var(--cl-shadow)!important}
+.app-container #homeView#homeView #chatList.only-unread .chat-item:not(.has-unread){display:none!important}
 
-/* ---------- Composer ---------- */
-.app-container #mainPage#mainPage .chat-input-container{background:var(--tg-bar)!important;border-top:0!important;box-shadow:0 -1px 0 var(--tg-sep)!important}
-.app-container #mainPage#mainPage #textInputBar.chat-input-bar{padding:6px 8px!important;gap:4px!important;min-height:52px}
-.app-container #mainPage#mainPage #messageInput{
-  height:40px!important;border:0!important;border-radius:20px!important;padding:8px 14px!important;
-  background:transparent!important;color:var(--tg-text)!important;font-size:16px!important;
-}
-.app-container[data-app-theme="light"] #mainPage#mainPage #messageInput,.app-container[data-app-theme="dark"] #mainPage#mainPage #messageInput{background:transparent!important;border:0!important}
-.app-container #mainPage#mainPage #textInputBar .icon-btn{color:var(--tg-sub)!important;width:40px;height:40px}
-.app-container #mainPage#mainPage #textInputBar>button[type="submit"]{
-  width:40px!important;height:40px!important;flex:0 0 40px!important;border-radius:50%!important;
-  background:var(--tg-blue)!important;color:#fff!important;box-shadow:none!important;
-}
-.app-container #mainPage#mainPage #textInputBar>button[type="submit"] svg{stroke:#fff!important;transform:rotate(-90deg)}
-.app-container #mainPage#mainPage #textInputBar>button[type="submit"]:active{background:var(--tg-blue-dark)!important;transform:scale(.94)!important}
-.app-container #mainPage#mainPage .recording-bar{background:var(--tg-bar)!important;border-top:0!important}
-.app-container #mainPage#mainPage .record-send-btn{background:var(--tg-blue)!important;color:#fff!important;box-shadow:none!important}
-.app-container #mainPage#mainPage .recording-wave i{background:var(--tg-blue)}
-/* reply preview bar */
-.app-container #mainPage#mainPage .reply-preview-content{background:transparent!important;border-right:2px solid var(--tg-blue)!important;border-radius:0!important;padding:2px 10px}
-.app-container #mainPage#mainPage .reply-preview-label{color:var(--tg-blue)!important}
-.app-container #mainPage#mainPage .reply-preview-message{color:var(--tg-sub)!important;font-weight:400!important}
-/* voice cards */
-.app-container #mainPage#mainPage .custom-voice-card{background:transparent!important;border:0!important;padding:2px 0 4px!important;max-width:250px}
-.app-container #mainPage#mainPage .voice-play-btn{background:var(--tg-blue)!important;color:#fff!important;box-shadow:none!important;border-radius:50%!important}
-.app-container #mainPage#mainPage .voice-progress{accent-color:var(--tg-blue)}
-.app-container #mainPage#mainPage .custom-voice-card.is-playing .voice-wave i{background:var(--tg-blue)}
-.app-container #mainPage#mainPage .audio-player-title{color:var(--tg-text)}
+/* avatar + online dot */
+.cl-av{position:relative;flex:0 0 auto;display:flex}
+.app-container #homeView#homeView #chatList .chat-item .avatar{width:56px!important;height:56px!important;flex:0 0 56px;font-size:21px;color:#fff;
+  background:linear-gradient(145deg,#e8c25a,#b88a1c);box-shadow:0 3px 10px rgba(184,138,28,.28)}
+.cl-online{position:absolute;bottom:1px;inset-inline-end:1px;width:15px;height:15px;border-radius:50%;background:#34c759;border:2.5px solid var(--cl-card);box-shadow:0 0 0 0 rgba(52,199,89,.5);animation:clPulse 2.4s ease-out infinite;z-index:3}
+@keyframes clPulse{0%{box-shadow:0 0 0 0 rgba(52,199,89,.5)}70%{box-shadow:0 0 0 7px rgba(52,199,89,0)}100%{box-shadow:0 0 0 0 rgba(52,199,89,0)}}
+@media(prefers-reduced-motion:reduce){.cl-online{animation:none}}
 
-/* ---------- Bottom navigation ---------- */
-.app-container #mainPage#mainPage .telegram-bottom-nav{height:58px!important;padding:0 4px max(0px,env(safe-area-inset-bottom,0px))!important;gap:0!important;
-  background:var(--tg-bar)!important;border-top:0!important;box-shadow:0 -1px 0 var(--tg-sep)!important}
-.app-container #mainPage#mainPage .telegram-bottom-nav .nav-item{height:100%!important;border:0!important;border-radius:0!important;background:transparent!important;
-  color:var(--tg-sub)!important;font-size:11px!important;font-weight:500!important;gap:2px!important}
-.app-container #mainPage#mainPage .telegram-bottom-nav .nav-item .nav-icon{width:auto!important;height:auto!important;background:transparent!important;transform:none!important}
-.app-container #mainPage#mainPage .telegram-bottom-nav .nav-item.active{color:var(--tg-blue)!important;background:transparent!important}
-.app-container #mainPage#mainPage .telegram-bottom-nav .nav-item.active .nav-icon{background:transparent!important}
+/* text */
+.app-container #homeView#homeView #chatList .chat-item-info{display:flex;flex-direction:column;justify-content:center;gap:5px;min-width:0}
+.app-container #homeView#homeView #chatList .chat-item-header-row{margin:0!important}
+.app-container #homeView#homeView #chatList .chat-item-name{font-size:16.5px!important;font-weight:700!important;color:var(--cl-text)!important}
+.app-container #homeView#homeView #chatList .chat-item-time{display:inline-flex;align-items:center;gap:4px;font-size:12px!important;color:var(--cl-sub)!important;direction:ltr}
+.app-container #homeView#homeView #chatList .chat-item-sub{font-size:14px!important;color:var(--cl-sub)!important}
+.app-container #homeView#homeView #chatList .chat-item.has-unread .chat-item-time{color:var(--cl-gold)!important;font-weight:700}
+.app-container #homeView#homeView #chatList .chat-item.has-unread .chat-item-sub{color:var(--cl-text)!important;font-weight:600}
+.cl-tick{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;color:var(--cl-sub)}
+.cl-tick.read{color:#34a7f0}
+.app-container #homeView#homeView #chatList .unread-badge{background:linear-gradient(145deg,#efcd62,#c99a1c)!important;color:#1b1b1b!important;min-width:22px!important;height:22px;padding:0 7px!important;border-radius:11px!important;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;line-height:1;margin-right:8px;box-shadow:0 2px 6px rgba(201,154,28,.35)}
+.app-container #homeView#homeView #chatList .verified-badge{width:15px!important;height:15px!important}
 
-/* ---------- Search ---------- */
-.app-container #mainPage#mainPage #searchView .search-screen-top{background:var(--tg-bar)!important;box-shadow:0 1px 0 var(--tg-sep)!important;border:0!important}
-.app-container #mainPage#mainPage #searchView .search-field{border-radius:22px!important;background:rgba(127,140,155,.13)!important;border:0!important}
-.app-container #mainPage#mainPage #searchView .search-user-card{background:transparent!important;border:0!important;border-radius:0!important;margin:0!important;padding:9px 14px!important}
-.app-container #mainPage#mainPage #searchView .search-results{background:var(--tg-bg)!important;padding:0!important}
-
-/* ---------- Menus ---------- */
-.app-container #mainPage#mainPage .chat-more-menu{border:0!important;border-radius:12px!important;box-shadow:0 8px 30px rgba(0,0,0,.25)!important}
-.app-container #mainPage#mainPage .chat-more-menu button:hover{background:rgba(51,144,236,.10)!important}
-
-/* thin scrollbars */
-.app-container #mainPage#mainPage ::-webkit-scrollbar{width:4px;height:4px}
-.app-container #mainPage#mainPage ::-webkit-scrollbar-thumb{background:rgba(127,140,155,.35);border-radius:4px}
+/* empty state */
+.app-container #homeView#homeView .empty-chats{padding:60px 28px!important}
+.app-container #homeView#homeView .empty-chats-icon{width:92px!important;height:92px!important;font-size:38px!important;border:0!important;background:linear-gradient(145deg,rgba(228,196,91,.22),rgba(228,196,91,.06))!important;color:var(--cl-gold)!important;box-shadow:0 10px 30px rgba(201,154,28,.15)}
 </style>
