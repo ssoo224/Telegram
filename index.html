@@ -3368,8 +3368,11 @@ function openChatRoom(otherUserId, keepLimit) {
         let pressTimer = null;
         let touchStartX = 0;
         let touchStartY = 0;
+        let ignoreTouch = false;
 
         b.ontouchstart = (e) => {
+          ignoreTouch = !!(e.target.closest && e.target.closest('.voice-play-btn,.voice-progress'));
+          if (ignoreTouch) return;
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
           pressTimer = setTimeout(() => {
@@ -3387,11 +3390,13 @@ function openChatRoom(otherUserId, keepLimit) {
 
         b.ontouchend = (e) => {
           clearTimeout(pressTimer);
+          if (ignoreTouch) { ignoreTouch = false; return; }
           if (touchStartX - e.changedTouches[0].clientX > 50) triggerSwipeReply(m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"));
         };
 
         b.onmousedown = (e) => {
           if (e.button !== 0) return;
+          if (e.target.closest && e.target.closest('.voice-play-btn,.voice-progress')) return;
           pressTimer = setTimeout(() => {
             suppressNextMessageClick = true;
             if (messageSelectionMode) toggleMessageSelection(doc.id);
@@ -3403,7 +3408,8 @@ function openChatRoom(otherUserId, keepLimit) {
           if (suppressNextMessageClick) { suppressNextMessageClick = false; return; }
           // Keep media controls interactive; a normal tap on the message opens its actions,
           // while a long press enters multi-select mode.
-          if (e.target.closest('button,input,audio,.msg-image img,a')) return;
+          // The play button swaps its own icon while handling the click, which detaches e.target; check the original event path too.
+          if (e.target.closest('button,input,audio,.msg-image img,a') || (e.composedPath && e.composedPath().some(n => n.matches && n.matches('button,input,audio,a')))) return;
           if (messageSelectionMode) {
             e.preventDefault(); e.stopPropagation(); toggleMessageSelection(doc.id);
             return;
@@ -5931,9 +5937,9 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
   background:linear-gradient(90deg,transparent,rgba(212,175,55,.65) 20%,rgba(246,223,134,.9) 50%,rgba(212,175,55,.65) 80%,transparent)}
 </style>
 <style id="babylon-mentions">
-.msg-text .mention{color:#1a73e8;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.app-container[data-app-theme="dark"] .msg-text .mention{color:#6cb6ff}
-.app-container[data-app-theme="dark"] .msg-bubble.mine .msg-text .mention{color:#d6ebff}
+.app-container .msg-bubble .msg-text span.mention{color:#0b5fd6!important;-webkit-text-fill-color:#0b5fd6!important;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app-container[data-app-theme="dark"] .msg-bubble .msg-text span.mention{color:#6cb6ff!important;-webkit-text-fill-color:#6cb6ff!important}
+.app-container[data-app-theme="dark"] .msg-bubble.mine .msg-text span.mention{color:#a9d4ff!important;-webkit-text-fill-color:#a9d4ff!important}
 .msg-text .mention:active{opacity:.7}
 @keyframes babylonChatShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-9px)}30%{transform:translateX(8px)}45%{transform:translateX(-7px)}60%{transform:translateX(6px)}75%{transform:translateX(-3px)}90%{transform:translateX(2px)}}
 #chatView.chat-shake{animation:babylonChatShake .5s ease-in-out}
