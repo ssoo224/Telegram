@@ -6070,6 +6070,45 @@ function openMention(username){
 .app-container #mainPage .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel),
 .app-container #mainPage .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel) span{color:#fff!important;-webkit-text-fill-color:#fff!important}
 </style>
+<style id="babylon-nav-gold">
+/* Add-story "+" badge in day mode: gold circle, white plus */
+.app-container[data-app-theme="light"] #homeView .sb-item .sb-plus{background:linear-gradient(135deg,#e6bd45,#b8861b)!important;box-shadow:0 1px 4px rgba(184,134,27,.4)}
+.app-container[data-app-theme="light"] #homeView .sb-item .sb-plus svg{stroke:#fff!important;color:#fff!important}
+
+/* Bottom navigation: gold icons + Arabic labels, polished layout, tap animation */
+.app-container #bottomNav.telegram-bottom-nav{position:relative;height:72px!important;padding:8px 10px max(8px,env(safe-area-inset-bottom,0px))!important;gap:6px!important;align-items:stretch}
+.app-container #bottomNav.telegram-bottom-nav::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(212,175,55,.6) 25%,rgba(246,223,134,.85) 50%,rgba(212,175,55,.6) 75%,transparent)}
+.app-container[data-app-theme] #bottomNav .nav-item{position:relative;flex:1 1 0;min-width:0;height:auto;gap:4px;padding:4px 2px;border:0!important;border-radius:16px!important;background:transparent!important;overflow:visible;
+  font-size:11.5px;font-weight:700;letter-spacing:.1px;-webkit-tap-highlight-color:transparent;transition:transform .18s ease}
+.app-container[data-app-theme="light"] #bottomNav .nav-item,.app-container[data-app-theme="light"] #bottomNav .nav-item span,.app-container[data-app-theme="light"] #bottomNav .nav-item svg{color:#b8861b!important;-webkit-text-fill-color:#b8861b}
+.app-container[data-app-theme="dark"] #bottomNav .nav-item,.app-container[data-app-theme="dark"] #bottomNav .nav-item span,.app-container[data-app-theme="dark"] #bottomNav .nav-item svg{color:#e4c45b!important;-webkit-text-fill-color:#e4c45b}
+.app-container[data-app-theme] #bottomNav .nav-item svg{stroke:currentColor!important;width:22px;height:22px}
+.app-container[data-app-theme] #bottomNav .nav-item .nav-icon{position:relative;width:54px;height:30px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:transparent;transform:none;transition:background .22s ease,box-shadow .22s ease}
+.app-container[data-app-theme] #bottomNav .nav-item:not(.active){opacity:.78}
+.app-container[data-app-theme] #bottomNav .nav-item.active{opacity:1}
+.app-container[data-app-theme] #bottomNav .nav-item.active .nav-icon{background:linear-gradient(135deg,rgba(230,189,69,.26),rgba(184,134,27,.18));box-shadow:inset 0 0 0 1px rgba(212,175,55,.42)}
+.app-container[data-app-theme] #bottomNav .nav-item.active>span:last-child{font-weight:800}
+.app-container[data-app-theme] #bottomNav .nav-item .nav-icon::after{content:"";position:absolute;inset:0;border-radius:inherit;background:rgba(212,175,55,.38);opacity:0;transform:scale(.4);pointer-events:none}
+.app-container[data-app-theme] #bottomNav .nav-item.nav-tapped .nav-icon{animation:navIconPop .46s cubic-bezier(.2,1.5,.4,1)}
+.app-container[data-app-theme] #bottomNav .nav-item.nav-tapped .nav-icon::after{animation:navRipple .5s ease-out}
+.app-container[data-app-theme] #bottomNav .nav-item.nav-tapped>span:last-child{animation:navLabelNudge .4s ease-out}
+.app-container[data-app-theme] #bottomNav .nav-item:active{transform:scale(.94)}
+@keyframes navIconPop{0%{transform:scale(1)}30%{transform:scale(.78)}65%{transform:scale(1.16)}100%{transform:scale(1)}}
+@keyframes navRipple{0%{opacity:.85;transform:scale(.4)}100%{opacity:0;transform:scale(1.7)}}
+@keyframes navLabelNudge{0%{transform:translateY(0)}35%{transform:translateY(2px)}100%{transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.app-container #bottomNav .nav-item,.app-container #bottomNav .nav-item *{animation:none!important;transition:none!important}}
+</style>
+<script id="babylon-nav-gold-js">
+(function(){
+  var nav=document.getElementById('bottomNav'); if(!nav)return;
+  nav.querySelectorAll('.nav-item').forEach(function(b){
+    b.addEventListener('click',function(){
+      b.classList.remove('nav-tapped'); void b.offsetWidth; b.classList.add('nav-tapped');
+      clearTimeout(b._tapT); b._tapT=setTimeout(function(){b.classList.remove('nav-tapped');},560);
+    });
+  });
+})();
+</script>
 <script id="babylon-splash-js">
 (function(){
   var splash=document.getElementById('splashPage');if(!splash)return;
