@@ -2006,6 +2006,16 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
   <!-- الصفحة الرئيسية وتطبيق الدردشة -->
   <section id="mainPage" class="hidden" style="height:100%; display:flex; flex-direction:column;">
     
+    <header id="selBar" class="main-header hidden">
+      <div class="sel-left">
+        <button type="button" class="icon-btn" onclick="exitSel()" aria-label="إلغاء التحديد"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        <div id="selCount">1</div>
+      </div>
+      <div class="main-header-actions">
+        <button type="button" id="selPinBtn" class="icon-btn" onclick="selPin()" aria-label="تثبيت"></button>
+        <button type="button" class="icon-btn danger" onclick="selDelete()" aria-label="حذف"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>
+      </div>
+    </header>
     <header id="mainHeader" class="main-header">
       <div class="main-header-title">Babylon Chat</div>
       <div class="main-header-actions">
@@ -3743,6 +3753,7 @@ function openChatRoom(otherUserId, keepLimit) {
         const hiddenLocalMessages = getLocalChatSet('babylon_hidden_messages_' + activeChatId);
         if (hiddenLocalMessages.has(doc.id)) return;
         const m = doc.data();
+        { const _cl = chatClearedAt(activeChatId, chatMetaCache[activeChatId]); if (_cl && (Number(m.createdAt) || 0) <= _cl) return; }
         const isMine = m.senderId === currentUser.uid;
         
         let checkHtml = "";
@@ -4172,14 +4183,6 @@ function sendMessage(e) {
   }
 }
 
-function reorderChatListItems(){
-  const list=document.getElementById("chatList"); if(!list) return;
-  const items=Array.from(list.querySelectorAll('.chat-item[id^="chat_item_"]'));
-  items.forEach(el=>{const isActive=!!activeChatId && el.dataset.chatid===activeChatId;el.classList.toggle('is-active-chat',isActive);});
-  items.sort((a,b)=>{const aa=a.dataset.chatid===activeChatId?1:0,bb=b.dataset.chatid===activeChatId?1:0;if(aa!==bb)return bb-aa;return (Number(b.dataset.updatedat)||0)-(Number(a.dataset.updatedat)||0);});
-  items.forEach(el=>list.appendChild(el));
-}
-
 function loadChats() {
   startBlocksListener();
   const container = document.getElementById("chatList");
@@ -4205,6 +4208,8 @@ function loadChats() {
         chatDocsList.push({ id: doc.id, data: doc.data() });
       });
 
+      chatDocsList.forEach(c => { chatMetaCache[c.id] = c.data; });
+      { const live = new Set(chatDocsList.map(c => c.id)); container.querySelectorAll('.chat-item[id^="chat_item_"]').forEach(el => { if (!live.has(el.dataset.chatid)) el.remove(); }); }
       chatDocsList.sort((a, b) => { const aa = a.id === activeChatId ? 1 : 0, bb = b.id === activeChatId ? 1 : 0; return aa !== bb ? bb - aa : (b.data.updatedAt || 0) - (a.data.updatedAt || 0); });
       storyPartnerIds = chatDocsList.map(c => (c.data.participants || []).find(id => id !== currentUser.uid)).filter(Boolean);
       renderStoriesBar();
@@ -4219,6 +4224,7 @@ function loadChats() {
         const otherId = participants.find(id => id !== currentUser.uid);
         if (!otherId) return;
         if (getLocalChatSet('babylon_hidden_chats').has(chatId)) { const hiddenItem = document.getElementById("chat_item_" + chatId); if (hiddenItem) hiddenItem.remove(); return; }
+        { const _clr = chatClearedAt(chatId, chatData); if (_clr && (Number(chatData.updatedAt) || 0) <= _clr) { const _h = document.getElementById("chat_item_" + chatId); if (_h) _h.remove(); return; } }
 
         let existingItem = document.getElementById("chat_item_" + chatId);
         if (!existingItem) {
@@ -4264,7 +4270,7 @@ function loadChats() {
                 .where("senderId", "==", otherId)
                 .where("read", "==", false)
                 .get().then(unReadSnap => {
-                  let unreadCount = unReadSnap.size;
+                  const _c2 = chatClearedAt(chatId, chatData); let unreadCount = _c2 ? unReadSnap.docs.filter(d => (Number(d.data().createdAt) || 0) > _c2).length : unReadSnap.size;
                   const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
                   const verifiedBadge = isUVerified ? `<span class="verified-badge" style="width:13px;height:13px;font-size:8px;">✓</span>` : '';
 
@@ -5496,9 +5502,178 @@ function seekVoicePlayback(range){var card=range.closest('.custom-voice-card'), 
 .chat-search-empty { padding:14px 8px; opacity:.7; font-size:13px; }
 .msg-bubble.search-match { outline:2px solid var(--babylon-gold); outline-offset:2px; }
 </style>
+<style id="chatops-css">
+/* ===== تثبيت / تحديد / حذف المحادثات ===== */
+#chatList .chat-item{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;position:relative}
+.app-container #homeView#homeView #chatList .chat-item.cl-selected{background:rgba(228,196,91,.14)!important;box-shadow:inset 0 0 0 1.5px var(--cl-gold,#e4c45b)!important}
+.chat-item .cl-av{position:relative}
+.chat-item.cl-selected .cl-av::after{content:"";position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:50%;border:2px solid var(--cl-card,#17212b);background:var(--cl-gold,#e4c45b) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/13px no-repeat;z-index:3}
+.chat-item .cl-pin{display:inline-flex;flex:0 0 auto;width:17px;height:17px;margin-inline-start:6px;color:var(--cl-gold,#e4c45b);opacity:.95}
+.chat-item .cl-pin svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.chat-item.has-unread .cl-pin{display:none}
+#selBar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#selBar .sel-left{display:flex;align-items:center;gap:6px}
+#selBar #selCount{font-size:19px;font-weight:700;color:var(--cl-text,#fff);margin-inline-start:6px}
+#selBar .icon-btn.danger{color:#f0605d}
+.cl-dlg-ov{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:22px;animation:clFade .15s ease}
+.cl-dlg{width:min(340px,100%);background:var(--cl-card,#17212b);color:var(--cl-text,#f1f5f9);border-radius:20px;padding:20px 20px 12px;box-shadow:0 18px 50px rgba(0,0,0,.5);direction:rtl;text-align:right;animation:clPop .16s ease}
+.cl-dlg h3{margin:0 0 8px;font-size:18px;font-weight:700}
+.cl-dlg p{margin:0 0 14px;font-size:14.5px;line-height:1.7;color:var(--cl-sub,#8798aa)}
+.cl-dlg p b{color:var(--cl-text,#f1f5f9)}
+.cl-dlg label.cl-chk{display:flex;align-items:center;gap:11px;margin:4px 0 12px;font-size:14.5px;cursor:pointer}
+.cl-dlg .cl-box{width:22px;height:22px;border-radius:7px;border:2px solid var(--cl-sub,#8798aa);display:inline-flex;align-items:center;justify-content:center;flex:0 0 22px;transition:.15s}
+.cl-dlg input:checked+.cl-box{background:var(--cl-gold,#e4c45b);border-color:var(--cl-gold,#e4c45b)}
+.cl-dlg input:checked+.cl-box::after{content:"";width:6px;height:11px;border:solid #111;border-width:0 2.6px 2.6px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.cl-dlg input{position:absolute;opacity:0;pointer-events:none}
+.cl-dlg .cl-btns{display:flex;justify-content:flex-start;gap:6px;margin:0 -8px}
+.cl-dlg button{background:none;border:0;padding:11px 16px;font:inherit;font-size:15px;font-weight:700;color:var(--cl-gold,#e4c45b);border-radius:12px;cursor:pointer}
+.cl-dlg button:active{background:rgba(255,255,255,.07)}
+.cl-dlg button.cl-danger{color:#f0605d}
+@keyframes clFade{from{opacity:0}to{opacity:1}}
+@keyframes clPop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+</style>
 <script>
 function getLocalChatSet(key) { try { const a=JSON.parse(localStorage.getItem(key)||'[]'); return new Set(Array.isArray(a)?a:[]); } catch(e) { return new Set(); } }
 function saveLocalChatSet(key,set) { try { localStorage.setItem(key,JSON.stringify([...set])); } catch(e) {} }
+
+/*CHATOPS_START*/
+const PIN_KEY='babylon_pinned_chats', CLR_KEY='babylon_cleared_chats', MAX_PINS=5;
+const chatMetaCache={};
+const ICON_PIN='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M8 3h8l-1 6 3 3.5V14H6v-1.5L9 9z"/></svg>';
+const ICON_UNPIN='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M8 3h8l-1 6 3 3.5V14H6v-1.5L9 9z"/><path d="m3 3 18 18"/></svg>';
+const ICON_PIN_SM='<svg viewBox="0 0 24 24"><path d="M12 17v5M8 3h8l-1 6 3 3.5V14H6v-1.5L9 9z"/></svg>';
+function getPins(){try{const a=JSON.parse(localStorage.getItem(PIN_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+function setPins(a){try{localStorage.setItem(PIN_KEY,JSON.stringify(a));}catch(e){}syncChatStateToCloud();}
+function getCleared(){try{const o=JSON.parse(localStorage.getItem(CLR_KEY)||'{}');return o&&typeof o==='object'&&!Array.isArray(o)?o:{};}catch(e){return {};}}
+function setClearedLocal(o){try{localStorage.setItem(CLR_KEY,JSON.stringify(o));}catch(e){}}
+function chatClearedAt(chatId,meta){return Math.max(Number(getCleared()[chatId])||0,Number(meta&&meta.clearedAll)||0);}
+let chatStateTimer=null,chatStateLoaded=false;
+function syncChatStateToCloud(){clearTimeout(chatStateTimer);chatStateTimer=setTimeout(()=>{if(typeof currentUser!=='undefined'&&currentUser)db.collection('users').doc(currentUser.uid).set({chatState:{pins:getPins(),cleared:getCleared()}},{merge:true}).catch(()=>{});},900);}
+function syncChatStateFromUser(u){
+  if(chatStateLoaded||!u)return;chatStateLoaded=true;const cs=u.chatState;if(!cs)return;
+  if(Array.isArray(cs.pins)&&!getPins().length){try{localStorage.setItem(PIN_KEY,JSON.stringify(cs.pins.slice(0,MAX_PINS)));}catch(e){}}
+  if(cs.cleared&&typeof cs.cleared==='object'){const c=getCleared();Object.keys(cs.cleared).forEach(k=>{c[k]=Math.max(Number(c[k])||0,Number(cs.cleared[k])||0);});setClearedLocal(c);}
+  reorderChatListItems();
+}
+if(typeof syncPrefsFromUser==='function'){const _spfu=syncPrefsFromUser;syncPrefsFromUser=function(u){try{syncChatStateFromUser(u);}catch(e){}return _spfu.apply(this,arguments);};}
+
+function chatItems(){return Array.from(document.querySelectorAll('#chatList .chat-item[id^="chat_item_"]'));}
+function applyChatMarks(){
+  const pins=getPins();
+  chatItems().forEach(el=>{
+    const pinned=pins.includes(el.dataset.chatid);
+    el.classList.toggle('is-pinned',pinned);
+    const row=el.querySelector('.chat-item-sub-row');if(!row)return;
+    let p=row.querySelector('.cl-pin');
+    if(pinned&&!p){p=document.createElement('span');p.className='cl-pin';p.innerHTML=ICON_PIN_SM;row.appendChild(p);}
+    else if(!pinned&&p)p.remove();
+  });
+}
+function reorderChatListItems(){
+  const list=document.getElementById("chatList");if(!list)return;
+  const pins=getPins();
+  const items=chatItems();
+  items.forEach(el=>{const isActive=!!activeChatId&&el.dataset.chatid===activeChatId;el.classList.toggle('is-active-chat',isActive);});
+  items.sort((a,b)=>{
+    const pa=pins.indexOf(a.dataset.chatid),pb=pins.indexOf(b.dataset.chatid);
+    if((pa>=0)!==(pb>=0))return pa>=0?-1:1;
+    if(pa>=0&&pb>=0)return pa-pb;
+    const aa=a.dataset.chatid===activeChatId?1:0,bb=b.dataset.chatid===activeChatId?1:0;if(aa!==bb)return bb-aa;
+    return (Number(b.dataset.updatedat)||0)-(Number(a.dataset.updatedat)||0);
+  });
+  items.forEach(el=>list.appendChild(el));
+  applyChatMarks();
+}
+
+/* ---- التحديد ---- */
+let selMode=false;const selSet=new Set();
+function enterSel(id){selMode=true;selSet.clear();selSet.add(id);refreshSelUI();try{navigator.vibrate&&navigator.vibrate(18);}catch(e){}}
+function toggleSel(id){selSet.has(id)?selSet.delete(id):selSet.add(id);if(!selSet.size)exitSel();else refreshSelUI();}
+function exitSel(){selMode=false;selSet.clear();refreshSelUI();}
+function refreshSelUI(){
+  chatItems().forEach(el=>el.classList.toggle('cl-selected',selMode&&selSet.has(el.dataset.chatid)));
+  const bar=document.getElementById('selBar'),head=document.getElementById('mainHeader');
+  if(bar)bar.classList.toggle('hidden',!selMode);
+  if(head)head.classList.toggle('hidden',selMode);
+  if(!selMode)return;
+  const c=document.getElementById('selCount');if(c)c.textContent=String(selSet.size);
+  const pins=getPins(),allPinned=[...selSet].every(id=>pins.includes(id));
+  const b=document.getElementById('selPinBtn');if(b){b.innerHTML=allPinned?ICON_UNPIN:ICON_PIN;b.setAttribute('aria-label',allPinned?'إلغاء التثبيت':'تثبيت');}
+}
+function selPin(){
+  const ids=[...selSet];if(!ids.length)return;
+  const pins=getPins(),allPinned=ids.every(id=>pins.includes(id));
+  if(allPinned){setPins(pins.filter(p=>!ids.includes(p)));showToast(ids.length>1?'تم إلغاء تثبيت المحادثات':'تم إلغاء تثبيت المحادثة');}
+  else{
+    const np=pins.slice();ids.forEach(id=>{if(!np.includes(id))np.unshift(id);});
+    if(np.length>MAX_PINS){showToast('يمكنك تثبيت '+MAX_PINS+' محادثات كحد أقصى');return;}
+    setPins(np);showToast(ids.length>1?'تم تثبيت المحادثات':'تم تثبيت المحادثة');
+  }
+  exitSel();reorderChatListItems();
+}
+(function initChatSelection(){
+  const list=document.getElementById('chatList');if(!list)return;
+  let timer=null,sx=0,sy=0,suppress=false;
+  const itemOf=t=>t&&t.closest?t.closest('.chat-item[id^="chat_item_"]'):null;
+  list.addEventListener('pointerdown',e=>{
+    const it=itemOf(e.target);if(!it)return;
+    suppress=false;sx=e.clientX;sy=e.clientY;clearTimeout(timer);
+    timer=setTimeout(()=>{timer=null;suppress=true;const id=it.dataset.chatid;if(!selMode)enterSel(id);else toggleSel(id);},430);
+  });
+  list.addEventListener('pointermove',e=>{if(timer&&(Math.abs(e.clientX-sx)>10||Math.abs(e.clientY-sy)>10)){clearTimeout(timer);timer=null;}});
+  ['pointerup','pointercancel','pointerleave'].forEach(ev=>list.addEventListener(ev,()=>{clearTimeout(timer);timer=null;}));
+  list.addEventListener('contextmenu',e=>{if(itemOf(e.target))e.preventDefault();});
+  list.addEventListener('click',e=>{
+    const it=itemOf(e.target);if(!it)return;
+    if(suppress){suppress=false;e.stopPropagation();e.preventDefault();return;}
+    if(selMode){e.stopPropagation();e.preventDefault();toggleSel(it.dataset.chatid);}
+  },true);
+  setInterval(()=>{const hv=document.getElementById('homeView');if(selMode&&hv&&hv.offsetParent===null)exitSel();},500);
+})();
+
+/* ---- الحذف (مثل تليجرام) ---- */
+function chatNameOf(id){const el=document.getElementById('chat_item_'+id);const n=el&&el.querySelector('.chat-item-name');if(!n)return 'المستخدم';const t=n.childNodes[0];return ((t&&t.textContent)||n.textContent||'المستخدم').trim()||'المستخدم';}
+function selDelete(){if(selSet.size)openDeleteChatsDialog([...selSet]);}
+function openDeleteChatsDialog(ids){
+  const one=ids.length===1,name=one?chatNameOf(ids[0]):'';
+  const ov=document.createElement('div');ov.className='cl-dlg-ov';
+  ov.innerHTML=`<div class="cl-dlg" role="dialog" aria-modal="true">
+    <h3>${one?'حذف المحادثة':'حذف '+ids.length+' محادثات'}</h3>
+    <p>${one?'هل تريد حذف المحادثة مع <b>'+esc(name)+'</b>؟':'هل تريد حذف المحادثات المحددة؟'} لا يمكن التراجع عن هذا الإجراء.</p>
+    <label class="cl-chk"><input type="checkbox" id="clDelBoth"><span class="cl-box"></span><span>${one?'حذف أيضاً عند '+esc(name):'حذف أيضاً عند الطرف الآخر'}</span></label>
+    <div class="cl-btns"><button type="button" class="cl-danger" id="clDelOk">حذف</button><button type="button" id="clDelNo">إلغاء</button></div></div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+  ov.querySelector('#clDelNo').onclick=close;
+  ov.querySelector('#clDelOk').onclick=()=>{const both=ov.querySelector('#clDelBoth').checked;close();deleteChats(ids,both);};
+}
+async function purgeChatMessages(id){
+  const col=db.collection('chats').doc(id).collection('messages');
+  try{for(let k=0;k<30;k++){const s=await col.limit(400).get();if(s.empty)break;const b=db.batch();s.docs.forEach(d=>b.delete(d.ref));await b.commit();}return;}catch(e){}
+  try{const me=currentUser.uid;for(let k=0;k<30;k++){const s=await col.where('senderId','==',me).limit(400).get();if(s.empty)break;const b=db.batch();s.docs.forEach(d=>b.delete(d.ref));await b.commit();}}catch(e){}
+}
+async function deleteChats(ids,both){
+  const now=Date.now(),cl=getCleared(),stamps={};
+  ids.forEach(id=>{const meta=chatMetaCache[id]||{};stamps[id]=Math.max(now,Number(meta.updatedAt)||0);cl[id]=stamps[id];});
+  setClearedLocal(cl);syncChatStateToCloud();
+  setPins(getPins().filter(p=>!ids.includes(p)));
+  ids.forEach(id=>{const el=document.getElementById('chat_item_'+id);if(el)el.remove();});
+  exitSel();
+  try{updateUnreadChip();}catch(e){}
+  const list=document.getElementById('chatList');
+  if(list&&!chatItems().length&&!list.querySelector('.empty-chats'))list.innerHTML='<div class="empty-chats"><div class="empty-chats-icon">⌂</div><div style="font-weight:600;font-size:16px;margin-bottom:6px;color:var(--babylon-gold);">لا توجد محادثات في بابل بعد</div><div style="font-size:13px;color:var(--text-muted);">اضغط على أيقونة البحث (⌕) في الأعلى وابحث عن مستخدم بيوزر صالح</div></div>';
+  if(activeChatId&&ids.includes(activeChatId)){try{activeChatId=null;}catch(e){}}
+  showToast(ids.length>1?'تم حذف المحادثات':'تم حذف المحادثة');
+  if(!both)return;
+  let failed=0;
+  for(const id of ids){
+    try{await db.collection('chats').doc(id).set({clearedAll:stamps[id]},{merge:true});}catch(e){failed++;continue;}
+    purgeChatMessages(id);
+  }
+  if(failed)showToast('تعذّر الحذف عند الطرف الآخر، حُذفت عندك فقط');
+}
+/*CHATOPS_END*/
 function toggleChatMenu(ev) { if(ev) ev.stopPropagation(); const m=document.getElementById('chatMoreMenu'); if(!m)return; m.classList.toggle('hidden'); refreshMuteLabel(); }
 function closeChatMenus() { ['chatMoreMenu','chatSearchPanel'].forEach(id=>document.getElementById(id)?.classList.add('hidden')); }
 function refreshMuteLabel() { const b=document.getElementById('chatMuteAction'); if(!b||!currentChatOtherUserId)return; const muted=getLocalChatSet('babylon_muted_users').has(currentChatOtherUserId); b.innerHTML=muted?'<svg class="chat-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span>إلغاء كتم المحادثة</span>':'<svg class="chat-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/><path d="m3 3 18 18"/></svg><span>كتم المحادثة</span>'; }
