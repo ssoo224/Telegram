@@ -4341,7 +4341,8 @@ function loadChats() {
                 // إشعار نظام واحد فقط للرسالة الواردة الجديدة، عندما لا تكون محادثتها مفتوحة.
                 // لا نرسل إشعارات للرسائل الموجودة في أول تحميل أو عند فتح المحادثة نفسها.
                 const messageDoc = msgSnap.docs[0];
-                if (!isInitialSnapshot && !isMine && chatId !== activeChatId &&
+                if (!isInitialSnapshot && !isMine &&
+                    (chatId !== activeChatId || document.visibilityState === 'hidden') &&
                     Number(m.createdAt || 0) > sessionStartTime &&
                     !nativeNotifiedMessageIds.has(messageDoc.id) &&
                     getNotificationOption('push', false) &&
@@ -4350,7 +4351,7 @@ function loadChats() {
                   const nativeBody = m.audioUrl ? '♬ رسالة صوتية' : (m.imageUrl ? '▧ صورة' : (m.text || 'رسالة جديدة'));
                   try {
                     if (window.BabylonAndroid && typeof window.BabylonAndroid.showMessageNotification === 'function') {
-                      window.BabylonAndroid.showMessageNotification(u.displayName || 'رسالة جديدة', String(nativeBody).slice(0, 300));
+                      window.BabylonAndroid.showMessageNotification(u.displayName || 'رسالة جديدة', String(nativeBody).slice(0, 300), pvUrl(u) || '');
                     }
                   } catch (nativeNotifError) { console.warn('Native notification failed', nativeNotifError); }
                 }
