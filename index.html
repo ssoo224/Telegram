@@ -3092,11 +3092,6 @@ function applyAppTheme(theme) {
   if (!app) return;
   const safeTheme = theme === 'dark' ? 'dark' : 'light';
   app.setAttribute('data-app-theme', safeTheme);
-  try {
-    if (window.BabylonAndroid && typeof window.BabylonAndroid.setTheme === 'function') {
-      window.BabylonAndroid.setTheme(safeTheme);
-    }
-  } catch (e) {}
   /* The delete dialog is mounted directly under body, so mirror the theme onto it. */
   const deleteDialog = document.getElementById('messageDeleteModal');
   if (deleteDialog) deleteDialog.setAttribute('data-app-theme', safeTheme);
