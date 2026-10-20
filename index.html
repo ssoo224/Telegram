@@ -7426,7 +7426,7 @@ function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-ite
 </style>
 <style id="babylon-chatlist-tweaks-2">
 /* stories: one step further from the header */
-.app-container #homeView#homeView .sbar{padding-top:12px!important}
+.app-container #homeView#homeView .sbar{padding-top:12px!important;direction:ltr!important;flex-direction:row!important;justify-content:flex-start!important}
 /* filter chips: white label when pressed, readable deep gold in both themes */
 .app-container #homeView#homeView .cl-chip.active{background:linear-gradient(145deg,#d9ad34,#b8861b)!important;color:#fff!important;-webkit-text-fill-color:#fff}
 /* count circle on the unread chip: gold + white number, flips when the chip is pressed */
@@ -7565,7 +7565,7 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
 #hdrAvatarBtn .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 #hdrAvatarBtn .sb-plus{display:none!important}
 #newGroupFab{position:absolute;left:16px;bottom:78px;width:56px;height:56px;border-radius:50%;border:0;padding:0;display:none;align-items:center;justify-content:center;background:linear-gradient(135deg,#e0bd4a,#b8891a);color:#17212b;box-shadow:0 6px 18px rgba(0,0,0,.35);z-index:15;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s ease}
-#newGroupFab svg{display:block;stroke:currentColor}
+#newGroupFab svg{display:block;stroke:#fff!important;color:#fff!important}
 #newGroupFab:active{transform:scale(.92)}
 #homeView:not(.hidden) ~ #newGroupFab{display:flex}
 .app-container #homeView#homeView #chatList{padding-bottom:88px!important}
@@ -7574,6 +7574,7 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
 .app-container #homeView#homeView #storiesBar.collapsed::after{display:none!important}
 .app-container #homeView#homeView #storiesBar{transition:max-height .32s cubic-bezier(.2,.8,.2,1),padding .32s ease,opacity .25s ease}
 .app-container #homeView#homeView .top-stories.sb-off::after{display:none}
+  #hdrAvatarBtn.story-avatar-moved{opacity:0;visibility:hidden;pointer-events:none;transform:scale(.65);width:0!important;flex-basis:0!important;margin:0!important;overflow:hidden;transition:opacity .2s,transform .25s,width .25s,flex-basis .25s}
 </style>
 <script id="babylon-avatar-fab-js">
 (function(){
@@ -7581,10 +7582,20 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
   if(!bar||!btn)return;
   var av=btn.querySelector('.avatar');
   function syncAv(){var src=bar.querySelector('.sb-item .avatar');if(!src)return;av.className=src.className;av.innerHTML=src.innerHTML;var p=av.querySelector('.sb-plus');if(p)p.remove();}
-  function syncTop(){if(top)top.classList.toggle('sb-off',bar.classList.contains('collapsed')||bar.classList.contains('hidden'));}
+  function syncTop(){
+    var expanded=!bar.classList.contains('collapsed')&&!bar.classList.contains('hidden');
+    if(top)top.classList.toggle('sb-off',!expanded);
+    // The header avatar moves visually into the stories strip while it is expanded.
+    btn.classList.toggle('story-avatar-moved',expanded);
+    btn.setAttribute('aria-expanded',expanded?'true':'false');
+  }
   new MutationObserver(function(){syncAv();syncTop();}).observe(bar,{childList:true,attributes:true,attributeFilter:['class']});
   syncTop();
-  btn.addEventListener('click',function(){if(bar.classList.contains('hidden'))return;window.setStoriesCollapsed(!bar.classList.contains('collapsed'));});
+  btn.addEventListener('click',function(){
+    if(bar.classList.contains('hidden'))return;
+    window.setStoriesCollapsed(!bar.classList.contains('collapsed'));
+    syncTop();
+  });
 })();
 </script>
 <style id="babylon-mentions">
