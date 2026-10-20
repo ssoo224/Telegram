@@ -7526,11 +7526,18 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
   background-size:250% 100%!important;background-repeat:repeat-x!important;
   -webkit-background-clip:text!important;background-clip:text!important;
   color:transparent!important;-webkit-text-fill-color:transparent!important;
-  filter:drop-shadow(0 2px 2px rgba(0,0,0,.16)) drop-shadow(0 0 4px rgba(232,200,93,.35));
+  filter:none!important;text-shadow:none!important;
   animation:babylonTextShine 3s linear infinite}
 .app-container #mainHeader#mainHeader .main-header-title::after{content:none!important;display:none!important;animation:none!important}
 @keyframes babylonTextShine{from{background-position:0% 0}to{background-position:250% 0}}
 @media(prefers-reduced-motion:reduce){.app-container #mainHeader#mainHeader .main-header-title{animation:none}}
+</style>
+<style id="babylon-chat-names-color">
+/* Chat list names (people & groups): black in day mode, white in night mode */
+.app-container[data-app-theme="light"] #mainPage #homeView #chatList .chat-item-name,
+.app-container[data-app-theme="light"] #mainPage #homeView #chatList .chat-item-name .g-name-t{color:#000!important;-webkit-text-fill-color:#000!important}
+.app-container[data-app-theme="dark"] #mainPage #homeView #chatList .chat-item-name,
+.app-container[data-app-theme="dark"] #mainPage #homeView #chatList .chat-item-name .g-name-t{color:#fff!important;-webkit-text-fill-color:#fff!important}
 </style>
 <style id="babylon-search-ring">
 /* Stories live in the top field (pinned under the header); a gold divider sits below them */
