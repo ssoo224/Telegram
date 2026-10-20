@@ -4113,12 +4113,12 @@ function startRecording() {
   }
 
   navigator.mediaDevices.getUserMedia({
-    audio: { channelCount: 1, sampleRate: 48000, sampleSize: 16, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+    audio: { channelCount: 1, sampleRate: 48000, sampleSize: 16, echoCancellation: false, noiseSuppression: false, autoGainControl: false }
   }).then(stream => {
-    /* OGG/Opus أولاً (48kHz، 64kbps)، مع بدائل للمتصفحات التي لا تدعمه */
+    /* OGG/Opus أولاً (48kHz، 96kbps)، مع بدائل للمتصفحات التي لا تدعمه */
     const mime = ['audio/ogg;codecs=opus', 'audio/ogg', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
       .find(t => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
-    const opts = { audioBitsPerSecond: 64000 };
+    const opts = { audioBitsPerSecond: 96000 };
     if (mime) opts.mimeType = mime;
     try { mediaRecorder = new MediaRecorder(stream, opts); }
     catch (_) { mediaRecorder = new MediaRecorder(stream); }
@@ -4159,7 +4159,7 @@ function stopAndSendRecording() {
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64Audio = reader.result;
-      if (base64Audio.length > 950000) { showToast("البصمة كبيرة جداً، سجّل مدة أقصر"); cancelRecording(); return; }
+      if (base64Audio.length > 1000000) { showToast("البصمة كبيرة جداً، سجّل مدة أقصر"); cancelRecording(); return; }
 
       db.collection("chats").doc(activeChatId).collection("messages").add({
         senderId: currentUser.uid,
