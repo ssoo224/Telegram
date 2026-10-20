@@ -2618,26 +2618,7 @@ if (APP_CHECK_SITE_KEY && firebase.appCheck) {
 }
 const auth = firebase.auth();
 try { auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => console.warn("Auth persistence preference:", err)); } catch (e) {}
-const db = firebase.firestore();\nconst db = firebase.firestore();
-
-// إشعارات Android الأصلية للرسائل الجديدة التي يرصدها مستمع Firestore.
-function notifyBabylonNativeMessage(doc, chatId, isGroup) {
-  try {
-    if (!doc || !currentUser || !window.BabylonAndroid ||
-        typeof window.BabylonAndroid.showMessageNotification !== 'function') return;
-    const data = doc.data ? doc.data() : doc;
-    if (!data || data.system || data.senderId === currentUser.uid) return;
-    const sender = (data.senderName || data.name || (GU && GU[data.senderId] && (GU[data.senderId].displayName || GU[data.senderId].name)) || (isGroup ? 'رسالة جديدة في مجموعة' : 'رسالة جديدة'));
-    let body = data.text || data.message || '';
-    if (data.type === 'image' || data.imageUrl || data.image) body = body || '📷 صورة';
-    else if (data.type === 'audio' || data.audioUrl || data.voiceUrl) body = body || '🎤 رسالة صوتية';
-    else if (data.type === 'video' || data.videoUrl) body = body || '🎬 فيديو';
-    if (!body) body = 'أرسل لك رسالة جديدة';
-    body = String(body).replace(/<[^>]*>/g, '').slice(0, 240);
-    window.BabylonAndroid.showMessageNotification(String(sender).slice(0, 80), body, String(chatId || ''));
-  } catch (e) { console.warn('Native message notification failed', e); }
-}
-
+const db = firebase.firestore();
 
 let messaging = null;
 if (firebase.messaging.isSupported()) {
@@ -3760,18 +3741,9 @@ function openChatRoom(otherUserId, keepLimit) {
       snap.forEach(d => d.ref.update({ read: true }));
     });
 
-  let personalMessagesSnapshotInitialized = false;
-  const personalNotificationChatId = activeChatId;
   messagesUnsubscribe = db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "desc").limit(msgLimit)
     .onSnapshot(snap => {
-      if (personalMessagesSnapshotInitialized) {
-        snap.docChanges().forEach(change => {
-          if (change.type === "added") notifyBabylonNativeMessage(change.doc, personalNotificationChatId, false);
-        });
-      } else {
-        personalMessagesSnapshotInitialized = true;
-      }
       const box = document.getElementById("messagesArea");
       const prevH = box.scrollHeight;
       
@@ -6057,16 +6029,8 @@ function openGroupRoom(chatId,keepLimit){
       if(miss.length)loadUsers(miss).then(()=>updateGroupHeader(d));
       updateGroupHeader(d);refreshGroupTicks();
     });
-    let groupMessagesSnapshotInitialized = false;
     messagesUnsubscribe=db.collection('chats').doc(chatId).collection('messages').orderBy('createdAt','desc').limit(msgLimit).onSnapshot(snap=>{
       if(activeChatId!==chatId)return;
-      if(groupMessagesSnapshotInitialized){
-        snap.docChanges().forEach(change=>{
-          if(change.type==='added')notifyBabylonNativeMessage(change.doc,chatId,true);
-        });
-      }else{
-        groupMessagesSnapshotInitialized=true;
-      }
       const prevH=box.scrollHeight;
       Array.from(box.children).forEach(c=>c.remove());
       if(snap.size>=msgLimit){
