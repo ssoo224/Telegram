@@ -8079,3 +8079,36 @@ function openMention(username){
 .app-container[data-app-theme="light"] #chatView .msg-bubble.selected-message{outline-color:rgba(201,154,28,.9)}
 .app-container[data-app-theme="light"] #multiDeleteDlg .message-delete-card,.app-container[data-app-theme="light"] ~ #multiDeleteDlg .message-delete-card{background:#fff;color:#16202b}
 </style>
+<style>
+/* شريط تحديد الرسائل — حواف منحنية عائمة */
+#chatView #multiSelectBar.multi-select-bar{margin:0 10px calc(10px + env(safe-area-inset-bottom,0px))!important;padding:8px 10px!important;border:1px solid rgba(228,196,91,.45)!important;border-radius:22px!important;box-shadow:0 8px 24px rgba(0,0,0,.22),0 0 0 1px rgba(228,196,91,.06)!important}
+#chatView #multiSelectBar .msb-close{border-radius:50%!important;width:40px;height:40px}
+#chatView #multiSelectBar .msb-del{border-radius:999px!important;padding:0 18px!important}
+.app-container[data-app-theme="light"] #chatView #multiSelectBar.multi-select-bar{border:1px solid rgba(201,154,28,.55)!important;box-shadow:0 8px 24px rgba(20,35,55,.14)!important}
+</style>
+<style>
+/* ===== شريط حذف الرسائل — تصميم كبسولة احترافي ===== */
+#chatView#chatView #multiSelectBar.multi-select-bar{
+  position:relative;display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;gap:10px;
+  margin:6px 12px calc(12px + env(safe-area-inset-bottom,0px))!important;padding:7px!important;
+  border:1px solid rgba(228,196,91,.38)!important;border-radius:30px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0)),var(--chat-panel-bg,#17212b)!important;
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06)!important;
+  animation:msbIn .22s cubic-bezier(.2,.9,.3,1.1)}
+@keyframes msbIn{from{transform:translateY(14px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+#chatView#chatView #multiSelectBar .msb-close{width:42px;height:42px;flex:0 0 42px;border-radius:50%!important;border:none!important;background:rgba(127,140,160,.16)!important;color:inherit;transition:background .15s,transform .12s}
+#chatView#chatView #multiSelectBar .msb-count{flex:1;justify-content:center;margin:0;display:flex;align-items:center;gap:8px}
+#chatView#chatView #multiSelectBar .msb-count b{min-width:30px;height:30px;padding:0 8px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;color:#1b1405;background:linear-gradient(135deg,#f6e08a,#d4a62a);box-shadow:0 2px 8px rgba(201,154,28,.35)}
+#chatView#chatView #multiSelectBar .msb-count span{font-size:14px;font-weight:700;opacity:.85}
+#chatView#chatView #multiSelectBar .msb-del{height:42px;padding:0 20px!important;border-radius:999px!important;border:none!important;display:flex;align-items:center;gap:8px;color:#fff!important;font-weight:800;font-size:14px;background:linear-gradient(135deg,#f2706d,#d83a37)!important;box-shadow:0 6px 16px rgba(216,58,55,.38);transition:transform .12s,box-shadow .15s}
+#chatView#chatView #multiSelectBar .msb-del svg{stroke:#fff}
+#chatView#chatView #multiSelectBar .msb-del span{color:#fff!important}
+#chatView#chatView #multiSelectBar .msb-del:active,#chatView#chatView #multiSelectBar .msb-close:active{transform:scale(.94)}
+.app-container[data-app-theme="light"] #chatView#chatView #multiSelectBar.multi-select-bar{background:linear-gradient(180deg,#fff,#fbfcfe)!important;border:1px solid rgba(201,154,28,.5)!important;box-shadow:0 10px 26px rgba(20,35,55,.16)!important}
+.app-container[data-app-theme="light"] #chatView#chatView #multiSelectBar .msb-close{background:#eef2f7!important;color:#3a4a5c!important;border:none!important}
+.app-container[data-app-theme="light"] #chatView#chatView #multiSelectBar .msb-count span{color:#3a4a5c!important}
+.app-container[data-app-theme="light"] #chatView#chatView #multiSelectBar .msb-count b{color:#1b1405!important}
+.app-container[data-app-theme="light"] #chatView#chatView #multiSelectBar .msb-del{background:linear-gradient(135deg,#f2706d,#d83a37)!important;color:#fff!important}
+@media(prefers-reduced-motion:reduce){#chatView#chatView #multiSelectBar.multi-select-bar{animation:none}}
+</style>
