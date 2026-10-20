@@ -7793,12 +7793,12 @@ function openMention(username){
 
 
 <style id="babylon-header-story-stack-fix">
-#hdrAvatarBtn{position:relative;display:flex!important;align-items:center;gap:7px;width:auto!important;min-width:36px;flex:0 0 auto;padding:0 2px;overflow:visible}
+#hdrAvatarBtn{position:relative;display:flex!important;flex-direction:row-reverse!important;align-items:center;gap:7px;width:auto!important;min-width:36px;flex:0 0 auto;padding:0 2px;overflow:visible}
 #hdrAvatarBtn .hdr-story-stack{display:flex;align-items:center;gap:0;direction:ltr;max-width:130px;overflow:visible}
+#hdrAvatarBtn[aria-expanded="true"] .hdr-story-stack{display:none!important}
 #hdrAvatarBtn .hdr-story-thumb{width:29px;height:29px;border-radius:50%;border:2px solid var(--babylon-surface,#17212b);object-fit:cover;display:block;box-sizing:content-box;margin-left:-8px;background:var(--babylon-surface-card,#1e293b);flex:0 0 29px}
 #hdrAvatarBtn .hdr-story-thumb:first-child{margin-left:0}
 #hdrAvatarBtn .hdr-story-count{height:29px;min-width:29px;padding:0 5px;border-radius:16px;border:2px solid var(--babylon-surface,#17212b);background:var(--babylon-gold,#c29d30);color:#111827;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-left:-7px;box-sizing:border-box}
-#hdrAvatarBtn.story-avatar-moved{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:none!important;width:auto!important;flex-basis:auto!important}
 #hdrAvatarBtn .avatar{flex:0 0 36px}
 </style>
 <script id="babylon-header-story-stack-fix-js">
@@ -7828,11 +7828,20 @@ function openMention(username){
   const observer=new MutationObserver(refreshStack);
   observer.observe(bar,{childList:true,subtree:true,attributes:true,attributeFilter:['class','src']});
   refreshStack();
-  btn.addEventListener('click',function(){
-    if(bar.classList.contains('hidden'))return;
-    if(typeof window.setStoriesCollapsed==='function')window.setStoriesCollapsed(false);
-    bar.classList.remove('hidden');
-    const handle=document.getElementById('sbHandle');if(handle)handle.classList.remove('hidden');
-  });
+  // Tapping an individual preview opens the stories strip; the previews then disappear from the header.
+  stackClickSetup();
+  function stackClickSetup(){
+    const stack=btn.querySelector('.hdr-story-stack');
+    if(!stack)return;
+    stack.addEventListener('click',function(e){
+      const thumb=e.target.closest('.hdr-story-thumb,.hdr-story-count');
+      if(!thumb)return;
+      e.preventDefault();e.stopPropagation();
+      bar.classList.remove('hidden');
+      if(typeof window.setStoriesCollapsed==='function')window.setStoriesCollapsed(false);
+      const handle=document.getElementById('sbHandle');if(handle)handle.classList.remove('hidden');
+      btn.setAttribute('aria-expanded','true');
+    });
+  }
 })();
 </script>
