@@ -5882,6 +5882,7 @@ const GCOLORS = ['#e17076','#faa774','#a695e7','#7bc862','#6ec9cb','#65aadd','#e
 function hashStr(s){let h=2166136261;s=String(s);for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return h>>>0;}
 function gColor(uid){return GCOLORS[hashStr(uid)%GCOLORS.length];}
 function gGrad(seed){const a=hashStr(seed);return 'linear-gradient(145deg,'+GCOLORS[a%GCOLORS.length]+','+GCOLORS[(a>>>5)%GCOLORS.length]+')';}
+function gGroupGrad(){return 'linear-gradient(145deg,#1769aa 0%,#123b70 58%,#d4af37 100%)';}
 function uiRoot(){return document.querySelector('.app-container')||document.body;}
 function meId(){return currentUser&&currentUser.uid;}
 function myDisplayName(){return (typeof currentUserData!=='undefined'&&currentUserData&&currentUserData.displayName)||'مستخدم';}
@@ -5900,7 +5901,7 @@ function userAvHtml(uid,cls){
 }
 function groupAvHtml(d,cls){
   d=d||{};
-  return '<div class="g-av '+(cls||'')+'" style="background:'+(d.photo?'#223':gGrad(d.name||'g'))+'">'+(d.photo?'<img src="'+esc(d.photo)+'" alt="">':esc((d.name||'؟').charAt(0)))+'</div>';
+  return '<div class="g-av '+(cls||'')+'" style="background:'+(d.photo?'#223':gGroupGrad())+'">'+(d.photo?'<img src="'+esc(d.photo)+'" alt="">':esc((d.name||'؟').charAt(0)))+'</div>';
 }
 const IC_USERS='<svg class="g-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4M20 20v-1.5a3.5 3.5 0 0 0-2.6-3.4M14.6 5.3a3.2 3.2 0 0 1 0 6.2"/></svg>';
 
@@ -5964,7 +5965,7 @@ function updateGroupHeader(d){
   const t=document.getElementById('chatTitleText');if(t)t.textContent=d.name||'مجموعة';
   document.getElementById('chatBadgeBox')?.classList.add('hidden');
   const av=document.getElementById('chatAvatar');
-  if(av){av.className='telegram-avatar';av.style.background=d.photo?'#223':gGrad(d.name||'g');av.innerHTML=d.photo?'<img src="'+esc(d.photo)+'">':esc((d.name||'؟').charAt(0));}
+  if(av){av.className='telegram-avatar';av.style.background=d.photo?'#223':gGroupGrad();av.innerHTML=d.photo?'<img src="'+esc(d.photo)+'">':esc((d.name||'؟').charAt(0));}
   const sub=document.getElementById('chatSub');
   if(sub){
     const tp=groupTypingText(d);
