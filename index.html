@@ -5115,12 +5115,18 @@ function renderStoriesBar() {
     let html = `<div class="sb-item" onclick="myStoryClick()"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''} ${toneCls(me)}">${avInner(me)}${act.length ? '' : '<div class="sb-plus" aria-label="إضافة قصة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>'}</div><span>قصتي</span></div>`;
     const us = await Promise.all(storyPartnerIds.map(id => fetchUser(id, true)));
     const bm = await Promise.all(storyPartnerIds.map(id => myBlocks[id] ? true : blockedByThem(id)));
+    const others = [];
     us.forEach((u, i) => {
-      if (!u || !(u.storyUntil > Date.now())) return;
-      if (bm[i]) return;
+      if (!u || !(u.storyUntil > Date.now()) || bm[i]) return;
       const id = storyPartnerIds[i]; u.id = id;
-      html += `<div class="sb-item" onclick="openStories('${id}')"><div class="avatar${ringCls(u)} ${toneCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
+      others.push({user:u,id});
     });
+    if (others.length) {
+      const visible = others.slice(0, 2);
+      const extra = others.length - visible.length;
+      const faces = visible.map((item, i) => `<div class="sb-stack-avatar ${i === 0 ? 'front' : 'back'} ${toneCls(item.user)}">${avInner(item.user)}<i class="sb-stack-ring"></i></div>`).join('');
+      html += `<div class="sb-item sb-stack-item" onclick="openStories('${others[0].id}')" aria-label="قصص الآخرين، ${others.length} قصة"><div class="sb-stack">${faces}${extra > 0 ? `<b class="sb-stack-count">+${extra}</b>` : ''}</div><span>قصص الآخرين</span></div>`;
+    }
     bar.innerHTML = html;
     bar.classList.remove('hidden');
   }, 350);
@@ -7809,4 +7815,15 @@ function openMention(username){
 #chatSettingsView .pv .msg-bubble.mine {
   border-radius: var(--r, 12px) var(--r, 12px) var(--r, 12px) 6px !important;
 }
+
+
+/* قصص الآخرين: صورتان متراصتان بحلقة ذهبية وبحجم صورة قصتي */
+.app-container #homeView#homeView .sb-stack-item{width:64px;flex:0 0 64px}
+.app-container #homeView#homeView .sb-stack{position:relative;width:58px;height:58px;direction:ltr;flex:0 0 58px}
+.app-container #homeView#homeView .sb-stack-avatar{position:absolute;top:2px;width:54px;height:54px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#8f6810 0%,#f8e7a0 18%,#c29d30 38%,#fff1a8 52%,#c69a20 72%,#f5dc7a 100%);box-shadow:0 0 4px rgba(212,175,55,.55);overflow:visible}
+.app-container #homeView#homeView .sb-stack-avatar.back{left:0;z-index:1;transform:scale(.91);transform-origin:left center}
+.app-container #homeView#homeView .sb-stack-avatar.front{right:0;z-index:2}
+.app-container #homeView#homeView .sb-stack-avatar img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid var(--babylon-surface,#17212b)}
+.app-container #homeView#homeView .sb-stack-avatar:not(:has(img)){border:3px solid #c29d30}
+.app-container #homeView#homeView .sb-stack-count{position:absolute;right:-5px;bottom:-2px;z-index:4;min-width:23px;height:23px;padding:0 5px;border-radius:14px;background:#c29d30;color:#101827;border:2px solid var(--babylon-surface,#17212b);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;direction:ltr}
 </style>
