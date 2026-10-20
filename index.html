@@ -8036,7 +8036,7 @@ function openMention(username){
     d=document.createElement('div');d.id='multiDeleteDlg';d.className='message-delete-modal hidden';
     d.innerHTML='<div class="message-delete-card"><div class="message-delete-heading" id="mddTitle">حذف الرسائل</div><p class="message-delete-description" id="mddDesc"></p><button type="button" id="mddMe">حذف لدي فقط</button><button type="button" class="danger" id="mddAll">حذف لدى الكل</button><button type="button" class="cancel" id="mddCancel">إلغاء</button></div>';
     d.addEventListener('click',function(e){if(e.target===d)d.classList.add('hidden');});
-    document.body.appendChild(d);
+    (document.querySelector('.app-container')||document.body).appendChild(d);
     d.querySelector('#mddCancel').onclick=function(){d.classList.add('hidden');};
     d.querySelector('#mddMe').onclick=function(){d.classList.add('hidden');deleteMultipleMessagesForMe();};
     d.querySelector('#mddAll').onclick=function(){d.classList.add('hidden');deleteMultipleForEveryone();};
@@ -8068,3 +8068,14 @@ function openMention(username){
   };
 })();
 </script>
+<style>
+/* شريط تحديد الرسائل — الطور النهاري */
+.app-container[data-app-theme="light"] #chatView #multiSelectBar.multi-select-bar{background:#ffffff!important;color:#16202b!important;border-top:1px solid rgba(201,154,28,.55)!important;box-shadow:0 -6px 18px rgba(20,35,55,.08)!important}
+.app-container[data-app-theme="light"] #chatView #multiSelectBar .msb-close{background:#f1f4f9!important;border:1px solid #dce4ee!important;color:#3a4a5c!important}
+.app-container[data-app-theme="light"] #chatView #multiSelectBar .msb-count{color:#16202b!important}
+.app-container[data-app-theme="light"] #chatView #multiSelectBar .msb-count b{color:#b98710!important}
+.app-container[data-app-theme="light"] #chatView #multiSelectBar .msb-count span{color:#6b7a8c!important;opacity:1}
+.app-container[data-app-theme="light"] #chatView #multiSelectBar .msb-del{background:rgba(214,60,57,.10)!important;color:#d23c39!important}
+.app-container[data-app-theme="light"] #chatView .msg-bubble.selected-message{outline-color:rgba(201,154,28,.9)}
+.app-container[data-app-theme="light"] #multiDeleteDlg .message-delete-card,.app-container[data-app-theme="light"] ~ #multiDeleteDlg .message-delete-card{background:#fff;color:#16202b}
+</style>
