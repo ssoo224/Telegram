@@ -2312,6 +2312,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
         <div id="chatMessageSearchResults" class="chat-message-search-results"></div>
       </div>
 
+      <div id="pinnedBar" class="pinned-bar hidden" role="button" aria-label="الرسالة المثبتة"></div>
       <div id="messagesArea" class="messages-area"></div>
       <div id="multiSelectBar" class="multi-select-bar hidden" role="toolbar" aria-label="إجراءات الرسائل المحددة"><span id="multiSelectCount">تم تحديد 0</span><button type="button" onclick="deleteMultipleMessagesForMe()">حذف لدي فقط</button><button type="button" onclick="clearMessageSelection()" aria-label="إلغاء التحديد">إلغاء</button></div>
 
@@ -3646,7 +3647,7 @@ let loadingOlder = false;
 
 function openChatRoom(otherUserId, keepLimit) {
   reorderChatListItems();
-  document.getElementById('chatGroupInfoAction')?.classList.add('hidden'); { const _av = document.getElementById('chatAvatar'); if (_av) _av.style.background = ''; } try { hideMentionPop(); } catch (e) {}
+  document.getElementById('chatGroupInfoAction')?.classList.add('hidden'); { const _av = document.getElementById('chatAvatar'); if (_av) _av.style.background = ''; } try { hideMentionPop(); resetGroupUI(); } catch (e) {}
   if (!keepLimit) msgLimit = 50;
   currentChatOtherUserId = otherUserId;
   // Persist each opened conversation so it stays in the Search screen's recent list.
@@ -3771,6 +3772,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         const grp = isGroupChat(activeChatId);
         if (m.system) {
           const sp = document.createElement('div'); sp.className = 'sys-msg'; sp.id = 'message_' + doc.id; sp.textContent = sysText(m);
+          if (m.sys && m.sys.ref) { sp.classList.add('link'); sp.onclick = () => jumpToMessage(m.sys.ref); }
           if (existingTyping) box.insertBefore(sp, existingTyping); else box.appendChild(sp);
           return;
         }
@@ -3790,7 +3792,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         b.dataset.messageText = String(m.text || '');
         
         let htmlContent = "";
-        if (grp && !isMine) htmlContent += `<div class="g-sender" style="color:${gColor(m.senderId)}">${esc(gUserName(m.senderId))}</div>`;
+        if (grp && !isMine) htmlContent += groupSenderHtml(m.senderId);
         if (m.replyTo) htmlContent += `<div class="reply-quote">${esc(m.replyTo)}</div>`;
         if (m.storyReply) {
           const sr = m.storyReplyData || {};
@@ -5620,6 +5622,8 @@ function seekVoicePlayback(range){var card=range.closest('.custom-voice-card'), 
 .gi-av{position:relative;width:104px;height:104px;margin:0 auto 12px}
 .gi-av.can{cursor:pointer}
 .gi-av .g-av{width:104px;height:104px;font-size:44px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.gi-av.sm{width:84px;height:84px}
+.gi-av.sm .g-av{width:84px;height:84px;font-size:34px}
 .gi-cam{position:absolute;bottom:0;left:0;width:34px;height:34px;border-radius:50%;background:var(--cl-gold,#e4c45b);color:#111;display:flex;align-items:center;justify-content:center;border:3px solid var(--cl-bg,#0e1621)}
 .gi-name{display:inline-flex;align-items:center;gap:7px;font-size:21px;font-weight:700;max-width:100%}
 .gi-name.can{cursor:pointer}
@@ -5645,6 +5649,43 @@ function seekVoicePlayback(range){var card=range.closest('.custom-voice-card'), 
 .cl-dlg .cl-btns{flex-wrap:wrap}
 .cl-dlg button.cl-cancel{color:var(--cl-sub,#8798aa)}
 #newGroupBtn svg{display:block}
+</style>
+<style id="groups2-css">
+/* ===== المجموعات v2 ===== */
+.g-row.g-first .g-sender{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.g-sender .g-sn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g-role{flex:0 0 auto;font-size:11.5px;font-weight:600;color:var(--cl-gold,#c9a227);opacity:.95}
+.g-role.m{color:var(--cl-sub,#8798aa)}
+.pinned-bar{display:flex;align-items:center;gap:11px;padding:7px 14px 7px 8px;background:var(--cl-card,#17212b);border-bottom:1px solid var(--cl-sep,rgba(255,255,255,.07));direction:rtl;cursor:pointer;flex:0 0 auto}
+.pinned-bar.hidden{display:none!important}
+.pinned-bar .pb-line{display:flex;flex-direction:column;gap:2px;height:34px;width:3px;flex:0 0 3px}
+.pinned-bar .pb-line i{flex:1;border-radius:2px;background:var(--cl-gold,#e4c45b);opacity:.3}
+.pinned-bar .pb-line i.on{opacity:1}
+.pinned-bar .pb-t{flex:1;min-width:0}
+.pinned-bar .pb-t b{display:block;font-size:13px;color:var(--cl-gold,#c9a227);font-weight:700}
+.pinned-bar .pb-t span{display:block;font-size:13.5px;color:var(--cl-text,#f1f5f9);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pinned-bar .pb-x{background:none;border:0;color:var(--cl-sub,#8798aa);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.pinned-bar .pb-x:active{background:rgba(255,255,255,.08)}
+@keyframes pinFlash{0%{box-shadow:0 0 0 0 rgba(228,196,91,0)}25%{box-shadow:0 0 0 4px rgba(228,196,91,.55)}100%{box-shadow:0 0 0 0 rgba(228,196,91,0)}}
+.msg-bubble.pin-flash{animation:pinFlash 1.2s ease}
+#chatView #messagesArea .sys-msg.link{cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.grp-nosend{display:flex;align-items:center;justify-content:center;gap:9px;margin:8px 12px calc(10px + env(safe-area-inset-bottom,0px));padding:13px 16px;border-radius:16px;background:var(--cl-card,#17212b);color:var(--cl-sub,#8798aa);font-size:14px}
+.gi-chev{margin-inline-start:2px;opacity:.5;flex:0 0 auto}
+.gi-about{padding:4px 16px 16px;font-size:15px;line-height:1.75;color:var(--cl-text,#f1f5f9);word-break:break-word}
+.gi-about.can{cursor:pointer}
+.gi-about .ph{color:var(--cl-gold,#e4c45b)}
+.gi-tag{margin-inline-start:auto;flex:0 0 auto;font-size:12px;color:var(--cl-gold,#e4c45b);max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gi-tag.m{color:var(--cl-sub,#8798aa)}
+.gx-note{margin:10px 22px 0;font-size:13px;line-height:1.7;color:var(--cl-sub,#8798aa)}
+.sw{position:relative;flex:0 0 46px;width:46px;height:28px;border-radius:16px;background:rgba(135,152,170,.45);transition:.2s}
+.sw::after{content:"";position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:.2s}
+.sw.on{background:var(--cl-gold,#e4c45b)}
+.sw.on::after{transform:translateX(-18px)}
+.gi-row.sws .gi-lb{font-size:15px}
+.cl-dlg.stack .cl-btns{flex-direction:column;align-items:stretch;gap:0;margin:0 -8px}
+.cl-dlg.stack button{text-align:right;padding:13px 16px;font-weight:600}
+.cl-dlg.stack button.cl-cancel{border-top:1px solid var(--cl-sep,rgba(255,255,255,.08));margin-top:4px}
+.cl-ta{resize:none;min-height:96px;line-height:1.6}
 </style>
 <script>
 function getLocalChatSet(key) { try { const a=JSON.parse(localStorage.getItem(key)||'[]'); return new Set(Array.isArray(a)?a:[]); } catch(e) { return new Set(); } }
@@ -5884,7 +5925,9 @@ function updateGroupHeader(d){
     sub.textContent=tp||memberWord((d.participants||[]).length);
     sub.style.color=tp?'#4ade80':'var(--text-muted)';
   }
+  try{applyGroupComposer();renderPinnedBar();}catch(e){console.error(e);}
   if(document.getElementById('grpInfo'))renderGroupInfo();
+  if(window.__subRefresh&&document.getElementById('grpSub'))window.__subRefresh();
 }
 function groupReadAll(m,meta){
   meta=meta||chatMetaCache[activeChatId]||{};
@@ -5932,7 +5975,7 @@ function openGroupRoom(chatId,keepLimit){
   document.getElementById('textInputBar')?.classList.remove('hidden');
   document.getElementById('blockBanner')?.classList.add('hidden');
   document.getElementById('chatGroupInfoAction')?.classList.remove('hidden');
-  hideMentionPop();
+  hideMentionPop();pinIdx=-1;
   updateGroupHeader(meta);
   const box=document.getElementById('messagesArea');
   if(!keepLimit)box.innerHTML='';
@@ -5964,28 +6007,6 @@ function openGroupRoom(chatId,keepLimit){
       if(snap.docs[0])markGroupRead(chatId,snap.docs[0].data());
     });
   });
-}
-function sysText(m){
-  const s=m.sys;if(!s)return m.text||'';
-  const by=s.by,mine=by===meId(),nm=gUserName(by);
-  const list=(s.to||[]).map(gUserName);
-  const lst=list.length>1?list.slice(0,-1).join('، ')+' و'+list[list.length-1]:(list[0]||'');
-  switch(s.k){
-    case 'create':return mine?'أنت أنشأت المجموعة':nm+' أنشأ المجموعة';
-    case 'add':return (mine?'أنت أضفت ':nm+' أضاف ')+lst;
-    case 'remove':return (mine?'أنت أزلت ':nm+' أزال ')+lst;
-    case 'leave':return mine?'أنت غادرت المجموعة':nm+' غادر المجموعة';
-    case 'rename':return (mine?'أنت غيّرت':nm+' غيّر')+' اسم المجموعة إلى «'+(s.name||'')+'»';
-    case 'photo':return (mine?'أنت غيّرت':nm+' غيّر')+' صورة المجموعة';
-  }
-  return m.text||'';
-}
-function sysPreview(s,name){
-  const lst=(s.to||[]).map(u=>(GU[u]&&GU[u].displayName)||'مستخدم').join('، ');
-  switch(s.k){
-    case 'create':return name+' أنشأ المجموعة';case 'add':return name+' أضاف '+lst;case 'remove':return name+' أزال '+lst;
-    case 'leave':return name+' غادر المجموعة';case 'rename':return name+' غيّر اسم المجموعة';case 'photo':return name+' غيّر صورة المجموعة';
-  }return '';
 }
 async function addGroupSystem(chatId,sys,extra){
   const me=meId(),now=Date.now(),text=sysPreview(sys,myDisplayName());
@@ -6036,15 +6057,20 @@ document.getElementById('messageInput')?.addEventListener('input',checkMention);
 function clAsk(o){
   return new Promise(res=>{
     const ov=document.createElement('div');ov.className='cl-dlg-ov';
-    ov.innerHTML='<div class="cl-dlg" role="dialog" aria-modal="true"><h3>'+o.title+'</h3>'+(o.body?'<p>'+o.body+'</p>':'')
-      +(o.input?'<input class="cl-in" type="text" maxlength="'+(o.input.max||60)+'" placeholder="'+esc(o.input.placeholder||'')+'" value="'+esc(o.input.value||'')+'">':'')
+    let inp='';
+    if(o.input){
+      inp=o.input.multiline
+        ?'<textarea class="cl-in cl-ta" maxlength="'+(o.input.max||255)+'" placeholder="'+esc(o.input.placeholder||'')+'">'+esc(o.input.value||'')+'</textarea>'
+        :'<input class="cl-in" type="text" maxlength="'+(o.input.max||60)+'" placeholder="'+esc(o.input.placeholder||'')+'" value="'+esc(o.input.value||'')+'">';
+    }
+    ov.innerHTML='<div class="cl-dlg'+(o.stack?' stack':'')+'" role="dialog" aria-modal="true"><h3>'+o.title+'</h3>'+(o.body?'<p>'+o.body+'</p>':'')+inp
       +'<div class="cl-btns">'+(o.buttons||[]).map((b,i)=>'<button type="button" class="'+(b.cls||'')+'" data-i="'+i+'">'+b.text+'</button>').join('')+'</div></div>';
     uiRoot().appendChild(ov);
-    const inp=ov.querySelector('.cl-in');if(inp){setTimeout(()=>{inp.focus();inp.select();},60);}
+    const el=ov.querySelector('.cl-in');if(el){setTimeout(()=>{el.focus();if(el.select&&!o.input.multiline)el.select();},60);}
     const done=v=>{ov.remove();res(v);};
     ov.addEventListener('click',e=>{if(e.target===ov)done(null);});
-    ov.querySelectorAll('.cl-btns button').forEach(b=>b.onclick=()=>done({i:Number(b.dataset.i),value:inp?inp.value.trim():''}));
-    if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter'){const ok=ov.querySelector('.cl-btns button:not(.cl-cancel)');ok&&ok.click();}});
+    ov.querySelectorAll('.cl-btns button').forEach(b=>b.onclick=()=>done({i:Number(b.dataset.i),value:el?el.value.trim():''}));
+    if(el&&!o.input.multiline)el.addEventListener('keydown',e=>{if(e.key==='Enter'){const ok=ov.querySelector('.cl-btns button:not(.cl-cancel)');ok&&ok.click();}});
   });
 }
 
@@ -6059,7 +6085,7 @@ function closeGroupPicker(){document.getElementById('grpPick')?.remove();}
 function openGroupPicker(mode,chatId){
   closeGroupPicker();
   GP.mode=mode;GP.chatId=chatId||null;GP.selected=[];GP.q='';GP.step=1;GP.name='';GP.photo='';GP.extra=[];
-  GP.existing=new Set(mode==='add'?((chatMetaCache[chatId]||{}).participants||[]):[meId()]);
+  GP.existing=new Set((mode==='add'?((chatMetaCache[chatId]||{}).participants||[]):[meId()]).concat(mode==='add'?((chatMetaCache[chatId]||{}).banned||[]):[]));
   const ov=document.createElement('div');ov.id='grpPick';ov.className='gx-ov';uiRoot().appendChild(ov);
   const ids=contactIds(GP.existing);
   ov.innerHTML='<div class="gx-load">جاري التحميل…</div>';
@@ -6168,6 +6194,7 @@ async function createGroup(){
   creatingGroup=false;
 }
 async function doAddMembers(){
+  if(!gRight('invite',meId(),chatMetaCache[GP.chatId]))return showToast('ليس لديك صلاحية إضافة أعضاء');
   const chatId=GP.chatId,ids=GP.selected.slice(),me=meId();
   if(!ids.length)return;
   try{
@@ -6186,70 +6213,6 @@ function openGroupInfo(){
   const ov=document.createElement('div');ov.id='grpInfo';ov.className='gx-ov';uiRoot().appendChild(ov);
   loadUsers((chatMetaCache[activeChatId]||{}).participants).then(()=>renderGroupInfo());
 }
-function renderGroupInfo(){
-  const ov=document.getElementById('grpInfo');if(!ov)return;
-  const d=chatMetaCache[activeChatId];if(!d){closeGroupInfo();return;}
-  const me=meId(),isOwner=d.ownerId===me,parts=d.participants||[];
-  const sorted=parts.slice().sort((a,b)=>(a===d.ownerId?-1:b===d.ownerId?1:0)||String((GU[a]||{}).displayName||'').localeCompare(String((GU[b]||{}).displayName||''),'ar'));
-  const muted=getLocalChatSet('babylon_muted_users').has(activeChatId);
-  const scroll=ov.querySelector('.gx-scroll'),st=scroll?scroll.scrollTop:0;
-  ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="giBack" aria-label="رجوع"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button><div class="gx-title"><b>معلومات المجموعة</b></div></div>'
-    +'<div class="gx-scroll">'
-    +'<div class="gi-hero"><div class="gi-av'+(isOwner?' can':'')+'" id="giAv">'+groupAvHtml(d,'gi-av-in')+(isOwner?'<span class="gi-cam"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h3l1.6-2.2h6.8L17 8.5h3V19H4z"/><circle cx="12" cy="13.3" r="3.6"/></svg></span>':'')+'</div>'
-    +'<input type="file" id="giFile" accept="image/*" class="hidden">'
-    +'<div class="gi-name'+(isOwner?' can':'')+'" id="giName">'+esc(d.name||'مجموعة')+(isOwner?'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></svg>':'')+'</div>'
-    +'<div class="gi-sub">'+memberWord(parts.length)+'</div></div>'
-    +'<div class="gi-card"><div class="gi-row" id="giMute"><span class="gi-ic">'+(muted?'🔕':'🔔')+'</span><span class="gi-lb">الإشعارات</span><span class="gi-val">'+(muted?'مكتومة':'مفعّلة')+'</span></div></div>'
-    +'<div class="gi-card"><div class="gi-head">الأعضاء <b>'+parts.length+'</b></div>'
-    +(isOwner&&parts.length<GROUP_MAX?'<div class="gi-row gold" id="giAdd"><span class="gi-ic add"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="gi-lb">إضافة أعضاء</span></div>':'')
-    +sorted.map(u=>{const g=GU[u]||{};return '<div class="gi-member" data-u="'+u+'">'+userAvHtml(u,'gx-av')+'<div class="gx-t"><b>'+esc(g.displayName||'مستخدم')+(u===me?' <em>(أنت)</em>':'')+'</b><span>'+(g.username?'@'+esc(g.username):'')+'</span></div>'+(u===d.ownerId?'<span class="gi-owner">المالك</span>':'')+'</div>';}).join('')
-    +'</div>'
-    +'<div class="gi-card"><div class="gi-row danger" id="giLeave"><span class="gi-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/></svg></span><span class="gi-lb">مغادرة المجموعة</span></div></div>'
-    +'<div style="height:30px"></div></div>';
-  const sc=ov.querySelector('.gx-scroll');if(sc)sc.scrollTop=st;
-  ov.querySelector('#giBack').onclick=closeGroupInfo;
-  ov.querySelector('#giMute').onclick=()=>{toggleChatMute();renderGroupInfo();};
-  ov.querySelector('#giLeave').onclick=()=>confirmLeaveGroup(activeChatId);
-  const add=ov.querySelector('#giAdd');if(add)add.onclick=()=>openGroupPicker('add',activeChatId);
-  if(isOwner){
-    ov.querySelector('#giAv').onclick=()=>ov.querySelector('#giFile').click();
-    ov.querySelector('#giFile').onchange=e=>{
-      const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
-      if(!f.type.startsWith('image/'))return showToast('اختر ملف صورة فقط');
-      compressSquare(f,320,async data=>{
-        if(!data)return showToast('تعذر تجهيز الصورة');
-        try{const u=await addGroupSystem(activeChatId,{k:'photo',by:me});await db.collection('chats').doc(activeChatId).update({photo:data,updatedAt:u.updatedAt,lastMsg:u.lastMsg});showToast('تم تغيير صورة المجموعة');}catch(err){showToast('تعذر تغيير الصورة');}
-      });
-    };
-    ov.querySelector('#giName').onclick=async()=>{
-      const r=await clAsk({title:'اسم المجموعة',input:{value:d.name||'',placeholder:'اسم المجموعة',max:40},buttons:[{text:'حفظ'},{text:'إلغاء',cls:'cl-cancel'}]});
-      if(!r||r.i!==0)return;if(!r.value)return showToast('الاسم لا يمكن أن يكون فارغاً');if(r.value===d.name)return;
-      try{const u=await addGroupSystem(activeChatId,{k:'rename',by:me,name:r.value});await db.collection('chats').doc(activeChatId).update({name:r.value,updatedAt:u.updatedAt,lastMsg:u.lastMsg});}catch(err){showToast('تعذر تغيير الاسم');}
-    };
-  }
-  ov.querySelectorAll('.gi-member').forEach(row=>row.onclick=()=>memberAction(row.dataset.u));
-}
-async function memberAction(uid){
-  const d=chatMetaCache[activeChatId],me=meId();if(!d)return;
-  const g=GU[uid]||{},isOwner=d.ownerId===me;
-  const btns=[{text:'عرض الملف الشخصي'}];
-  if(isOwner&&uid!==me)btns.push({text:'إزالة من المجموعة',cls:'cl-danger'});
-  btns.push({text:'إلغاء',cls:'cl-cancel'});
-  if(uid===me&&btns.length===2)return;
-  const r=await clAsk({title:esc(g.displayName||'مستخدم'),body:g.username?'@'+esc(g.username):'',buttons:uid===me?[{text:'إلغاء',cls:'cl-cancel'}]:btns});
-  if(!r||uid===me)return;
-  if(r.i===0){
-    db.collection('users').doc(uid).get().then(doc=>{if(doc.exists){window.__grpReturn=activeChatId;closeGroupInfo();openUserProfileDirect(Object.assign({id:uid},doc.data()));}});
-  }else if(btns[r.i]&&btns[r.i].cls==='cl-danger'){
-    const c=await clAsk({title:'إزالة العضو',body:'هل تريد إزالة <b>'+esc(g.displayName||'مستخدم')+'</b> من المجموعة؟',buttons:[{text:'إزالة',cls:'cl-danger'},{text:'إلغاء',cls:'cl-cancel'}]});
-    if(!c||c.i!==0)return;
-    try{
-      const u=await addGroupSystem(activeChatId,{k:'remove',by:me,to:[uid]});
-      await db.collection('chats').doc(activeChatId).update({participants:firebase.firestore.FieldValue.arrayRemove(uid),updatedAt:u.updatedAt,lastMsg:u.lastMsg});
-      showToast('تمت إزالة العضو');
-    }catch(e){showToast('تعذرت الإزالة');}
-  }
-}
 async function leaveGroup(chatId){
   const meta=chatMetaCache[chatId];if(!meta)return false;
   const me=meId(),rest=(meta.participants||[]).filter(u=>u!==me);
@@ -6258,7 +6221,7 @@ async function leaveGroup(chatId){
     else{
       const u=await addGroupSystem(chatId,{k:'leave',by:me});
       const upd={participants:firebase.firestore.FieldValue.arrayRemove(me),updatedAt:u.updatedAt,lastMsg:u.lastMsg};
-      if(meta.ownerId===me)upd.ownerId=rest[0];
+      if(meta.ownerId===me)upd.ownerId=rest.find(u=>meta.admins&&meta.admins[u])||rest[0];
       await db.collection('chats').doc(chatId).update(upd);
     }
     setPins(getPins().filter(p=>p!==chatId));
@@ -6307,6 +6270,381 @@ function groupAddMembersFromInfo(){openGroupPicker('add',activeChatId);}
 /*GROUPS_END*/
 
 function muteKeyNow(){return isGroupChat()?activeChatId:currentChatOtherUserId;}
+/* ===== المجموعات v2: وصف، مشرفون، صلاحيات، ألقاب، تثبيت، حظر ===== */
+const ADMIN_RIGHTS=[['info','تغيير معلومات المجموعة'],['delete','حذف رسائل الأعضاء'],['ban','تقييد الأعضاء وحظرهم'],['invite','إضافة أعضاء'],['pin','تثبيت الرسائل']];
+const ADMIN_DEFAULTS={info:false,delete:true,ban:true,invite:true,pin:true};
+const MEMBER_PERMS=[['text','إرسال الرسائل',true],['media','إرسال الصور',true],['voice','إرسال البصمات الصوتية',true],['invite','إضافة أعضاء',false],['pin','تثبيت الرسائل',false],['info','تغيير معلومات المجموعة',false]];
+let selectedMsgIsAudio=false,pinIdx=-1;
+function gMeta(d){return d||chatMetaCache[activeChatId]||{};}
+function gRole(uid,d){d=gMeta(d);return d.ownerId===uid?'owner':(d.admins&&d.admins[uid]?'admin':'member');}
+function gRight(right,uid,d){
+  uid=uid||meId();d=gMeta(d);const r=gRole(uid,d);
+  if(r==='owner')return true;
+  if(r==='admin')return !!(d.admins[uid]&&d.admins[uid][right]===true);
+  if(right==='invite'||right==='pin'||right==='info')return !!(d.perms&&d.perms[right]===true);
+  return false;
+}
+function gCanSend(kind,uid,d){
+  uid=uid||meId();d=gMeta(d);
+  if(gRole(uid,d)!=='member')return true;
+  if(d.muted&&d.muted[uid])return false;
+  return !(d.perms&&d.perms[kind]===false);
+}
+function gTitle(uid,d){d=gMeta(d);const t=d.titles&&d.titles[uid];if(t)return t;const r=gRole(uid,d);return r==='owner'?'المالك':r==='admin'?'مشرف':'';}
+function groupSenderHtml(uid){
+  const t=gTitle(uid);
+  return '<div class="g-sender" style="color:'+gColor(uid)+'"><span class="g-sn">'+esc(gUserName(uid))+'</span>'+(t?'<span class="g-role'+(gRole(uid)==='member'?' m':'')+'">'+esc(t)+'</span>':'')+'</div>';
+}
+function roleTag(uid,d){const t=gTitle(uid,d);return t?'<span class="gi-tag'+(gRole(uid,d)==='member'?' m':'')+'">'+esc(t)+'</span>':'';}
+function gUpdate(data){return db.collection('chats').doc(activeChatId).update(data);}
+const FVd=()=>firebase.firestore.FieldValue.delete();
+
+/* ---------- شريط الكتابة حسب الصلاحيات ---------- */
+function resetGroupUI(){
+  const bar=document.getElementById('textInputBar');
+  document.getElementById('grpNoSend')?.remove();
+  if(bar){
+    const rec=(typeof mediaRecorder!=='undefined'&&mediaRecorder&&mediaRecorder.state==='recording');
+    if(!rec)bar.classList.remove('hidden');
+    const im=bar.querySelector('label[for="chatImageInput"]'),mic=bar.querySelector('.mic-button');
+    if(im)im.style.display='';if(mic)mic.style.display='';
+  }
+  document.getElementById('pinnedBar')?.classList.add('hidden');
+}
+function applyGroupComposer(){
+  const bar=document.getElementById('textInputBar');if(!bar)return;
+  if(!isGroupChat()){resetGroupUI();return;}
+  const rec=(typeof mediaRecorder!=='undefined'&&mediaRecorder&&mediaRecorder.state==='recording');
+  const d=chatMetaCache[activeChatId],me=meId();
+  const restricted=gRole(me,d)==='member'&&d.muted&&d.muted[me];
+  const canText=gCanSend('text');
+  let nb=document.getElementById('grpNoSend');
+  if(!canText){
+    bar.classList.add('hidden');
+    if(!nb){nb=document.createElement('div');nb.id='grpNoSend';nb.className='grp-nosend';bar.parentNode.insertBefore(nb,bar.nextSibling);}
+    nb.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>'+(restricted?'تم تقييدك من الإرسال في هذه المجموعة':'المشرفون فقط يمكنهم الإرسال في هذه المجموعة')+'</span>';
+    return;
+  }
+  nb&&nb.remove();
+  if(!rec)bar.classList.remove('hidden');
+  const im=bar.querySelector('label[for="chatImageInput"]'),mic=bar.querySelector('.mic-button');
+  if(im)im.style.display=gCanSend('media')?'':'none';
+  if(mic)mic.style.display=gCanSend('voice')?'':'none';
+}
+
+/* ---------- الرسائل المثبتة ---------- */
+function jumpToMessage(id){
+  const el=document.getElementById('message_'+id);
+  if(!el){showToast('الرسالة بعيدة، حمّل رسائل أقدم للوصول لها');return false;}
+  el.scrollIntoView({block:'center',behavior:'smooth'});
+  const t=el.classList.contains('msg-bubble')?el:el.querySelector('.msg-bubble')||el;
+  t.classList.remove('pin-flash');void t.offsetWidth;t.classList.add('pin-flash');
+  return true;
+}
+function renderPinnedBar(){
+  const bar=document.getElementById('pinnedBar');if(!bar)return;
+  if(!isGroupChat()){bar.classList.add('hidden');return;}
+  const d=chatMetaCache[activeChatId],pins=(d&&d.pins)||[];
+  if(!pins.length){bar.classList.add('hidden');pinIdx=-1;return;}
+  if(pinIdx<0||pinIdx>=pins.length)pinIdx=pins.length-1;
+  const p=pins[pinIdx],canPin=gRight('pin');
+  bar.classList.remove('hidden');
+  bar.innerHTML='<div class="pb-line">'+pins.map((_,i)=>'<i class="'+(i===pinIdx?'on':'')+'"></i>').join('')+'</div>'
+    +'<div class="pb-t"><b>رسالة مثبتة'+(pins.length>1?' #'+(pinIdx+1):'')+'</b><span>'+esc(p.text||'')+'</span></div>'
+    +(canPin?'<button type="button" class="pb-x" aria-label="إلغاء التثبيت"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M8 3h8l-1 6 3 3.5V14H6v-1.5L9 9z"/><path d="m3 3 18 18"/></svg></button>':'');
+  bar.querySelector('.pb-t').onclick=()=>{
+    jumpToMessage(p.id);
+    if(pins.length>1){pinIdx=(pinIdx-1+pins.length)%pins.length;renderPinnedBar();}
+  };
+  const x=bar.querySelector('.pb-x');
+  if(x)x.onclick=async()=>{
+    const r=await clAsk({title:'إلغاء التثبيت',body:'هل تريد إلغاء تثبيت هذه الرسالة؟',buttons:[{text:'إلغاء التثبيت',cls:'cl-danger'},{text:'تراجع',cls:'cl-cancel'}]});
+    if(!r||r.i!==0)return;
+    const np=pins.filter((_,i)=>i!==pinIdx);pinIdx=-1;
+    try{await gUpdate({pins:np});}catch(e){showToast('تعذر إلغاء التثبيت');}
+  };
+}
+async function actionPinMsg(){
+  document.getElementById('msgModal')?.classList.add('hidden');
+  if(!isGroupChat()||!gRight('pin')||!selectedMsgId)return;
+  const d=chatMetaCache[activeChatId],pins=(d.pins||[]).slice(),id=selectedMsgId,ex=pins.findIndex(p=>p.id===id);
+  try{
+    if(ex>=0){pins.splice(ex,1);pinIdx=-1;await gUpdate({pins:pins});showToast('تم إلغاء تثبيت الرسالة');return;}
+    if(pins.length>=10)return showToast('الحد الأقصى 10 رسائل مثبتة');
+    const txt=String(selectedMsgText||'').trim();
+    pins.push({id:id,text:txt?txt.slice(0,90):(selectedMsgIsAudio?'♬ بصمة صوتية':'▧ صورة'),by:meId(),at:Date.now()});
+    pinIdx=pins.length-1;
+    const u=await addGroupSystem(activeChatId,{k:'pin',by:meId(),ref:id});
+    await gUpdate({pins:pins,updatedAt:u.updatedAt,lastMsg:u.lastMsg});
+    showToast('تم تثبيت الرسالة');
+  }catch(e){console.error(e);showToast('تعذر تثبيت الرسالة');}
+}
+(function hookMsgModal(){
+  const modal=document.getElementById('msgModal');if(!modal||document.getElementById('btnPinMsg'))return;
+  const del=document.getElementById('btnDeleteMsg');
+  const b=document.createElement('button');b.id='btnPinMsg';b.type='button';b.className='hidden';b.onclick=actionPinMsg;
+  del.parentNode.insertBefore(b,del);
+  const _omm=openMsgModal;
+  openMsgModal=function(msgId,text,senderId,reactions,isAudio,anchor){
+    _omm.apply(this,arguments);
+    selectedMsgIsAudio=!!isAudio;
+    const grp=isGroupChat()&&gRight('pin');
+    const pinned=grp&&((chatMetaCache[activeChatId].pins||[]).some(p=>p.id===msgId));
+    b.classList.toggle('hidden',!grp);
+    b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5M8 3h8l-1 6 3 3.5V14H6v-1.5L9 9z"/>'+(pinned?'<path d="m3 3 18 18"/>':'')+'</svg><span>'+(pinned?'إلغاء تثبيت الرسالة':'تثبيت الرسالة')+'</span>';
+  };
+  const _omdo=openMessageDeleteOptions;
+  openMessageDeleteOptions=function(){
+    _omdo.apply(this,arguments);
+    const all=document.querySelector('#messageDeleteModal button.danger');
+    if(all){const ok=!isGroupChat()||selectedMsgSender===meId()||gRight('delete');all.classList.toggle('hidden',!ok);}
+  };
+})();
+
+/* ---------- رسائل النظام الإضافية ---------- */
+function sysText(m){
+  const s=m.sys;if(!s)return m.text||'';
+  const by=s.by,mine=by===meId(),nm=gUserName(by);
+  const list=(s.to||[]).map(gUserName);
+  const lst=list.length>1?list.slice(0,-1).join('، ')+' و'+list[list.length-1]:(list[0]||'');
+  switch(s.k){
+    case 'create':return mine?'أنت أنشأت المجموعة':nm+' أنشأ المجموعة';
+    case 'add':return (mine?'أنت أضفت ':nm+' أضاف ')+lst;
+    case 'remove':return (mine?'أنت أزلت ':nm+' أزال ')+lst;
+    case 'ban':return (mine?'أنت أزلت وحظرت ':nm+' أزال وحظر ')+lst;
+    case 'leave':return mine?'أنت غادرت المجموعة':nm+' غادر المجموعة';
+    case 'rename':return (mine?'أنت غيّرت':nm+' غيّر')+' اسم المجموعة إلى «'+(s.name||'')+'»';
+    case 'photo':return (mine?'أنت غيّرت':nm+' غيّر')+' صورة المجموعة';
+    case 'about':return (mine?'أنت غيّرت':nm+' غيّر')+' وصف المجموعة';
+    case 'pin':return (mine?'أنت ثبّتّ':nm+' ثبّت')+' رسالة';
+    case 'promote':return (mine?'أنت عيّنت ':nm+' عيّن ')+lst+' مشرفاً';
+    case 'demote':return (mine?'أنت أزلت ':nm+' أزال ')+lst+' من الإشراف';
+    case 'perms':return (mine?'أنت غيّرت':nm+' غيّر')+' صلاحيات الأعضاء';
+  }
+  return m.text||'';
+}
+function sysPreview(s,name){
+  const lst=(s.to||[]).map(u=>(GU[u]&&GU[u].displayName)||'مستخدم').join('، ');
+  switch(s.k){
+    case 'create':return name+' أنشأ المجموعة';case 'add':return name+' أضاف '+lst;case 'remove':return name+' أزال '+lst;
+    case 'ban':return name+' أزال وحظر '+lst;case 'leave':return name+' غادر المجموعة';case 'rename':return name+' غيّر اسم المجموعة';
+    case 'photo':return name+' غيّر صورة المجموعة';case 'about':return name+' غيّر وصف المجموعة';case 'pin':return name+' ثبّت رسالة';
+    case 'promote':return name+' عيّن '+lst+' مشرفاً';case 'demote':return name+' أزال '+lst+' من الإشراف';case 'perms':return name+' غيّر صلاحيات الأعضاء';
+  }return '';
+}
+
+/* ---------- شاشات فرعية ---------- */
+function closeSub(){document.getElementById('grpSub')?.remove();}
+function openSub(title,sub){
+  closeSub();
+  const ov=document.createElement('div');ov.id='grpSub';ov.className='gx-ov';ov.style.zIndex=9100;
+  ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="subBack" aria-label="رجوع"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button><div class="gx-title"><b>'+esc(title)+'</b>'+(sub?'<span>'+esc(sub)+'</span>':'')+'</div></div><div class="gx-scroll" id="subBody"></div>';
+  uiRoot().appendChild(ov);ov.querySelector('#subBack').onclick=()=>{closeSub();};
+  return ov;
+}
+function swHtml(on){return '<span class="sw'+(on?' on':'')+'"></span>';}
+
+/* ---------- شاشة معلومات المجموعة (جديدة) ---------- */
+function renderGroupInfo(){
+  const ov=document.getElementById('grpInfo');if(!ov)return;
+  const d=chatMetaCache[activeChatId];if(!d){closeGroupInfo();return;}
+  const me=meId(),isOwner=d.ownerId===me,parts=d.participants||[],canInfo=gRight('info'),canInvite=gRight('invite'),canBan=gRight('ban'),isStaff=gRole(me,d)!=='member';
+  const rank=u=>u===d.ownerId?0:(d.admins&&d.admins[u]?1:2);
+  const sorted=parts.slice().sort((a,b)=>rank(a)-rank(b)||String((GU[a]||{}).displayName||'').localeCompare(String((GU[b]||{}).displayName||''),'ar'));
+  const muted=getLocalChatSet('babylon_muted_users').has(activeChatId);
+  const adminCount=parts.filter(u=>rank(u)<=1).length,bannedN=(d.banned||[]).length;
+  const permsOn=MEMBER_PERMS.filter(p=>d.perms&&d.perms[p[0]]!==undefined?d.perms[p[0]]===true:p[2]).length;
+  const scroll=ov.querySelector('.gx-scroll'),st=scroll?scroll.scrollTop:0;
+  const pen='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></svg>';
+  const chev='<svg class="gi-chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>';
+  ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="giBack" aria-label="رجوع"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button><div class="gx-title"><b>معلومات المجموعة</b></div></div>'
+    +'<div class="gx-scroll">'
+    +'<div class="gi-hero"><div class="gi-av'+(canInfo?' can':'')+'" id="giAv">'+groupAvHtml(d,'gi-av-in')+(canInfo?'<span class="gi-cam"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h3l1.6-2.2h6.8L17 8.5h3V19H4z"/><circle cx="12" cy="13.3" r="3.6"/></svg></span>':'')+'</div>'
+    +'<input type="file" id="giFile" accept="image/*" class="hidden">'
+    +'<div class="gi-name'+(canInfo?' can':'')+'" id="giName">'+esc(d.name||'مجموعة')+(canInfo?pen:'')+'</div>'
+    +'<div class="gi-sub">'+memberWord(parts.length)+'</div></div>'
+    +'<div class="gi-card"><div class="gi-row" id="giMute"><span class="gi-ic">'+(muted?'🔕':'🔔')+'</span><span class="gi-lb">الإشعارات</span><span class="gi-val">'+(muted?'مكتومة':'مفعّلة')+'</span></div></div>'
+    +((d.about||canInfo)?'<div class="gi-card"><div class="gi-head">الوصف</div><div class="gi-about'+(canInfo?' can':'')+'" id="giAbout">'+(d.about?esc(d.about).replace(/\n/g,'<br>'):'<span class="ph">أضف وصفاً للمجموعة</span>')+'</div></div>':'')
+    +(isStaff?'<div class="gi-card"><div class="gi-head">الإدارة</div>'
+      +'<div class="gi-row" id="giAdmins"><span class="gi-ic">🛡</span><span class="gi-lb">المشرفون</span><span class="gi-val">'+adminCount+'</span>'+chev+'</div>'
+      +(canBan?'<div class="gi-row" id="giPerms"><span class="gi-ic">🔑</span><span class="gi-lb">صلاحيات الأعضاء</span><span class="gi-val">'+permsOn+'/'+MEMBER_PERMS.length+'</span>'+chev+'</div>'
+      +'<div class="gi-row" id="giBanned"><span class="gi-ic">⛔</span><span class="gi-lb">المحظورون</span><span class="gi-val">'+bannedN+'</span>'+chev+'</div>':'')
+      +'</div>':'')
+    +'<div class="gi-card"><div class="gi-head">الأعضاء <b>'+parts.length+'</b></div>'
+    +(canInvite&&parts.length<GROUP_MAX?'<div class="gi-row gold" id="giAdd"><span class="gi-ic add"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="gi-lb">إضافة أعضاء</span></div>':'')
+    +sorted.map(u=>{const g=GU[u]||{},mu=d.muted&&d.muted[u]&&rank(u)===2;return '<div class="gi-member" data-u="'+u+'">'+userAvHtml(u,'gx-av')+'<div class="gx-t"><b>'+esc(g.displayName||'مستخدم')+(u===me?' <em>(أنت)</em>':'')+(mu?' <em>· مقيّد</em>':'')+'</b><span>'+(g.username?'@'+esc(g.username):'')+'</span></div>'+roleTag(u,d)+'</div>';}).join('')
+    +'</div>'
+    +'<div class="gi-card"><div class="gi-row danger" id="giLeave"><span class="gi-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/></svg></span><span class="gi-lb">مغادرة المجموعة</span></div></div>'
+    +'<div style="height:30px"></div></div>';
+  const sc=ov.querySelector('.gx-scroll');if(sc)sc.scrollTop=st;
+  ov.querySelector('#giBack').onclick=closeGroupInfo;
+  ov.querySelector('#giMute').onclick=()=>{toggleChatMute();renderGroupInfo();};
+  ov.querySelector('#giLeave').onclick=()=>confirmLeaveGroup(activeChatId);
+  const add=ov.querySelector('#giAdd');if(add)add.onclick=()=>openGroupPicker('add',activeChatId);
+  const q=id=>ov.querySelector(id);
+  if(q('#giAdmins'))q('#giAdmins').onclick=openAdminsScreen;
+  if(q('#giPerms'))q('#giPerms').onclick=openPermsScreen;
+  if(q('#giBanned'))q('#giBanned').onclick=openBannedScreen;
+  if(canInfo){
+    q('#giAv').onclick=()=>q('#giFile').click();
+    q('#giFile').onchange=e=>{
+      const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
+      if(!f.type.startsWith('image/'))return showToast('اختر ملف صورة فقط');
+      compressSquare(f,320,async data=>{
+        if(!data)return showToast('تعذر تجهيز الصورة');
+        try{const u=await addGroupSystem(activeChatId,{k:'photo',by:me});await gUpdate({photo:data,updatedAt:u.updatedAt,lastMsg:u.lastMsg});showToast('تم تغيير صورة المجموعة');}catch(err){showToast('تعذر تغيير الصورة');}
+      });
+    };
+    q('#giName').onclick=async()=>{
+      const r=await clAsk({title:'اسم المجموعة',input:{value:d.name||'',placeholder:'اسم المجموعة',max:40},buttons:[{text:'حفظ'},{text:'إلغاء',cls:'cl-cancel'}]});
+      if(!r||r.i!==0)return;if(!r.value)return showToast('الاسم لا يمكن أن يكون فارغاً');if(r.value===d.name)return;
+      try{const u=await addGroupSystem(activeChatId,{k:'rename',by:me,name:r.value});await gUpdate({name:r.value,updatedAt:u.updatedAt,lastMsg:u.lastMsg});}catch(err){showToast('تعذر تغيير الاسم');}
+    };
+    q('#giAbout').onclick=async()=>{
+      const r=await clAsk({title:'وصف المجموعة',input:{value:d.about||'',placeholder:'اكتب وصفاً للمجموعة',max:255,multiline:true},buttons:[{text:'حفظ'},{text:'إلغاء',cls:'cl-cancel'}]});
+      if(!r||r.i!==0||r.value===(d.about||''))return;
+      try{const u=await addGroupSystem(activeChatId,{k:'about',by:me});await gUpdate({about:r.value,updatedAt:u.updatedAt,lastMsg:u.lastMsg});showToast('تم تحديث الوصف');}catch(err){showToast('تعذر تحديث الوصف');}
+    };
+  }
+  ov.querySelectorAll('.gi-member').forEach(row=>row.onclick=()=>memberAction(row.dataset.u));
+}
+
+/* ---------- المشرفون ---------- */
+function openAdminsScreen(){
+  const d=chatMetaCache[activeChatId],me=meId(),isOwner=d.ownerId===me;
+  const ov=openSub('المشرفون','الإدارة');
+  const draw=()=>{
+    const dd=chatMetaCache[activeChatId];if(!dd||!document.getElementById('grpSub'))return;
+    const ids=(dd.participants||[]).filter(u=>u===dd.ownerId||(dd.admins&&dd.admins[u]));
+    ids.sort((a,b)=>(a===dd.ownerId?-1:b===dd.ownerId?1:0));
+    ov.querySelector('#subBody').innerHTML='<div class="gi-card">'
+      +(isOwner?'<div class="gi-row gold" id="adNew"><span class="gi-ic add"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="gi-lb">إضافة مشرف</span></div>':'')
+      +ids.map(u=>{const g=GU[u]||{};const rs=u===dd.ownerId?'كل الصلاحيات':ADMIN_RIGHTS.filter(r=>dd.admins[u][r[0]]===true).length+' من '+ADMIN_RIGHTS.length+' صلاحيات';
+        return '<div class="gi-member" data-u="'+u+'">'+userAvHtml(u,'gx-av')+'<div class="gx-t"><b>'+esc(g.displayName||'مستخدم')+(u===me?' <em>(أنت)</em>':'')+'</b><span style="direction:rtl">'+esc(rs)+'</span></div>'+roleTag(u,dd)+'</div>';}).join('')
+      +'</div><p class="gx-note">المشرفون يستطيعون إدارة المجموعة حسب الصلاحيات التي تمنحها لهم. فقط المالك يعيّن المشرفين ويزيلهم.</p>';
+    const nw=ov.querySelector('#adNew');if(nw)nw.onclick=pickAdminCandidate;
+    ov.querySelectorAll('.gi-member').forEach(r=>r.onclick=()=>{const u=r.dataset.u;if(u===dd.ownerId){if(isOwner)changeTitle(u);return;}if(isOwner)openAdminEditor(u,false);else if(u===me)changeTitle(u);});
+  };
+  draw();
+  window.__subRefresh=draw;
+}
+function pickAdminCandidate(){
+  const d=chatMetaCache[activeChatId],me=meId();
+  const ids=(d.participants||[]).filter(u=>u!==d.ownerId&&!(d.admins&&d.admins[u]));
+  const ov=openSub('اختر عضواً','تعيين مشرف');
+  ov.querySelector('#subBody').innerHTML=ids.length?'<div class="gx-list flat">'+ids.map(u=>{const g=GU[u]||{};return '<div class="gx-row" data-u="'+u+'">'+userAvHtml(u,'gx-av')+'<div class="gx-t"><b>'+esc(g.displayName||'مستخدم')+'</b><span>'+(g.username?'@'+esc(g.username):'')+'</span></div></div>';}).join('')+'</div>':'<div class="gx-empty">لا يوجد أعضاء متاحون للتعيين.</div>';
+  ov.querySelectorAll('.gx-row').forEach(r=>r.onclick=()=>openAdminEditor(r.dataset.u,true));
+}
+function openAdminEditor(uid,isNew){
+  const d=chatMetaCache[activeChatId],me=meId(),g=GU[uid]||{};
+  const cur=Object.assign({},ADMIN_DEFAULTS,isNew?{}:(d.admins&&d.admins[uid])||{});
+  let title=(d.titles&&d.titles[uid])||'';
+  const ov=openSub(isNew?'تعيين مشرف':'صلاحيات المشرف',g.displayName||'');
+  window.__subRefresh=null;
+  const body=ov.querySelector('#subBody');
+  body.innerHTML='<div class="gi-hero" style="padding-bottom:0"><div class="gi-av sm">'+userAvHtml(uid,'gi-av-in')+'</div><div class="gi-name" style="font-size:19px">'+esc(g.displayName||'مستخدم')+'</div></div>'
+    +'<div class="gi-card"><div class="gi-head">اللقب المخصص</div><div style="padding:4px 14px 14px"><input class="cl-in" id="aeTitle" type="text" maxlength="16" placeholder="مثال: المدير، الأستاذ، حارس الشلة" value="'+esc(title)+'" style="margin:0"></div></div>'
+    +'<div class="gi-card"><div class="gi-head">ما يستطيع هذا المشرف فعله</div>'+ADMIN_RIGHTS.map(r=>'<div class="gi-row sws" data-r="'+r[0]+'"><span class="gi-lb">'+r[1]+'</span>'+swHtml(cur[r[0]])+'</div>').join('')+'</div>'
+    +(isNew?'':'<div class="gi-card"><div class="gi-row danger" id="aeRemove"><span class="gi-lb">إزالة من الإشراف</span></div></div>')
+    +'<div style="height:100px"></div><button type="button" class="gx-fab on" id="aeSave" aria-label="حفظ"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button>';
+  body.querySelectorAll('.sws').forEach(r=>r.onclick=()=>{const k=r.dataset.r;cur[k]=!cur[k];r.querySelector('.sw').classList.toggle('on',cur[k]);});
+  body.querySelector('#aeSave').onclick=async()=>{
+    title=body.querySelector('#aeTitle').value.trim();
+    try{
+      const upd={};upd['admins.'+uid]=Object.assign({},cur);
+      if(title)upd['titles.'+uid]=title;else if(d.titles&&d.titles[uid])upd['titles.'+uid]=FVd();
+      if(isNew){const u=await addGroupSystem(activeChatId,{k:'promote',by:me,to:[uid]});upd.updatedAt=u.updatedAt;upd.lastMsg=u.lastMsg;}
+      await gUpdate(upd);showToast(isNew?'تم تعيين المشرف':'تم حفظ الصلاحيات');openAdminsScreen();
+    }catch(e){console.error(e);showToast('تعذر الحفظ');}
+  };
+  const rm=body.querySelector('#aeRemove');
+  if(rm)rm.onclick=async()=>{
+    const c=await clAsk({title:'إزالة من الإشراف',body:'هل تريد إزالة <b>'+esc(g.displayName||'مستخدم')+'</b> من الإشراف؟',buttons:[{text:'إزالة',cls:'cl-danger'},{text:'إلغاء',cls:'cl-cancel'}]});
+    if(!c||c.i!==0)return;
+    try{
+      const u=await addGroupSystem(activeChatId,{k:'demote',by:me,to:[uid]});
+      const upd={updatedAt:u.updatedAt,lastMsg:u.lastMsg};upd['admins.'+uid]=FVd();if(d.titles&&d.titles[uid])upd['titles.'+uid]=FVd();
+      await gUpdate(upd);showToast('تمت إزالة المشرف');openAdminsScreen();
+    }catch(e){showToast('تعذرت الإزالة');}
+  };
+}
+async function changeTitle(uid){
+  const d=chatMetaCache[activeChatId],g=GU[uid]||{};
+  const r=await clAsk({title:'اللقب',body:uid===meId()?'':esc(g.displayName||''),input:{value:(d.titles&&d.titles[uid])||'',placeholder:'اللقب (اختياري)',max:16},buttons:[{text:'حفظ'},{text:'إلغاء',cls:'cl-cancel'}]});
+  if(!r||r.i!==0)return;
+  const upd={};if(r.value)upd['titles.'+uid]=r.value;else upd['titles.'+uid]=FVd();
+  try{await gUpdate(upd);showToast('تم تحديث اللقب');}catch(e){showToast('تعذر تحديث اللقب');}
+}
+
+/* ---------- صلاحيات الأعضاء ---------- */
+function openPermsScreen(){
+  const ov=openSub('صلاحيات الأعضاء','ما الذي يستطيع الأعضاء فعله');
+  const draw=()=>{
+    const d=chatMetaCache[activeChatId];if(!d||!document.getElementById('grpSub'))return;
+    ov.querySelector('#subBody').innerHTML='<div class="gi-card"><div class="gi-head">الأعضاء يستطيعون</div>'+MEMBER_PERMS.map(p=>{const on=d.perms&&d.perms[p[0]]!==undefined?d.perms[p[0]]===true:p[2];return '<div class="gi-row sws" data-k="'+p[0]+'"><span class="gi-lb">'+p[1]+'</span>'+swHtml(on)+'</div>';}).join('')+'</div>'
+      +'<p class="gx-note">هذه الصلاحيات تخص الأعضاء العاديين فقط، أما المالك والمشرفون فيستطيعون الإرسال دائماً. يمكنك أيضاً تقييد عضو معيّن من قائمة الأعضاء.</p>';
+    ov.querySelectorAll('.sws').forEach(r=>r.onclick=async()=>{
+      const k=r.dataset.k,cur=ov.querySelector('[data-k="'+k+'"] .sw').classList.contains('on');
+      try{const u=await addGroupSystem(activeChatId,{k:'perms',by:meId()});await gUpdate({['perms.'+k]:!cur,updatedAt:u.updatedAt,lastMsg:u.lastMsg});}catch(e){showToast('تعذر تغيير الصلاحية');}
+    });
+  };
+  draw();window.__subRefresh=draw;
+}
+
+/* ---------- المحظورون ---------- */
+function openBannedScreen(){
+  const d0=chatMetaCache[activeChatId],ov=openSub('المحظورون','لا يمكن إضافتهم مرة أخرى');
+  const draw=()=>{
+    const d=chatMetaCache[activeChatId];if(!d||!document.getElementById('grpSub'))return;
+    const ids=d.banned||[];
+    ov.querySelector('#subBody').innerHTML=ids.length?'<div class="gi-card">'+ids.map(u=>{const g=GU[u]||{};return '<div class="gi-member" data-u="'+u+'">'+userAvHtml(u,'gx-av')+'<div class="gx-t"><b>'+esc(g.displayName||'مستخدم')+'</b><span>'+(g.username?'@'+esc(g.username):'')+'</span></div><span class="gi-tag m">إلغاء الحظر</span></div>';}).join('')+'</div>':'<div class="gx-empty">لا يوجد أعضاء محظورون.</div>';
+    ov.querySelectorAll('.gi-member').forEach(r=>r.onclick=async()=>{
+      const u=r.dataset.u,g=GU[u]||{};
+      const c=await clAsk({title:'إلغاء الحظر',body:'السماح لـ <b>'+esc(g.displayName||'مستخدم')+'</b> بالانضمام مجدداً؟',buttons:[{text:'إلغاء الحظر'},{text:'تراجع',cls:'cl-cancel'}]});
+      if(!c||c.i!==0)return;
+      try{await gUpdate({banned:firebase.firestore.FieldValue.arrayRemove(u)});showToast('تم إلغاء الحظر');}catch(e){showToast('تعذر إلغاء الحظر');}
+    });
+  };
+  loadUsers(d0.banned||[]).then(draw);window.__subRefresh=draw;
+}
+
+/* ---------- إجراءات العضو ---------- */
+async function memberAction(uid){
+  const d=chatMetaCache[activeChatId],me=meId();if(!d)return;
+  const g=GU[uid]||{},myRole=gRole(me,d),tRole=gRole(uid,d),isOwner=myRole==='owner';
+  const acts=[{k:'profile',text:'عرض الملف الشخصي'}];
+  if(isOwner&&uid!==me){acts.push(tRole==='admin'?{k:'adm',text:'تعديل صلاحيات المشرف'}:{k:'prom',text:'تعيين كمشرف'});}
+  if((isOwner)||(myRole==='admin'&&uid===me))acts.push({k:'title',text:'تغيير اللقب'});
+  const canAct=uid!==me&&tRole!=='owner'&&gRight('ban')&&(tRole==='member'||isOwner);
+  if(canAct&&tRole==='member')acts.push({k:'mute',text:(d.muted&&d.muted[uid])?'إلغاء تقييد الكتابة':'تقييد من الكتابة'});
+  if(canAct){acts.push({k:'remove',text:'إزالة من المجموعة',cls:'cl-danger'});acts.push({k:'ban',text:'إزالة وحظر',cls:'cl-danger'});}
+  acts.push({text:'إلغاء',k:'x',cls:'cl-cancel'});
+  const r=await clAsk({stack:true,title:esc(g.displayName||'مستخدم'),body:(g.username?'@'+esc(g.username):'')+(gTitle(uid,d)?' · '+esc(gTitle(uid,d)):''),buttons:acts});
+  if(!r)return;const a=acts[r.i];if(!a||a.k==='x')return;
+  if(a.k==='profile'){
+    if(uid===me){showToast('هذا ملفك الشخصي');return;}
+    db.collection('users').doc(uid).get().then(doc=>{if(doc.exists){window.__grpReturn=activeChatId;closeGroupInfo();closeSub();openUserProfileDirect(Object.assign({id:uid},doc.data()));}});
+  }else if(a.k==='prom'||a.k==='adm'){openAdminEditor(uid,a.k==='prom');}
+  else if(a.k==='title'){changeTitle(uid);}
+  else if(a.k==='mute'){
+    const on=!(d.muted&&d.muted[uid]);
+    try{await gUpdate({['muted.'+uid]:on?true:FVd()});showToast(on?'تم تقييد العضو من الكتابة':'تم إلغاء التقييد');}catch(e){showToast('تعذر تنفيذ الإجراء');}
+  }else if(a.k==='remove'||a.k==='ban'){
+    const ban=a.k==='ban';
+    const c=await clAsk({title:ban?'إزالة وحظر':'إزالة العضو',body:'هل تريد '+(ban?'إزالة وحظر ':'إزالة ')+'<b>'+esc(g.displayName||'مستخدم')+'</b> '+(ban?'من المجموعة؟ لن يستطيع أحد إضافته مجدداً قبل رفع الحظر.':'من المجموعة؟'),buttons:[{text:ban?'إزالة وحظر':'إزالة',cls:'cl-danger'},{text:'إلغاء',cls:'cl-cancel'}]});
+    if(!c||c.i!==0)return;
+    try{
+      const u=await addGroupSystem(activeChatId,{k:ban?'ban':'remove',by:me,to:[uid]});
+      const upd={participants:firebase.firestore.FieldValue.arrayRemove(uid),updatedAt:u.updatedAt,lastMsg:u.lastMsg};
+      if(ban)upd.banned=firebase.firestore.FieldValue.arrayUnion(uid);
+      if(d.titles&&d.titles[uid])upd['titles.'+uid]=FVd();
+      if(d.muted&&d.muted[uid])upd['muted.'+uid]=FVd();
+      if(d.admins&&d.admins[uid]&&isOwner)upd['admins.'+uid]=FVd();
+      await gUpdate(upd);showToast(ban?'تمت الإزالة والحظر':'تمت إزالة العضو');
+    }catch(e){console.error(e);showToast('تعذرت الإزالة');}
+  }
+}
+
 
 function toggleChatMenu(ev) { if(ev) ev.stopPropagation(); const m=document.getElementById('chatMoreMenu'); if(!m)return; m.classList.toggle('hidden'); refreshMuteLabel(); }
 function closeChatMenus() { ['chatMoreMenu','chatSearchPanel'].forEach(id=>document.getElementById(id)?.classList.add('hidden')); }
