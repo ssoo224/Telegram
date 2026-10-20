@@ -4112,9 +4112,9 @@ function startRecording() {
     return showToast("المتصفح لا يدعم تسجيل الصوت");
   }
 
-  navigator.mediaDevices.getUserMedia({
-    audio: { channelCount: 1, sampleRate: 48000, sampleSize: 16, echoCancellation: false, noiseSuppression: false, autoGainControl: false }
-  }).then(stream => {
+  // استخدم إعدادات صوت متوافقة مع WebView على أجهزة Android؛ القيود الدقيقة
+  // مثل sampleRate وsampleSize قد تجعل getUserMedia يفشل رغم منح الإذن.
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     /* OGG/Opus أولاً (48kHz، 96kbps)، مع بدائل للمتصفحات التي لا تدعمه */
     const mime = ['audio/ogg;codecs=opus', 'audio/ogg', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
       .find(t => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
@@ -4139,7 +4139,19 @@ function startRecording() {
       let secs = String(recordSeconds % 60).padStart(2, '0');
       document.getElementById("recordTimer").textContent = `${mins}:${secs}`;
     }, 1000);
-  }).catch(() => showToast("يرجى إعطاء إذن المايكروفون للتسجيل"));
+  }).catch(err => {
+    console.error('Voice recording getUserMedia/MediaRecorder error:', err);
+    const name = err && err.name ? err.name : '';
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
+      showToast('لم يتم السماح للتطبيق باستخدام الميكروفون');
+    } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      showToast('لم يتم العثور على ميكروفون متاح');
+    } else if (name === 'NotReadableError' || name === 'TrackStartError') {
+      showToast('الميكروفون مستخدم من تطبيق آخر أو غير متاح');
+    } else {
+      showToast('تعذر بدء التسجيل (' + (name || 'خطأ غير معروف') + ')');
+    }
+  });
 }
 
 function cancelRecording() {
