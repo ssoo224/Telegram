@@ -2048,7 +2048,6 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
       <div class="main-header-title">Babylon Chat</div>
       <div class="main-header-actions">
         <button type="button" id="hdrAvatarBtn" class="hdr-avatar" aria-label="القصص" title="القصص"><div class="avatar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg></div></button>
-        <div id="hdrStoryPreviews" class="hdr-story-previews" aria-label="قصص منشورة"></div>
         <button id="mainSearchBtn" class="icon-btn header-search-btn" onclick="openSearch()" title="بحث عن مستخدم باليوزر" aria-label="بحث"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.5 4.5"></path></svg></button>
       </div>
     </header>
@@ -5115,18 +5114,12 @@ function renderStoriesBar() {
     let html = `<div class="sb-item" onclick="myStoryClick()"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''} ${toneCls(me)}">${avInner(me)}${act.length ? '' : '<div class="sb-plus" aria-label="إضافة قصة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>'}</div><span>قصتي</span></div>`;
     const us = await Promise.all(storyPartnerIds.map(id => fetchUser(id, true)));
     const bm = await Promise.all(storyPartnerIds.map(id => myBlocks[id] ? true : blockedByThem(id)));
-    const others = [];
     us.forEach((u, i) => {
-      if (!u || !(u.storyUntil > Date.now()) || bm[i]) return;
+      if (!u || !(u.storyUntil > Date.now())) return;
+      if (bm[i]) return;
       const id = storyPartnerIds[i]; u.id = id;
-      others.push({user:u,id});
+      html += `<div class="sb-item" onclick="openStories('${id}')"><div class="avatar${ringCls(u)} ${toneCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
     });
-    if (others.length) {
-      const visible = others.slice(0, 2);
-      const extra = others.length - visible.length;
-      const faces = visible.map((item, i) => `<div class="sb-stack-avatar ${i === 0 ? 'front' : 'back'} ${toneCls(item.user)}">${avInner(item.user)}<i class="sb-stack-ring"></i></div>`).join('');
-      html += `<div class="sb-item sb-stack-item" onclick="openStories('${others[0].id}')" aria-label="قصص الآخرين، ${others.length} قصة"><div class="sb-stack">${faces}${extra > 0 ? `<b class="sb-stack-count">+${extra}</b>` : ''}</div><span>قصص الآخرين</span></div>`;
-    }
     bar.innerHTML = html;
     bar.classList.remove('hidden');
   }, 350);
@@ -7568,12 +7561,6 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
 /* Profile picture in the header (opens the stories bar) + floating "new group" circle */
 #hdrAvatarBtn{width:42px;height:42px;padding:0;border:0;background:transparent;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;flex:0 0 auto}
 #hdrAvatarBtn:active{transform:scale(.93)}
-#hdrStoryPreviews{display:flex;align-items:center;gap:4px;max-width:124px;overflow:hidden;flex:0 1 auto;transition:opacity .2s,transform .25s,width .25s;}
-#hdrStoryPreviews .sb-item{display:flex;align-items:center;justify-content:center;flex:0 0 30px;width:30px;min-width:30px;padding:0;margin:0;gap:0;cursor:pointer;}
-#hdrStoryPreviews .sb-item>span,#hdrStoryPreviews .sb-plus{display:none!important}
-#hdrStoryPreviews .sb-item .avatar{width:28px!important;height:28px!important;min-width:28px!important;font-size:12px!important;margin:0!important;}
-#hdrStoryPreviews .sb-item .avatar.sring::after{inset:-2px!important;padding:2px!important;}
-#hdrStoryPreviews.is-hidden{opacity:0;visibility:hidden;pointer-events:none;width:0!important;max-width:0!important;flex-basis:0!important;overflow:hidden;}
 #hdrAvatarBtn .avatar{width:36px!important;height:36px!important;min-width:36px;font-size:15px!important;margin:0;display:flex;align-items:center;justify-content:center;color:var(--cl-gold,#e4c45b)}
 #hdrAvatarBtn .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 #hdrAvatarBtn .sb-plus{display:none!important}
@@ -7591,32 +7578,19 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
 </style>
 <script id="babylon-avatar-fab-js">
 (function(){
-  var bar=document.getElementById('storiesBar'),top=document.getElementById('topStories'),btn=document.getElementById('hdrAvatarBtn'),previews=document.getElementById('hdrStoryPreviews');
+  var bar=document.getElementById('storiesBar'),top=document.getElementById('topStories'),btn=document.getElementById('hdrAvatarBtn');
   if(!bar||!btn)return;
   var av=btn.querySelector('.avatar');
   function syncAv(){var src=bar.querySelector('.sb-item .avatar');if(!src)return;av.className=src.className;av.innerHTML=src.innerHTML;var p=av.querySelector('.sb-plus');if(p)p.remove();}
-  function syncStoryPreviews(){
-    if(!previews)return;
-    previews.innerHTML='';
-    // The first item is the current user's own story; show other published stories beside the profile picture.
-    Array.prototype.slice.call(bar.querySelectorAll('.sb-item')).slice(1,5).forEach(function(item){
-      var copy=item.cloneNode(true);copy.classList.add('header-story-preview');
-      copy.removeAttribute('role');
-      var label=copy.querySelector('span');if(label)label.style.display='none';
-      previews.appendChild(copy);
-    });
-    previews.classList.toggle('is-hidden',previews.children.length===0);
-  }
   function syncTop(){
     var expanded=!bar.classList.contains('collapsed')&&!bar.classList.contains('hidden');
     if(top)top.classList.toggle('sb-off',!expanded);
-    // Hide the header avatar and story previews together while the stories strip is open.
+    // The header avatar moves visually into the stories strip while it is expanded.
     btn.classList.toggle('story-avatar-moved',expanded);
-    if(previews)previews.classList.toggle('is-hidden',expanded||previews.children.length===0);
     btn.setAttribute('aria-expanded',expanded?'true':'false');
   }
-  new MutationObserver(function(){syncAv();syncStoryPreviews();syncTop();}).observe(bar,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
-  syncAv();syncStoryPreviews();syncTop();
+  new MutationObserver(function(){syncAv();syncTop();}).observe(bar,{childList:true,attributes:true,attributeFilter:['class']});
+  syncTop();
   btn.addEventListener('click',function(){
     if(bar.classList.contains('hidden'))return;
     window.setStoriesCollapsed(!bar.classList.contains('collapsed'));
@@ -7815,16 +7789,4 @@ function openMention(username){
 #chatSettingsView .pv .msg-bubble.mine {
   border-radius: var(--r, 12px) var(--r, 12px) var(--r, 12px) 6px !important;
 }
-
-
-/* قصص الآخرين: الحفاظ على مقاسات وتناسق عناصر شريط القصص الأصلي */
-.app-container #homeView#homeView .sb-stack-item{width:62px;flex:0 0 62px;gap:6px}
-.app-container #homeView#homeView .sb-stack{position:relative;width:54px;height:54px;flex:0 0 54px;direction:ltr;margin:0 auto}
-.app-container #homeView#homeView .sb-stack-avatar{position:absolute;top:2px;width:50px;height:50px;box-sizing:border-box;border-radius:50%;padding:3px;background:linear-gradient(135deg,#8f6810 0%,#f8e7a0 18%,#c29d30 38%,#fff1a8 52%,#c69a20 72%,#f5dc7a 100%);box-shadow:0 0 3px rgba(212,175,55,.4);overflow:hidden}
-.app-container #homeView#homeView .sb-stack-avatar.back{left:0;z-index:1;transform:scale(.88);transform-origin:left center}
-.app-container #homeView#homeView .sb-stack-avatar.front{right:0;z-index:2}
-.app-container #homeView#homeView .sb-stack-avatar img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid var(--babylon-surface,#17212b);box-sizing:border-box}
-.app-container #homeView#homeView .sb-stack-avatar:not(:has(img)){border:3px solid #c29d30}
-.app-container #homeView#homeView .sb-stack-count{position:absolute;right:-2px;bottom:-1px;z-index:4;min-width:20px;height:20px;padding:0 4px;box-sizing:border-box;border-radius:12px;background:#c29d30;color:#101827;border:2px solid var(--babylon-surface,#17212b);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;direction:ltr}
-.app-container #homeView#homeView .sb-stack-item>span{display:block;width:62px;max-width:62px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
