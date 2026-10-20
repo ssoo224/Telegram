@@ -7559,13 +7559,6 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
   background:linear-gradient(90deg,transparent,rgba(212,175,55,.65) 20%,rgba(246,223,134,.9) 50%,rgba(212,175,55,.65) 80%,transparent)}
 </style>
 <style id="babylon-avatar-fab">
-/* Header story previews match the profile avatar and overlap as a compact stack. */
-#hdrStoryPreviews{gap:0!important;max-width:116px!important;overflow:visible!important;direction:ltr}
-#hdrStoryPreviews .sb-item{flex:0 0 36px!important;width:36px!important;min-width:36px!important;height:42px}
-#hdrStoryPreviews .sb-item + .sb-item{margin-left:-12px!important}
-#hdrStoryPreviews .sb-item .avatar{width:36px!important;height:36px!important;min-width:36px!important;font-size:15px!important;border:2px solid var(--babylon-surface,#17212b);box-sizing:content-box}
-#hdrStoryPreviews .sb-item .avatar.sring::after{inset:-3px!important;padding:2px!important}
-#hdrStoryPreviews .header-story-count{position:relative;z-index:5;display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;padding:0 6px;margin-left:-7px;border-radius:16px;background:linear-gradient(135deg,#e4c45b,#b8891a);border:2px solid var(--babylon-surface,#17212b);color:#17212b;font-size:11px;font-weight:800;white-space:nowrap}
 /* Profile picture in the header (opens the stories bar) + floating "new group" circle */
 #hdrAvatarBtn{width:42px;height:42px;padding:0;border:0;background:transparent;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;flex:0 0 auto}
 #hdrAvatarBtn:active{transform:scale(.93)}
@@ -7599,24 +7592,14 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
   function syncStoryPreviews(){
     if(!previews)return;
     previews.innerHTML='';
-    // Keep two other stories visible, stacked like overlapping pieces; show the remaining count.
-    var others=Array.prototype.slice.call(bar.querySelectorAll('.sb-item')).slice(1);
-    others.slice(0,2).forEach(function(item){
+    // The first item is the current user's own story; show other published stories beside the profile picture.
+    Array.prototype.slice.call(bar.querySelectorAll('.sb-item')).slice(1,5).forEach(function(item){
       var copy=item.cloneNode(true);copy.classList.add('header-story-preview');
       copy.removeAttribute('role');
       var label=copy.querySelector('span');if(label)label.style.display='none';
-      var plus=copy.querySelector('.sb-plus');if(plus)plus.remove();
       previews.appendChild(copy);
     });
-    var remaining=others.length-2;
-    if(remaining>0){
-      var count=document.createElement('span');
-      count.className='header-story-count';
-      count.textContent='+'+remaining;
-      count.setAttribute('aria-label','قصص إضافية '+remaining);
-      previews.appendChild(count);
-    }
-    previews.classList.toggle('is-hidden',others.length===0);
+    previews.classList.toggle('is-hidden',previews.children.length===0);
   }
   function syncTop(){
     var expanded=!bar.classList.contains('collapsed')&&!bar.classList.contains('hidden');
