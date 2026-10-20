@@ -2047,7 +2047,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
     <header id="mainHeader" class="main-header">
       <div class="main-header-title">Babylon Chat</div>
       <div class="main-header-actions">
-        <button id="newGroupBtn" class="icon-btn header-search-btn" onclick="openGroupPicker('create')" title="مجموعة جديدة" aria-label="مجموعة جديدة"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 3 18.5V20M9 11.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4M19 8v6M16 11h6"/></svg></button>
+        <button type="button" id="hdrAvatarBtn" class="hdr-avatar" aria-label="القصص" title="القصص"><div class="avatar"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg></div></button>
         <button id="mainSearchBtn" class="icon-btn header-search-btn" onclick="openSearch()" title="بحث عن مستخدم باليوزر" aria-label="بحث"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.5 4.5"></path></svg></button>
       </div>
     </header>
@@ -2061,6 +2061,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
       </div>
       <div id="chatList" style="display:flex; flex-direction:column;"></div>
     </div>
+    <button type="button" id="newGroupFab" onclick="openGroupPicker('create')" title="مجموعة جديدة" aria-label="مجموعة جديدة"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 3 18.5V20M9 11.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4M19 8v6M16 11h6"/></svg></button>
 
     <div id="searchView" class="search-view hidden">
       <div class="search-screen-top">
@@ -7556,6 +7557,36 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
 .app-container #homeView#homeView .top-stories::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;pointer-events:none;
   background:linear-gradient(90deg,transparent,rgba(212,175,55,.65) 20%,rgba(246,223,134,.9) 50%,rgba(212,175,55,.65) 80%,transparent)}
 </style>
+<style id="babylon-avatar-fab">
+/* Profile picture in the header (opens the stories bar) + floating "new group" circle */
+#hdrAvatarBtn{width:42px;height:42px;padding:0;border:0;background:transparent;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;flex:0 0 auto}
+#hdrAvatarBtn:active{transform:scale(.93)}
+#hdrAvatarBtn .avatar{width:36px!important;height:36px!important;min-width:36px;font-size:15px!important;margin:0;display:flex;align-items:center;justify-content:center;color:var(--cl-gold,#e4c45b)}
+#hdrAvatarBtn .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+#hdrAvatarBtn .sb-plus{display:none!important}
+#newGroupFab{position:absolute;left:16px;bottom:78px;width:56px;height:56px;border-radius:50%;border:0;padding:0;display:none;align-items:center;justify-content:center;background:linear-gradient(135deg,#e0bd4a,#b8891a);color:#17212b;box-shadow:0 6px 18px rgba(0,0,0,.35);z-index:15;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s ease}
+#newGroupFab svg{display:block;stroke:currentColor}
+#newGroupFab:active{transform:scale(.92)}
+#homeView:not(.hidden) ~ #newGroupFab{display:flex}
+.app-container #homeView#homeView #chatList{padding-bottom:88px!important}
+/* stories bar: hidden until the header picture is tapped */
+.app-container #homeView#homeView #storiesBar.collapsed{max-height:0!important;padding-top:0!important;padding-bottom:0!important;opacity:0;pointer-events:none;overflow:hidden!important;border:0!important}
+.app-container #homeView#homeView #storiesBar.collapsed::after{display:none!important}
+.app-container #homeView#homeView #storiesBar{transition:max-height .32s cubic-bezier(.2,.8,.2,1),padding .32s ease,opacity .25s ease}
+.app-container #homeView#homeView .top-stories.sb-off::after{display:none}
+</style>
+<script id="babylon-avatar-fab-js">
+(function(){
+  var bar=document.getElementById('storiesBar'),top=document.getElementById('topStories'),btn=document.getElementById('hdrAvatarBtn');
+  if(!bar||!btn)return;
+  var av=btn.querySelector('.avatar');
+  function syncAv(){var src=bar.querySelector('.sb-item .avatar');if(!src)return;av.className=src.className;av.innerHTML=src.innerHTML;var p=av.querySelector('.sb-plus');if(p)p.remove();}
+  function syncTop(){if(top)top.classList.toggle('sb-off',bar.classList.contains('collapsed')||bar.classList.contains('hidden'));}
+  new MutationObserver(function(){syncAv();syncTop();}).observe(bar,{childList:true,attributes:true,attributeFilter:['class']});
+  syncTop();
+  btn.addEventListener('click',function(){if(bar.classList.contains('hidden'))return;window.setStoriesCollapsed(!bar.classList.contains('collapsed'));});
+})();
+</script>
 <style id="babylon-mentions">
 .app-container .msg-bubble .msg-text span.mention{color:#0b5fd6!important;-webkit-text-fill-color:#0b5fd6!important;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .app-container[data-app-theme="dark"] .msg-bubble .msg-text span.mention{color:#6cb6ff!important;-webkit-text-fill-color:#6cb6ff!important}
