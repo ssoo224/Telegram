@@ -1913,6 +1913,34 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 .app-container #chatView .telegram-user-name,
 .app-container[data-app-theme] #chatView #chatTitleText{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:-.5px 0 0 #000,.5px 0 0 #000,0 -.5px 0 #000,0 .5px 0 #000,0 0 3px rgba(0,0,0,.55)!important}
 </style>
+
+<style id="tg-polish">
+/* ===== لقب المشرف/المالك كشارة ===== */
+.g-role{display:inline-flex;align-items:center;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:700;line-height:1.5;opacity:1;background:rgba(135,152,170,.18);color:var(--cl-sub,#8798aa)}
+.g-role.g-role-member{background:rgba(135,152,170,.18);color:var(--cl-sub,#8798aa)}
+.g-role.g-role-admin{background:rgba(74,222,128,.16);color:#4ade80}
+.g-role.g-role-owner{background:rgba(167,139,250,.20);color:#a78bfa}
+.app-container[data-app-theme="light"] .g-role.g-role-admin{color:#16a34a;background:rgba(22,163,74,.12)}
+.app-container[data-app-theme="light"] .g-role.g-role-owner{color:#7c3aed;background:rgba(124,58,237,.12)}
+/* ===== فقاعات متتالية مرتبة ===== */
+#chatView .messages-area{gap:2px!important}
+#chatView #messagesArea .g-row.g-first,#chatView #messagesArea .msg-bubble.mine.gb-first{margin-top:9px}
+#chatView #messagesArea .g-row .msg-bubble:not(.mine){border-radius:20px 20px 20px 20px!important}
+#chatView #messagesArea .g-row .msg-bubble.gb-first:not(.gb-last){border-radius:20px 20px 20px 6px!important}
+#chatView #messagesArea .g-row .msg-bubble.gb-last:not(.gb-first){border-radius:6px 20px 20px 20px!important}
+#chatView #messagesArea .g-row .msg-bubble:not(.gb-first):not(.gb-last){border-radius:6px 20px 20px 6px!important}
+#chatView #messagesArea .g-row .msg-bubble.gb-first.gb-last{border-radius:20px 20px 20px 6px!important}
+#chatView #messagesArea .msg-bubble.mine.gb-first:not(.gb-last){border-radius:20px 20px 6px 20px!important}
+#chatView #messagesArea .msg-bubble.mine.gb-last:not(.gb-first){border-radius:20px 6px 20px 20px!important}
+#chatView #messagesArea .msg-bubble.mine:not(.gb-first):not(.gb-last){border-radius:20px 6px 6px 20px!important}
+#chatView #messagesArea .g-row .msg-bubble:not(.gb-first) .g-sender{display:none}
+/* ===== هيدر عائم مثل تليجرام ===== */
+#chatView .telegram-chat-header{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;height:auto;padding:8px 10px 6px;gap:8px}
+#chatView .telegram-chat-header .telegram-user-info{flex:1;min-width:0;background:var(--cr-card)!important;border:1px solid var(--cr-line);border-radius:24px;padding:6px 14px 6px 8px;box-shadow:var(--cr-shadow)}
+#chatView .telegram-chat-header .icon-btn{width:44px;height:44px;min-width:44px;border-radius:50%;background:var(--cr-card)!important;border:1px solid var(--cr-line);box-shadow:var(--cr-shadow)}
+/* ===== شريط التثبيت عائم ===== */
+#chatView .pinned-bar{margin:4px 10px 2px;border-radius:18px;border:1px solid var(--cr-line);background:var(--cr-card);box-shadow:var(--cr-shadow)}
+</style>
 </head>
 
 <body>
@@ -5944,12 +5972,15 @@ function refreshGroupTicks(){
   });
 }
 function finalizeGroupRows(box){
+  const key=el=>el.classList.contains('g-row')?el.dataset.sender:(el.classList.contains('msg-bubble')&&el.classList.contains('mine')?'__me':null);
   const kids=Array.from(box.children).filter(c=>c.classList&&(c.classList.contains('g-row')||c.classList.contains('msg-bubble')||c.classList.contains('sys-msg')));
   kids.forEach((el,i)=>{
-    if(!el.classList.contains('g-row'))return;
-    const s=el.dataset.sender,p=kids[i-1],n=kids[i+1];
-    el.classList.toggle('g-first',!(p&&p.classList.contains('g-row')&&p.dataset.sender===s));
-    el.classList.toggle('g-last',!(n&&n.classList.contains('g-row')&&n.dataset.sender===s));
+    const s=key(el);if(!s)return;
+    const p=kids[i-1],n=kids[i+1];
+    const first=!(p&&key(p)===s),last=!(n&&key(n)===s);
+    el.classList.toggle('g-first',first);el.classList.toggle('g-last',last);
+    const b=el.classList.contains('g-row')?el.querySelector('.msg-bubble'):el;
+    if(b){b.classList.toggle('gb-first',first);b.classList.toggle('gb-last',last);}
   });
 }
 let lastGroupReadWrite=0;
@@ -6292,8 +6323,8 @@ function gCanSend(kind,uid,d){
 }
 function gTitle(uid,d){d=gMeta(d);const t=d.titles&&d.titles[uid];if(t)return t;const r=gRole(uid,d);return r==='owner'?'المالك':r==='admin'?'مشرف':'';}
 function groupSenderHtml(uid){
-  const t=gTitle(uid);
-  return '<div class="g-sender" style="color:'+gColor(uid)+'"><span class="g-sn">'+esc(gUserName(uid))+'</span>'+(t?'<span class="g-role'+(gRole(uid)==='member'?' m':'')+'">'+esc(t)+'</span>':'')+'</div>';
+  const t=gTitle(uid),r=gRole(uid);
+  return '<div class="g-sender" style="color:'+gColor(uid)+'"><span class="g-sn">'+esc(gUserName(uid))+'</span>'+(t?'<span class="g-role g-role-'+r+'">'+esc(t)+'</span>':'')+'</div>';
 }
 function roleTag(uid,d){const t=gTitle(uid,d);return t?'<span class="gi-tag'+(gRole(uid,d)==='member'?' m':'')+'">'+esc(t)+'</span>':'';}
 function gUpdate(data){return db.collection('chats').doc(activeChatId).update(data);}
