@@ -2719,6 +2719,16 @@ function renderNotificationSettings() {
 }
 
 function requestNotificationPermission() {
+  // داخل تطبيق Sketchware، اطلب إذن Android الأصلي بدل Web Notification API غير المدعوم في WebView.
+  if (window.BabylonAndroid && typeof window.BabylonAndroid.requestNativeNotificationPermission === 'function') {
+    window.onNativeNotificationPermissionResult = function(granted) {
+      try { localStorage.setItem('babylon_notification_push', String(!!granted)); } catch (e) {}
+      renderNotificationSettings();
+      showToast(granted ? 'تم تفعيل إشعارات الجهاز' : 'لم يتم منح إذن إشعارات الجهاز');
+    };
+    window.BabylonAndroid.requestNativeNotificationPermission();
+    return;
+  }
   if (!("Notification" in window)) {
     return showToast("متصفحك لا يدعم الإشعارات");
   }
