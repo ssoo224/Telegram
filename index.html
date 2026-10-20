@@ -4112,11 +4112,19 @@ function startRecording() {
     return showToast("المتصفح لا يدعم تسجيل الصوت");
   }
 
-  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-    mediaRecorder = new MediaRecorder(stream);
+  navigator.mediaDevices.getUserMedia({
+    audio: { channelCount: 1, sampleRate: 48000, sampleSize: 16, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+  }).then(stream => {
+    /* OGG/Opus أولاً (48kHz، 64kbps)، مع بدائل للمتصفحات التي لا تدعمه */
+    const mime = ['audio/ogg;codecs=opus', 'audio/ogg', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
+      .find(t => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+    const opts = { audioBitsPerSecond: 64000 };
+    if (mime) opts.mimeType = mime;
+    try { mediaRecorder = new MediaRecorder(stream, opts); }
+    catch (_) { mediaRecorder = new MediaRecorder(stream); }
     audioChunks = [];
 
-    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size) audioChunks.push(e.data); };
     mediaRecorder.start();
 
     recordSeconds = 0;
@@ -4147,7 +4155,7 @@ function stopAndSendRecording() {
 
   const voiceSeconds = Math.max(1, recordSeconds);
   mediaRecorder.onstop = () => {
-    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    const audioBlob = new Blob(audioChunks, { type: ((mediaRecorder && mediaRecorder.mimeType) || 'audio/webm').split(';')[0] });
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64Audio = reader.result;
