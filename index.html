@@ -1943,14 +1943,15 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 </style>
 
 <style id="babylon-header-story-preview-refine">
-/* Keep published stories directly to the RIGHT of the profile avatar, at matching size. */
+/* Small clean story avatars beside the profile avatar; no story-strip borders or labels. */
 #mainHeader .main-header-actions{direction:ltr!important}
-#hdrStoryPreviews{direction:ltr!important;align-self:center!important;max-width:160px!important;overflow:hidden!important;gap:5px!important;border-top:0!important;border-bottom:0!important;border-block:0!important;padding-top:0!important;padding-bottom:0!important;margin-block:0!important}
-#hdrStoryPreviews .sb-item{flex:0 0 36px!important;width:36px!important;min-width:36px!important;height:42px!important;min-height:42px!important;border:0!important;border-top:0!important;border-bottom:0!important;border-block:0!important;padding:0!important;margin:0!important;background:transparent!important;box-shadow:none!important;outline:0!important}
-#hdrStoryPreviews .sb-item .avatar{width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;font-size:15px!important;margin:0!important;box-sizing:border-box!important}
-#hdrStoryPreviews .sb-item .avatar.sring::after{inset:-2px!important;padding:2px!important}
-#hdrStoryPreviews .sb-item::before,#hdrStoryPreviews .sb-item::after{display:none!important}
-#hdrStoryPreviews{box-shadow:none!important}
+#hdrStoryPreviews{display:flex!important;direction:ltr!important;align-items:center!important;align-self:center!important;gap:5px!important;max-width:164px!important;overflow:hidden!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important;flex:0 1 auto!important}
+#hdrStoryPreviews .header-story-preview{display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 36px!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important;outline:0!important;cursor:pointer!important}
+#hdrStoryPreviews .header-story-preview .avatar{display:flex!important;width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;margin:0!important;box-sizing:border-box!important;border:0!important}
+#hdrStoryPreviews .header-story-preview .avatar.sring::after{inset:-2px!important;padding:2px!important}
+#hdrStoryPreviews .header-story-preview>span,#hdrStoryPreviews .header-story-preview .sb-plus,
+#hdrStoryPreviews .header-story-preview::before,#hdrStoryPreviews .header-story-preview::after{display:none!important}
+#hdrStoryPreviews.is-hidden{opacity:0!important;visibility:hidden!important;pointer-events:none!important;width:0!important;max-width:0!important;flex-basis:0!important;overflow:hidden!important}
 </style>
 
 </head>
@@ -7574,12 +7575,7 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
 /* Profile picture in the header (opens the stories bar) + floating "new group" circle */
 #hdrAvatarBtn{width:42px;height:42px;padding:0;border:0;background:transparent;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;flex:0 0 auto}
 #hdrAvatarBtn:active{transform:scale(.93)}
-#hdrStoryPreviews{display:flex;align-items:center;gap:4px;max-width:124px;overflow:hidden;flex:0 1 auto;transition:opacity .2s,transform .25s,width .25s;}
-#hdrStoryPreviews .sb-item{display:flex;align-items:center;justify-content:center;flex:0 0 30px;width:30px;min-width:30px;padding:0;margin:0;gap:0;cursor:pointer;}
-#hdrStoryPreviews .sb-item>span,#hdrStoryPreviews .sb-plus{display:none!important}
-#hdrStoryPreviews .sb-item .avatar{width:28px!important;height:28px!important;min-width:28px!important;font-size:12px!important;margin:0!important;}
-#hdrStoryPreviews .sb-item .avatar.sring::after{inset:-2px!important;padding:2px!important;}
-#hdrStoryPreviews.is-hidden{opacity:0;visibility:hidden;pointer-events:none;width:0!important;max-width:0!important;flex-basis:0!important;overflow:hidden;}
+#hdrStoryPreviews{display:flex;align-items:center;gap:5px;max-width:164px;overflow:hidden;flex:0 1 auto;transition:opacity .2s,transform .25s,width .25s;}
 #hdrAvatarBtn .avatar{width:36px!important;height:36px!important;min-width:36px;font-size:15px!important;margin:0;display:flex;align-items:center;justify-content:center;color:var(--cl-gold,#e4c45b)}
 #hdrAvatarBtn .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 #hdrAvatarBtn .sb-plus{display:none!important}
@@ -7606,10 +7602,15 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
     previews.innerHTML='';
     // The first item is the current user's own story; show other published stories beside the profile picture.
     Array.prototype.slice.call(bar.querySelectorAll('.sb-item')).slice(1,5).forEach(function(item){
-      var copy=item.cloneNode(true);copy.classList.add('header-story-preview');
-      copy.removeAttribute('role');
-      var label=copy.querySelector('span');if(label)label.style.display='none';
-      previews.appendChild(copy);
+      var preview=document.createElement('button');
+      preview.type='button';
+      preview.className='header-story-preview';
+      preview.setAttribute('aria-label','فتح قصة '+((item.querySelector('span')||{}).textContent||'مستخدم'));
+      var avatar=item.querySelector('.avatar');
+      if(avatar) preview.appendChild(avatar.cloneNode(true));
+      var action=item.getAttribute('onclick');
+      if(action) preview.addEventListener('click',function(){ try { (new Function(action))(); } catch(e){} });
+      previews.appendChild(preview);
     });
     previews.classList.toggle('is-hidden',previews.children.length===0);
   }
