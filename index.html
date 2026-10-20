@@ -3510,6 +3510,29 @@ function clearSearchInput() {
   input.focus();
 }
 const BABYLON_RECENT_SEARCH_KEY = "babylon_recent_search_users_v1";
+let recentSearchSelectionMode = false;
+let selectedRecentSearchIds = new Set();
+function toggleRecentSearchSelectionMode() {
+  recentSearchSelectionMode = !recentSearchSelectionMode;
+  selectedRecentSearchIds.clear();
+  const input = document.getElementById("searchInput");
+  if (input && !input.value.trim()) renderRecentSearchUsers(document.getElementById("searchResults"));
+}
+function toggleRecentSearchItem(id, checked) {
+  if (checked) selectedRecentSearchIds.add(id); else selectedRecentSearchIds.delete(id);
+  const count = document.getElementById("recentSearchSelectedCount");
+  if (count) count.textContent = selectedRecentSearchIds.size ? `تم تحديد ${selectedRecentSearchIds.size}` : "حدد المحادثات";
+}
+function deleteSelectedRecentSearchUsers() {
+  if (!selectedRecentSearchIds.size) { if (typeof showToast === "function") showToast("حدد محادثة واحدة على الأقل"); return; }
+  const ids = selectedRecentSearchIds;
+  const kept = getRecentSearchUsers().filter(u => !ids.has(u.id));
+  try { localStorage.setItem(BABYLON_RECENT_SEARCH_KEY, JSON.stringify(kept)); } catch (_) {}
+  selectedRecentSearchIds = new Set();
+  recentSearchSelectionMode = false;
+  renderRecentSearchUsers(document.getElementById("searchResults"));
+  if (typeof showToast === "function") showToast("تم حذف المحادثات المحددة من قائمة البحث");
+}
 function getRecentSearchUsers() {
   try { return JSON.parse(localStorage.getItem(BABYLON_RECENT_SEARCH_KEY) || "[]").filter(u => u && u.id); }
   catch (_) { return []; }
@@ -3533,7 +3556,10 @@ function renderRecentSearchUsers(res) {
     res.innerHTML = '<div class="search-state-card search-empty-state"><span class="search-empty-icon">⌕</span><strong>ابحث عن أصدقائك</strong><span>اكتب اسم المستخدم، وستظهر هنا المحادثات التي فتحتها مؤخرًا.</span></div>';
     return;
   }
-  const label = document.createElement("div"); label.className = "search-recent-label"; label.textContent = "المحادثات التي زرتها"; res.appendChild(label);
+  const toolbar = document.createElement("div");
+  toolbar.className = "search-recent-toolbar";
+  toolbar.innerHTML = `<span class="search-recent-label">المحادثات التي زرتها</span><span id="recentSearchSelectedCount" class="search-recent-count">${selectedRecentSearchIds.size ? `تم تحديد ${selectedRecentSearchIds.size}` : "الأحدث أولاً"}</span><button type="button" class="search-manage-btn" onclick="toggleRecentSearchSelectionMode()">${recentSearchSelectionMode ? "إلغاء" : "تحديد"}</button>${recentSearchSelectionMode ? '<button type="button" class="search-delete-btn" onclick="deleteSelectedRecentSearchUsers()">حذف المحدد</button>' : ""}`;
+  res.appendChild(toolbar);
   recent.forEach(u => {
     const div = document.createElement("div"); div.className = "chat-item search-user-card search-recent-card";
     const avatar = document.createElement("div"); avatar.className = "avatar " + toneCls(u);
@@ -3545,7 +3571,19 @@ function renderRecentSearchUsers(res) {
     const sub = document.createElement("div"); sub.className = "chat-item-sub"; sub.textContent = "@" + (u.username || "");
     info.append(name, sub);
     div.append(avatar, info);
-    div.onclick = () => openChatRoom(u.id);
+    if (recentSearchSelectionMode) {
+      const check = document.createElement("input");
+      check.type = "checkbox"; check.className = "recent-search-check";
+      check.checked = selectedRecentSearchIds.has(u.id);
+      check.setAttribute("aria-label", "تحديد " + (u.displayName || "المحادثة"));
+      check.onclick = e => e.stopPropagation();
+      check.onchange = () => toggleRecentSearchItem(u.id, check.checked);
+      div.appendChild(check);
+      div.classList.toggle("selected-for-delete", check.checked);
+      div.onclick = () => { check.checked = !check.checked; toggleRecentSearchItem(u.id, check.checked); div.classList.toggle("selected-for-delete", check.checked); };
+    } else {
+      div.onclick = () => openChatRoom(u.id);
+    }
     res.appendChild(div);
   });
 }
@@ -3577,7 +3615,7 @@ function searchUsers() {
       res.innerHTML = "";
       let found = 0;
       snap.forEach(doc => {
-        const u = doc.data();
+        const u = { id: doc.id, ...doc.data() };
         if (u.id === (currentUser && currentUser.uid) || myBlocks[doc.id]) return;
         found++;
         const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
@@ -7865,3 +7903,13 @@ function openMention(username){
   }
 })();
 </script>
+
+<style id="recent-search-management-fix">
+.search-recent-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 6px;position:sticky;top:0;z-index:4;background:var(--babylon-dark)}
+.search-recent-toolbar .search-recent-label{font-size:13px;font-weight:750;color:var(--babylon-gold);margin-inline-end:auto}
+.search-recent-count{font-size:11px;color:var(--text-muted)}
+.search-manage-btn,.search-delete-btn{border:1px solid var(--babylon-border);border-radius:10px;padding:7px 11px;background:var(--babylon-surface-card);color:var(--text-main);font-size:12px;cursor:pointer}
+.search-delete-btn{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.4);color:#f87171}
+.recent-search-check{width:19px;height:19px;accent-color:var(--babylon-gold);flex:0 0 19px}
+.search-results .search-recent-card.selected-for-delete{background:rgba(194,157,48,.12);border:1px solid rgba(194,157,48,.5)}
+</style>
