@@ -2084,14 +2084,14 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
       <div class="search-screen-top">
         <div class="search-screen-heading">
           <button class="icon-btn search-back-btn" onclick="goHome()" title="الرجوع" aria-label="رجوع"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
-          <div class="search-heading-copy"><h2>بحث عن مستخدمين</h2><p>اعثر على أصدقائك باستخدام اسم المستخدم</p></div>
+          <div class="search-heading-copy"><h2>بحث المستخدمين</h2></div>
         </div>
         <div class="search-field">
           <svg class="search-field-icon" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.5 4.5"></path></svg>
-          <input id="searchInput" class="search-input" type="search" autocomplete="off" spellcheck="false" placeholder="اسم المستخدم أو @username" oninput="searchUsers()">
+          <input id="searchInput" class="search-input" type="search" autocomplete="off" spellcheck="false" placeholder="ابحث بـ @username" oninput="searchUsers()">
           <button id="searchClearBtn" class="search-clear-btn hidden" type="button" onclick="clearSearchInput()" aria-label="مسح البحث">×</button>
         </div>
-        <div id="searchHint" class="search-hint">اكتب 3 أحرف على الأقل للبدء بالبحث.</div>
+        <div id="searchHint" class="search-hint">اكتب 3 أحرف على الأقل</div>
       </div>
       <div id="searchResults" class="chat-list search-results"></div>
     </div>
@@ -3159,7 +3159,7 @@ function goHome() {
   document.getElementById("searchResults").innerHTML = "";
   const searchClearBtn = document.getElementById("searchClearBtn");
   if (searchClearBtn) searchClearBtn.classList.add("hidden");
-  setSearchHint("اكتب 3 أحرف على الأقل للبدء بالبحث.", "idle");
+  setSearchHint("اكتب 3 أحرف على الأقل", "idle");
   showView("homeView");
   loadChats();
 }
@@ -3513,7 +3513,7 @@ function clearSearchInput() {
 /* سجل المحادثات المزارة أُزيل نهائياً: نمسح أي بيانات قديمة كانت محفوظة على الجهاز */
 try { localStorage.removeItem("babylon_recent_search_users_v1"); } catch (_) {}
 function renderSearchIdleStateBase(res) {
-  res.innerHTML = '<div class="search-state-card search-empty-state"><span class="search-empty-icon">⌕</span><strong>ابحث عن أصدقائك</strong><span>اكتب اسم المستخدم للعثور على الشخص الذي تريد مراسلته.</span></div>';
+  res.innerHTML = '<div class="search-state-card search-empty-state"><span class="search-empty-icon">⌕</span><strong>ابحث عن أصدقاء</strong><span>اكتب اسم المستخدم</span></div>';
 }
 
 function searchUsers() {
@@ -3528,10 +3528,10 @@ function searchUsers() {
   res.innerHTML = "";
   if (q.length < 3) {
     if (!q) renderSearchIdleState(res);
-    setSearchHint(q.length ? `باقي ${3 - q.length} أحرف لبدء البحث.` : "اكتب 3 أحرف على الأقل للبدء بالبحث.", "idle");
+    setSearchHint(q.length ? `باقي ${3 - q.length} أحرف` : "اكتب 3 أحرف على الأقل", "idle");
     return;
   }
-  setSearchHint("جارٍ البحث عن المستخدمين…", "loading");
+  setSearchHint("جارٍ البحث…", "loading");
   const loading = document.createElement("div");
   loading.className = "search-state-card";
   loading.innerHTML = '<span class="search-loading-dot"></span><span>جارٍ البحث…</span>';
@@ -3556,24 +3556,24 @@ function searchUsers() {
             <div class="chat-item-name">${esc(u.displayName || "مستخدم")} ${verifiedBadge}</div>
             <div class="chat-item-sub">@${esc(u.username || "")}</div>
           </div>
-          <span class="search-result-arrow" aria-hidden="true">›</span>`;
+          <span class="search-result-arrow" aria-hidden="true">‹</span>`;
         div.onclick = () => openUserProfileDirect(u);
         res.appendChild(div);
       });
       if (!found) {
         const empty = document.createElement("div");
         empty.className = "search-state-card search-empty-state";
-        empty.innerHTML = '<span class="search-empty-icon">⌕</span><strong>ما لقينا مستخدم بهذا الاسم</strong><span>تأكد من كتابة اسم المستخدم بشكل صحيح.</span>';
+        empty.innerHTML = '<span class="search-empty-icon">⌕</span><strong>لا يوجد مستخدم</strong><span>تحقق من الاسم</span>';
         res.appendChild(empty);
-        setSearchHint("اكتمل البحث — لا توجد نتائج مطابقة.", "empty");
+        setSearchHint("لا نتائج", "empty");
       } else {
-        setSearchHint(`نتائج البحث: ${found} مستخدم${found === 1 ? "" : "ين"}.`, "results");
+        setSearchHint(`${found} نتيجة`, "results");
       }
     }).catch(err => {
       if (token !== searchRequestToken) return;
       console.warn("User search failed:", err);
-      res.innerHTML = '<div class="search-state-card search-empty-state"><span class="search-empty-icon">!</span><strong>تعذر إكمال البحث</strong><span>تحقق من الاتصال ثم حاول مرة أخرى.</span></div>';
-      setSearchHint("حدثت مشكلة أثناء البحث.", "error");
+      res.innerHTML = '<div class="search-state-card search-empty-state"><span class="search-empty-icon">!</span><strong>تعذر البحث</strong><span>تحقق من الاتصال</span></div>';
+      setSearchHint("تعذر البحث", "error");
     });
 }
 function openUserProfileDirect(u) {
@@ -7986,12 +7986,12 @@ function openMention(username){
       if(rMode){head.innerHTML='<span>'+rSel.size+' محدد</span><span class="recent-actions"><button type="button" class="r-del">حذف</button><button type="button" class="r-cancel">إلغاء</button></span>';
         head.querySelector('.r-del').onclick=function(){setRecents(getRecents().filter(function(x){return !rSel.has(x);}));rSel.clear();rMode=false;renderRecents(res);};
         head.querySelector('.r-cancel').onclick=function(){rSel.clear();rMode=false;renderRecents(res);};
-      }else head.innerHTML='<span>آخر الزيارات</span>';
+      }else head.innerHTML='<span>الأخيرة</span>';
     }
     updHead();
     ids.forEach(function(id){
       var div=document.createElement('div');div.className='chat-item search-user-card recent-item';div.dataset.rid=id;
-      div.innerHTML='<div class="avatar"></div><div class="chat-item-info"><div class="chat-item-name">…</div><div class="chat-item-sub"></div></div><span class="search-result-arrow" aria-hidden="true">›</span>';
+      div.innerHTML='<div class="avatar"></div><div class="chat-item-info"><div class="chat-item-name">…</div><div class="chat-item-sub"></div></div><span class="search-result-arrow" aria-hidden="true">‹</span>';
       list.appendChild(div);
       var u0=null;
       fetchUser(id).then(function(u){
@@ -8209,4 +8209,43 @@ function openMention(username){
 .app-container[data-app-theme="light"] #chatView#chatView #multiSelectBar .msb-fwd{background:rgba(201,154,28,.14)!important;color:#9c7410!important}
 #chatView#chatView #multiSelectBar .msb-del{box-shadow:0 4px 12px rgba(216,58,55,.32)}
 .msb-fwd svg,.msb-del svg{width:18px;height:18px}
+</style>
+
+<style id="babylon-search-redesign">
+#searchView#searchView{--sr-bg:#0f172a;--sr-top:linear-gradient(180deg,#1e293b,#17212b);--sr-field:#0f172a;--sr-card:#1b2636;--sr-line:rgba(148,163,184,.16);--sr-chip:rgba(228,196,91,.12);--sr-gold:#e4c45b;--sr-text:#f1f5f9;--sr-mute:#8ea0b4;--sr-shadow:0 6px 18px rgba(0,0,0,.28);background:var(--sr-bg)!important}
+.app-container[data-app-theme="light"] #searchView#searchView{--sr-bg:#f3f6fb;--sr-top:linear-gradient(180deg,#fff,#f8fafd);--sr-field:#eef2f8;--sr-card:#fff;--sr-line:#e3e9f2;--sr-chip:rgba(194,157,48,.13);--sr-gold:#b98710;--sr-text:#17212b;--sr-mute:#6b7a8c;--sr-shadow:0 6px 16px rgba(28,45,70,.07)}
+#searchView#searchView .search-screen-top{padding:14px 14px 16px!important;background:var(--sr-top)!important;border:0!important;border-radius:0 0 30px 30px!important;box-shadow:var(--sr-shadow)!important;position:relative;z-index:2}
+#searchView#searchView .search-screen-heading{display:flex;align-items:center;gap:10px;margin:0 0 14px!important}
+#searchView#searchView .search-back-btn{width:42px!important;height:42px!important;flex:0 0 42px!important;border-radius:16px!important;border:1px solid var(--sr-line)!important;background:var(--sr-field)!important;color:var(--sr-text)!important;display:grid;place-items:center;transition:transform .15s}
+#searchView#searchView .search-back-btn:active{transform:scale(.92)}
+#searchView#searchView .search-heading-copy h2{margin:0!important;font-size:19px!important;font-weight:800;color:var(--sr-text)!important;letter-spacing:-.2px}
+#searchView#searchView .search-field{min-height:52px!important;border-radius:999px!important;padding:0 8px 0 18px!important;gap:10px!important;background:var(--sr-field)!important;border:1.5px solid transparent!important;box-shadow:inset 0 1px 3px rgba(0,0,0,.12)!important;transition:border-color .2s,box-shadow .2s,background .2s}
+#searchView#searchView .search-field:focus-within{border-color:var(--sr-gold)!important;box-shadow:0 0 0 4px rgba(228,196,91,.14)!important}
+#searchView#searchView .search-field-icon{color:var(--sr-gold)!important;width:20px;height:20px}
+#searchView#searchView .search-input{font-size:15px!important;color:var(--sr-text)!important;background:transparent!important}
+#searchView#searchView .search-input::placeholder{color:var(--sr-mute);opacity:.85}
+#searchView#searchView .search-clear-btn{width:32px;height:32px;flex:0 0 32px;border:0;border-radius:50%;background:var(--sr-chip);color:var(--sr-gold);font-size:20px;line-height:1;display:grid;place-items:center;cursor:pointer}
+#searchView#searchView .search-clear-btn.hidden{display:none}
+#searchView#searchView .search-hint{margin:10px 6px 0!important;padding:0!important;font-size:12px!important;min-height:16px;color:var(--sr-mute)!important}
+#searchView#searchView .search-hint[data-state="loading"]{color:var(--sr-gold)!important}
+#searchView#searchView .search-hint[data-state="error"]{color:#f87171!important}
+#searchView#searchView .search-results{padding:16px 12px 26px!important;gap:10px;background:var(--sr-bg)!important;display:flex;flex-direction:column}
+#searchView#searchView .search-user-card{display:flex;align-items:center;gap:13px!important;margin:0!important;padding:11px 14px!important;min-height:74px!important;border-radius:24px!important;background:var(--sr-card)!important;border:1px solid var(--sr-line)!important;box-shadow:var(--sr-shadow)!important;transition:transform .15s,border-color .15s}
+#searchView#searchView .search-user-card:active{transform:scale(.975)}
+#searchView#searchView .search-user-card:hover{border-color:rgba(228,196,91,.45)!important}
+#searchView#searchView .search-user-card.cl-selected{border-color:var(--sr-gold)!important;background:var(--sr-chip)!important}
+#searchView#searchView .search-user-card .avatar{width:50px!important;height:50px!important;min-width:50px;flex:0 0 50px!important;border-radius:50%!important;overflow:hidden;box-shadow:0 0 0 2px var(--sr-card),0 0 0 4px rgba(228,196,91,.55)}
+#searchView#searchView .search-user-card .chat-item-name{font-size:15px!important;font-weight:750;color:var(--sr-text)!important}
+#searchView#searchView .search-user-card .chat-item-sub{font-size:12.5px!important;color:var(--sr-mute)!important;direction:ltr;text-align:right;opacity:1!important}
+#searchView#searchView .search-result-arrow{width:32px;height:32px;flex:0 0 32px;border-radius:50%;display:grid;place-items:center;background:var(--sr-chip);color:var(--sr-gold)!important;font-size:22px!important;line-height:1;opacity:1!important;padding-bottom:3px}
+#searchView#searchView .search-state-card{margin:6px 0!important;padding:24px 16px!important;border-radius:28px!important;background:var(--sr-card)!important;border:1px dashed var(--sr-line)!important;box-shadow:none!important;color:var(--sr-mute)!important}
+#searchView#searchView .search-empty-state{min-height:210px!important;justify-content:center}
+#searchView#searchView .search-empty-state strong{font-size:16px;color:var(--sr-text)!important}
+#searchView#searchView .search-empty-icon{width:58px!important;height:58px!important;border-radius:20px!important;background:var(--sr-chip)!important;color:var(--sr-gold)!important;font-size:30px!important}
+#searchView#searchView .recent-head{display:flex;align-items:center;justify-content:space-between;padding:0 8px 10px;font-size:12.5px;font-weight:700;color:var(--sr-mute)}
+#searchView#searchView .recent-actions{display:flex;gap:8px}
+#searchView#searchView .recent-head button{border:0;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:700;background:var(--sr-chip);color:var(--sr-gold);cursor:pointer}
+#searchView#searchView .recent-head .r-del{background:rgba(248,113,113,.15);color:#f87171}
+#searchView#searchView .recent-head+div{display:flex;flex-direction:column;gap:10px}
+@media(prefers-reduced-motion:reduce){#searchView#searchView *{transition:none!important}}
 </style>
