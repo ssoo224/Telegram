@@ -1875,6 +1875,13 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal .story-type-li
 #chatView #textInputBar > button[type="submit"] svg *,
 #chatView #textInputBar > button[type="submit"] i[data-ic] svg{color:#fff!important;stroke:#fff!important}
 </style>
+<style id="sent-message-slightly-thinner">
+/* تقليل ارتفاع الرسائل المرسلة بدرجة بسيطة دون تغيير حجم الخط */
+#chatView #messagesArea .msg-bubble.mine {
+  padding-top: 8px !important;
+  padding-bottom: 19px !important;
+}
+</style>
 <style id="chat-room-tweaks-2">
 /* اتجاه الرسائل: رسائلي يميناً ورسائل الطرف الآخر يساراً */
 #chatView #messagesArea .msg-bubble.mine{align-self:flex-start!important;border-radius:20px 20px 6px 20px!important}
@@ -2451,7 +2458,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
         <span>الملف الشخصي</span>
       </button>
       <button id="navSettings" class="nav-item" onclick="openSettings()">
-        <span class="nav-icon"><i data-ic="sliders" data-size="22"></i></span>
+        <span class="nav-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span>
         <span>الإعدادات</span>
       </button>
     </nav>
@@ -5885,7 +5892,7 @@ function groupAvHtml(d,cls){
   d=d||{};
   return '<div class="g-av '+(cls||'')+'" style="background:'+(d.photo?'#223':gGrad(d.name||'g'))+'">'+(d.photo?'<img src="'+esc(d.photo)+'" alt="">':esc((d.name||'؟').charAt(0)))+'</div>';
 }
-const IC_USERS='<svg class="g-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4M20 20v-1.5a3.5 3.5 0 0 0-2.6-3.4M14.6 5.3a3.2 3.2 0 0 1 0 6.2"/></svg>';
+const IC_USERS='<svg class="g-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4M20 20v-1.5a3.5 3.5 0 0 0-2.6-3.4M14.6 5.3a3.2 3.2 0 0 1 0 6.2"/></svg>';
 
 /* ---------- عنصر المجموعة بقائمة المحادثات ---------- */
 function paintGroupBadges(el){
