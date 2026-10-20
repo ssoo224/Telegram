@@ -2360,7 +2360,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 
       <div id="pinnedBar" class="pinned-bar hidden" role="button" aria-label="الرسالة المثبتة"></div>
       <div id="messagesArea" class="messages-area"></div>
-      <div id="multiSelectBar" class="multi-select-bar hidden" role="toolbar" aria-label="إجراءات الرسائل المحددة"><span id="multiSelectCount">تم تحديد 0</span><button type="button" onclick="deleteMultipleMessagesForMe()">حذف لدي فقط</button><button type="button" onclick="clearMessageSelection()" aria-label="إلغاء التحديد">إلغاء</button></div>
+      <div id="multiSelectBar" class="multi-select-bar hidden" role="toolbar" aria-label="إجراءات الرسائل المحددة"><button type="button" class="msb-close" onclick="clearMessageSelection()" aria-label="إلغاء التحديد"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button><div class="msb-count"><b id="multiSelectCount">0</b><span>محدد</span></div><button type="button" class="msb-del" onclick="openMultiDeleteDialog()" aria-label="حذف الرسائل المحددة"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg><span>حذف</span></button></div>
 
       <div class="chat-input-container">
         <div id="replyPreviewBar" class="reply-preview-bar hidden" role="status" aria-live="polite">
@@ -2644,6 +2644,7 @@ let selectedMsgText = null;
 let selectedMsgSender = null;
 let selectedMsgReactions = {};
 let replyingToText = null;
+let replyingToId = null;
 let editingMsgId = null;
 
 let mediaRecorder = null;
@@ -3511,7 +3512,7 @@ function clearSearchInput() {
 }
 /* سجل المحادثات المزارة أُزيل نهائياً: نمسح أي بيانات قديمة كانت محفوظة على الجهاز */
 try { localStorage.removeItem("babylon_recent_search_users_v1"); } catch (_) {}
-function renderSearchIdleState(res) {
+function renderSearchIdleStateBase(res) {
   res.innerHTML = '<div class="search-state-card search-empty-state"><span class="search-empty-icon">⌕</span><strong>ابحث عن أصدقائك</strong><span>اكتب اسم المستخدم للعثور على الشخص الذي تريد مراسلته.</span></div>';
 }
 
@@ -3639,6 +3640,7 @@ function goBackFromOtherProfile() {
 function startChatFromProfile() {
   if (!currentChatOtherUserId) return;
   const targetId = currentChatOtherUserId;
+  try { recordRecentVisit(targetId); } catch (e) {}
   const chatId = [currentUser.uid, targetId].sort().join("__");
   activeChatId = chatId;
 
@@ -3767,6 +3769,7 @@ function openChatRoom(otherUserId, keepLimit) {
 
       snap.docs.slice().reverse().forEach(doc => renderMsgDoc(doc, box, existingTyping));
       if (messageSelectionMode) refreshMessageSelectionUI();
+      if (window.__pendingJump) setTimeout(runPendingJump, 30);
       if (loadingOlder) { box.scrollTop = Math.max(0, box.scrollHeight - prevH); loadingOlder = false; }
       else box.scrollTop = box.scrollHeight;
     });
@@ -3802,7 +3805,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         
         let htmlContent = "";
         if (grp && !isMine) htmlContent += groupSenderHtml(m.senderId);
-        if (m.replyTo) htmlContent += `<div class="reply-quote">${esc(m.replyTo)}</div>`;
+        if (m.replyTo) htmlContent += `<div class="reply-quote" data-reply-id="${esc(m.replyToId||'')}" role="button">${esc(m.replyTo)}</div>`;
         if (m.storyReply) {
           const sr = m.storyReplyData || {};
           const previewText = sr.caption || (sr.videoUrl ? 'قصة فيديو' : 'قصة');
@@ -3811,7 +3814,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         }
 
         if (m.audioUrl) {
-          htmlContent += `<div class="audio-player-card custom-voice-card" aria-label="رسالة صوتية"><audio class="voice-audio" preload="metadata" src="${esc(m.audioUrl)}"></audio><button type="button" class="voice-play-btn" onclick="toggleVoicePlayback(this)" aria-label="تشغيل الرسالة الصوتية"><svg class="voice-play-icon" viewBox="0 0 24 24" width="23" height="23" fill="currentColor" aria-hidden="true"><path d="M8 5.8c0-.8.9-1.3 1.6-.8l9.2 6.2a1 1 0 0 1 0 1.6l-9.2 6.2c-.7.5-1.6 0-1.6-.8z"/></svg></button><div class="audio-player-content"><div class="audio-player-title">رسالة صوتية</div><div class="voice-progress-row"><input class="voice-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="تقدم الصوت" oninput="seekVoicePlayback(this)"><span class="voice-time">0:00</span></div><div class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>`;
+          htmlContent += `<div class="audio-player-card custom-voice-card" aria-label="رسالة صوتية" data-dur="${Number(m.duration)||0}"><audio class="voice-audio" preload="metadata" src="${esc(m.audioUrl)}"></audio><button type="button" class="voice-play-btn" onclick="toggleVoicePlayback(this)" aria-label="تشغيل الرسالة الصوتية"><svg class="voice-play-icon" viewBox="0 0 24 24" width="23" height="23" fill="currentColor" aria-hidden="true"><path d="M8 5.8c0-.8.9-1.3 1.6-.8l9.2 6.2a1 1 0 0 1 0 1.6l-9.2 6.2c-.7.5-1.6 0-1.6-.8z"/></svg></button><div class="audio-player-content"><div class="audio-player-title">رسالة صوتية</div><div class="voice-progress-row"><input class="voice-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="تقدم الصوت" oninput="seekVoicePlayback(this)"><span class="voice-time">${m.duration?formatVoiceTime(m.duration):'0:00'}</span></div><div class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>`;
         } else {
           htmlContent += m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`;
         }
@@ -3826,6 +3829,7 @@ function renderMsgDoc(doc, box, existingTyping) {
 
         htmlContent += `<div class="msg-meta"><span>${rawTimeStr}</span> ${checkHtml}</div>`;
         b.innerHTML = htmlContent;
+        try { primeVoiceDuration(b); } catch (e) {}
         const msgImg = b.querySelector(".msg-image img");
         if (msgImg) msgImg.onclick = (ev) => { ev.stopPropagation(); openImageViewer(msgImg.src); };
 
@@ -3855,7 +3859,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         b.ontouchend = (e) => {
           clearTimeout(pressTimer);
           if (ignoreTouch) { ignoreTouch = false; return; }
-          if (touchStartX - e.changedTouches[0].clientX > 50) triggerSwipeReply(m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"));
+          if (touchStartX - e.changedTouches[0].clientX > 50) triggerSwipeReply(m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), doc.id);
         };
 
         b.onmousedown = (e) => {
@@ -3870,6 +3874,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         b.onmouseup = b.onmouseleave = () => clearTimeout(pressTimer);
         b.onclick = (e) => {
           if (suppressNextMessageClick) { suppressNextMessageClick = false; return; }
+          { const rq = e.target.closest && e.target.closest('.reply-quote'); if (rq && !messageSelectionMode) { e.preventDefault(); e.stopPropagation(); goToReplied(rq.dataset.replyId, rq.textContent, doc.id); return; } }
           // Keep media controls interactive; a normal tap on the message opens its actions,
           // while a long press enters multi-select mode.
           // The play button swaps its own icon while handling the click, which detaches e.target; check the original event path too.
@@ -3916,7 +3921,8 @@ function refreshMessageSelectionUI() {
   });
   const bar = document.getElementById('multiSelectBar');
   const count = document.getElementById('multiSelectCount');
-  if (count) count.textContent = `تم تحديد ${selectedMessageIds.size} ${selectedMessageIds.size === 1 ? 'رسالة' : 'رسائل'}`;
+  if (count) count.textContent = String(selectedMessageIds.size);
+  document.getElementById('chatView')?.classList.toggle('msg-selecting', !!messageSelectionMode);
   if (bar) bar.classList.toggle('hidden', !messageSelectionMode);
 }
 function clearMessageSelection() {
@@ -3926,6 +3932,7 @@ function clearMessageSelection() {
     b.classList.remove('selected-message'); b.setAttribute('aria-selected','false');
   });
   document.getElementById('multiSelectBar')?.classList.add('hidden');
+  document.getElementById('chatView')?.classList.remove('msg-selecting');
 }
 function deleteMultipleMessagesForMe() {
   if (!activeChatId || !selectedMessageIds.size) return showToast('حدد رسالة واحدة على الأقل');
@@ -3937,8 +3944,9 @@ function deleteMultipleMessagesForMe() {
   showToast(`تم إخفاء ${ids.length} رسالة لديك فقط`);
 }
 
-function triggerSwipeReply(text) {
+function triggerSwipeReply(text, id) {
   replyingToText = text;
+  replyingToId = id || null;
   const previewText = document.getElementById("replyPreviewText");
   if (previewText) previewText.textContent = replyingToText || "رسالة";
   document.getElementById("replyPreviewBar").classList.remove("hidden");
@@ -4023,7 +4031,7 @@ function actionReply() {
   if (!selectedMsgId) return showToast("حدد رسالة أولاً");
   const text = selectedMsgText || "رسالة";
   document.getElementById("msgModal")?.classList.add("hidden");
-  triggerSwipeReply(text);
+  triggerSwipeReply(text, selectedMsgId);
 }
 
 function addReaction(emoji) {
@@ -4051,6 +4059,7 @@ function actionCopy() {
 
 function cancelReply() {
   replyingToText = null;
+  replyingToId = null;
   document.getElementById("replyPreviewBar").classList.add("hidden");
 }
 
@@ -4135,6 +4144,7 @@ function cancelRecording() {
 function stopAndSendRecording() {
   if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
 
+  const voiceSeconds = Math.max(1, recordSeconds);
   mediaRecorder.onstop = () => {
     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
     const reader = new FileReader();
@@ -4145,6 +4155,7 @@ function stopAndSendRecording() {
       db.collection("chats").doc(activeChatId).collection("messages").add({
         senderId: currentUser.uid,
         audioUrl: base64Audio,
+        duration: voiceSeconds,
         read: false,
         createdAt: Date.now()
       }).then(() => {
@@ -4197,7 +4208,7 @@ function sendMessage(e) {
       createdAt: Date.now()
     };
 
-    if (replyingToText) msgData.replyTo = replyingToText;
+    if (replyingToText) { msgData.replyTo = replyingToText; if (replyingToId) msgData.replyToId = replyingToId; }
     if (isGroupChat(activeChatId)) { const _mn = extractMentionUids(text); if (_mn.length) msgData.mentions = _mn; }
 
     db.collection("chats").doc(activeChatId).collection("messages").add(msgData).then(() => {
@@ -6016,6 +6027,7 @@ function openGroupRoom(chatId,keepLimit){
       snap.docs.slice().reverse().forEach(doc=>renderMsgDoc(doc,box,null));
       finalizeGroupRows(box);
       if(messageSelectionMode)refreshMessageSelectionUI();
+      if(window.__pendingJump)setTimeout(runPendingJump,30);
       if(loadingOlder){box.scrollTop=Math.max(0,box.scrollHeight-prevH);loadingOlder=false;}else box.scrollTop=box.scrollHeight;
       if(snap.docs[0])markGroupRead(chatId,snap.docs[0].data());
     });
@@ -7856,4 +7868,203 @@ function openMention(username){
 #chatView .msg-bubble.mine .voice-play-btn { background: #fff; color: #a9791a; box-shadow: 0 2px 8px rgba(0,0,0,.14); }
 #chatView .msg-bubble.mine .voice-progress { accent-color: #fff; }
 #chatView .msg-bubble.mine .custom-voice-card.is-playing .voice-wave i { background: #fff; }
+/* ===== v3 additions ===== */
+.voice-time{visibility:visible!important}
+.reply-quote[data-reply-id]{cursor:pointer}
+.reply-quote:active{opacity:.75}
+/* زر رسالة ذهبي متدرج */
+.app-container #otherUserProfileView .pf-actions .pf-btn.primary.pf-btn.primary{background:linear-gradient(135deg,#f6e08a 0%,#e4c45b 38%,#c99a1c 72%,#9c7410 100%)!important;color:#1b1405!important;border:none!important;box-shadow:0 4px 14px rgba(201,154,28,.35),inset 0 1px 0 rgba(255,255,255,.45)!important;font-weight:800}
+.app-container #otherUserProfileView .pf-actions .pf-btn.primary.pf-btn.primary svg,.app-container #otherUserProfileView .pf-actions .pf-btn.primary.pf-btn.primary span{color:#1b1405!important;stroke:currentColor}
+/* تحديد المحادثات: شريط ذهبي + توهج خفيف جداً */
+#homeView #chatList .chat-item.cl-selected.cl-selected,.app-container #homeView#homeView #chatList .chat-item.cl-selected.cl-selected,.recent-item.cl-selected.cl-selected{background:rgba(228,196,91,.05)!important;box-shadow:inset 0 0 0 1.5px var(--cl-gold,#e4c45b),0 0 10px rgba(228,196,91,.14)!important;border-radius:14px}
+.chat-item.cl-selected .cl-av::after,.recent-item.cl-selected .avatar::after{display:none!important;content:none!important}
+/* شريط التحديد الرئيسي: أنحف وأكثر احترافية */
+#selBar.main-header{min-height:0!important;height:54px!important;padding:0 10px!important;border-bottom:1px solid rgba(228,196,91,.35)!important;background:var(--cl-bg,#0e1621)!important;box-shadow:0 1px 0 rgba(228,196,91,.12),0 6px 16px rgba(0,0,0,.12)}
+#selBar .sel-left{gap:4px}
+#selBar #selCount{font-size:17px!important;font-weight:800;color:var(--cl-gold,#e4c45b)!important;margin-inline-start:2px!important;display:flex;align-items:baseline;gap:6px}
+#selBar #selCount::after{content:"محدد";font-size:12px;font-weight:600;color:var(--cl-sub,#8798aa)}
+#selBar .icon-btn{width:38px!important;height:38px!important;border-radius:12px!important;display:flex;align-items:center;justify-content:center}
+#selBar .icon-btn svg{width:20px;height:20px}
+#selBar #selPinBtn{background:rgba(228,196,91,.12)!important;color:var(--cl-gold,#e4c45b)!important}
+#selBar .icon-btn.danger{background:rgba(240,96,93,.12)!important;color:#f0605d!important}
+#selBar .main-header-actions{display:flex;gap:8px}
+/* شريط تحديد الرسائل داخل المحادثة */
+#chatView #multiSelectBar.multi-select-bar{flex-wrap:nowrap;align-items:center;gap:10px;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid rgba(228,196,91,.4);background:var(--chat-panel-bg,var(--app-panel,#17212b));box-shadow:0 -6px 18px rgba(0,0,0,.15)}
+#chatView #multiSelectBar .msb-close{width:40px;height:40px;padding:0;border-radius:12px;border:1px solid rgba(127,140,160,.3);background:transparent;color:inherit;display:flex;align-items:center;justify-content:center}
+#chatView #multiSelectBar .msb-count{margin-inline-end:auto;display:flex;align-items:baseline;gap:6px;font-weight:700}
+#chatView #multiSelectBar .msb-count b{font-size:20px;color:#e4c45b}
+#chatView #multiSelectBar .msb-count span{font-size:13px;opacity:.7;font-weight:600;margin:0}
+#chatView #multiSelectBar .msb-del{display:flex;align-items:center;gap:7px;height:40px;padding:0 16px;border-radius:12px;border:none;background:rgba(240,96,93,.14);color:#f0605d;font-weight:700}
+#chatView #multiSelectBar .msb-del span{margin:0;font-weight:700}
+#chatView #multiSelectBar .msb-del:active,#chatView #multiSelectBar .msb-close:active{transform:scale(.95)}
+#chatView.msg-selecting .chat-input-container{display:none!important}
+#chatView .msg-bubble.selected-message{outline:2px solid rgba(228,196,91,.85);outline-offset:2px}
+/* آخر الزيارات */
+.recent-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px;font-size:13px;font-weight:700;color:var(--cl-sub,#8798aa)}
+.recent-head .recent-actions{display:flex;gap:8px;align-items:center}
+.recent-head button{border:none;border-radius:10px;padding:6px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.recent-head .r-del{background:rgba(240,96,93,.14);color:#f0605d}
+.recent-head .r-cancel{background:rgba(127,140,160,.15);color:inherit}
+.recent-item{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 </style>
+<script>
+(function(){
+  /* ---- مدة الصوتية قبل التشغيل ---- */
+  window.primeVoiceDuration=function(root){
+    root.querySelectorAll('.custom-voice-card').forEach(function(card){
+      var a=card.querySelector('.voice-audio'),t=card.querySelector('.voice-time');
+      if(!a||!t||Number(card.dataset.dur)>0)return;
+      var show=function(){var d=a.duration;if(isFinite(d)&&d>0){t.textContent=formatVoiceTime(Math.round(d));}};
+      a.addEventListener('loadedmetadata',function(){
+        if(a.duration===Infinity){
+          var fix=function(){a.removeEventListener('timeupdate',fix);a.currentTime=0;show();};
+          a.addEventListener('timeupdate',fix);a.currentTime=1e101;
+        }else show();
+      });
+    });
+  };
+  document.addEventListener('ended',function(e){
+    var a=e.target;if(!a||!a.classList||!a.classList.contains('voice-audio'))return;
+    var card=a.closest('.custom-voice-card'),t=card&&card.querySelector('.voice-time');
+    if(!t)return;var d=Number(card.dataset.dur)||(isFinite(a.duration)?a.duration:0);
+    if(d)t.textContent=formatVoiceTime(Math.round(d));
+  },true);
+
+  /* ---- الرجوع للرسالة المردود عليها ---- */
+  function findEl(id){return id?document.getElementById('message_'+id):null;}
+  function findByText(text,selfId){
+    var list=Array.from(document.querySelectorAll('#messagesArea .msg-bubble')),idx=list.findIndex(function(b){return b.id==='message_'+selfId;});
+    if(idx<0)idx=list.length;
+    for(var i=idx-1;i>=0;i--){
+      var b=list[i],tx=b.dataset.messageText||'';
+      if(text&&tx&&text.indexOf(tx)===0||tx===text)return b;
+      if(!tx&&(text==='▧ صورة'&&b.querySelector('.msg-image')||text==='بصمة صوتية'&&b.querySelector('.custom-voice-card')))return b;
+    }
+    return null;
+  }
+  function flash(el){
+    el.scrollIntoView({block:'center',behavior:'smooth'});
+    el.classList.remove('pin-flash');void el.offsetWidth;el.classList.add('pin-flash');
+  }
+  window.goToReplied=function(id,text,selfId){
+    var el=findEl(id)||(!id?findByText(text,selfId):null);
+    if(el){flash(el);return;}
+    window.__pendingJump={id:id,text:text,selfId:selfId,tries:0};
+    runPendingJump(true);
+  };
+  window.runPendingJump=function(first){
+    var j=window.__pendingJump;if(!j)return;
+    var el=findEl(j.id)||(!j.id?findByText(j.text,j.selfId):null);
+    if(el){window.__pendingJump=null;flash(el);return;}
+    var more=document.querySelector('#messagesArea .load-older-btn');
+    if(!more||j.tries>=8){window.__pendingJump=null;showToast('تعذر العثور على الرسالة الأصلية');return;}
+    j.tries++;
+    try{
+      msgLimit+=50;loadingOlder=true;
+      if(isGroupChat(activeChatId))openGroupRoom(activeChatId,true);else openChatRoom(currentChatOtherUserId,true);
+    }catch(e){window.__pendingJump=null;}
+  };
+
+  /* ---- آخر الزيارات في البحث ---- */
+  var MAXR=12;
+  function rKey(){return 'babylon_recent_visits_'+((window.currentUser&&currentUser.uid)||'x');}
+  function getRecents(){try{var a=JSON.parse(localStorage.getItem(rKey())||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+  function setRecents(a){try{localStorage.setItem(rKey(),JSON.stringify(a.slice(0,MAXR)));}catch(e){}}
+  window.recordRecentVisit=function(uid){
+    if(!uid||(currentUser&&uid===currentUser.uid))return;
+    setRecents([uid].concat(getRecents().filter(function(x){return x!==uid;})));
+  };
+  var rSel=new Set(),rMode=false;
+  function renderRecents(res){
+    var ids=getRecents().filter(function(id){return !(myBlocks&&myBlocks[id]);});
+    if(!ids.length){renderSearchIdleStateBase(res);return;}
+    res.innerHTML='';
+    var head=document.createElement('div');head.className='recent-head';res.appendChild(head);
+    var list=document.createElement('div');res.appendChild(list);
+    function updHead(){
+      if(rMode){head.innerHTML='<span>'+rSel.size+' محدد</span><span class="recent-actions"><button type="button" class="r-del">حذف</button><button type="button" class="r-cancel">إلغاء</button></span>';
+        head.querySelector('.r-del').onclick=function(){setRecents(getRecents().filter(function(x){return !rSel.has(x);}));rSel.clear();rMode=false;renderRecents(res);};
+        head.querySelector('.r-cancel').onclick=function(){rSel.clear();rMode=false;renderRecents(res);};
+      }else head.innerHTML='<span>آخر الزيارات</span>';
+    }
+    updHead();
+    ids.forEach(function(id){
+      var div=document.createElement('div');div.className='chat-item search-user-card recent-item';div.dataset.rid=id;
+      div.innerHTML='<div class="avatar"></div><div class="chat-item-info"><div class="chat-item-name">…</div><div class="chat-item-sub"></div></div><span class="search-result-arrow" aria-hidden="true">›</span>';
+      list.appendChild(div);
+      var u0=null;
+      fetchUser(id).then(function(u){
+        if(!u)return;u0=Object.assign({id:id},u);
+        var av=div.querySelector('.avatar');av.className='avatar '+toneCls(u0);av.innerHTML=avInner(u0);
+        div.querySelector('.chat-item-name').textContent=u.displayName||'مستخدم';
+        div.querySelector('.chat-item-sub').textContent='@'+(u.username||'');
+      });
+      var timer=null,long=false;
+      function sync(){div.classList.toggle('cl-selected',rSel.has(id));updHead();}
+      function toggle(){if(rSel.has(id))rSel.delete(id);else rSel.add(id);if(!rSel.size){rMode=false;renderRecents(res);}else sync();}
+      function start(){long=false;timer=setTimeout(function(){long=true;if(!rMode){rMode=true;rSel.clear();rSel.add(id);list.querySelectorAll('.recent-item').forEach(function(x){x.classList.toggle('cl-selected',rSel.has(x.dataset.rid));});updHead();try{navigator.vibrate&&navigator.vibrate(18);}catch(e){}}else toggle();},450);}
+      function cancel(){clearTimeout(timer);}
+      div.addEventListener('touchstart',start,{passive:true});div.addEventListener('touchmove',cancel,{passive:true});div.addEventListener('touchend',cancel);
+      div.addEventListener('mousedown',start);div.addEventListener('mouseup',cancel);div.addEventListener('mouseleave',cancel);
+      div.addEventListener('contextmenu',function(e){e.preventDefault();});
+      div.addEventListener('click',function(){
+        if(long){long=false;return;}
+        if(rMode){toggle();return;}
+        if(u0)openUserProfileDirect(u0);
+      });
+    });
+  }
+  window.renderSearchIdleState=function(res){rMode=false;rSel.clear();renderRecents(res);};
+  var _show=window.showView;
+  if(typeof _show==='function')window.showView=function(v){
+    var r=_show.apply(this,arguments);
+    if(v==='searchView'){try{var i=document.getElementById('searchInput'),res=document.getElementById('searchResults');if(i&&res&&!i.value.trim())window.renderSearchIdleState(res);}catch(e){}}
+    return r;
+  };
+
+  /* ---- حذف عدة رسائل: لدي / لدى الكل ---- */
+  function canDeleteForAll(ids){
+    var uid=currentUser.uid,grp=isGroupChat(activeChatId),adm=false;
+    try{adm=grp&&gRight('delete');}catch(e){}
+    return ids.every(function(id){
+      var el=document.getElementById('message_'+id);if(!el)return true;
+      return el.classList.contains('mine')||adm;
+    });
+  }
+  function ensureDlg(){
+    var d=document.getElementById('multiDeleteDlg');if(d)return d;
+    d=document.createElement('div');d.id='multiDeleteDlg';d.className='message-delete-modal hidden';
+    d.innerHTML='<div class="message-delete-card"><div class="message-delete-heading" id="mddTitle">حذف الرسائل</div><p class="message-delete-description" id="mddDesc"></p><button type="button" id="mddMe">حذف لدي فقط</button><button type="button" class="danger" id="mddAll">حذف لدى الكل</button><button type="button" class="cancel" id="mddCancel">إلغاء</button></div>';
+    d.addEventListener('click',function(e){if(e.target===d)d.classList.add('hidden');});
+    document.body.appendChild(d);
+    d.querySelector('#mddCancel').onclick=function(){d.classList.add('hidden');};
+    d.querySelector('#mddMe').onclick=function(){d.classList.add('hidden');deleteMultipleMessagesForMe();};
+    d.querySelector('#mddAll').onclick=function(){d.classList.add('hidden');deleteMultipleForEveryone();};
+    return d;
+  }
+  window.openMultiDeleteDialog=function(){
+    if(!selectedMessageIds.size)return showToast('حدد رسالة واحدة على الأقل');
+    var d=ensureDlg(),n=selectedMessageIds.size,ok=canDeleteForAll(Array.from(selectedMessageIds));
+    d.querySelector('#mddTitle').textContent='حذف '+n+(n===1?' رسالة':' رسائل');
+    d.querySelector('#mddDesc').textContent=ok?'اختر أين تريد حذف الرسائل المحددة.':'الحذف لدى الكل متاح فقط لرسائلك.';
+    var all=d.querySelector('#mddAll');all.disabled=!ok;all.style.opacity=ok?'':'.45';
+    d.classList.remove('hidden');
+  };
+  window.deleteMultipleForEveryone=async function(){
+    var ids=Array.from(selectedMessageIds);
+    if(!ids.length||!activeChatId||!db)return;
+    if(!canDeleteForAll(ids))return showToast('يمكنك الحذف لدى الكل لرسائلك فقط');
+    if(!confirm('سيتم حذف '+ids.length+' رسالة لدى الجميع. هل تريد المتابعة؟'))return;
+    try{
+      var col=db.collection('chats').doc(activeChatId).collection('messages'),batch=db.batch();
+      ids.forEach(function(id){batch.delete(col.doc(id));});
+      await batch.commit();
+      clearMessageSelection();
+      showToast('تم حذف الرسائل لدى الجميع');
+    }catch(err){
+      console.error(err);
+      showToast(err&&err.code==='permission-denied'?'تعذر الحذف: الصلاحيات لا تسمح بذلك':'تعذر حذف الرسائل؛ تحقق من الاتصال');
+    }
+  };
+})();
+</script>
