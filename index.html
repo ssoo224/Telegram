@@ -2632,8 +2632,6 @@ let currentChatOtherUserId = null;
 let messagesUnsubscribe = null;
 let userUnsubscribe = null;
 let chatsListUnsubscribe = null;
-// يمنع إرسال أكثر من إشعار لنفس رسالة Firestore خلال جلسة التطبيق.
-const nativeNotifiedMessageIds = new Set();
 let userDocUnsubscribe = null;
 let chatDocUnsubscribe = null;
 let heartbeatInterval = null;
@@ -2721,16 +2719,6 @@ function renderNotificationSettings() {
 }
 
 function requestNotificationPermission() {
-  // داخل تطبيق Sketchware، اطلب إذن Android الأصلي بدل Web Notification API غير المدعوم في WebView.
-  if (window.BabylonAndroid && typeof window.BabylonAndroid.requestNativeNotificationPermission === 'function') {
-    window.onNativeNotificationPermissionResult = function(granted) {
-      try { localStorage.setItem('babylon_notification_push', String(!!granted)); } catch (e) {}
-      renderNotificationSettings();
-      showToast(granted ? 'تم تفعيل إشعارات الجهاز' : 'لم يتم منح إذن إشعارات الجهاز');
-    };
-    window.BabylonAndroid.requestNativeNotificationPermission();
-    return;
-  }
   if (!("Notification" in window)) {
     return showToast("متصفحك لا يدعم الإشعارات");
   }
@@ -4260,13 +4248,9 @@ function loadChats() {
   if (chatsListUnsubscribe) { chatsListUnsubscribe(); chatsListUnsubscribe = null; }
   if (!currentUser) return;
 
-  // أول لقطة تحتوي المحادثات القديمة؛ لا نرسل إشعارات عنها.
-  let isInitialChatsSnapshot = true;
   chatsListUnsubscribe = db.collection("chats")
     .where("participants", "array-contains", currentUser.uid)
     .onSnapshot(snap => {
-      const isInitialSnapshot = isInitialChatsSnapshot;
-      isInitialChatsSnapshot = false;
       if (snap.empty) {
         container.innerHTML = `
           <div class="empty-chats">
@@ -4338,22 +4322,6 @@ function loadChats() {
                 if (tStr.startsWith('0')) tStr = tStr.substring(1);
                 lastMsgTime = tStr;
 
-                // إشعار نظام واحد فقط للرسالة الواردة الجديدة، عندما لا تكون محادثتها مفتوحة.
-                // لا نرسل إشعارات للرسائل الموجودة في أول تحميل أو عند فتح المحادثة نفسها.
-                const messageDoc = msgSnap.docs[0];
-                if (!isInitialSnapshot && !isMine && chatId !== activeChatId &&
-                    Number(m.createdAt || 0) > sessionStartTime &&
-                    !nativeNotifiedMessageIds.has(messageDoc.id) &&
-                    getNotificationOption('push', false) &&
-                    !getLocalChatSet('babylon_muted_users').has(otherId)) {
-                  nativeNotifiedMessageIds.add(messageDoc.id);
-                  const nativeBody = m.audioUrl ? '♬ رسالة صوتية' : (m.imageUrl ? '▧ صورة' : (m.text || 'رسالة جديدة'));
-                  try {
-                    if (window.BabylonAndroid && typeof window.BabylonAndroid.showMessageNotification === 'function') {
-                      window.BabylonAndroid.showMessageNotification(u.displayName || 'رسالة جديدة', String(nativeBody).slice(0, 300));
-                    }
-                  } catch (nativeNotifError) { console.warn('Native notification failed', nativeNotifError); }
-                }
                 if (!isMine && m.createdAt > sessionStartTime && !getLocalChatSet('babylon_muted_users').has(otherId)) playNotificationSound();
               }
 
