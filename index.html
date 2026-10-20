@@ -3510,82 +3510,15 @@ function clearSearchInput() {
   input.focus();
 }
 const BABYLON_RECENT_SEARCH_KEY = "babylon_recent_search_users_v1";
-let recentSearchSelectionMode = false;
-let selectedRecentSearchIds = new Set();
-function toggleRecentSearchSelectionMode() {
-  recentSearchSelectionMode = !recentSearchSelectionMode;
-  selectedRecentSearchIds.clear();
-  const input = document.getElementById("searchInput");
-  if (input && !input.value.trim()) renderRecentSearchUsers(document.getElementById("searchResults"));
+// لا تعرض أو تحفظ قائمة المحادثات التي تمت زيارتها؛ صفحة البحث مخصصة للبحث فقط.
+function clearRecentSearchHistory() {
+  try { localStorage.removeItem(BABYLON_RECENT_SEARCH_KEY); } catch (_) {}
 }
-function toggleRecentSearchItem(id, checked) {
-  if (checked) selectedRecentSearchIds.add(id); else selectedRecentSearchIds.delete(id);
-  const count = document.getElementById("recentSearchSelectedCount");
-  if (count) count.textContent = selectedRecentSearchIds.size ? `تم تحديد ${selectedRecentSearchIds.size}` : "حدد المحادثات";
-}
-function deleteSelectedRecentSearchUsers() {
-  if (!selectedRecentSearchIds.size) { if (typeof showToast === "function") showToast("حدد محادثة واحدة على الأقل"); return; }
-  const ids = selectedRecentSearchIds;
-  const kept = getRecentSearchUsers().filter(u => !ids.has(u.id));
-  try { localStorage.setItem(BABYLON_RECENT_SEARCH_KEY, JSON.stringify(kept)); } catch (_) {}
-  selectedRecentSearchIds = new Set();
-  recentSearchSelectionMode = false;
-  renderRecentSearchUsers(document.getElementById("searchResults"));
-  if (typeof showToast === "function") showToast("تم حذف المحادثات المحددة من قائمة البحث");
-}
-function getRecentSearchUsers() {
-  try { return JSON.parse(localStorage.getItem(BABYLON_RECENT_SEARCH_KEY) || "[]").filter(u => u && u.id); }
-  catch (_) { return []; }
-}
-function rememberSearchUser(u) {
-  if (!u || !u.id || (currentUser && u.id === currentUser.uid)) return;
-  const recent = getRecentSearchUsers().filter(x => x.id !== u.id);
-  recent.unshift({ id:u.id, displayName:u.displayName || "مستخدم", username:u.username || "", avatarUrl:pvUrl(u), isVerified:!!u.isVerified });
-  try { localStorage.setItem(BABYLON_RECENT_SEARCH_KEY, JSON.stringify(recent.slice(0,30))); } catch (_) {}
-  // Refresh the visible recent list immediately if the search screen is currently open.
-  const searchView = document.getElementById("searchView");
-  const searchInput = document.getElementById("searchInput");
-  if (searchView && !searchView.classList.contains("hidden") && searchInput && !searchInput.value.trim()) {
-    const results = document.getElementById("searchResults");
-    if (results) renderRecentSearchUsers(results);
-  }
-}
+function rememberSearchUser(u) { clearRecentSearchHistory(); }
 function renderRecentSearchUsers(res) {
-  const recent = getRecentSearchUsers().filter(u => !(myBlocks && myBlocks[u.id]));
-  if (!recent.length) {
-    res.innerHTML = '<div class="search-state-card search-empty-state"><span class="search-empty-icon">⌕</span><strong>ابحث عن أصدقائك</strong><span>اكتب اسم المستخدم، وستظهر هنا المحادثات التي فتحتها مؤخرًا.</span></div>';
-    return;
-  }
-  const toolbar = document.createElement("div");
-  toolbar.className = "search-recent-toolbar";
-  toolbar.innerHTML = `<span class="search-recent-label">المحادثات التي زرتها</span><span id="recentSearchSelectedCount" class="search-recent-count">${selectedRecentSearchIds.size ? `تم تحديد ${selectedRecentSearchIds.size}` : "الأحدث أولاً"}</span><button type="button" class="search-manage-btn" onclick="toggleRecentSearchSelectionMode()">${recentSearchSelectionMode ? "إلغاء" : "تحديد"}</button>${recentSearchSelectionMode ? '<button type="button" class="search-delete-btn" onclick="deleteSelectedRecentSearchUsers()">حذف المحدد</button>' : ""}`;
-  res.appendChild(toolbar);
-  recent.forEach(u => {
-    const div = document.createElement("div"); div.className = "chat-item search-user-card search-recent-card";
-    const avatar = document.createElement("div"); avatar.className = "avatar " + toneCls(u);
-    if (pvUrl(u)) { const img = document.createElement("img"); img.src = pvUrl(u); img.alt = ""; avatar.appendChild(img); }
-    else avatar.textContent = (u.displayName || "?").charAt(0).toUpperCase();
-    const info = document.createElement("div"); info.className = "chat-item-info";
-    const name = document.createElement("div"); name.className = "chat-item-name"; name.textContent = u.displayName || "مستخدم";
-    if (u.isVerified) { const badge = document.createElement("span"); badge.className = "verified-badge"; badge.textContent = "✓"; name.appendChild(badge); }
-    const sub = document.createElement("div"); sub.className = "chat-item-sub"; sub.textContent = "@" + (u.username || "");
-    info.append(name, sub);
-    div.append(avatar, info);
-    if (recentSearchSelectionMode) {
-      const check = document.createElement("input");
-      check.type = "checkbox"; check.className = "recent-search-check";
-      check.checked = selectedRecentSearchIds.has(u.id);
-      check.setAttribute("aria-label", "تحديد " + (u.displayName || "المحادثة"));
-      check.onclick = e => e.stopPropagation();
-      check.onchange = () => toggleRecentSearchItem(u.id, check.checked);
-      div.appendChild(check);
-      div.classList.toggle("selected-for-delete", check.checked);
-      div.onclick = () => { check.checked = !check.checked; toggleRecentSearchItem(u.id, check.checked); div.classList.toggle("selected-for-delete", check.checked); };
-    } else {
-      div.onclick = () => openChatRoom(u.id);
-    }
-    res.appendChild(div);
-  });
+  if (!res) return;
+  clearRecentSearchHistory();
+  res.innerHTML = '<div class="search-state-card search-empty-state"><span class="search-empty-icon">⌕</span><strong>ابحث عن محادثة</strong><span>اكتب اسم المستخدم للعثور عليه وبدء المحادثة.</span></div>';
 }
 
 function searchUsers() {
@@ -3600,7 +3533,7 @@ function searchUsers() {
   res.innerHTML = "";
   if (q.length < 3) {
     if (!q) renderRecentSearchUsers(res);
-    setSearchHint(q.length ? `باقي ${3 - q.length} أحرف لبدء البحث.` : "المحادثات التي فتحتها تظهر هنا لسهولة الوصول.", q ? "idle" : "recent");
+    setSearchHint(q.length ? `باقي ${3 - q.length} أحرف لبدء البحث.` : "ابحث باسم المستخدم للعثور على محادثة.", q ? "idle" : "search");
     return;
   }
   setSearchHint("جارٍ البحث عن المستخدمين…", "loading");
@@ -7913,3 +7846,35 @@ function openMention(username){
 .recent-search-check{width:19px;height:19px;accent-color:var(--babylon-gold);flex:0 0 19px}
 .search-results .search-recent-card.selected-for-delete{background:rgba(194,157,48,.12);border:1px solid rgba(194,157,48,.5)}
 </style>
+
+
+<style id="babylon-search-only-bottom-spacing-voice">
+/* البحث يعرض خانة البحث فقط، ولا يعرض سجل الزيارات. */
+#searchView .search-recent-toolbar,
+#searchView .search-recent-card { display:none !important; }
+/* عند وجود رسائل قليلة، اجعلها تستقر أسفل مساحة المحادثة. */
+#chatView #messagesArea { justify-content:flex-end !important; gap:3px !important; }
+#chatView #messagesArea .msg-bubble { margin-block:2px !important; }
+/* الصوتية تظهر كمحتوى رسالة مباشرة، دون بطاقة/حقل داخلي يحيط بها. */
+#chatView #messagesArea .msg-bubble:has(.custom-voice-card) {
+  min-width:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  padding:0 !important;
+}
+#chatView #messagesArea .custom-voice-card {
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  border-radius:0 !important;
+}
+.app-container[data-app-theme="light"] #chatView #messagesArea .msg-bubble.mine .custom-voice-card,
+.app-container[data-app-theme="dark"] #chatView #messagesArea .msg-bubble.mine .custom-voice-card {
+  background:transparent !important; border:0 !important; box-shadow:none !important;
+}
+</style>
+<script id="babylon-clear-visited-history">
+(function(){ try { localStorage.removeItem('babylon_recent_search_users_v1'); } catch (_) {} })();
+</script>
