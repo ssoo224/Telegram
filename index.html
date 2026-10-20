@@ -2360,7 +2360,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 
       <div id="pinnedBar" class="pinned-bar hidden" role="button" aria-label="الرسالة المثبتة"></div>
       <div id="messagesArea" class="messages-area"></div>
-      <div id="multiSelectBar" class="multi-select-bar hidden" role="toolbar" aria-label="إجراءات الرسائل المحددة"><button type="button" class="msb-close" onclick="clearMessageSelection()" aria-label="إلغاء التحديد"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button><div class="msb-count"><b id="multiSelectCount">0</b><span>محدد</span></div><button type="button" class="msb-del" onclick="openMultiDeleteDialog()" aria-label="حذف الرسائل المحددة"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg><span>حذف</span></button></div>
+      <div id="multiSelectBar" class="multi-select-bar hidden" role="toolbar" aria-label="إجراءات الرسائل المحددة"><button type="button" class="msb-close" onclick="clearMessageSelection()" aria-label="إلغاء التحديد"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button><div class="msb-count"><b id="multiSelectCount">0</b></div><button type="button" class="msb-fwd" onclick="openForwardPicker()" aria-label="إعادة توجيه"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 6 6-6 6"/><path d="M21 11H9a6 6 0 0 0-6 6v1"/></svg><span>إعادة توجيه</span></button><button type="button" class="msb-del" onclick="openMultiDeleteDialog()" aria-label="حذف الرسائل المحددة"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg><span>حذف</span></button></div>
 
       <div class="chat-input-container">
         <div id="replyPreviewBar" class="reply-preview-bar hidden" role="status" aria-live="polite">
@@ -3805,6 +3805,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         
         let htmlContent = "";
         if (grp && !isMine) htmlContent += groupSenderHtml(m.senderId);
+        if (m.forwarded) htmlContent += `<div class="fwd-label"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 6 6-6 6"/><path d="M21 11H9a6 6 0 0 0-6 6v1"/></svg>معاد توجيهها</div>`;
         if (m.replyTo) htmlContent += `<div class="reply-quote" data-reply-id="${esc(m.replyToId||'')}" role="button">${esc(m.replyTo)}</div>`;
         if (m.storyReply) {
           const sr = m.storyReplyData || {};
@@ -8111,4 +8112,101 @@ function openMention(username){
 .app-container[data-app-theme="light"] #chatView#chatView #multiSelectBar .msb-count b{color:#1b1405!important}
 .app-container[data-app-theme="light"] #chatView#chatView #multiSelectBar .msb-del{background:linear-gradient(135deg,#f2706d,#d83a37)!important;color:#fff!important}
 @media(prefers-reduced-motion:reduce){#chatView#chatView #multiSelectBar.multi-select-bar{animation:none}}
+</style>
+
+<script>
+(function(){
+  function esc2(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function ensure(){
+    var d=document.getElementById('fwdPicker');if(d)return d;
+    d=document.createElement('div');d.id='fwdPicker';d.className='message-delete-modal hidden';
+    d.innerHTML='<div class="message-delete-card fwd-card"><div class="message-delete-heading">إعادة توجيه إلى</div><div class="fwd-list" id="fwdList"></div><button type="button" class="cancel" id="fwdCancel">إلغاء</button></div>';
+    d.addEventListener('click',function(e){if(e.target===d)d.classList.add('hidden');});
+    (document.querySelector('.app-container')||document.body).appendChild(d);
+    d.querySelector('#fwdCancel').onclick=function(){d.classList.add('hidden');};
+    return d;
+  }
+  window.openForwardPicker=async function(){
+    if(!selectedMessageIds.size)return showToast('حدد رسالة واحدة على الأقل');
+    var d=ensure(),list=d.querySelector('#fwdList');
+    list.innerHTML='<div class="fwd-empty">جارٍ التحميل…</div>';d.classList.remove('hidden');
+    var rows=[];
+    var ids=Object.keys(chatMetaCache);
+    for(var i=0;i<ids.length;i++){
+      var id=ids[i],m=chatMetaCache[id];if(!m||!(m.participants||[]).includes(currentUser.uid))continue;
+      if(m.type==='group'){
+        var ok=true;try{ok=gCanSend('text',currentUser.uid,m);}catch(e){}
+        if(ok)rows.push({id:id,name:m.name||'مجموعة',sub:'مجموعة',at:m.updatedAt||0,photo:m.photo||''});
+      }else{
+        var o=(m.participants||[]).find(function(x){return x!==currentUser.uid;});
+        if(!o||(myBlocks&&myBlocks[o]))continue;
+        var u=await fetchUser(o);if(!u)continue;
+        rows.push({id:id,name:u.displayName||'مستخدم',sub:'@'+(u.username||''),at:m.updatedAt||0,photo:pvUrl(u),u:u});
+      }
+    }
+    rows.sort(function(a,b){return b.at-a.at;});
+    if(!rows.length){list.innerHTML='<div class="fwd-empty">لا توجد محادثات متاحة</div>';return;}
+    list.innerHTML='';
+    rows.forEach(function(r){
+      var b=document.createElement('button');b.type='button';b.className='fwd-row';
+      b.innerHTML='<span class="avatar">'+(r.photo?'<img src="'+esc2(r.photo)+'" alt="">':esc2((r.name||'?').charAt(0).toUpperCase()))+'</span><span class="fwd-info"><b>'+esc2(r.name)+'</b><i>'+esc2(r.sub)+'</i></span>';
+      b.onclick=function(){d.classList.add('hidden');forwardSelected(r.id);};
+      list.appendChild(b);
+    });
+  };
+  window.forwardSelected=async function(targetId){
+    var ids=Array.from(selectedMessageIds),src=activeChatId;
+    if(!ids.length||!src||!targetId)return;
+    try{
+      var col=db.collection('chats').doc(src).collection('messages');
+      var docs=await Promise.all(ids.map(function(id){return col.doc(id).get();}));
+      var msgs=docs.filter(function(x){return x.exists;}).map(function(x){return x.data();}).filter(function(m){return !m.system&&(m.text||m.imageUrl||m.audioUrl);}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
+      if(!msgs.length)return showToast('لا توجد رسائل قابلة لإعادة التوجيه');
+      var tcol=db.collection('chats').doc(targetId).collection('messages'),now=Date.now(),last='';
+      for(var i=0;i<msgs.length;i++){
+        var m=msgs[i],n={senderId:currentUser.uid,forwarded:true,read:false,createdAt:now+i};
+        if(m.text)n.text=m.text;if(m.imageUrl)n.imageUrl=m.imageUrl;if(m.audioUrl){n.audioUrl=m.audioUrl;if(m.duration)n.duration=m.duration;}
+        await tcol.add(n);last=m.text||(m.imageUrl?'▧ صورة':'بصمة صوتية');
+      }
+      var upd={updatedAt:Date.now()};
+      var meta=chatMetaCache[targetId];
+      if(meta&&meta.type==='group')upd.lastMsg={text:String(last).slice(0,120),senderId:currentUser.uid,senderName:(typeof myDisplayName==='function'?myDisplayName():''),at:Date.now()};
+      upd['typing_'+currentUser.uid]=false;
+      await db.collection('chats').doc(targetId).set(upd,{merge:true});
+      try{notifyPeer(targetId,last);}catch(e){}
+      clearMessageSelection();
+      showToast('تمت إعادة توجيه '+msgs.length+(msgs.length===1?' رسالة':' رسائل'));
+    }catch(err){
+      console.error(err);
+      showToast(err&&err.code==='permission-denied'?'تعذر الإرسال: الصلاحيات لا تسمح بذلك':'تعذر إعادة التوجيه؛ تحقق من الاتصال');
+    }
+  };
+})();
+</script>
+<style>
+.fwd-label{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;opacity:.8;margin-bottom:4px;font-style:italic}
+.fwd-card{max-height:80vh;display:flex;flex-direction:column}
+.fwd-list{overflow:auto;margin:8px -6px 12px;padding:0 6px;display:flex;flex-direction:column;gap:6px;max-height:52vh}
+.fwd-row{display:flex!important;align-items:center;gap:12px;width:100%;text-align:right;padding:8px 10px!important;border-radius:16px!important;border:1px solid rgba(127,140,160,.22)!important;background:rgba(127,140,160,.08)!important;color:inherit!important;margin:0!important}
+.fwd-row:active{background:rgba(228,196,91,.16)!important;border-color:rgba(228,196,91,.5)!important}
+.fwd-row .avatar{width:40px;height:40px;flex:0 0 40px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(228,196,91,.2);font-weight:800}
+.fwd-row .avatar img{width:100%;height:100%;object-fit:cover}
+.fwd-info{display:flex;flex-direction:column;min-width:0}
+.fwd-info b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fwd-info i{font-style:normal;font-size:12px;opacity:.65;direction:ltr;text-align:right}
+.fwd-empty{padding:18px;text-align:center;opacity:.7;font-size:13px}
+/* شريط أنحف: عدد فقط + إعادة توجيه + حذف */
+#chatView#chatView #multiSelectBar.multi-select-bar{padding:4px!important;gap:6px;margin:4px 12px calc(10px + env(safe-area-inset-bottom,0px))!important;border-radius:24px!important}
+#chatView#chatView #multiSelectBar .msb-close{width:36px;height:36px;flex-basis:36px}
+#chatView#chatView #multiSelectBar .msb-close svg{width:17px;height:17px}
+#chatView#chatView #multiSelectBar .msb-count{flex:1;justify-content:flex-start;padding-inline-start:6px}
+#chatView#chatView #multiSelectBar .msb-count b,.app-container[data-app-theme="light"] #chatView#chatView #multiSelectBar .msb-count b{min-width:0;height:auto;padding:0;border-radius:0;background:none!important;box-shadow:none;font-size:19px;font-weight:800;color:#e4c45b!important}
+.app-container[data-app-theme="light"] #chatView#chatView #multiSelectBar .msb-count b{color:#b98710!important}
+#chatView#chatView #multiSelectBar .msb-fwd,#chatView#chatView #multiSelectBar .msb-del{height:36px;padding:0 14px!important;font-size:13px;gap:6px}
+#chatView#chatView #multiSelectBar .msb-fwd{display:flex;align-items:center;border:none!important;border-radius:999px!important;font-weight:700;background:rgba(228,196,91,.16)!important;color:#e4c45b!important}
+#chatView#chatView #multiSelectBar .msb-fwd span{margin:0;color:inherit!important}
+#chatView#chatView #multiSelectBar .msb-fwd:active{transform:scale(.94)}
+.app-container[data-app-theme="light"] #chatView#chatView #multiSelectBar .msb-fwd{background:rgba(201,154,28,.14)!important;color:#9c7410!important}
+#chatView#chatView #multiSelectBar .msb-del{box-shadow:0 4px 12px rgba(216,58,55,.32)}
+.msb-fwd svg,.msb-del svg{width:18px;height:18px}
 </style>
