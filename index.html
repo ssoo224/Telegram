@@ -5882,7 +5882,7 @@ const GCOLORS = ['#e17076','#faa774','#a695e7','#7bc862','#6ec9cb','#65aadd','#e
 function hashStr(s){let h=2166136261;s=String(s);for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return h>>>0;}
 function gColor(uid){return GCOLORS[hashStr(uid)%GCOLORS.length];}
 function gGrad(seed){const a=hashStr(seed);return 'linear-gradient(145deg,'+GCOLORS[a%GCOLORS.length]+','+GCOLORS[(a>>>5)%GCOLORS.length]+')';}
-function gGroupGrad(){return 'linear-gradient(145deg,#1769aa 0%,#123b70 58%,#d4af37 100%)';}
+function gGroupGrad(){return 'linear-gradient(145deg,#d4af37 0%,#b88a20 58%,#1769aa 100%)';}
 function uiRoot(){return document.querySelector('.app-container')||document.body;}
 function meId(){return currentUser&&currentUser.uid;}
 function myDisplayName(){return (typeof currentUserData!=='undefined'&&currentUserData&&currentUserData.displayName)||'مستخدم';}
