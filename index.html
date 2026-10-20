@@ -7796,7 +7796,9 @@ function openMention(username){
 #hdrAvatarBtn{position:relative;display:flex!important;flex-direction:row-reverse!important;align-items:center;gap:7px;width:auto!important;min-width:36px;flex:0 0 auto;padding:0 2px;overflow:visible}
 #hdrAvatarBtn .hdr-story-stack{display:flex;align-items:center;gap:0;direction:ltr;max-width:130px;overflow:visible}
 #hdrAvatarBtn[aria-expanded="true"] .hdr-story-stack{display:none!important}
-#hdrAvatarBtn .hdr-story-thumb{width:29px;height:29px;border-radius:50%;border:2px solid var(--babylon-surface,#17212b);object-fit:cover;display:block;box-sizing:content-box;margin-left:-8px;background:var(--babylon-surface-card,#1e293b);flex:0 0 29px}
+#hdrAvatarBtn .hdr-story-thumb{width:29px;height:29px;border-radius:50%;border:2.5px solid #d4af37;box-shadow:0 0 0 1px rgba(212,175,55,.22);object-fit:cover;display:block;box-sizing:content-box;margin-left:-8px;background:var(--babylon-surface-card,#1e293b);flex:0 0 29px}
+#hdrAvatarBtn .hdr-story-thumb.seen{border-color:#66717d;box-shadow:none}
+#hdrAvatarBtn .hdr-story-thumb.unseen{border-color:#d4af37;box-shadow:0 0 0 1px rgba(212,175,55,.25)}
 #hdrAvatarBtn .hdr-story-thumb:first-child{margin-left:0}
 #hdrAvatarBtn .hdr-story-count{height:29px;min-width:29px;padding:0 5px;border-radius:16px;border:2px solid var(--babylon-surface,#17212b);background:var(--babylon-gold,#c29d30);color:#111827;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-left:-7px;box-sizing:border-box}
 #hdrAvatarBtn .avatar{flex:0 0 36px}
@@ -7815,7 +7817,7 @@ function openMention(username){
       const avatar=el.querySelector('.avatar');
       const img=avatar&&avatar.querySelector('img');
       const thumb=document.createElement('span');
-      thumb.className='hdr-story-thumb';
+      thumb.className='hdr-story-thumb '+(avatar.classList.contains('seen')?'seen':'unseen');
       if(img&&img.src){thumb.style.backgroundImage='url("'+img.src.replace(/"/g,'%22')+'")';thumb.style.backgroundSize='cover';thumb.style.backgroundPosition='center';}
       else {thumb.style.display='flex';thumb.style.alignItems='center';thumb.style.justifyContent='center';thumb.style.fontSize='11px';thumb.style.color='var(--babylon-gold)';thumb.textContent=(avatar&&avatar.textContent.trim().slice(0,1))||'•';}
       stack.appendChild(thumb);
