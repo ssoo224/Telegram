@@ -7817,13 +7817,14 @@ function openMention(username){
 }
 
 
-/* قصص الآخرين: صورتان متراصتان بحلقة ذهبية وبحجم صورة قصتي */
-.app-container #homeView#homeView .sb-stack-item{width:64px;flex:0 0 64px}
-.app-container #homeView#homeView .sb-stack{position:relative;width:58px;height:58px;direction:ltr;flex:0 0 58px}
-.app-container #homeView#homeView .sb-stack-avatar{position:absolute;top:2px;width:54px;height:54px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#8f6810 0%,#f8e7a0 18%,#c29d30 38%,#fff1a8 52%,#c69a20 72%,#f5dc7a 100%);box-shadow:0 0 4px rgba(212,175,55,.55);overflow:visible}
-.app-container #homeView#homeView .sb-stack-avatar.back{left:0;z-index:1;transform:scale(.91);transform-origin:left center}
+/* قصص الآخرين: الحفاظ على مقاسات وتناسق عناصر شريط القصص الأصلي */
+.app-container #homeView#homeView .sb-stack-item{width:62px;flex:0 0 62px;gap:6px}
+.app-container #homeView#homeView .sb-stack{position:relative;width:54px;height:54px;flex:0 0 54px;direction:ltr;margin:0 auto}
+.app-container #homeView#homeView .sb-stack-avatar{position:absolute;top:2px;width:50px;height:50px;box-sizing:border-box;border-radius:50%;padding:3px;background:linear-gradient(135deg,#8f6810 0%,#f8e7a0 18%,#c29d30 38%,#fff1a8 52%,#c69a20 72%,#f5dc7a 100%);box-shadow:0 0 3px rgba(212,175,55,.4);overflow:hidden}
+.app-container #homeView#homeView .sb-stack-avatar.back{left:0;z-index:1;transform:scale(.88);transform-origin:left center}
 .app-container #homeView#homeView .sb-stack-avatar.front{right:0;z-index:2}
-.app-container #homeView#homeView .sb-stack-avatar img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid var(--babylon-surface,#17212b)}
+.app-container #homeView#homeView .sb-stack-avatar img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid var(--babylon-surface,#17212b);box-sizing:border-box}
 .app-container #homeView#homeView .sb-stack-avatar:not(:has(img)){border:3px solid #c29d30}
-.app-container #homeView#homeView .sb-stack-count{position:absolute;right:-5px;bottom:-2px;z-index:4;min-width:23px;height:23px;padding:0 5px;border-radius:14px;background:#c29d30;color:#101827;border:2px solid var(--babylon-surface,#17212b);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;direction:ltr}
+.app-container #homeView#homeView .sb-stack-count{position:absolute;right:-2px;bottom:-1px;z-index:4;min-width:20px;height:20px;padding:0 4px;box-sizing:border-box;border-radius:12px;background:#c29d30;color:#101827;border:2px solid var(--babylon-surface,#17212b);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;direction:ltr}
+.app-container #homeView#homeView .sb-stack-item>span{display:block;width:62px;max-width:62px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
