@@ -7790,3 +7790,49 @@ function openMention(username){
   border-radius: var(--r, 12px) var(--r, 12px) var(--r, 12px) 6px !important;
 }
 </style>
+
+
+<style id="babylon-header-story-stack-fix">
+#hdrAvatarBtn{position:relative;display:flex!important;align-items:center;gap:7px;width:auto!important;min-width:36px;flex:0 0 auto;padding:0 2px;overflow:visible}
+#hdrAvatarBtn .hdr-story-stack{display:flex;align-items:center;gap:0;direction:ltr;max-width:130px;overflow:visible}
+#hdrAvatarBtn .hdr-story-thumb{width:29px;height:29px;border-radius:50%;border:2px solid var(--babylon-surface,#17212b);object-fit:cover;display:block;box-sizing:content-box;margin-left:-8px;background:var(--babylon-surface-card,#1e293b);flex:0 0 29px}
+#hdrAvatarBtn .hdr-story-thumb:first-child{margin-left:0}
+#hdrAvatarBtn .hdr-story-count{height:29px;min-width:29px;padding:0 5px;border-radius:16px;border:2px solid var(--babylon-surface,#17212b);background:var(--babylon-gold,#c29d30);color:#111827;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-left:-7px;box-sizing:border-box}
+#hdrAvatarBtn.story-avatar-moved{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:none!important;width:auto!important;flex-basis:auto!important}
+#hdrAvatarBtn .avatar{flex:0 0 36px}
+</style>
+<script id="babylon-header-story-stack-fix-js">
+(function(){
+  const bar=document.getElementById('storiesBar'), btn=document.getElementById('hdrAvatarBtn');
+  if(!bar||!btn)return;
+  function refreshStack(){
+    let stack=btn.querySelector('.hdr-story-stack');
+    if(!stack){stack=document.createElement('span');stack.className='hdr-story-stack';stack.setAttribute('aria-hidden','true');btn.appendChild(stack);}
+    stack.innerHTML='';
+    const items=Array.from(bar.querySelectorAll('.sb-item')).slice(1);
+    const active=items.filter(el=>el.querySelector('.avatar'));
+    active.slice(0,3).forEach(el=>{
+      const avatar=el.querySelector('.avatar');
+      const img=avatar&&avatar.querySelector('img');
+      const thumb=document.createElement('span');
+      thumb.className='hdr-story-thumb';
+      if(img&&img.src){thumb.style.backgroundImage='url("'+img.src.replace(/"/g,'%22')+'")';thumb.style.backgroundSize='cover';thumb.style.backgroundPosition='center';}
+      else {thumb.style.display='flex';thumb.style.alignItems='center';thumb.style.justifyContent='center';thumb.style.fontSize='11px';thumb.style.color='var(--babylon-gold)';thumb.textContent=(avatar&&avatar.textContent.trim().slice(0,1))||'•';}
+      stack.appendChild(thumb);
+    });
+    const remaining=Math.max(0,active.length-3);
+    if(remaining){const count=document.createElement('span');count.className='hdr-story-count';count.textContent='+'+remaining;stack.appendChild(count);}
+    stack.style.display=active.length?'flex':'none';
+    btn.setAttribute('aria-label',active.length?'القصص، '+active.length+' قصة':'القصص');
+  }
+  const observer=new MutationObserver(refreshStack);
+  observer.observe(bar,{childList:true,subtree:true,attributes:true,attributeFilter:['class','src']});
+  refreshStack();
+  btn.addEventListener('click',function(){
+    if(bar.classList.contains('hidden'))return;
+    if(typeof window.setStoriesCollapsed==='function')window.setStoriesCollapsed(false);
+    bar.classList.remove('hidden');
+    const handle=document.getElementById('sbHandle');if(handle)handle.classList.remove('hidden');
+  });
+})();
+</script>
