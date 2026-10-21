@@ -37,12 +37,33 @@ function startWallet(uid){
 auth.onAuthStateChanged(u=>{if(u)startWallet(u.uid);else{if(walletUnsub)walletUnsub();walletUnsub=null;walletFor=null;myStars=0;walletReady=false;}});
 
 /* ---------- Lottie ---------- */
+const GIFTS_CDN='https://cdn.changes.tg/gifts/models/';
+const GIFTS_CDN_DIR={pepe:'Plush Pepe',cat:'Scared Cat'};
+/* ===== هدايا إضافية من gifts/manifest.json (تولّده make_manifest.py) ===== */
+const gid=(K,n)=>K.gen?K.key+'_'+n:String(n);
+const salesQ=K=>K.gen?db.collection('giftSales').where('k','==',K.key):db.collection(K.sales);
+const kindDir=K=>GIFTS_CDN_DIR[K.key]||K.name;
+const modelName=(K,i)=>i<0?(K.gen&&!K.orig?K.models[0].n:'Original'):K.models[i].n;
+const BLANK_IMG='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+const GIFTS_READY=fetch(GIFTS_BASE+'manifest.json?v=1').then(r=>r.ok?r.json():null).then(m=>{
+  if(!m||!m.gifts)return;
+  m.gifts.forEach(g=>{
+    const key=g.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    if(!key||GIFT_KINDS[key]||/^plush pepe$|^scared cat$/i.test(g.name)||!g.models||!g.models.length)return;
+    GIFTS_CDN_DIR[key]=g.name;
+    const names=g.models.filter(n=>n!=='Original'),orig=names.length<g.models.length;
+    if(!names.length)return;
+    GIFT_KINDS[key]={key,name:g.name,gen:true,orig,coll:'gifts',field:'lastBuyGift',max:g.max||30,price:g.price||500,models:names.map(n=>({n,p:1}))};
+  });
+}).catch(()=>{});
 const _pepeTxt={};
 async function pepeText(i,kind){
   const K=gk(kind),key=K.key+':'+i;
   if(_pepeTxt[key])return _pepeTxt[key];
   const f=i<0?'original':K.models[i].f;
-  const r=await fetch(GIFTS_BASE+K.dir+'/'+f+'.tgs');
+  /* المصدر: موقع CDN خارجي (اترك GIFTS_CDN فاضي '' للرجوع لملفات gifts/ المحلية) */
+  const url=GIFTS_CDN?GIFTS_CDN+encodeURIComponent(kindDir(K))+'/'+encodeURIComponent(modelName(K,i))+'.tgs':GIFTS_BASE+K.dir+'/'+f+'.tgs';
+  const r=await fetch(url);
   if(!r.ok)throw new Error('tgs '+r.status);
   const st=new Blob([await r.arrayBuffer()]).stream().pipeThrough(new DecompressionStream('gzip'));
   return _pepeTxt[key]=await new Response(st).text();
@@ -89,9 +110,16 @@ function bgCss(g){
   const up=g&&g.upgraded,b=up?PEPE_BGS[g.bg]:{a:'#3b414d',b:'#12151b'};
   return 'radial-gradient(circle at 50% 44%,'+b.a+' 0%,'+b.b+' 100%)';
 }
-function thumbUrl(g){
-  const K=gk(g.k),f=g.upgraded?K.models[g.model].f:'original';
+function thumbLocal(g){
+  const K=gk(g.k);if(K.gen)return BLANK_IMG;
+  const f=g.upgraded?K.models[g.model].f:'original';
   return GIFTS_BASE+K.dir+'/thumbs/'+f+'.webp';
+}
+/* الصورة المصغّرة من مجلد png بالـ CDN؛ إذا ما انوجدت يرجع للمحلية تلقائياً */
+function thumbUrl(g){
+  if(!GIFTS_CDN)return thumbLocal(g);
+  const K=gk(g.k);
+  return GIFTS_CDN+encodeURIComponent(kindDir(K))+'/png/'+encodeURIComponent(modelName(K,g.upgraded?g.model:-1))+'.png';
 }
 function giftArt(g,opt){
   opt=opt||{};
@@ -103,7 +131,7 @@ function giftArt(g,opt){
     /* مربعات الشبكة: صورة ثابتة خفيفة بدل أنيميشن Lottie؛ وإذا فشلت الصورة نرجع للأنيميشن */
     const im=new Image();im.alt='';im.decoding='async';im.loading='lazy';
     im.onerror=()=>mountPepeAnim(holder,mi,{still:true,kind:g.k});
-    im.src=thumbUrl(g);holder.appendChild(im);
+    im.onerror=function(){im.onerror=null;im.src=thumbLocal(g);};im.src=thumbUrl(g);holder.appendChild(im);
   }else mountPepeAnim(holder,mi,{kind:g.k});
   return el;
 }
@@ -125,12 +153,17 @@ function loadGiftsGrid(uid,gridId,wrapId){
       grid.appendChild(t);
     });
   };
-  const unsubs=Object.values(GIFT_KINDS).map(K=>{
+  const unsubs=Object.values(GIFT_KINDS).filter(K=>!K.gen).map(K=>{
     data[K.key]=[];
     return db.collection('users').doc(uid).collection(K.coll).onSnapshot(snap=>{
       data[K.key]=snap.docs.map(d=>Object.assign({k:K.key},d.data()));draw();
     },()=>{data[K.key]=[];draw();});
   });
+  /* الهدايا الإضافية كلها بمجموعة واحدة users/{uid}/gifts وكل وثيقة فيها k */
+  data.__gen=[];
+  unsubs.push(db.collection('users').doc(uid).collection('gifts').onSnapshot(snap=>{
+    data.__gen=snap.docs.map(d=>d.data()).filter(g=>g.k&&GIFT_KINDS[g.k]);draw();
+  },()=>{data.__gen=[];draw();}));
   giftGridUnsub[gridId]=()=>unsubs.forEach(u=>u());
 }
 
@@ -144,11 +177,11 @@ async function openGiftPage(uid,n,kind){
   const ov=document.createElement('div');ov.id='giftPage';ov.className='gp-ov';uiRoot().appendChild(ov);
   ov.innerHTML='<div class="gp-hero" style="background:'+bgCss({})+'"><div class="gp-top"><button type="button" class="gp-round" id="gpBack" aria-label="رجوع">'+IC_BACK+'</button></div></div>';
   ov.querySelector('#gpBack').onclick=closeGiftPage;
-  const issuedP=db.collection(K.sales).get().then(s=>s.size).catch(()=>null);
+  const issuedP=salesQ(K).get().then(s=>s.size).catch(()=>null);
   await loadUsers([uid]);
   const issued=await issuedP;
   if(!document.getElementById('giftPage'))return;
-  gpUnsub=db.collection('users').doc(uid).collection(K.coll).doc(String(n)).onSnapshot(doc=>{
+  gpUnsub=db.collection('users').doc(uid).collection(K.coll).doc(gid(K,n)).onSnapshot(doc=>{
     if(!doc.exists){closeGiftPage();showToast('هذه الهدية غير موجودة');return;}
     renderGiftPage(ov,uid,Object.assign({k:K.key},doc.data()),issued);
   },()=>{closeGiftPage();});
@@ -202,7 +235,7 @@ async function doUpgrade(ov,uid,g){
   }
   await sleep(250);
   try{
-    await db.collection('users').doc(uid).collection(K.coll).doc(String(g.number)).update({upgraded:true,model:res.model,bg:res.bg,sym:res.sym});
+    await db.collection('users').doc(uid).collection(K.coll).doc(gid(K,g.number)).update({upgraded:true,model:res.model,bg:res.bg,sym:res.sym});
     showToast('✨ تمت الترقية: '+K.models[res.model].n);
     const doc=ov.querySelector('#gpHero');if(doc)doc.classList.add('reveal');
   }catch(e){console.error(e);showToast('تعذرت الترقية');hero.classList.remove('rolling');renderGiftPage(ov,uid,g,null);}
@@ -212,19 +245,46 @@ async function doUpgrade(ov,uid,g){
 /* ---------- متجر الهدايا ---------- */
 let storeKind='pepe';
 function closeStore(){document.getElementById('giftStore')?.remove();clearInterval(window.__storeTimer);}
-function openStoreGrid(){
+async function openStoreGrid(){
   closeStore();
   const ov=document.createElement('div');ov.id='giftStore';ov.className='gp-ov st-ov';uiRoot().appendChild(ov);
-  const kinds=Object.values(GIFT_KINDS);
-  ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="stBack" aria-label="رجوع">'+IC_BACK+'</button><div class="gx-title"><b>متجر الهدايا</b></div></div>'
-    +'<div class="sg-sub">اختر هدية لتشتريها</div>'
-    +'<div class="sg-grid">'+kinds.map(K=>'<div class="sg-card" data-k="'+K.key+'"><div class="sg-ribbon"></div><div class="sg-art"><img alt="" src="'+GIFTS_BASE+K.dir+'/thumbs/original.webp"></div><div class="sg-name">'+K.name+'</div><div class="sg-price">⭐ '+K.price+'</div></div>').join('')+'</div>';
+  ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="stBack" aria-label="رجوع">'+IC_BACK+'</button><div class="gx-title"><b>متجر الهدايا</b></div></div><div class="sg-sub">جاري التحميل…</div>';
   ov.querySelector('#stBack').onclick=closeStore;
+  await GIFTS_READY;
+  if(!document.getElementById('giftStore'))return;
+  const kinds=Object.values(GIFT_KINDS);
+  const art=K=>{
+    const gen=!!K.gen;
+    const src=GIFTS_CDN?GIFTS_CDN+encodeURIComponent(kindDir(K))+'/png/'+encodeURIComponent(modelName(K,-1))+'.png':(gen?BLANK_IMG:GIFTS_BASE+K.dir+'/thumbs/original.webp');
+    const fb=gen?BLANK_IMG:GIFTS_BASE+K.dir+'/thumbs/original.webp';
+    return {src,fb};
+  };
+  ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="stBack" aria-label="رجوع">'+IC_BACK+'</button><div class="gx-title"><b>متجر الهدايا</b></div></div>'
+    +'<div class="sg-search"><input id="sgQ" type="search" placeholder="ابحث عن هدية…" autocomplete="off"></div>'
+    +'<div class="sg-grid">'+kinds.map(K=>{const a=art(K);return '<div class="sg-card" data-k="'+K.key+'" data-n="'+K.name.toLowerCase()+'"><div class="sg-ribbon"></div><div class="sg-art"><img alt="" loading="lazy" decoding="async" src="'+a.src+'" data-fb="'+a.fb+'"></div><div class="sg-name">'+K.name+'</div><div class="sg-price">⭐ '+K.price+'</div></div>';}).join('')+'</div>';
+  ov.querySelector('#stBack').onclick=closeStore;
+  ov.querySelectorAll('.sg-art img').forEach(im=>{im.onerror=()=>{im.onerror=null;im.src=im.dataset.fb;};});
   ov.querySelectorAll('.sg-card').forEach(c=>c.onclick=()=>openGiftStore(c.dataset.k));
-  /* نحدّث "نفدت" لكل نوع */
-  kinds.forEach(K=>db.collection(K.sales).get().then(s=>{
+  ov.querySelector('#sgQ').oninput=e=>{const q=e.target.value.trim().toLowerCase();ov.querySelectorAll('.sg-card').forEach(c=>{c.style.display=!q||c.dataset.n.includes(q)?'':'none';});};
+  /* "نفدت" للهديتين القديمتين فقط (الباقي نعرفه من صفحة الهدية حتى ما نقرأ مبيعات الكل) */
+  kinds.filter(K=>!K.gen).forEach(K=>db.collection(K.sales).get().then(s=>{
     if(K.max-s.size<=0){const c=ov.querySelector('.sg-card[data-k="'+K.key+'"]');if(c){c.classList.add('out');c.querySelector('.sg-ribbon').textContent='نفدت';}}
   }).catch(()=>{}));
+  syncCatalog();
+}
+/* المطوّر فقط: يكتب سعر وكمية كل هدية بـ giftCatalog حتى القواعد تتحقق منها عند الشراء */
+let catalogSynced=false;
+async function syncCatalog(){
+  if(catalogSynced||!isDevUser())return;catalogSynced=true;
+  try{
+    const cur={};(await db.collection('giftCatalog').get()).forEach(d=>cur[d.id]=d.data());
+    const todo=Object.values(GIFT_KINDS).filter(K=>K.gen&&(!cur[K.key]||cur[K.key].price!==K.price||cur[K.key].max!==K.max));
+    for(let i=0;i<todo.length;i+=400){
+      const b=db.batch();todo.slice(i,i+400).forEach(K=>b.set(db.collection('giftCatalog').doc(K.key),{name:K.name,price:K.price,max:K.max}));
+      await b.commit();
+    }
+    if(todo.length)showToast('تم تحديث كتالوج الهدايا ('+todo.length+')');
+  }catch(e){console.error(e);catalogSynced=false;}
 }
 async function openGiftStore(kind){
   if(typeof kind!=='string')return openStoreGrid();
@@ -233,7 +293,6 @@ async function openGiftStore(kind){
   const K=gk(storeKind);
   const ov=document.createElement('div');ov.id='giftStore';ov.className='gp-ov st-ov';uiRoot().appendChild(ov);
   ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="stBack" aria-label="رجوع">'+IC_BACK+'</button><div class="gx-title"><b>متجر الهدايا</b></div></div>'
-    +'<div class="sh-tabs st-kinds">'+Object.values(GIFT_KINDS).map(x=>'<button type="button" class="'+(x.key===K.key?'on':'')+'" data-k="'+x.key+'">'+x.name+'</button>').join('')+'</div>'
     +'<div class="st-body"><div class="st-hero" id="stHero"></div>'
     +'<div class="st-title">'+K.name+'</div><div class="st-sub" id="stSub">نسخ محدودة · '+K.max+' فقط</div>'
     +'<div class="gp-table st-table">'
@@ -242,7 +301,6 @@ async function openGiftStore(kind){
     +gpRow('الترقية','مجانية، نموذج وخلفية ورمز عشوائي')
     +'</div><button type="button" class="gp-cta" id="stBuy">شراء بـ '+K.price+' نجمة</button><div class="gp-note" id="stNote"></div></div>';
   ov.querySelector('#stBack').onclick=openStoreGrid;
-  ov.querySelectorAll('.st-kinds button').forEach(b=>b.onclick=()=>{if(b.dataset.k!==storeKind)openGiftStore(b.dataset.k);});
   // عرض متنوع: يبدّل النموذج والخلفية والرمز كل كم ثانية
   const hero=ov.querySelector('#stHero');let i=0;
   const show=()=>{
@@ -258,7 +316,7 @@ async function refreshStore(){
   const ov=document.getElementById('giftStore');if(!ov)return;
   const K=gk(storeKind);
   try{
-    const s=await db.collection(K.sales).get();
+    const s=await salesQ(K).get();
     const left=K.max-s.size,sub=ov.querySelector('#stSub'),btn=ov.querySelector('#stBuy');
     if(sub)sub.textContent='نسخة محدودة · المتبقي '+Math.max(0,left)+' من '+K.max;
     if(btn&&left<=0){btn.disabled=true;btn.textContent='نفدت الكمية';}
@@ -272,16 +330,16 @@ async function buyGift(kind){
   buying=true;
   const btn=document.getElementById('stBuy');if(btn){btn.disabled=true;btn.textContent='جاري الشراء…';}
   try{
-    const snap=await db.collection(K.sales).get(),taken=new Set(snap.docs.map(d=>d.id));
+    const snap=await salesQ(K).get(),taken=new Set(snap.docs.map(d=>K.gen?String(d.data().n):d.id));
     let n=0;for(let k=1;k<=K.max;k++)if(!taken.has(String(k))){n=k;break;}
     if(!n){showToast('نفدت الكمية');refreshStore();buying=false;return;}
     const wref=db.collection('wallets').doc(me),now=Date.now(),inc=firebase.firestore.FieldValue.increment;
     if(dev)await wref.set({stars:DEV_BIG},{merge:true});
     const b=db.batch();
-    const wu={stars:inc(-K.price)};wu[K.field]=String(n);
+    const wu={stars:inc(-K.price)};wu[K.field]=gid(K,n);
     b.update(wref,wu);
-    b.set(db.collection(K.sales).doc(String(n)),{ownerId:me,at:now});
-    b.set(db.collection('users').doc(me).collection(K.coll).doc(String(n)),{number:n,upgraded:false,at:now});
+    b.set(db.collection(K.gen?'giftSales':K.sales).doc(gid(K,n)),K.gen?{ownerId:me,at:now,k:K.key,n}:{ownerId:me,at:now});
+    b.set(db.collection('users').doc(me).collection(K.coll).doc(gid(K,n)),K.gen?{number:n,upgraded:false,at:now,k:K.key}:{number:n,upgraded:false,at:now});
     const tx={type:'buy',gift:n,stars:K.price,at:now};if(K.key!=='pepe')tx.kind=K.key;
     b.set(db.collection('users').doc(me).collection('txs').doc(),tx);
     await b.commit();
