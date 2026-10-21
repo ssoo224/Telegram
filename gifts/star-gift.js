@@ -20,9 +20,13 @@ async function devGiftStars(){
   }catch(e){console.error(e);return showToast('تعذر إهداء النجوم');}
   try{
     const cid=[me,to].sort().join('__');
-    await db.collection('chats').doc(cid).set({participants:[me,to],updatedAt:now},{merge:true});
-    await db.collection('chats').doc(cid).collection('messages').add({senderId:me,type:'stars',stars:n,text:'🎁 هدية '+fmtN(n)+' نجمة',createdAt:now,read:false});
-  }catch(e){}
+    const cref=db.collection('chats').doc(cid);
+    const cs=await cref.get();
+    /* مهم: ما نلمس participants إذا المحادثة موجودة (القواعد تمنع تغيير ترتيبها، وكان هذا سبب اختفاء الرسالة) */
+    if(cs.exists)await cref.update({updatedAt:now});
+    else await cref.set({participants:[me,to],updatedAt:now});
+    await cref.collection('messages').add({senderId:me,type:'stars',stars:n,text:'🎁 هدية '+fmtN(n)+' نجمة',createdAt:now,read:false});
+  }catch(e){console.error('star-gift message',e);showToast('وصلت النجوم لكن تعذر إظهار الهدية بالمحادثة');}
 }
 
 /* رسم الكارت البابلي: نجمة عشتار ذهبية داخل ميدالية لازورد */
