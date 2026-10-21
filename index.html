@@ -3218,6 +3218,27 @@ function renderSettingsHero() {
 /* ===== الخصوصية والأمان ===== */
 function isMeUser(u){ return !!u && (u === currentUserData || (currentUser && (u.id === currentUser.uid || u.uid === currentUser.uid))); }
 function pvUrl(u){ if (!u || !u.avatarUrl) return ''; return (u.hideAvatar && !isMeUser(u)) ? '' : u.avatarUrl; }
+// صورة مصغّرة (192px) لصورة المرسل تُرسل لإشعار أندرويد بدل الصورة الأصلية الكبيرة.
+const notifAvatarCache = {};
+function notifAvatarThumb(url, key, cb){
+  if (!url) { cb(''); return; }
+  if (url.indexOf('data:image') !== 0) { cb(url); return; }
+  const ck = key + ':' + url.length;
+  if (notifAvatarCache[ck]) { cb(notifAvatarCache[ck]); return; }
+  const im = new Image();
+  im.onload = function(){
+    try {
+      const size = 192, s = Math.min(im.naturalWidth, im.naturalHeight);
+      const sx = (im.naturalWidth - s) / 2, sy = (im.naturalHeight - s) / 2;
+      const c = document.createElement('canvas'); c.width = c.height = size;
+      c.getContext('2d').drawImage(im, sx, sy, s, s, 0, 0, size, size);
+      const out = c.toDataURL('image/jpeg', 0.85);
+      notifAvatarCache[ck] = out; cb(out);
+    } catch (e) { cb(''); }
+  };
+  im.onerror = function(){ cb(''); };
+  im.src = url;
+}
 function lsHidden(u){ return !!u && !!u.hideLastSeen && !isMeUser(u); }
 function openPrivacySettings(){ renderPrivacySeg(); showView('privacySettingsView'); }
 function renderPrivacySeg(){
@@ -4351,7 +4372,11 @@ function loadChats() {
                   const nativeBody = m.audioUrl ? '♬ رسالة صوتية' : (m.imageUrl ? '▧ صورة' : (m.text || 'رسالة جديدة'));
                   try {
                     if (window.BabylonAndroid && typeof window.BabylonAndroid.showMessageNotification === 'function') {
-                      window.BabylonAndroid.showMessageNotification(u.displayName || 'رسالة جديدة', String(nativeBody).slice(0, 300), pvUrl(u) || '');
+                      const nativeTitle = u.displayName || 'رسالة جديدة';
+                      notifAvatarThumb(pvUrl(u) || '', otherId, function(thumb){
+                        try { window.BabylonAndroid.showMessageNotification(nativeTitle, String(nativeBody).slice(0, 300), thumb || ''); }
+                        catch (e2) { console.warn('Native notification failed', e2); }
+                      });
                     }
                   } catch (nativeNotifError) { console.warn('Native notification failed', nativeNotifError); }
                 }
