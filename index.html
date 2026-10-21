@@ -3909,7 +3909,8 @@ function renderMsgDoc(doc, box, existingTyping) {
         let ignoreTouch = false;
 
         b.ontouchstart = (e) => {
-          ignoreTouch = false;
+          ignoreTouch = !!(e.target.closest && e.target.closest('.voice-play-btn,.voice-progress'));
+          if (ignoreTouch) return;
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
           pressTimer = setTimeout(() => {
@@ -3927,12 +3928,13 @@ function renderMsgDoc(doc, box, existingTyping) {
 
         b.ontouchend = (e) => {
           clearTimeout(pressTimer);
-          ignoreTouch = false;
+          if (ignoreTouch) { ignoreTouch = false; return; }
           if (touchStartX - e.changedTouches[0].clientX > 50) triggerSwipeReply(m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), doc.id);
         };
 
         b.onmousedown = (e) => {
           if (e.button !== 0) return;
+          if (e.target.closest && e.target.closest('.voice-play-btn,.voice-progress')) return;
           pressTimer = setTimeout(() => {
             suppressNextMessageClick = true;
             if (messageSelectionMode) toggleMessageSelection(doc.id);
@@ -5505,7 +5507,7 @@ function svFooter(s) {
       const el = $('svViews'); if (el) { el.textContent = SV.views.length + (r ? ` · ${r}` : ''); if (el.parentElement) el.parentElement.classList.toggle('has-reaction', r > 0); }
     }).catch(() => {});
   } else {
-    f.innerHTML = `<div class="sv-reacts" aria-label="إرسال إيموجي في المحادثة">${['😂','❤️','👍🏻','😭','✨'].map(e => `<span data-e="${e}" role="button" tabindex="0" aria-label="إرسال ${e}" onclick="sendStoryEmoji('${e}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sendStoryEmoji('${e}')}">${e}</span>`).join('')}</div><div id="svReactPicker" class="sv-react-picker hidden">${['😂','❤️','👍🏻','😭','✨','😍','😮','😢','🙏','🔥'].map(e=>`<button type="button" onclick="event.preventDefault();event.stopPropagation();svReact('${e}')" aria-label="تفاعل ${e}">${e}</button>`).join('')}</div><div class="sv-reply"><button id="svHeartBtn" class="sv-heart-btn" aria-label="تفاعل مع القصة" onpointerdown="svHeartDown(event)" onpointerup="svHeartUp(event)" onpointercancel="svHeartCancel()" onpointerleave="svHeartCancel()" oncontextmenu="event.preventDefault();svOpenReactPicker()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg></button><input id="svReplyInput" placeholder="رد على القصة..." autocomplete="off" oninput="svReplyInputChanged()" onfocus="svPause(true);svShowStoryReactions(true)" onblur="svStoryReactionBlur()" onkeydown="if(event.key==='Enter'){event.preventDefault();sendStoryReply()}"><button id="svReplySend" class="sv-pill hidden" aria-label="إرسال" onmousedown="event.preventDefault()" onclick="sendStoryReply()"><svg class="sv-send-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></button></div>`;
+    f.innerHTML = `<div class="sv-reacts" aria-label="إرسال إيموجي في المحادثة">${['😂','❤️','👍🏻','😭','✨'].map(e => `<span data-e="${e}" role="button" tabindex="0" aria-label="إرسال ${e}" onclick="sendStoryEmoji('${e}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sendStoryEmoji('${e}')}">${e}</span>`).join('')}</div><div id="svReactPicker" class="sv-react-picker hidden">${['😂','❤️','👍🏻','😭','✨','😍','😮','😢','🙏','🔥'].map(e=>`<button type="button" onclick="event.preventDefault();event.stopPropagation();svReact('${e}')" aria-label="تفاعل ${e}">${e}</button>`).join('')}</div><div class="sv-reply"><button id="svHeartBtn" class="sv-heart-btn" aria-label="تفاعل مع القصة" onpointerdown="svHeartDown(event)" onpointerup="svHeartUp(event)" onpointercancel="svHeartCancel()" onpointerleave="svHeartCancel()" oncontextmenu="event.preventDefault();svOpenReactPicker()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg></button><input id="svReplyInput" placeholder="رد على القصة..." autocomplete="off" oninput="svReplyInputChanged()" onfocus="svPause(true)" onblur="svPause(false)" onkeydown="if(event.key==='Enter'){event.preventDefault();sendStoryReply()}"><button id="svReplySend" class="sv-pill hidden" aria-label="إرسال" onmousedown="event.preventDefault()" onclick="sendStoryReply()"><svg class="sv-send-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></button></div>`;
     svReplyInputChanged();
     db.collection('stories').doc(s.id).collection('views').doc(currentUser.uid).get().then(d => {
       if (SV.list[SV.i] !== s || !d.exists) return;
@@ -9119,125 +9121,82 @@ function openMention(username){
 })();
 </script>
 
-<style id="gold-buttons-arabic-white-bold-fix">
-/* النص العربي في الأزرار الذهبية: أبيض وعريض، مع الحفاظ على الأيقونات */
-.app-container button,
-#storyViewer button,
-#storyManageModal button,
-button.babylon-btn,
+<style id="babylon-requested-final-fixes">
+/* اللون الأبيض يطبق على الأزرار الذهبية فقط */
+.app-container button.babylon-btn,
+.app-container .pf-btn.primary,
+#storyViewer .sv-action-pin,
+#storyViewer .sv-action-views,
+#storyManageModal .sm-save,
+#storyManageModal .sm-media,
 button.story-type-btn,
-.multi-select-bar button {
-  --gold-button-text:#fff;
-}
-.app-container button[style*="background:var(--babylon-gold)"],
-.app-container button[style*="background: var(--babylon-gold)"],
-.app-container button[style*="background:linear-gradient"],
-.app-container .babylon-btn,
-button.babylon-btn,
-button.story-type-btn,
-.multi-select-bar button:first-of-type {
-  color:#fff !important;
-  font-weight:700 !important;
-}
-.app-container button[style*="background:var(--babylon-gold)"] svg,
-.app-container button[style*="background: var(--babylon-gold)"] svg,
-.app-container .babylon-btn svg,
-button.babylon-btn svg,
-button.story-type-btn svg,
-.multi-select-bar button:first-of-type svg { color:#fff; }
-</style>
-
-<style id="babylon-requested-ui-fixes">
-/* Gold buttons: white, bold text and icons. */
-.app-container button.babylon-btn,.app-container button.story-type-btn,
-.app-container .pf-btn.primary,.app-container .sv-action,.app-container .sv-pill:not(.hidden),
-.app-container .record-send-btn,.app-container .notification-toggle button.active,
-.app-container .babylon-tab.active,.app-container .add-post-fab,.app-container .sc-chips button,
-.app-container .multi-select-bar button:not(.msb-close),
-.app-container button[style*="background:#c29d30"],.app-container button[style*="background: #c29d30"],
-.app-container button[style*="background:var(--babylon-gold)"],.app-container button[style*="background: var(--babylon-gold)"],
-.app-container button[style*="linear-gradient(135deg, var(--babylon-gold)"],.app-container button[style*="linear-gradient(135deg,var(--babylon-gold)"] {
+#notificationSettingsView .notification-toggle button.active {
  color:#fff!important;font-weight:700!important;
 }
-.app-container button.babylon-btn svg,.app-container button.story-type-btn svg,.app-container .pf-btn.primary svg,
-.app-container .sv-action svg,.app-container .record-send-btn svg,.app-container .multi-select-bar button:not(.msb-close) svg {
- color:#fff!important;stroke:currentColor;
-}
-/* Long-press selection on text, numbers, and voice-note controls. */
-.app-container .msg-bubble,.app-container .msg-bubble *,.app-container .audio-player-card,.app-container .audio-player-card * {
+.app-container button.babylon-btn svg,.app-container .pf-btn.primary svg,
+#storyViewer .sv-action-pin svg,#storyViewer .sv-action-views svg,
+#storyManageModal .sm-save svg,button.story-type-btn svg {color:#fff!important;stroke:currentColor}
+/* السماح بتحديد نص الرسائل والصوتيات على الهاتف */
+.msg-bubble,.msg-bubble *,.audio-player-card,.audio-player-card * {
  -webkit-touch-callout:default;
 }
-.app-container .msg-bubble .msg-text,.app-container .msg-bubble .audio-player-card,.app-container .msg-bubble .audio-player-card * {
- user-select:text!important;-webkit-user-select:text!important;
+.msg-bubble .msg-text,.msg-bubble .reply-quote,.audio-player-title,
+.audio-player-card .voice-time,.audio-player-card .voice-progress-row {
+ -webkit-user-select:text!important;user-select:text!important;
 }
-/* Story owner controls next to the close button. */
-#storyViewer .sv-top{gap:7px}
-#storyViewer .sv-top .sv-top-owner-actions{display:flex;align-items:center;gap:5px;flex:0 0 auto}
-#storyViewer .sv-top .sv-top-owner-actions .sv-action{width:32px;height:32px;min-width:32px;min-height:32px;max-width:32px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:5px}
-#storyViewer .sv-top .sv-top-owner-actions .sv-action svg{width:17px;height:17px}
-#storyViewer .sv-own .sv-action-edit,#storyViewer .sv-own .sv-action-pin,#storyViewer .sv-own .sv-action-delete{display:none!important}
-#storyViewer .sv-cap{bottom:calc(64px + env(safe-area-inset-bottom, 0px))!important}
-/* Hide reactions until the reply field is focused. */
-#storyViewer:not(.reactions-open) .sv-reacts,#storyViewer:not(.reactions-open) #svReactPicker{display:none!important}
-#storyViewer.reactions-open .sv-reacts{display:flex!important}
-#storyViewer.reactions-open #svReactPicker:not(.hidden){display:flex!important}
-/* Viewers sheet day theme. */
-.app-container[data-app-theme="light"] .viewers-modal{background:rgba(20,30,45,.28)}
+/* وصف القصة أخفض قليلاً */
+#storyViewer .sv-cap{bottom:calc(68px + env(safe-area-inset-bottom,0px))!important}
+/* التفاعلات لا تظهر للمشاهد إلا أثناء التركيز على حقل الرد */
+#storyViewer .sv-reacts{display:none!important}
+#storyViewer .sv-foot.reply-focused .sv-reacts{display:flex!important}
+#storyViewer .sv-react-picker{display:none!important}
+#storyViewer .sv-foot.reply-focused .sv-react-picker:not(.hidden){display:flex!important}
+/* ألوان قائمة المشاهدين في الوضع النهاري */
+.app-container[data-app-theme="light"] .viewers-modal{background:rgba(15,23,42,.35)}
 .app-container[data-app-theme="light"] .viewers-card{background:#fff!important;color:#17212b!important;border:1px solid #e1e7ef}
-.app-container[data-app-theme="light"] .viewers-title{color:#17212b!important}
-.app-container[data-app-theme="light"] .viewer-item{border-bottom-color:#e6ebf2}
-.app-container[data-app-theme="light"] .viewer-item,.app-container[data-app-theme="light"] .viewer-info,.app-container[data-app-theme="light"] .viewer-info *{color:#17212b}
-[data-theme="light"] .viewers-card,[data-theme="day"] .viewers-card,.theme-light .viewers-card,body.light .viewers-card{background:#fff!important;color:#17212b!important}
-[data-theme="light"] .viewers-title,[data-theme="day"] .viewers-title,.theme-light .viewers-title,body.light .viewers-title{color:#17212b!important}
+.app-container[data-app-theme="light"] .viewers-title,
+.app-container[data-app-theme="light"] .viewer-item,
+.app-container[data-app-theme="light"] .viewer-info,
+.app-container[data-app-theme="light"] .viewers-card :is(span,strong,small,p,div){color:#17212b}
+.app-container[data-app-theme="light"] .viewer-item{border-bottom-color:#e7edf4}
+/* مساحة لأزرار إدارة القصة بجوار × */
+#storyViewer .sv-top{justify-content:flex-start;gap:7px;padding-inline:10px}
+#storyViewer .sv-top>.icon-btn{order:3;flex:0 0 36px;width:36px;height:36px}
+#storyViewer .sv-top .sv-own{order:2;display:flex;flex:1;justify-content:flex-start;gap:5px;width:auto;min-width:0}
+#storyViewer .sv-top .sv-action{width:34px;height:34px;min-width:34px;max-width:34px;min-height:34px;border-radius:10px}
+#storyViewer .sv-top .sv-action-views{width:auto;min-width:48px;max-width:none}
+@media(max-width:380px){#storyViewer .sv-top{gap:4px}#storyViewer .sv-top .sv-action{width:31px;height:32px;min-width:31px;max-width:31px}#storyViewer .sv-top .sv-action-views{min-width:43px;max-width:none}}
 </style>
-<script id="babylon-requested-ui-behavior">
+<script id="babylon-requested-final-fixes-js">
 (function(){
- function moveStoryOwnerActions(){
-  var viewer=document.getElementById('storyViewer');if(!viewer)return;
-  var top=viewer.querySelector('.sv-top'),foot=viewer.querySelector('#svFoot');if(!top||!foot)return;
-  var close=top.querySelector('button[aria-label="إغلاق القصة"]');if(!close)return;
-  var own=foot.querySelector('.sv-own'),actions=own&&own.querySelectorAll('.sv-action-edit,.sv-action-pin,.sv-action-delete');
-  if(!actions||!actions.length)return;
-  var holder=top.querySelector('.sv-top-owner-actions');
-  if(!holder){holder=document.createElement('div');holder.className='sv-top-owner-actions';close.parentNode.insertBefore(holder,close);}
-  actions.forEach(function(btn){if(btn.parentNode!==holder)holder.appendChild(btn);});
+ const root=document.querySelector('.app-container');
+ function isGoldButton(b){
+  const cs=getComputedStyle(b),bg=(cs.backgroundColor+' '+cs.backgroundImage+' '+b.getAttribute('style')+' '+b.className).toLowerCase();
+  return /babylon-btn|story-type-btn|pf-btn primary|sm-save|sv-action-pin|notification-toggle/.test(bg) ||
+   ((/linear-gradient|rgb\(\s*(194|203|212|217|226|232|245),/.test(bg)) && !/danger|delete|cancel|red|#ff/i.test(bg));
  }
-
- function paintGoldButtons(){
-  document.querySelectorAll('.app-container button, #storyViewer button, #storyManageModal button, .multi-select-bar button').forEach(function(btn){
-   var cs=getComputedStyle(btn), bg=(cs.backgroundImage||'')+' '+(cs.backgroundColor||'');
-   var gold=/rgb\(\s*(194|197|203|211|212|217|226|232|238|243|245|248)\s*,\s*(\d{2,3})\s*,\s*(\d{1,3})\s*\)/i.test(bg) ||
-    /#(?:c29d30|c5a028|b38f27|d4af37|e8c85d|cba843|d9b64f|f5d76e|b8912a|e2b53c|cf9d27)/i.test(bg);
-   if(!gold && /linear-gradient/i.test(bg)) gold=/gold|babylon-gold|#c29d30|#b38f27|#d4af37|#e8c85d|#cba843/i.test(bg);
-   if(gold){btn.style.setProperty('color','#fff','important');btn.style.setProperty('font-weight','700','important');btn.querySelectorAll('svg').forEach(function(svg){svg.style.setProperty('color','#fff','important');svg.style.setProperty('stroke','currentColor');});}
-  });
+ function fixGoldButtons(scope){(scope||document).querySelectorAll('button').forEach(b=>{
+  if(!isGoldButton(b))return;
+  const cs=getComputedStyle(b),bg=(cs.backgroundColor+' '+cs.backgroundImage+' '+b.getAttribute('style')+' '+b.className).toLowerCase();
+  if(/danger|delete|cancel|red|#ff6a|#c52d/.test(bg))return;
+  b.style.setProperty('color','#fff','important');b.style.setProperty('font-weight','700','important');
+  b.querySelectorAll('svg').forEach(svg=>{svg.style.setProperty('color','#fff','important');svg.style.setProperty('stroke','currentColor','important');});
+ });}
+ fixGoldButtons();
+ new MutationObserver(ms=>ms.forEach(m=>{m.addedNodes&&m.addedNodes.forEach(n=>{if(n.nodeType===1){if(n.matches&&n.matches('button'))fixGoldButtons(n.parentElement||document);else fixGoldButtons(n);}})})).observe(document.documentElement,{childList:true,subtree:true});
+ // نقل أدوات مالك القصة من أسفل العرض إلى الشريط العلوي بجوار زر الإغلاق.
+ function moveStoryActions(){const top=document.querySelector('#storyViewer .sv-top'),foot=document.getElementById('svFoot');if(!top||!foot)return;const own=foot.querySelector('.sv-own');if(own&&own.parentElement!==top){top.insertBefore(own,top.querySelector('.icon-btn')||null);}}
+ const foot=document.getElementById('svFoot');if(foot)new MutationObserver(moveStoryActions).observe(foot,{childList:true,subtree:true});
+ const viewer=document.getElementById('storyViewer');if(viewer){
+  viewer.addEventListener('focusin',e=>{if(e.target&&e.target.id==='svReplyInput'){const f=document.getElementById('svFoot');if(f)f.classList.add('reply-focused');if(typeof svPause==='function')svPause(true);}});
+  viewer.addEventListener('focusout',e=>{if(e.target&&e.target.id==='svReplyInput'){setTimeout(()=>{const inp=document.getElementById('svReplyInput'),f=document.getElementById('svFoot');if(inp&&document.activeElement===inp)return;if(f)f.classList.remove('reply-focused');const picker=document.getElementById('svReactPicker');if(picker)picker.classList.add('hidden');if(typeof svPause==='function')svPause(false);},120);}});
+  viewer.addEventListener('click',e=>{if(e.target.closest('.sv-action'))e.stopPropagation();});
  }
- window.svShowStoryReactions=function(show){
-  var viewer=document.getElementById('storyViewer');if(viewer)viewer.classList.toggle('reactions-open',!!show);
-  if(show){var picker=document.getElementById('svReactPicker');if(picker)picker.classList.remove('hidden');}
- };
- window.svStoryReactionBlur=function(){
-  setTimeout(function(){
-   var viewer=document.getElementById('storyViewer'),input=document.getElementById('svReplyInput');
-   if(input&&document.activeElement===input)return;
-   if(viewer)viewer.classList.remove('reactions-open');
-   var picker=document.getElementById('svReactPicker');if(picker)picker.classList.add('hidden');
-   if(typeof svPause==='function')svPause(false);
-  },180);
- };
- var root=document.getElementById('storyViewer');
- if(root){
-  new MutationObserver(moveStoryOwnerActions).observe(root,{subtree:true,childList:true});
-  moveStoryOwnerActions();
-  root.addEventListener('focusin',function(e){if(e.target&&e.target.id==='svReplyInput')window.svShowStoryReactions(true);});
-  root.addEventListener('focusout',function(e){if(e.target&&e.target.id==='svReplyInput')window.svStoryReactionBlur();});
- }
- document.addEventListener('DOMContentLoaded',function(){moveStoryOwnerActions();paintGoldButtons();});
- document.addEventListener('click',function(e){
-  if(window.suppressNextMessageClick && e.target && e.target.closest && e.target.closest('.voice-play-btn,.voice-progress')){
-   e.preventDefault();e.stopPropagation();window.suppressNextMessageClick=false;
-  }
- },true);
- setInterval(function(){moveStoryOwnerActions();paintGoldButtons();},900);
+ // الضغط المطول على محتوى الرسالة أو زر تشغيل الصوت يحدد النص بدلاً من فتح قائمة الرسالة.
+ let hold=null,holdTarget=null,holdX=0,holdY=0,selectedByHold=false;
+ document.addEventListener('pointerdown',e=>{const bubble=e.target.closest&&e.target.closest('#chatView .msg-bubble');if(!bubble)return;holdTarget=bubble;holdX=e.clientX;holdY=e.clientY;selectedByHold=false;clearTimeout(hold);hold=setTimeout(()=>{if(!holdTarget)return;const text=holdTarget.querySelector('.msg-text,.audio-player-title,.voice-time')||holdTarget;try{const range=document.createRange();range.selectNodeContents(text);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);selectedByHold=true;}catch(_){}},550);},true);
+ document.addEventListener('pointermove',e=>{if(hold&&(Math.abs(e.clientX-holdX)>12||Math.abs(e.clientY-holdY)>12)){clearTimeout(hold);hold=null;}},true);
+ ['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,()=>{clearTimeout(hold);hold=null;holdTarget=null;},true));
+ document.addEventListener('contextmenu',e=>{if(e.target.closest&&e.target.closest('#chatView .msg-bubble')){e.preventDefault();}},true);
 })();
 </script>
