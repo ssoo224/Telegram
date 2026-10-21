@@ -1,10 +1,10 @@
 /* ===== gifts.js — هدايا Plush Pepe + المحفظة + المتجر ===== */
 /* يُحمَّل بعد models.js وقبل star-gift.js. اقرأ gifts/README.md */
-const PEPE_MAX=30, PEPE_PRICE=100, DEV_BIG=1000000000;
+const PEPE_MAX=30, PEPE_PRICE=1000, DEV_BIG=1000000000;
 /* أنواع الهدايا: كل نوع له مجموعة بفايربيس + مبيعات + نماذج. نوع جديد = سطر هنا + قواعد firestore */
 const GIFT_KINDS={
-  pepe:{key:'pepe',name:'Plush Pepe',coll:'pepes',sales:'pepeSales',field:'lastBuy',max:30,price:100,dir:'models',models:PEPE_MODELS},
-  cat:{key:'cat',name:'Scared Cat',coll:'cats',sales:'catSales',field:'lastBuyCat',max:30,price:100,dir:'cat-models',models:CAT_MODELS}
+  pepe:{key:'pepe',name:'Plush Pepe',coll:'pepes',sales:'pepeSales',field:'lastBuy',max:30,price:1000,dir:'models',models:PEPE_MODELS},
+  cat:{key:'cat',name:'Scared Cat',coll:'cats',sales:'catSales',field:'lastBuyCat',max:30,price:500,dir:'cat-models',models:CAT_MODELS}
 };
 const gk=k=>GIFT_KINDS[k||'pepe']||GIFT_KINDS.pepe;
 const PEPE_BGS=[{n:'Chocolate',a:'#b8795a',b:'#5b3326',p:30},{n:'Emerald',a:'#3fd0a0',b:'#0a5a40',p:25},{n:'Sapphire',a:'#5784e6',b:'#122565',p:20},{n:'Ruby',a:'#ea4b50',b:'#650d1a',p:15},{n:'Black',a:'#26262c',b:'#000000',p:10}];
@@ -218,7 +218,7 @@ function openStoreGrid(){
   const kinds=Object.values(GIFT_KINDS);
   ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="stBack" aria-label="رجوع">'+IC_BACK+'</button><div class="gx-title"><b>متجر الهدايا</b></div></div>'
     +'<div class="sg-sub">اختر هدية لتشتريها</div>'
-    +'<div class="sg-grid">'+kinds.map(K=>'<div class="sg-card" data-k="'+K.key+'"><div class="sg-ribbon">محدودة</div><div class="sg-art"><img alt="" src="'+GIFTS_BASE+K.dir+'/thumbs/original.webp"></div><div class="sg-name">'+K.name+'</div><div class="sg-price">⭐ '+K.price+'</div></div>').join('')+'</div>';
+    +'<div class="sg-grid">'+kinds.map(K=>'<div class="sg-card" data-k="'+K.key+'"><div class="sg-ribbon"></div><div class="sg-art"><img alt="" src="'+GIFTS_BASE+K.dir+'/thumbs/original.webp"></div><div class="sg-name">'+K.name+'</div><div class="sg-price">⭐ '+K.price+'</div></div>').join('')+'</div>';
   ov.querySelector('#stBack').onclick=closeStore;
   ov.querySelectorAll('.sg-card').forEach(c=>c.onclick=()=>openGiftStore(c.dataset.k));
   /* نحدّث "نفدت" لكل نوع */
