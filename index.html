@@ -9136,13 +9136,12 @@ button.story-type-btn,
 .app-container button.babylon-btn svg,.app-container .pf-btn.primary svg,
 #storyViewer .sv-action-pin svg,#storyViewer .sv-action-views svg,
 #storyManageModal .sm-save svg,button.story-type-btn svg {color:#fff!important;stroke:currentColor}
-/* السماح بتحديد نص الرسائل والصوتيات على الهاتف */
-.msg-bubble,.msg-bubble *,.audio-player-card,.audio-player-card * {
- -webkit-touch-callout:default;
-}
-.msg-bubble .msg-text,.msg-bubble .reply-quote,.audio-player-title,
-.audio-player-card .voice-time,.audio-player-card .voice-progress-row {
- -webkit-user-select:text!important;user-select:text!important;
+/* منع تحديد نص الرسائل بالضغط المطول داخل المحادثة */
+#chatView .msg-bubble,#chatView .msg-bubble *,
+#chatView .audio-player-card,#chatView .audio-player-card * {
+ -webkit-touch-callout:none!important;
+ -webkit-user-select:none!important;
+ user-select:none!important;
 }
 /* وصف القصة أخفض قليلاً */
 #storyViewer .sv-cap{bottom:calc(68px + env(safe-area-inset-bottom,0px))!important}
@@ -9192,11 +9191,7 @@ button.story-type-btn,
   viewer.addEventListener('focusout',e=>{if(e.target&&e.target.id==='svReplyInput'){setTimeout(()=>{const inp=document.getElementById('svReplyInput'),f=document.getElementById('svFoot');if(inp&&document.activeElement===inp)return;if(f)f.classList.remove('reply-focused');const picker=document.getElementById('svReactPicker');if(picker)picker.classList.add('hidden');if(typeof svPause==='function')svPause(false);},120);}});
   viewer.addEventListener('click',e=>{if(e.target.closest('.sv-action'))e.stopPropagation();});
  }
- // الضغط المطول على محتوى الرسالة أو زر تشغيل الصوت يحدد النص بدلاً من فتح قائمة الرسالة.
- let hold=null,holdTarget=null,holdX=0,holdY=0,selectedByHold=false;
- document.addEventListener('pointerdown',e=>{const bubble=e.target.closest&&e.target.closest('#chatView .msg-bubble');if(!bubble)return;holdTarget=bubble;holdX=e.clientX;holdY=e.clientY;selectedByHold=false;clearTimeout(hold);hold=setTimeout(()=>{if(!holdTarget)return;const text=holdTarget.querySelector('.msg-text,.audio-player-title,.voice-time')||holdTarget;try{const range=document.createRange();range.selectNodeContents(text);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);selectedByHold=true;}catch(_){}},550);},true);
- document.addEventListener('pointermove',e=>{if(hold&&(Math.abs(e.clientX-holdX)>12||Math.abs(e.clientY-holdY)>12)){clearTimeout(hold);hold=null;}},true);
- ['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,()=>{clearTimeout(hold);hold=null;holdTarget=null;},true));
+ // تعطيل قائمة النسخ/تحديد النص بالضغط المطول داخل الرسائل فقط.
  document.addEventListener('contextmenu',e=>{if(e.target.closest&&e.target.closest('#chatView .msg-bubble')){e.preventDefault();}},true);
 })();
 </script>
