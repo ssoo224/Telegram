@@ -46,7 +46,7 @@ const kindDir=K=>GIFTS_CDN_DIR[K.key]||K.name;
 const modelName=(K,i)=>i<0?(K.gen&&!K.orig?K.models[0].n:'Original'):K.models[i].n;
 const BLANK_IMG='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const loadManifest=async()=>{
-  for(const u of [GIFTS_BASE+'manifest.json?v=1','/gifts/manifest.json?v=1']){
+  for(const u of [GIFTS_BASE+'manifest.json?v=1','/gifts/manifest.json?v=1','/manifest.json?v=1']){
     try{const r=await fetch(u);if(!r.ok)continue;const j=await r.json();if(j&&j.gifts)return j;}catch(e){}
   }
   console.warn('gifts manifest.json not found');return null;
