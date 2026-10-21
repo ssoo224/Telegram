@@ -9173,6 +9173,56 @@ body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-title{ba
 #storyViewer .sv-own .sv-action-views{display:none!important}
 body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-card{max-height:min(76vh,620px);overflow:auto}
 body:has(.app-container[data-app-theme="light"]) #viewersModal .viewer-item{background:#fff!important}
+
+/* إصلاح نهائي: قائمة المشاهدين في النهاري، وعداد القصة أسفل الوصف */
+/* قد تكون نافذة المشاهدين خارج .app-container، لذلك نعتمد :has على عنصر التطبيق ونغطي أسماء الثيمات الشائعة */
+body:has(.app-container[data-app-theme="light"]) #viewersModal,
+body:has(.app-container[data-theme="light"]) #viewersModal,
+body:has(.app-container[data-app-theme="day"]) #viewersModal,
+body:has([data-theme="light"]) #viewersModal,
+body:has(.light-mode) #viewersModal,
+body:has(.theme-light) #viewersModal,
+body.light #viewersModal {
+  background:rgba(15,23,42,.24)!important;
+}
+body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-card,
+body:has(.app-container[data-theme="light"]) #viewersModal .viewers-card,
+body:has(.app-container[data-app-theme="day"]) #viewersModal .viewers-card,
+body:has([data-theme="light"]) #viewersModal .viewers-card,
+body:has(.light-mode) #viewersModal .viewers-card,
+body:has(.theme-light) #viewersModal .viewers-card,
+body.light #viewersModal .viewers-card {
+  background:#fff!important;color:#17212b!important;border:1px solid #e1e7ef!important;
+  box-shadow:0 18px 50px rgba(15,23,42,.18)!important;
+}
+body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-card *,
+body:has(.app-container[data-theme="light"]) #viewersModal .viewers-card *,
+body:has(.app-container[data-app-theme="day"]) #viewersModal .viewers-card *,
+body:has([data-theme="light"]) #viewersModal .viewers-card *,
+body:has(.light-mode) #viewersModal .viewers-card *,
+body:has(.theme-light) #viewersModal .viewers-card *,
+body.light #viewersModal .viewers-card * {
+  color:#17212b!important;
+}
+body:has(.app-container[data-app-theme="light"]) #viewersModal .viewer-item,
+body:has(.app-container[data-theme="light"]) #viewersModal .viewer-item,
+body:has(.app-container[data-app-theme="day"]) #viewersModal .viewer-item,
+body:has([data-theme="light"]) #viewersModal .viewer-item,
+body:has(.light-mode) #viewersModal .viewer-item,
+body:has(.theme-light) #viewersModal .viewer-item,
+body.light #viewersModal .viewer-item {
+  background:#fff!important;border-bottom:1px solid #e7edf4!important;
+}
+/* العداد يأتي كسطر مستقل أسفل نص وصف القصة */
+#storyViewer #svCap .sv-story-stats{
+  display:flex!important;position:relative!important;inset:auto!important;transform:none!important;
+  margin:9px auto 0!important;clear:both;z-index:7;flex-shrink:0;
+  color:#fff!important;background:rgba(8,12,18,.62)!important;
+  border:1px solid rgba(255,255,255,.3)!important;
+}
+#storyViewer #svCap .sv-story-stats span{color:#fff!important;font-weight:700!important}
+#storyViewer #svCap{overflow:visible!important}
+
 </style>
 <script id="babylon-requested-final-fixes-js">
 (function(){
