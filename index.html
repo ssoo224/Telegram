@@ -3870,11 +3870,12 @@ function renderMsgDoc(doc, box, existingTyping) {
         b.id = "message_" + doc.id;
         b.dataset.created = String(m.createdAt || 0);
         b.dataset.messageText = String(m.text || '');
+        b.dataset.senderId = String(m.senderId || '');
         
         let htmlContent = "";
         if (grp && !isMine) htmlContent += groupSenderHtml(m.senderId);
         if (m.forwarded) htmlContent += `<div class="fwd-label"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 6 6-6 6"/><path d="M21 11H9a6 6 0 0 0-6 6v1"/></svg>معاد توجيهها</div>`;
-        if (m.replyTo) htmlContent += `<div class="reply-quote" data-reply-id="${esc(m.replyToId||'')}" role="button">${esc(m.replyTo)}</div>`;
+        if (m.replyTo) { const _rsid = m.replyToSenderId || (m.replyToId ? ((document.getElementById('message_'+m.replyToId)||{dataset:{}}).dataset.senderId||'') : ''); const _rn = _rsid ? replyOwnerName(_rsid) : ''; htmlContent += `<div class="reply-quote" data-reply-id="${esc(m.replyToId||'')}" role="button">${_rn ? `<span class="reply-quote-name">${esc(_rn)}</span>` : ''}${esc(m.replyTo)}</div>`; }
         if (m.storyReply) {
           const sr = m.storyReplyData || {};
           const previewText = sr.caption || (sr.videoUrl ? 'قصة فيديو' : 'قصة');
@@ -4013,9 +4014,22 @@ function deleteMultipleMessagesForMe() {
   showToast(`تم إخفاء ${ids.length} رسالة لديك فقط`);
 }
 
-function triggerSwipeReply(text, id) {
+function replyOwnerName(uid) {
+  if (!uid) return '';
+  if (currentUser && uid === currentUser.uid) return 'أنت';
+  try { if (isGroupChat(activeChatId)) return gUserName(uid); } catch (e) {}
+  const t = document.getElementById('chatTitleText');
+  return (t && t.textContent.trim()) || '';
+}
+let replyingToSenderId = null;
+function triggerSwipeReply(text, id, senderId) {
   replyingToText = text;
   replyingToId = id || null;
+  const _el = id ? document.getElementById('message_' + id) : null;
+  replyingToSenderId = senderId || (_el && _el.dataset.senderId) || null;
+  const _lbl = document.querySelector('#replyPreviewBar .reply-preview-label span');
+  const _nm = replyOwnerName(replyingToSenderId);
+  if (_lbl) _lbl.textContent = _nm ? 'الرد على ' + _nm : 'الرد على الرسالة';
   const previewText = document.getElementById("replyPreviewText");
   if (previewText) previewText.textContent = replyingToText || "رسالة";
   document.getElementById("replyPreviewBar").classList.remove("hidden");
@@ -4129,6 +4143,7 @@ function actionCopy() {
 function cancelReply() {
   replyingToText = null;
   replyingToId = null;
+  replyingToSenderId = null;
   document.getElementById("replyPreviewBar").classList.add("hidden");
 }
 
@@ -4285,7 +4300,7 @@ function sendMessage(e) {
       createdAt: Date.now()
     };
 
-    if (replyingToText) { msgData.replyTo = replyingToText; if (replyingToId) msgData.replyToId = replyingToId; }
+    if (replyingToText) { msgData.replyTo = replyingToText; if (replyingToId) msgData.replyToId = replyingToId; if (replyingToSenderId) msgData.replyToSenderId = replyingToSenderId; }
     if (isGroupChat(activeChatId)) { const _mn = extractMentionUids(text); if (_mn.length) msgData.mentions = _mn; }
 
     db.collection("chats").doc(activeChatId).collection("messages").add(msgData).then(() => {
@@ -7509,14 +7524,15 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 </style>
 
 <style id="babylon-slim-reply-round-rec">
-#chatView .reply-preview-bar, .reply-preview-bar { gap:8px !important; padding:4px 10px 3px !important; }
-.reply-preview-content { padding:3px 9px !important; border-radius:6px 0 0 6px !important; }
-.reply-preview-label { margin-bottom:0 !important; font-size:10px !important; gap:4px !important; line-height:1.2 !important; }
-.reply-preview-label svg { width:12px !important; height:12px !important; }
-.reply-preview-message { font-size:12px !important; line-height:1.3 !important; }
-.reply-preview-cancel { width:26px !important; height:26px !important; flex:0 0 26px !important; }
-.reply-preview-cancel svg { width:14px !important; height:14px !important; }
+#chatView .reply-preview-bar, .reply-preview-bar { gap:10px !important; padding:6px 10px 6px !important; margin:6px 8px 4px !important; border:1px solid var(--babylon-border,rgba(148,163,184,.25)) !important; border-radius:14px !important; }
+.reply-preview-content { padding:5px 10px !important; border-radius:8px 0 0 8px !important; }
+.reply-preview-label { margin-bottom:2px !important; font-size:11px !important; gap:5px !important; line-height:1.3 !important; }
+.reply-preview-label svg { width:14px !important; height:14px !important; }
+.reply-preview-message { font-size:13px !important; line-height:1.4 !important; }
+.reply-preview-cancel { width:30px !important; height:30px !important; flex:0 0 30px !important; }
+.reply-preview-cancel svg { width:16px !important; height:16px !important; }
 .recording-bar { border-radius:18px !important; margin:6px 10px !important; border:1px solid var(--babylon-border,rgba(148,163,184,.2)) !important; }
+.reply-quote-name{display:block;font-size:11px;color:var(--babylon-gold,#c9a45c);margin-bottom:2px}
 </style>
 
 <script id="babylon-voice-pop">
