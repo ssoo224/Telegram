@@ -2482,7 +2482,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
   <div class="viewers-card" style="padding:20px; gap:12px;">
     <div class="viewers-title" style="display:flex;align-items:center;justify-content:center;gap:8px">اختر نوع المنشور <svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
     <button class="babylon-btn story-type-btn story-type-limited" onclick="selectPublishType('story')"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17M8 13h3M8 16h6"/></svg> قصة (بوقت محدود)</button>
-    <button class="babylon-btn story-type-btn" style="background:transparent; border:1px solid var(--babylon-gold); color:var(--babylon-gold);" onclick="selectPublishType('post')"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg> منشور دائم بالبروفايل</button>
+    <button class="babylon-btn story-type-btn story-type-outline" onclick="selectPublishType('post')"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg> منشور دائم بالبروفايل</button>
   </div>
 </div>
 
@@ -9229,11 +9229,28 @@ body.light #viewersModal .viewer-item {
 /* الأيقونات بجانب زر الإغلاق وليس بجانب الاسم والصورة */
 #storyViewer .sv-top .story-user-info{margin-inline-end:auto!important}
 #storyViewer .sv-top .sv-own{flex:0 0 auto!important;justify-content:flex-end!important;margin:0!important}
+
+/* نافذة اختيار نوع المنشور: أزرار وألوان وخط عربي متناسقة */
+#publishTypeModal .viewers-card{width:min(88vw,340px)!important;padding:20px!important;gap:12px!important;border-radius:22px!important;direction:rtl}
+#publishTypeModal .viewers-title{font-size:17px!important;font-weight:800!important;text-align:center!important;margin:0 0 4px!important;font-family:inherit}
+#publishTypeModal .story-type-btn{width:100%;min-height:50px;padding:0 14px;border-radius:14px!important;font-family:inherit;font-size:15px;font-weight:800;direction:rtl;cursor:pointer;gap:10px;-webkit-tap-highlight-color:transparent}
+#publishTypeModal .story-type-btn:active{transform:scale(.98)}
+#publishTypeModal .story-type-btn svg{width:20px;height:20px;flex:0 0 20px}
+/* الزر الأول: ذهبي بنص أبيض */
+#publishTypeModal button.story-type-limited{background:linear-gradient(135deg,#e6bd45,#b8861b)!important;border:0!important;color:#fff!important;-webkit-text-fill-color:#fff!important;box-shadow:0 5px 16px rgba(184,134,27,.28)}
+/* الزر الثاني: إطار ذهبي ونص بلون واضح حسب الثيم */
+#publishTypeModal button.story-type-btn.story-type-outline{background:transparent!important;border:1.5px solid #c29d30!important;box-shadow:none!important}
+body:has(.app-container[data-app-theme="light"]) #publishTypeModal button.story-type-btn.story-type-outline,
+body:has(.app-container[data-app-theme="light"]) #publishTypeModal button.story-type-btn.story-type-outline svg{color:#8a6410!important;-webkit-text-fill-color:#8a6410!important;stroke:#8a6410!important;border-color:#c29d30!important}
+body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-type-btn.story-type-outline,
+body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-type-btn.story-type-outline svg{color:#e4c45b!important;-webkit-text-fill-color:#e4c45b!important;stroke:#e4c45b!important;border-color:#e4c45b!important}
+#publishTypeModal button.story-type-btn.story-type-outline svg{fill:none!important}
 </style>
 <script id="babylon-requested-final-fixes-js">
 (function(){
  const root=document.querySelector('.app-container');
  function isGoldButton(b){
+  if(b.classList&&b.classList.contains('story-type-outline'))return false;
   const cs=getComputedStyle(b),bg=(cs.backgroundColor+' '+cs.backgroundImage+' '+b.getAttribute('style')+' '+b.className).toLowerCase();
   return /babylon-btn|story-type-btn|pf-btn primary|sm-save|sv-action-pin|notification-toggle/.test(bg) ||
    ((/linear-gradient|rgb\(\s*(194|203|212|217|226|232|245),/.test(bg)) && !/danger|delete|cancel|red|#ff/i.test(bg));
