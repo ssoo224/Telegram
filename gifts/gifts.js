@@ -45,7 +45,13 @@ const salesQ=K=>K.gen?db.collection('giftSales').where('k','==',K.key):db.collec
 const kindDir=K=>GIFTS_CDN_DIR[K.key]||K.name;
 const modelName=(K,i)=>i<0?(K.gen&&!K.orig?K.models[0].n:'Original'):K.models[i].n;
 const BLANK_IMG='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
-const GIFTS_READY=fetch(GIFTS_BASE+'manifest.json?v=1').then(r=>r.ok?r.json():null).then(m=>{
+const loadManifest=async()=>{
+  for(const u of [GIFTS_BASE+'manifest.json?v=1','/gifts/manifest.json?v=1']){
+    try{const r=await fetch(u);if(!r.ok)continue;const j=await r.json();if(j&&j.gifts)return j;}catch(e){}
+  }
+  console.warn('gifts manifest.json not found');return null;
+};
+const GIFTS_READY=loadManifest().then(m=>{
   if(!m||!m.gifts)return;
   m.gifts.forEach(g=>{
     const key=g.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
@@ -260,12 +266,10 @@ async function openStoreGrid(){
     return {src,fb};
   };
   ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="stBack" aria-label="رجوع">'+IC_BACK+'</button><div class="gx-title"><b>متجر الهدايا</b></div></div>'
-    +'<div class="sg-search"><input id="sgQ" type="search" placeholder="ابحث عن هدية…" autocomplete="off"></div>'
     +'<div class="sg-grid">'+kinds.map(K=>{const a=art(K);return '<div class="sg-card" data-k="'+K.key+'" data-n="'+K.name.toLowerCase()+'"><div class="sg-ribbon"></div><div class="sg-art"><img alt="" loading="lazy" decoding="async" src="'+a.src+'" data-fb="'+a.fb+'"></div><div class="sg-name">'+K.name+'</div><div class="sg-price">⭐ '+K.price+'</div></div>';}).join('')+'</div>';
   ov.querySelector('#stBack').onclick=closeStore;
   ov.querySelectorAll('.sg-art img').forEach(im=>{im.onerror=()=>{im.onerror=null;im.src=im.dataset.fb;};});
   ov.querySelectorAll('.sg-card').forEach(c=>c.onclick=()=>openGiftStore(c.dataset.k));
-  ov.querySelector('#sgQ').oninput=e=>{const q=e.target.value.trim().toLowerCase();ov.querySelectorAll('.sg-card').forEach(c=>{c.style.display=!q||c.dataset.n.includes(q)?'':'none';});};
   /* "نفدت" للهديتين القديمتين فقط (الباقي نعرفه من صفحة الهدية حتى ما نقرأ مبيعات الكل) */
   kinds.filter(K=>!K.gen).forEach(K=>db.collection(K.sales).get().then(s=>{
     if(K.max-s.size<=0){const c=ov.querySelector('.sg-card[data-k="'+K.key+'"]');if(c){c.classList.add('out');c.querySelector('.sg-ribbon').textContent='نفدت';}}
