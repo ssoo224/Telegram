@@ -3572,8 +3572,9 @@ function renderAvatarGallery() {
   document.getElementById('avatarGalleryTitle').textContent = isCurrent ? 'الصورة الحالية' : 'صورة سابقة';
   document.getElementById('avatarGalleryCaption').textContent = avatarGalleryItems.length > 1 ? (isCurrent ? 'اسحب لليسار أو اليمين لاستعراض الصور السابقة' : `صورة سابقة ${avatarGalleryIndex} من ${avatarGalleryItems.length-1} — اسحب للتنقل`) : 'لا توجد صور سابقة محفوظة بعد';
   document.getElementById('avatarGalleryDots').innerHTML = avatarGalleryItems.map((_,i)=>`<span class="ag-dot${i===avatarGalleryIndex?' active':''}"></span>`).join('');
+  if (typeof updateAvatarMenu === 'function') updateAvatarMenu();
 }
-function closeAvatarGallery() { const modal=document.getElementById('avatarGalleryModal'); if(modal) modal.classList.add('hidden'); }
+function closeAvatarGallery() { const modal=document.getElementById('avatarGalleryModal'); if(modal) modal.classList.add('hidden'); const mn=document.getElementById('avatarMenu'); if(mn) mn.classList.add('hidden'); }
 
 let searchRequestToken = 0;
 function setSearchHint(message, state = "") {
@@ -7170,7 +7171,16 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 
 
 <div id="avatarGalleryModal" class="hidden" role="dialog" aria-modal="true" aria-label="صور الملف الشخصي" onclick="if(event.target===this)closeAvatarGallery()">
-  <div class="ag-top"><span id="avatarGalleryTitle">الصورة الشخصية</span><button class="ag-close" type="button" onclick="closeAvatarGallery()" aria-label="إغلاق"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+  <div class="ag-top"><button class="ag-close" type="button" onclick="closeAvatarGallery()" aria-label="إغلاق"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button><span id="avatarGalleryTitle">الصورة الشخصية</span>
+    <div class="ag-menu-wrap">
+      <button class="ag-close ag-dots-btn" id="avatarMenuBtn" type="button" onclick="toggleAvatarMenu(event)" aria-label="خيارات الصورة" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+      <div class="ag-menu hidden" id="avatarMenu" role="menu">
+        <button type="button" role="menuitem" id="agSetBtn" onclick="avatarSetAsCurrent()"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><span>اعتماد الصورة</span></button>
+        <button type="button" role="menuitem" onclick="avatarDownload()"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0 4-4m-4 4-4-4M5 19h14"/></svg><span>تنزيل الصورة</span></button>
+        <button type="button" role="menuitem" class="danger" onclick="avatarDelete()"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg><span>حذف الصورة</span></button>
+      </div>
+    </div>
+  </div>
   <div class="ag-photo-wrap" id="avatarGalleryTouchArea"><img id="avatarGalleryImage" alt="الصورة الشخصية كاملة"></div>
   <div id="avatarGalleryCaption" class="ag-caption">اسحب لليسار لعرض الصور السابقة</div><div id="avatarGalleryDots" class="ag-dots"></div>
 </div>
@@ -7279,6 +7289,91 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 .app-container #homeView#homeView .cl-chip:not(.active){
   background:#e8edf4!important;color:#1f2a37!important;-webkit-text-fill-color:#1f2a37!important;text-shadow:none!important}
 </style>
+<style id="avatar-gallery-menu-style">
+#avatarGalleryModal{padding:calc(70px + env(safe-area-inset-top,0px)) 12px calc(18px + env(safe-area-inset-bottom,0px))!important;height:100dvh}
+#avatarGalleryModal .ag-top{top:calc(12px + env(safe-area-inset-top,0px))!important;gap:10px;z-index:3}
+#avatarGalleryModal #avatarGalleryTitle{flex:1;text-align:center;font-weight:700;font-size:15px}
+/* الصورة كاملة بدون قص */
+#avatarGalleryModal .ag-photo-wrap{height:auto!important;flex:1;min-height:0;max-height:none!important}
+#avatarGalleryModal #avatarGalleryImage{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+#avatarGalleryModal .ag-menu-wrap{position:relative}
+#avatarGalleryModal .ag-menu{position:absolute;top:50px;inset-inline-end:0;min-width:190px;padding:6px;border-radius:16px;background:#1e2a38;border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.5);z-index:5;display:flex;flex-direction:column;gap:2px;animation:agMenuIn .14s ease-out}
+#avatarGalleryModal .ag-menu.hidden{display:none!important}
+#avatarGalleryModal .ag-menu button{display:flex;align-items:center;gap:11px;width:100%;padding:12px 13px;border:0;border-radius:11px;background:transparent;color:#f1f5f9;font:600 14.5px inherit;font-family:inherit;text-align:start;cursor:pointer}
+#avatarGalleryModal .ag-menu button:hover,#avatarGalleryModal .ag-menu button:active{background:rgba(255,255,255,.09)}
+#avatarGalleryModal .ag-menu button.danger{color:#ff6b6f}
+#avatarGalleryModal .ag-menu button.hidden{display:none!important}
+@keyframes agMenuIn{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+</style>
+<script id="avatar-gallery-menu-js">
+function toggleAvatarMenu(ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  var m=document.getElementById('avatarMenu'),b=document.getElementById('avatarMenuBtn');if(!m)return;
+  m.classList.toggle('hidden');if(b)b.setAttribute('aria-expanded',String(!m.classList.contains('hidden')));
+}
+function closeAvatarMenu(){var m=document.getElementById('avatarMenu'),b=document.getElementById('avatarMenuBtn');if(m)m.classList.add('hidden');if(b)b.setAttribute('aria-expanded','false');}
+function updateAvatarMenu(){
+  closeAvatarMenu();
+  // «اعتماد الصورة» تظهر فقط عند وجود أكثر من صورة وأنت تشاهد صورة غير الحالية
+  var set=document.getElementById('agSetBtn');
+  if(set)set.classList.toggle('hidden',!(avatarGalleryItems.length>1&&avatarGalleryIndex>0));
+}
+document.addEventListener('click',function(e){
+  var m=document.getElementById('avatarMenu');
+  if(m&&!m.classList.contains('hidden')&&!e.target.closest('.ag-menu-wrap'))closeAvatarMenu();
+});
+async function saveAvatarState(current,history){
+  if(!db||!currentUser)throw new Error('no-db');
+  await db.collection('users').doc(currentUser.uid).set({avatarUrl:current,avatarHistory:history},{merge:true});
+  currentUserData.avatarUrl=current;currentUserData.avatarHistory=history;
+  if(typeof updateProfileUI==='function')updateProfileUI(currentUserData);
+}
+function currentAvatarList(){
+  var cur=(currentUserData&&currentUserData.avatarUrl)||'';
+  var old=Array.isArray(currentUserData&&currentUserData.avatarHistory)?currentUserData.avatarHistory:[];
+  return {cur:cur,old:old.filter(function(u,i){return u&&u!==cur&&old.indexOf(u)===i;})};
+}
+async function avatarSetAsCurrent(){
+  closeAvatarMenu();
+  var url=avatarGalleryItems[avatarGalleryIndex];
+  if(!url||avatarGalleryIndex===0)return;
+  var l=currentAvatarList();
+  var hist=[l.cur].concat(l.old.filter(function(u){return u!==url;})).filter(Boolean).slice(0,4);
+  try{
+    await saveAvatarState(url,hist);
+    avatarGalleryItems=[url].concat(hist);avatarGalleryIndex=0;renderAvatarGallery();
+    showToast('تم اعتماد الصورة');
+  }catch(err){console.error(err);showToast('تعذر اعتماد الصورة');}
+}
+async function avatarDelete(){
+  closeAvatarMenu();
+  var idx=avatarGalleryIndex,url=avatarGalleryItems[idx];if(!url)return;
+  var ok=await appConfirmDialog('سيتم حذف هذه الصورة نهائياً. هل تريد المتابعة؟','حذف الصورة','حذف');
+  if(!ok)return;
+  var l=currentAvatarList(),cur=l.cur,hist=l.old.slice();
+  if(idx===0){cur=hist.length?hist[0]:'';hist=hist.slice(1);}
+  else{hist=hist.filter(function(u){return u!==url;});}
+  try{
+    await saveAvatarState(cur,hist);
+    avatarGalleryItems=cur?[cur].concat(hist):[];
+    if(!avatarGalleryItems.length){closeAvatarGallery();showToast('تم حذف الصورة');return;}
+    avatarGalleryIndex=0;renderAvatarGallery();showToast('تم حذف الصورة');
+  }catch(err){console.error(err);showToast('تعذر حذف الصورة');}
+}
+async function avatarDownload(){
+  closeAvatarMenu();
+  var url=avatarGalleryItems[avatarGalleryIndex];if(!url)return;
+  try{
+    var href=url,revoke=null;
+    if(!/^data:/.test(url)){var r=await fetch(url);var b=await r.blob();href=URL.createObjectURL(b);revoke=href;}
+    var ext=(/^data:image\/(png|webp|gif)/.exec(url)||[])[1]||'jpg';
+    var a=document.createElement('a');a.href=href;a.download='babylon-photo-'+Date.now()+'.'+ext;
+    document.body.appendChild(a);a.click();a.remove();
+    if(revoke)setTimeout(function(){URL.revokeObjectURL(revoke);},4000);
+    showToast('جارٍ تنزيل الصورة');
+  }catch(err){console.error(err);showToast('تعذر تنزيل الصورة');}
+}
+</script>
 </body>
 </html>
 
