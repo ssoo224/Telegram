@@ -5519,10 +5519,10 @@ function svFooter(s) {
   }
 }
 let svHeartTimer = null, svHeartLong = false;
-function svHeartDown(ev){ if(ev){ev.preventDefault();if(ev.pointerId!==undefined&&ev.currentTarget&&ev.currentTarget.setPointerCapture){try{ev.currentTarget.setPointerCapture(ev.pointerId);}catch(_){}}} svHeartLong=false; clearTimeout(svHeartTimer); svHeartTimer=setTimeout(()=>{svHeartLong=true;const p=$('svReactPicker');if(p)p.classList.remove('hidden');},500); }
+function svHeartDown(ev){ if(ev){ev.preventDefault();if(ev.pointerId!==undefined&&ev.currentTarget&&ev.currentTarget.setPointerCapture){try{ev.currentTarget.setPointerCapture(ev.pointerId);}catch(_){}}} svHeartLong=false; clearTimeout(svHeartTimer); svHeartTimer=setTimeout(()=>{svHeartLong=true;const p=$('svReactPicker'),f=$('svFoot');if(f)f.classList.add('heart-long-press');if(p)p.classList.remove('hidden');},500); }
 function svHeartUp(ev){ if(ev&&ev.preventDefault)ev.preventDefault(); clearTimeout(svHeartTimer); if(!svHeartLong){svHeartTap();} }
 function svHeartCancel(){clearTimeout(svHeartTimer);}
-function svOpenReactPicker(){const p=$('svReactPicker');if(p)p.classList.remove('hidden');}
+function svOpenReactPicker(){const p=$('svReactPicker'),f=$('svFoot');if(f)f.classList.add('heart-long-press');if(p)p.classList.remove('hidden');}
 function svHeartTap(){const p=$('svReactPicker');if(p&&!p.classList.contains('hidden'))return;svReact('❤️');}
 function svReplyInputChanged(){const inp=$('svReplyInput'),btn=$('svReplySend'),heart=$('svHeartBtn');if(!inp||!btn||!heart)return;const typed=!!inp.value.trim();btn.classList.toggle('hidden',!typed);heart.classList.toggle('hidden',typed);if(typed){const p=$('svReactPicker');if(p)p.classList.add('hidden');}}
 function sendStoryEmoji(emoji){const me=currentUser&&currentUser.uid;if(!me||!SV.uid||SV.uid===me){showToast('لا يمكن إرسال رسالة إلى نفسك');return;}const chatId=[me,SV.uid].sort().join('__');db.collection('chats').doc(chatId).set({participants:[me,SV.uid],updatedAt:Date.now()},{merge:true}).then(()=>db.collection('chats').doc(chatId).collection('messages').add({senderId:me,text:emoji,storyReply:true,read:false,createdAt:Date.now()})).then(()=>{notifyPeer(chatId,'↩ تفاعل على قصتك: '+emoji);showToast('تم إرسال الإيموجي ✓');}).catch(()=>showToast('تعذر إرسال الإيموجي'));}
@@ -5655,7 +5655,7 @@ function svReact(e) {
   SV.react = e;
   svCacheReaction(storyId, uid, e);
   markReact();
-  const rp = $('svReactPicker'); if (rp) rp.classList.add('hidden');
+  const rp = $('svReactPicker'); if (rp) rp.classList.add('hidden'); const foot=$('svFoot'); if(foot)foot.classList.remove('heart-long-press');
   svApplySelectedReaction(e);
   const ref = db.collection('stories').doc(storyId).collection('views').doc(uid);
   svReactionPending.add(key);
@@ -9168,7 +9168,7 @@ body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-title{ba
 @media(max-width:380px){#storyViewer .sv-top{gap:4px}#storyViewer .sv-top .sv-action{width:31px;height:32px;min-width:31px;max-width:31px}#storyViewer .sv-top .sv-action-views{min-width:43px;max-width:none}}
 
 /* ملخص المشاهدات والتفاعلات أسفل وصف القصة */
-#storyViewer .sv-story-stats{display:flex;position:relative;align-items:center;justify-content:center;width:max-content;max-width:100%;margin:8px auto 0;padding:6px 12px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(8,12,18,.52);color:#fff;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;direction:rtl;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer}
+#storyViewer .sv-story-stats{display:flex;position:absolute;left:50%;right:auto;bottom:calc(82px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);align-items:center;justify-content:center;gap:3px;width:max-content;max-width:calc(100% - 24px);margin:0;padding:7px 13px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(8,12,18,.68);color:#fff;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;direction:rtl;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;z-index:8;box-sizing:border-box}
 #storyViewer .sv-cap{z-index:5}
 #storyViewer .sv-own .sv-action-views{display:none!important}
 body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-card{max-height:min(76vh,620px);overflow:auto}
@@ -9214,14 +9214,11 @@ body.light #viewersModal .viewer-item {
   background:#fff!important;border-bottom:1px solid #e7edf4!important;
 }
 /* العداد يأتي كسطر مستقل أسفل نص وصف القصة */
-#storyViewer #svCap .sv-story-stats{
-  display:flex!important;position:relative!important;inset:auto!important;transform:none!important;
-  margin:9px auto 0!important;clear:both;z-index:7;flex-shrink:0;
-  color:#fff!important;background:rgba(8,12,18,.62)!important;
-  border:1px solid rgba(255,255,255,.3)!important;
-}
-#storyViewer #svCap .sv-story-stats span{color:#fff!important;font-weight:700!important}
-#storyViewer #svCap{overflow:visible!important}
+#storyViewer .sv-story-stats{display:flex!important;position:absolute!important;left:50%!important;right:auto!important;bottom:calc(82px + env(safe-area-inset-bottom,0px))!important;transform:translateX(-50%)!important;margin:0!important;z-index:8!important;flex-shrink:0;color:#fff!important;background:rgba(8,12,18,.72)!important;border:1px solid rgba(255,255,255,.3)!important}
+#storyViewer .sv-story-stats span{color:#fff!important;font-weight:700!important}
+#storyViewer .sv-cap{overflow:visible!important}
+/* استثناء: إظهار منتقي الإيموجي عند الضغط المطول على القلب الفارغ */
+#storyViewer .sv-foot.heart-long-press .sv-react-picker:not(.hidden){display:flex!important}
 
 </style>
 <script id="babylon-requested-final-fixes-js">
@@ -9243,14 +9240,15 @@ body.light #viewersModal .viewer-item {
  new MutationObserver(ms=>ms.forEach(m=>{m.addedNodes&&m.addedNodes.forEach(n=>{if(n.nodeType===1){if(n.matches&&n.matches('button'))fixGoldButtons(n.parentElement||document);else fixGoldButtons(n);}})})).observe(document.documentElement,{childList:true,subtree:true});
  // نقل أدوات مالك القصة من أسفل العرض إلى الشريط العلوي بجوار زر الإغلاق.
  function moveStoryActions(){
-  const top=document.querySelector('#storyViewer .sv-top'),foot=document.getElementById('svFoot'),cap=document.getElementById('svCap');
-  if(!top||!foot||!cap)return;
+  const top=document.querySelector('#storyViewer .sv-top'),foot=document.getElementById('svFoot'),cap=document.getElementById('svCap'),stage=document.querySelector('#storyViewer .sv-stage');
+  if(!top||!foot||!cap||!stage)return;
   const own=foot.querySelector('.sv-own')||top.querySelector('.sv-own');if(!own)return;
   let views=own.querySelector('.sv-action-views');
-  let stats=cap.querySelector('.sv-story-stats');
+  let stats=stage.querySelector('.sv-story-stats');
   if(views){
-    if(!stats){stats=document.createElement('button');stats.type='button';stats.className='sv-story-stats';stats.setAttribute('aria-label','عرض المشاهدات والتفاعلات');stats.onclick=function(e){e.preventDefault();e.stopPropagation();openViewersList();};stats.innerHTML='<span id="svViews">المشاهدات 0 | 0 ❤️</span>';cap.appendChild(stats);}
-    const count=views.querySelector('#svViews'),statsCount=stats.querySelector('#svViews');if(statsCount)statsCount.textContent=count?count.textContent:'المشاهدات 0 | 0 ❤️';
+    if(!stats){stats=document.createElement('button');stats.type='button';stats.className='sv-story-stats';stats.setAttribute('aria-label','عرض المشاهدات والتفاعلات');stats.onclick=function(e){e.preventDefault();e.stopPropagation();openViewersList();};stats.innerHTML='<span class="sv-stats-label">المشاهدات </span><span id="svViews">0 | 0 ❤️</span>';stage.insertBefore(stats,foot);}
+    if(stats.parentElement!==stage)stage.insertBefore(stats,foot);
+    const count=views.querySelector('#svViews'),statsCount=stats.querySelector('#svViews');if(statsCount)statsCount.textContent=(count?count.textContent:'0 | 0 ❤️').replace(/^المشاهدات\s*/,'');
     views.remove();cap.classList.remove('hidden');
   }
   top.querySelectorAll('.sv-own').forEach(el=>{if(el!==own)el.remove();});
