@@ -3525,11 +3525,11 @@ function bindAvatarRevealGestures() {
   const move = (x, y) => {
     const dx = x-avatarPressStartX, dy = y-avatarPressStartY;
     // Keep the timer alive for a deliberate downward pull; cancel horizontal/accidental movement.
-    if (Math.abs(dx) > 28 || (dy < -25) || (Math.abs(dy) > 28 && dy <= 0)) clearTimeout(avatarPressTimer);
+    if (Math.abs(dx) > 12 || Math.abs(dy) > 12) clearTimeout(avatarPressTimer);
   };
   const end = (x, y) => {
     clearTimeout(avatarPressTimer);
-    if (!avatarLongPressOpened && y-avatarPressStartY > 35) { avatarLongPressOpened = true; openAvatarGallery(); }
+    /* السحب للأسفل صار يكبّر الصورة (pf-pull-expand) بدل فتح المعرض */
   };
   // Avoid competing pointer + touch events on Android; use native touch events for touchscreens.
   target.addEventListener('touchstart', ev => { const t=ev.changedTouches[0]; if(t) start(t.clientX,t.clientY); }, {passive:true});
@@ -7397,6 +7397,160 @@ async function avatarDownload(){
     showToast('جارٍ تنزيل الصورة');
   }catch(err){console.error(err);showToast('تعذر تنزيل الصورة');}
 }
+</script>
+
+<style id="pf-pull-expand-css">
+#profileView,#otherUserProfileView{position:relative;overscroll-behavior-y:contain}
+.pf-hero{position:absolute;z-index:1;overflow:hidden;display:none;pointer-events:none;background:#16213a;will-change:width,height,top,left,border-radius;-webkit-tap-highlight-color:transparent}
+.pf-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none}
+.pf-hero .pf-hero-letter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--babylon-gold);font-weight:800;font-size:clamp(48px,26vw,140px)}
+.pf-hero .pf-hero-letter svg{width:38%;height:38%}
+.pf-hero .pf-hero-shade{position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.72));pointer-events:none}
+.pf-hero .pf-hero-info{position:absolute;inset-inline-start:18px;inset-inline-end:18px;bottom:16px;color:#fff;opacity:0;text-align:start}
+.pf-hero .pf-hero-name{font-size:24px;font-weight:800;line-height:1.25;text-shadow:0 1px 6px rgba(0,0,0,.55);overflow-wrap:anywhere}
+.pf-hero .pf-hero-status{font-size:13.5px;margin-top:3px;color:rgba(255,255,255,.82);text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.pf-hero .pf-hero-status.online{color:#4ade80}
+#profileView>.pf-topbar,#otherUserProfileView>.pf-topbar{position:absolute;top:0;left:0;right:0;z-index:3}
+</style>
+
+<script id="pf-pull-expand-js">
+/* سحب الشاشة للأسفل في البروفايل: تكبر الصورة مع الإصبع حتى تصبح مربعًا فيه الاسم، ويختفي الغلاف (مثل تليجرام) */
+(function(){
+  var RANGE = 230;      // كم بكسل سحب لتكتمل الصورة
+  var THRESH = 0.45;    // بعد هذه النسبة تثبت مفتوحة عند ترك الإصبع
+  function setup(cfg){
+    var view = document.getElementById(cfg.view); if(!view) return;
+    var cover = document.getElementById(cfg.cover);
+    var ring  = document.getElementById(cfg.ring);
+    var img   = document.getElementById(cfg.img);
+    var txt   = document.getElementById(cfg.txt);
+    var nameBox = document.getElementById(cfg.nameBox);
+    var nameTxt = document.getElementById(cfg.nameTxt);
+    var status  = document.getElementById(cfg.status);
+    if(!cover||!ring||!nameBox||!status) return;
+
+    // نقل زر الرجوع خارج الغلاف حتى لا يختفي مع الغلاف
+    var tb = cover.querySelector('.pf-topbar');
+    if(tb) view.insertBefore(tb, cover.nextSibling);
+
+    var hero = document.createElement('div');
+    hero.className = 'pf-hero';
+    hero.innerHTML = '<img alt="" draggable="false"><div class="pf-hero-letter"></div><div class="pf-hero-shade"></div>'+
+      '<div class="pf-hero-info"><div class="pf-hero-name"></div><div class="pf-hero-status"></div></div>';
+    view.appendChild(hero);
+    var hImg=hero.querySelector('img'), hLet=hero.querySelector('.pf-hero-letter'),
+        hInfo=hero.querySelector('.pf-hero-info'), hName=hero.querySelector('.pf-hero-name'),
+        hStat=hero.querySelector('.pf-hero-status');
+
+    var g=null, p=0, expanded=false, pulling=false, sy=0, sx=0, p0=0, raf=0, track=false;
+
+    function sync(){
+      var hasImg = img && !img.classList.contains('hidden') && img.getAttribute('src');
+      if(hasImg){ hImg.src = img.getAttribute('src'); hImg.style.display='block'; hLet.style.display='none'; }
+      else {
+        hImg.style.display='none'; hLet.style.display='flex'; hLet.innerHTML = txt ? txt.innerHTML : '';
+        if(txt){ var cs=getComputedStyle(txt); hero.style.background = cs.backgroundImage!=='none'? cs.backgroundImage : cs.backgroundColor; }
+      }
+      hName.textContent = nameTxt ? nameTxt.textContent : '';
+      var st = status.querySelector('span:last-child');
+      hStat.textContent = st ? st.textContent : '';
+      hStat.classList.toggle('online', status.classList.contains('online'));
+    }
+    function measure(){
+      var vr=view.getBoundingClientRect();
+      var hasImg = img && !img.classList.contains('hidden');
+      var av = hasImg ? img : txt;
+      var ar=av.getBoundingClientRect(), rr=ring.getBoundingClientRect();
+      var W=view.clientWidth;
+      g={ W:W, S:W, size:ar.width||108, top:ar.top-vr.top+view.scrollTop,
+          ringBottom: rr.bottom-vr.top+view.scrollTop,
+          coverH: cover.offsetHeight, nh: nameBox.offsetHeight, sh: status.offsetHeight };
+      g.delta = Math.max(0, g.S - g.ringBottom);
+    }
+    function clamp(v){ return v<0?0:v>1?1:v; }
+    function apply(v){
+      p=v;
+      if(v<=0.001){ reset(); return; }
+      var size=g.size+(g.S-g.size)*v;
+      hero.style.display='block';
+      hero.style.width=size+'px'; hero.style.height=size+'px';
+      hero.style.top=(g.top*(1-v))+'px'; hero.style.left=((g.W-size)/2)+'px';
+      hero.style.borderRadius=(50*(1-v))+'%';
+      hero.style.pointerEvents = v>=0.99 ? 'auto' : 'none';
+      hInfo.style.opacity = clamp((v-0.55)/0.4);
+      cover.style.height=(g.coverH+g.delta*v)+'px';
+      cover.style.opacity=clamp(1-v*1.5);
+      ring.style.opacity=0;
+      nameBox.style.overflow='hidden'; nameBox.style.height=(g.nh*(1-v))+'px';
+      nameBox.style.marginBottom=(6*(1-v))+'px'; nameBox.style.opacity=clamp(1-v*2);
+      status.style.overflow='hidden'; status.style.height=(g.sh*(1-v))+'px'; status.style.opacity=clamp(1-v*2);
+    }
+    function reset(){
+      p=0; expanded=false;
+      hero.style.display='none'; hero.style.pointerEvents='none'; hInfo.style.opacity=0;
+      cover.style.height=''; cover.style.opacity='';
+      ring.style.opacity='';
+      nameBox.style.height=nameBox.style.overflow=nameBox.style.marginBottom=nameBox.style.opacity='';
+      status.style.height=status.style.overflow=status.style.opacity='';
+    }
+    function animateTo(t){
+      cancelAnimationFrame(raf);
+      var from=p, t0=performance.now(), dur=220;
+      (function step(now){
+        var k=clamp((now-t0)/dur), e=1-Math.pow(1-k,3);
+        apply(from+(t-from)*e);
+        if(k<1) raf=requestAnimationFrame(step);
+        else { expanded = t>=1; if(t<=0) reset(); }
+      })(t0);
+    }
+
+    view.addEventListener('touchstart',function(ev){
+      if(ev.touches.length!==1){ track=false; return; }
+      track = view.scrollTop<=1;
+      pulling=false; sy=ev.touches[0].clientY; sx=ev.touches[0].clientX;
+    },{passive:true});
+
+    view.addEventListener('touchmove',function(ev){
+      if(!track) return;
+      var t=ev.touches[0], dy=t.clientY-sy, dx=t.clientX-sx;
+      if(!pulling){
+        var wantPull = !expanded && dy>8 && Math.abs(dy)>Math.abs(dx);
+        var wantBack = expanded && dy<-8 && Math.abs(dy)>Math.abs(dx) && view.scrollTop<=1;
+        if(!wantPull && !wantBack) return;
+        cancelAnimationFrame(raf);
+        if(!expanded){ reset(); sync(); measure(); }
+        pulling=true; p0=expanded?1:0; sy=t.clientY;   // نبدأ من نقطة بدء السحب الفعلي
+        dy=0;
+      }
+      if(ev.cancelable) ev.preventDefault();
+      apply(clamp(p0+dy/RANGE));
+    },{passive:false});
+
+    function finish(){
+      if(!pulling){ track=false; return; }
+      pulling=false; track=false;
+      animateTo(p>=THRESH && (p0===0 || p>=0.7) ? 1 : 0);
+    }
+    view.addEventListener('touchend',finish,{passive:true});
+    view.addEventListener('touchcancel',finish,{passive:true});
+
+    // الضغط على المربع المكبّر يفتح معرض الصور
+    hero.addEventListener('click',function(){ if(typeof window[cfg.gallery]==='function') window[cfg.gallery](); });
+
+    // عند إخفاء الشاشة أو إعادة فتحها نرجع للوضع الطبيعي
+    new MutationObserver(function(){
+      if(view.classList.contains('hidden')){ cancelAnimationFrame(raf); reset(); view.scrollTop=0; }
+    }).observe(view,{attributes:true,attributeFilter:['class']});
+    window.addEventListener('resize',function(){ if(expanded||p>0){ cancelAnimationFrame(raf); reset(); } });
+  }
+  function init(){
+    setup({view:'profileView',cover:'pCover',ring:'pStoryRing',img:'pAvatarImg',txt:'pAvatarText',
+           nameBox:'pHeaderName',nameTxt:'pHeaderNameText',status:'pHeaderStatus',gallery:'openAvatarGallery'});
+    setup({view:'otherUserProfileView',cover:'otherCover',ring:'otherStoryRing',img:'otherAvatarImg',txt:'otherAvatarText',
+           nameBox:'otherHeaderName',nameTxt:'otherHeaderNameText',status:'otherHeaderStatus',gallery:'openOtherAvatarGallery'});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
 </script>
 </body>
 </html>
