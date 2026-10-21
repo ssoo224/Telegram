@@ -5499,12 +5499,12 @@ function showStory() {
 function svFooter(s) {
   const f = $('svFoot');
   if (SV.mine) {
-    f.innerHTML = `<div class="sv-own"><button type="button" class="sv-action sv-action-views" onclick="openViewersList()" aria-label="المشاهدات والتفاعلات"><span class="sv-eye-wrap"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg><i class="sv-mini-heart" aria-hidden="true">♥</i></span><span id="svViews">0</span></button><button type="button" class="sv-action sv-action-edit" onclick="svEdit()" aria-label="تعديل القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"/><path d="M13 20h7"/></svg></button><button type="button" class="sv-action sv-action-pin" onclick="svPin()" aria-label="${s.pinned ? 'إلغاء التثبيت' : 'تثبيت'}"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/></svg></button><button type="button" class="sv-action sv-action-delete" onclick="svDelete()" aria-label="حذف القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-10 0 1 14h10l1-14M10 10v6m4-6v6"/></svg></button></div>`;
+    f.innerHTML = `<div class="sv-own"><button type="button" class="sv-action sv-action-views" onclick="openViewersList()" aria-label="المشاهدات والتفاعلات"><span class="sv-eye-wrap"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg><i class="sv-mini-heart" aria-hidden="true">♥</i></span><span id="svViews">المشاهدات 0 | 0 ❤️</span></button><button type="button" class="sv-action sv-action-edit" onclick="svEdit()" aria-label="تعديل القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"/><path d="M13 20h7"/></svg></button><button type="button" class="sv-action sv-action-pin" onclick="svPin()" aria-label="${s.pinned ? 'إلغاء التثبيت' : 'تثبيت'}"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/></svg></button><button type="button" class="sv-action sv-action-delete" onclick="svDelete()" aria-label="حذف القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-10 0 1 14h10l1-14M10 10v6m4-6v6"/></svg></button></div>`;
     db.collection('stories').doc(s.id).collection('views').get().then(q => {
       if (SV.list[SV.i] !== s) return;
       SV.views = q.docs.map(d => d.data());
       const r = SV.views.filter(v => v.reaction).length;
-      const el = $('svViews'); if (el) { el.textContent = SV.views.length + (r ? ` · ${r}` : ''); if (el.parentElement) el.parentElement.classList.toggle('has-reaction', r > 0); }
+      const el = $('svViews'); if (el) { el.textContent = `المشاهدات ${SV.views.length} | ${r} ❤️`; if (el.parentElement) el.parentElement.classList.toggle('has-reaction', r > 0); }
     }).catch(() => {});
   } else {
     f.innerHTML = `<div class="sv-reacts" aria-label="إرسال إيموجي في المحادثة">${['😂','❤️','👍🏻','😭','✨'].map(e => `<span data-e="${e}" role="button" tabindex="0" aria-label="إرسال ${e}" onclick="sendStoryEmoji('${e}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sendStoryEmoji('${e}')}">${e}</span>`).join('')}</div><div id="svReactPicker" class="sv-react-picker hidden">${['😂','❤️','👍🏻','😭','✨','😍','😮','😢','🙏','🔥'].map(e=>`<button type="button" onclick="event.preventDefault();event.stopPropagation();svReact('${e}')" aria-label="تفاعل ${e}">${e}</button>`).join('')}</div><div class="sv-reply"><button id="svHeartBtn" class="sv-heart-btn" aria-label="تفاعل مع القصة" onpointerdown="svHeartDown(event)" onpointerup="svHeartUp(event)" onpointercancel="svHeartCancel()" onpointerleave="svHeartCancel()" oncontextmenu="event.preventDefault();svOpenReactPicker()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg></button><input id="svReplyInput" placeholder="رد على القصة..." autocomplete="off" oninput="svReplyInputChanged()" onfocus="svPause(true)" onblur="svPause(false)" onkeydown="if(event.key==='Enter'){event.preventDefault();sendStoryReply()}"><button id="svReplySend" class="sv-pill hidden" aria-label="إرسال" onmousedown="event.preventDefault()" onclick="sendStoryReply()"><svg class="sv-send-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></button></div>`;
@@ -9151,13 +9151,14 @@ button.story-type-btn,
 #storyViewer .sv-react-picker{display:none!important}
 #storyViewer .sv-foot.reply-focused .sv-react-picker:not(.hidden){display:flex!important}
 /* ألوان قائمة المشاهدين في الوضع النهاري */
-.app-container[data-app-theme="light"] .viewers-modal{background:rgba(15,23,42,.35)}
-.app-container[data-app-theme="light"] .viewers-card{background:#fff!important;color:#17212b!important;border:1px solid #e1e7ef}
-.app-container[data-app-theme="light"] .viewers-title,
-.app-container[data-app-theme="light"] .viewer-item,
-.app-container[data-app-theme="light"] .viewer-info,
-.app-container[data-app-theme="light"] .viewers-card :is(span,strong,small,p,div){color:#17212b}
-.app-container[data-app-theme="light"] .viewer-item{border-bottom-color:#e7edf4}
+body:has(.app-container[data-app-theme="light"]) #viewersModal{background:rgba(15,23,42,.28)!important}
+body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-card{background:#fff!important;color:#17212b!important;border:1px solid #e1e7ef!important;box-shadow:0 18px 50px rgba(15,23,42,.18)!important}
+body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-title,
+body:has(.app-container[data-app-theme="light"]) #viewersModal .viewer-item,
+body:has(.app-container[data-app-theme="light"]) #viewersModal .viewer-info,
+body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-card :is(span,strong,small,p,div){color:#17212b!important}
+body:has(.app-container[data-app-theme="light"]) #viewersModal .viewer-item{border-bottom:1px solid #e7edf4!important}
+body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-title{background:#fff!important}
 /* مساحة لأزرار إدارة القصة بجوار × */
 #storyViewer .sv-top{justify-content:flex-start;gap:7px;padding-inline:10px}
 #storyViewer .sv-top>.icon-btn{order:3;flex:0 0 36px;width:36px;height:36px}
@@ -9165,6 +9166,13 @@ button.story-type-btn,
 #storyViewer .sv-top .sv-action{width:34px;height:34px;min-width:34px;max-width:34px;min-height:34px;border-radius:10px}
 #storyViewer .sv-top .sv-action-views{width:auto;min-width:48px;max-width:none}
 @media(max-width:380px){#storyViewer .sv-top{gap:4px}#storyViewer .sv-top .sv-action{width:31px;height:32px;min-width:31px;max-width:31px}#storyViewer .sv-top .sv-action-views{min-width:43px;max-width:none}}
+
+/* ملخص المشاهدات والتفاعلات أسفل وصف القصة */
+#storyViewer .sv-story-stats{display:flex;position:relative;align-items:center;justify-content:center;width:max-content;max-width:100%;margin:8px auto 0;padding:6px 12px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(8,12,18,.52);color:#fff;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;direction:rtl;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer}
+#storyViewer .sv-cap{z-index:5}
+#storyViewer .sv-own .sv-action-views{display:none!important}
+body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-card{max-height:min(76vh,620px);overflow:auto}
+body:has(.app-container[data-app-theme="light"]) #viewersModal .viewer-item{background:#fff!important}
 </style>
 <script id="babylon-requested-final-fixes-js">
 (function(){
@@ -9184,7 +9192,21 @@ button.story-type-btn,
  fixGoldButtons();
  new MutationObserver(ms=>ms.forEach(m=>{m.addedNodes&&m.addedNodes.forEach(n=>{if(n.nodeType===1){if(n.matches&&n.matches('button'))fixGoldButtons(n.parentElement||document);else fixGoldButtons(n);}})})).observe(document.documentElement,{childList:true,subtree:true});
  // نقل أدوات مالك القصة من أسفل العرض إلى الشريط العلوي بجوار زر الإغلاق.
- function moveStoryActions(){const top=document.querySelector('#storyViewer .sv-top'),foot=document.getElementById('svFoot');if(!top||!foot)return;const own=foot.querySelector('.sv-own');if(!own)return;top.querySelectorAll('.sv-own').forEach(el=>{if(el!==own)el.remove();});if(own.parentElement!==top)top.insertBefore(own,top.querySelector('.icon-btn')||null);}
+ function moveStoryActions(){
+  const top=document.querySelector('#storyViewer .sv-top'),foot=document.getElementById('svFoot'),cap=document.getElementById('svCap');
+  if(!top||!foot||!cap)return;
+  const own=foot.querySelector('.sv-own')||top.querySelector('.sv-own');if(!own)return;
+  let views=own.querySelector('.sv-action-views');
+  let stats=cap.querySelector('.sv-story-stats');
+  if(views){
+    if(!stats){stats=document.createElement('button');stats.type='button';stats.className='sv-story-stats';stats.setAttribute('aria-label','عرض المشاهدات والتفاعلات');stats.onclick=function(e){e.preventDefault();e.stopPropagation();openViewersList();};stats.innerHTML='<span id="svViews">المشاهدات 0 | 0 ❤️</span>';cap.appendChild(stats);}
+    const count=views.querySelector('#svViews'),statsCount=stats.querySelector('#svViews');if(statsCount)statsCount.textContent=count?count.textContent:'المشاهدات 0 | 0 ❤️';
+    views.remove();cap.classList.remove('hidden');
+  }
+  top.querySelectorAll('.sv-own').forEach(el=>{if(el!==own)el.remove();});
+  if(!own.querySelector('.sv-action-edit,.sv-action-pin,.sv-action-delete')){own.remove();return;}
+  if(own.parentElement!==top)top.insertBefore(own,top.querySelector('.icon-btn')||null);
+}
  const foot=document.getElementById('svFoot');if(foot)new MutationObserver(moveStoryActions).observe(foot,{childList:true,subtree:true});
  const viewer=document.getElementById('storyViewer');if(viewer){
   viewer.addEventListener('focusin',e=>{if(e.target&&e.target.id==='svReplyInput'){const f=document.getElementById('svFoot');if(f)f.classList.add('reply-focused');if(typeof svPause==='function')svPause(true);}});
