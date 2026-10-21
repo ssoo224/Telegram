@@ -9185,7 +9185,7 @@ button.story-type-btn,
  fixGoldButtons();
  new MutationObserver(ms=>ms.forEach(m=>{m.addedNodes&&m.addedNodes.forEach(n=>{if(n.nodeType===1){if(n.matches&&n.matches('button'))fixGoldButtons(n.parentElement||document);else fixGoldButtons(n);}})})).observe(document.documentElement,{childList:true,subtree:true});
  // نقل أدوات مالك القصة من أسفل العرض إلى الشريط العلوي بجوار زر الإغلاق.
- function moveStoryActions(){const top=document.querySelector('#storyViewer .sv-top'),foot=document.getElementById('svFoot');if(!top||!foot)return;const own=foot.querySelector('.sv-own');if(own&&own.parentElement!==top){top.insertBefore(own,top.querySelector('.icon-btn')||null);}}
+ function moveStoryActions(){const top=document.querySelector('#storyViewer .sv-top'),foot=document.getElementById('svFoot');if(!top||!foot)return;const own=foot.querySelector('.sv-own');if(!own)return;top.querySelectorAll('.sv-own').forEach(el=>{if(el!==own)el.remove();});if(own.parentElement!==top)top.insertBefore(own,top.querySelector('.icon-btn')||null);}
  const foot=document.getElementById('svFoot');if(foot)new MutationObserver(moveStoryActions).observe(foot,{childList:true,subtree:true});
  const viewer=document.getElementById('storyViewer');if(viewer){
   viewer.addEventListener('focusin',e=>{if(e.target&&e.target.id==='svReplyInput'){const f=document.getElementById('svFoot');if(f)f.classList.add('reply-focused');if(typeof svPause==='function')svPause(true);}});
