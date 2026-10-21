@@ -2181,7 +2181,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
       <div class="pf-head">
         <div id="otherStoryRing" class="avatar-story-ring" onclick="openOtherStories(event)">
           <div id="otherAvatarText" class="profile-large-avatar"><i data-ic="user" data-size="42"></i></div>
-          <img id="otherAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
+          <img id="otherAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar" style="cursor:pointer" onclick="openOtherAvatarGallery(event)">
         </div>
         <div id="otherHeaderName" class="pf-name">
           <span id="otherHeaderNameText">مستخدم</span>
@@ -3543,6 +3543,7 @@ function bindAvatarRevealGestures() {
 }
 function openAvatarGallery(ev) {
   if (ev && ev.stopPropagation) ev.stopPropagation();
+  avatarGalleryReadOnly = false;
   clearTimeout(avatarPressTimer);
   const current = currentUserData && currentUserData.avatarUrl;
   if (!current) { if (typeof showToast === 'function') showToast('لا توجد صورة شخصية لعرضها'); return; }
@@ -7177,7 +7178,7 @@ document.addEventListener('click',function(e){const menu=document.getElementById
       <div class="ag-menu hidden" id="avatarMenu" role="menu">
         <button type="button" role="menuitem" id="agSetBtn" onclick="avatarSetAsCurrent()"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><span>اعتماد الصورة</span></button>
         <button type="button" role="menuitem" onclick="avatarDownload()"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0 4-4m-4 4-4-4M5 19h14"/></svg><span>تنزيل الصورة</span></button>
-        <button type="button" role="menuitem" class="danger" onclick="avatarDelete()"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg><span>حذف الصورة</span></button>
+        <button type="button" role="menuitem" class="danger" id="agDelBtn" onclick="avatarDelete()"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg><span>حذف الصورة</span></button>
       </div>
     </div>
   </div>
@@ -7312,8 +7313,19 @@ function toggleAvatarMenu(ev){
   m.classList.toggle('hidden');if(b)b.setAttribute('aria-expanded',String(!m.classList.contains('hidden')));
 }
 function closeAvatarMenu(){var m=document.getElementById('avatarMenu'),b=document.getElementById('avatarMenuBtn');if(m)m.classList.add('hidden');if(b)b.setAttribute('aria-expanded','false');}
+var avatarGalleryReadOnly=false;
 function updateAvatarMenu(){
   closeAvatarMenu();
+  var del=document.getElementById('agDelBtn'),cap=document.getElementById('avatarGalleryCaption'),dots=document.getElementById('avatarGalleryDots'),ttl=document.getElementById('avatarGalleryTitle');
+  if(del)del.classList.toggle('hidden',!!avatarGalleryReadOnly);
+  if(cap)cap.style.display=avatarGalleryReadOnly?'none':'';
+  if(dots)dots.style.display=avatarGalleryReadOnly?'none':'';
+  if(avatarGalleryReadOnly){
+    var nm=document.getElementById('otherHeaderNameText');
+    if(ttl)ttl.textContent=(nm&&nm.textContent.trim())||'الصورة الشخصية';
+    var st=document.getElementById('agSetBtn');if(st)st.classList.add('hidden');
+    return;
+  }
   // «اعتماد الصورة» تظهر فقط عند وجود أكثر من صورة وأنت تشاهد صورة غير الحالية
   var set=document.getElementById('agSetBtn');
   if(set)set.classList.toggle('hidden',!(avatarGalleryItems.length>1&&avatarGalleryIndex>0));
@@ -7335,6 +7347,7 @@ function currentAvatarList(){
 }
 async function avatarSetAsCurrent(){
   closeAvatarMenu();
+  if(avatarGalleryReadOnly)return;
   var url=avatarGalleryItems[avatarGalleryIndex];
   if(!url||avatarGalleryIndex===0)return;
   var l=currentAvatarList();
@@ -7347,6 +7360,7 @@ async function avatarSetAsCurrent(){
 }
 async function avatarDelete(){
   closeAvatarMenu();
+  if(avatarGalleryReadOnly)return;
   var idx=avatarGalleryIndex,url=avatarGalleryItems[idx];if(!url)return;
   var ok=await appConfirmDialog('سيتم حذف هذه الصورة نهائياً. هل تريد المتابعة؟','حذف الصورة','حذف');
   if(!ok)return;
@@ -7359,6 +7373,16 @@ async function avatarDelete(){
     if(!avatarGalleryItems.length){closeAvatarGallery();showToast('تم حذف الصورة');return;}
     avatarGalleryIndex=0;renderAvatarGallery();showToast('تم حذف الصورة');
   }catch(err){console.error(err);showToast('تعذر حذف الصورة');}
+}
+function openOtherAvatarGallery(ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  var img=document.getElementById('otherAvatarImg');
+  var url=img&&!img.classList.contains('hidden')?img.getAttribute('src'):'';
+  if(!url){if(typeof showToast==='function')showToast('لا توجد صورة شخصية لعرضها');return;}
+  avatarGalleryReadOnly=true;
+  avatarGalleryItems=[url];avatarGalleryIndex=0;
+  renderAvatarGallery();
+  var modal=document.getElementById('avatarGalleryModal');if(modal)modal.classList.remove('hidden');
 }
 async function avatarDownload(){
   closeAvatarMenu();
