@@ -1958,6 +1958,17 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 #grpInfo #giLeave .gi-ic{color:#ef4444;background:rgba(239,68,68,.13)}
 #grpInfo .gi-ic svg{color:inherit;stroke:currentColor;fill:none}
 </style>
+<style id="publish-modal-balance">
+/* توازن نافذة اختيار نوع النشر: وسط الشاشة وبعرض مناسب */
+#publishTypeModal{align-items:center!important;justify-content:center!important;padding:20px;box-sizing:border-box}
+#publishTypeModal .viewers-card{
+  width:100%;max-width:360px;margin:0 auto;box-sizing:border-box;
+  border-radius:22px!important;max-height:none;
+  padding:22px 18px 18px!important;gap:12px!important;
+}
+#publishTypeModal .viewers-title{justify-content:center;text-align:center;margin:0 0 6px!important;font-size:17px}
+#publishTypeModal .story-type-btn{width:100%;min-height:50px;margin:0;padding:12px 16px;border-radius:14px;font-size:15px;font-weight:700}
+</style>
 </head>
 
 <body>
@@ -2479,8 +2490,8 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 <!-- نافذة اختيار نوع النشر -->
 <input type="file" id="storyMediaPicker" accept="image/*,video/*" class="hidden" onchange="onStoryMediaSelected(event)">
 <div id="publishTypeModal" class="viewers-modal hidden" onclick="if(event.target.id==='publishTypeModal')this.classList.add('hidden')">
-  <div class="viewers-card" style="padding:20px; gap:12px;">
-    <div class="viewers-title" style="display:flex;align-items:center;justify-content:center;gap:8px">اختر نوع المنشور <svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+  <div class="viewers-card">
+    <div class="viewers-title" style="display:flex;align-items:center;justify-content:center">اختر نوع المنشور</div>
     <button class="babylon-btn story-type-btn story-type-limited" onclick="selectPublishType('story')"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17M8 13h3M8 16h6"/></svg> قصة (بوقت محدود)</button>
     <button class="babylon-btn story-type-btn story-type-outline" onclick="selectPublishType('post')"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg> منشور دائم بالبروفايل</button>
   </div>
