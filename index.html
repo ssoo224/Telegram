@@ -6472,7 +6472,8 @@ function jumpToMessage(id){
   if(!el){showToast('الرسالة بعيدة، حمّل رسائل أقدم للوصول لها');return false;}
   el.scrollIntoView({block:'center',behavior:'smooth'});
   const t=el.classList.contains('msg-bubble')?el:el.querySelector('.msg-bubble')||el;
-  t.classList.remove('pin-flash');void t.offsetWidth;t.classList.add('pin-flash');
+  t.classList.remove('pin-flash');
+  setTimeout(function(){void t.offsetWidth;t.classList.add('pin-flash');setTimeout(function(){t.classList.remove('pin-flash');},1900);},550);
   return true;
 }
 function renderPinnedBar(){
@@ -7474,8 +7475,19 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 }
 @keyframes babylonGoldWave { from { background-position: 0% 0; } to { background-position: 200% 0; } }
 @media (prefers-reduced-motion: reduce) { #authPage .auth-title { animation: none !important; } }
-#splashPage .splash-title { color:#a8841f !important; }
-.app-container[data-app-theme="light"] #splashPage .splash-title { color:#7a5a0a !important; }
+#splashPage .splash-title {
+  display:block !important; width:fit-content !important; max-width:100% !important;
+  margin-left:auto !important; margin-right:auto !important; will-change:background-position;
+  background-image: linear-gradient(100deg,#8f6c10 0%,#c39a2a 20%,#f6dc7a 40%,#c39a2a 60%,#8f6c10 80%,#8f6c10 100%) !important;
+  background-size:200% 100% !important; background-repeat:repeat-x !important;
+  -webkit-background-clip:text !important; background-clip:text !important;
+  color:transparent !important; -webkit-text-fill-color:transparent !important;
+  animation: babylonGoldWave 15s linear infinite !important;
+}
+.app-container[data-app-theme="light"] #splashPage .splash-title {
+  background-image: linear-gradient(100deg,#7a5a0a 0%,#b08718 20%,#e8c555 40%,#b08718 60%,#7a5a0a 80%,#7a5a0a 100%) !important;
+}
+@media (prefers-reduced-motion: reduce) { #splashPage .splash-title { animation:none !important; } }
 
 /* زر الرجوع في بروفايل أي شخص: أبيض ليلًا / أسود نهارًا */
 #otherUserProfileView .pf-round { color:#fff !important; background:rgba(0,0,0,.35) !important; }
@@ -7486,8 +7498,14 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 @keyframes babylonMsgPop { 0%{opacity:0;transform:scale(.88) translateY(8px)} 60%{opacity:1;transform:scale(1.03)} 100%{opacity:1;transform:scale(1)} }
 .msg-bubble.voice-pop { animation: babylonMsgPop .32s cubic-bezier(.2,.8,.3,1) both; transform-origin:bottom center; }
 @keyframes babylonReplyTarget { 0%{transform:scale(1)} 35%{transform:scale(1.045)} 100%{transform:scale(1)} }
-.msg-bubble.pin-flash { animation: pinFlash 1.2s ease, babylonReplyTarget .45s cubic-bezier(.2,.8,.3,1) !important; }
-@media (prefers-reduced-motion: reduce) { .msg-bubble.voice-pop, .msg-bubble.pin-flash { animation:none !important; } }
+@keyframes babylonReplyRing { 0%{box-shadow:0 0 0 0 rgba(228,196,91,0)} 20%{box-shadow:0 0 0 4px rgba(228,196,91,.95),0 0 22px 6px rgba(228,196,91,.55)} 75%{box-shadow:0 0 0 3px rgba(228,196,91,.8),0 0 16px 4px rgba(228,196,91,.35)} 100%{box-shadow:0 0 0 0 rgba(228,196,91,0)} }
+.msg-bubble.pin-flash { position:relative; z-index:2; animation: babylonReplyRing 1.8s ease, babylonReplyTarget .5s cubic-bezier(.2,.8,.3,1) !important; }
+.msg-bubble.pin-flash::after { content:''; position:absolute; inset:0; border-radius:inherit; background:rgba(228,196,91,.22); pointer-events:none; animation:babylonReplyTint 1.8s ease forwards; }
+@keyframes babylonReplyTint { 0%{opacity:0} 20%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
+
+/* كل الرسائل بخط عريض (النصوص والأرقام وزمن الصوتيات) */
+#messagesArea .msg-bubble, #messagesArea .msg-bubble *:not(svg):not(path) { font-weight:700 !important; }
+@media (prefers-reduced-motion: reduce) { .msg-bubble.voice-pop, .msg-bubble.pin-flash { animation:none !important; } .msg-bubble.pin-flash::after{animation:none!important;opacity:1} }
 </style>
 
 <script id="babylon-voice-pop">
@@ -8154,7 +8172,8 @@ function openMention(username){
   }
   function flash(el){
     el.scrollIntoView({block:'center',behavior:'smooth'});
-    el.classList.remove('pin-flash');void el.offsetWidth;el.classList.add('pin-flash');
+    el.classList.remove('pin-flash');
+    setTimeout(function(){void el.offsetWidth;el.classList.add('pin-flash');setTimeout(function(){el.classList.remove('pin-flash');},1900);},550);
   }
   window.goToReplied=function(id,text,selfId){
     var el=findEl(id)||(!id?findByText(text,selfId):null);
