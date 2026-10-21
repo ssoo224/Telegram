@@ -3239,6 +3239,36 @@ function notifAvatarThumb(url, key, cb){
   im.onerror = function(){ cb(''); };
   im.src = url;
 }
+
+// أزرار إشعار أندرويد: (رد) و(اعتبارها مقروءة) تعمل على المحادثة المحددة دون فتحها.
+async function nativeMarkChatRead(chatId, otherId){
+  const snap = await db.collection('chats').doc(chatId).collection('messages')
+    .where('senderId', '==', otherId).where('read', '==', false).get();
+  snap.forEach(d => d.ref.update({ read: true }).catch(() => {}));
+}
+window.onNativeNotificationAction = async function(action, otherId, chatId, text){
+  try {
+    if (!currentUser || !chatId) return;
+    if (action === 'read') {
+      await nativeMarkChatRead(chatId, otherId);
+    } else if (action === 'reply') {
+      text = String(text || '').trim();
+      if (!text) return;
+      if (myBlocks[otherId]) { showToast('أنت حاظر هذا المستخدم، ألغِ الحظر حتى تراسله'); return; }
+      if (!isGroupChat(chatId) && await blockedByThem(otherId)) { showToast('تم حظرك من قبل هذا المستخدم'); return; }
+      const msgData = { senderId: currentUser.uid, text: text, read: false, createdAt: Date.now() };
+      if (isGroupChat(chatId)) { const mn = extractMentionUids(text); if (mn.length) msgData.mentions = mn; }
+      await db.collection('chats').doc(chatId).collection('messages').add(msgData);
+      await db.collection('chats').doc(chatId).set({
+        updatedAt: Date.now(),
+        ...groupLastMsgFor(chatId, text),
+        ['typing_' + currentUser.uid]: false
+      }, { merge: true });
+      notifyPeer(chatId, text);
+      await nativeMarkChatRead(chatId, otherId);
+    }
+  } catch (err) { console.warn('Native notification action failed', err); }
+};
 function lsHidden(u){ return !!u && !!u.hideLastSeen && !isMeUser(u); }
 function openPrivacySettings(){ renderPrivacySeg(); showView('privacySettingsView'); }
 function renderPrivacySeg(){
@@ -4374,7 +4404,14 @@ function loadChats() {
                     if (window.BabylonAndroid && typeof window.BabylonAndroid.showMessageNotification === 'function') {
                       const nativeTitle = u.displayName || 'رسالة جديدة';
                       notifAvatarThumb(pvUrl(u) || '', otherId, function(thumb){
-                        try { window.BabylonAndroid.showMessageNotification(nativeTitle, String(nativeBody).slice(0, 300), thumb || ''); }
+                        try {
+                          const api = window.BabylonAndroid;
+                          if (typeof api.showMessageNotificationEx === 'function') {
+                            api.showMessageNotificationEx(nativeTitle, String(nativeBody).slice(0, 300), thumb || '', otherId, chatId);
+                          } else {
+                            api.showMessageNotification(nativeTitle, String(nativeBody).slice(0, 300), thumb || '');
+                          }
+                        }
                         catch (e2) { console.warn('Native notification failed', e2); }
                       });
                     }
