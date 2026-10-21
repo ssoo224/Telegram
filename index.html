@@ -7226,6 +7226,32 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 })();
 </script>
 
+<style id="auth-text-contrast-fix">
+/* نصوص صفحة تسجيل الدخول: وضوح كامل في الوضعين الفاتح والداكن */
+/* الأزرار والتبويب النشط (خلفية ذهبية) => نص داكن واضح بدل الأبيض */
+#authPage .babylon-btn, #verifyPage .babylon-btn:not([style*="transparent"]), #authPage .babylon-tab.active, #verifyPage button.babylon-btn:not([style*="transparent"]){
+  color:#241a00 !important; -webkit-text-fill-color:#241a00 !important; text-shadow:none !important; font-weight:800 !important;
+}
+/* التبويب غير النشط */
+.app-container[data-app-theme="light"] #authPage .babylon-tab:not(.active){ color:#3f4f63 !important; -webkit-text-fill-color:#3f4f63 !important; }
+.app-container[data-app-theme="dark"]  #authPage .babylon-tab:not(.active){ color:#cbd5e1 !important; -webkit-text-fill-color:#cbd5e1 !important; }
+/* العناوين الفرعية والتسميات والروابط */
+.app-container[data-app-theme="light"] #authPage .auth-subtitle, .app-container[data-app-theme="light"] #verifyPage .auth-subtitle,
+.app-container[data-app-theme="light"] #authPage #formForgot > p { color:#3f4f63 !important; }
+.app-container[data-app-theme="dark"]  #authPage .auth-subtitle, .app-container[data-app-theme="dark"]  #verifyPage .auth-subtitle,
+.app-container[data-app-theme="dark"]  #authPage #formForgot > p { color:#cbd5e1 !important; }
+.app-container[data-app-theme="light"] #authPage .input-group label, .app-container[data-app-theme="light"] #authPage .forgot-btn,
+.app-container[data-app-theme="light"] #authPage a, .app-container[data-app-theme="light"] #authPage button[style*="background:none"],
+.app-container[data-app-theme="light"] #verifyPage button[style*="background:none"] { color:#6b4f08 !important; }
+.app-container[data-app-theme="dark"]  #authPage .input-group label, .app-container[data-app-theme="dark"]  #authPage .forgot-btn,
+.app-container[data-app-theme="dark"]  #authPage a, .app-container[data-app-theme="dark"]  #authPage button[style*="background:none"],
+.app-container[data-app-theme="dark"]  #verifyPage button[style*="background:none"] { color:#f0d77a !important; }
+/* حقول الإدخال */
+.app-container[data-app-theme="light"] #authPage .babylon-input{ color:#17212b !important; background:#fff !important; }
+.app-container[data-app-theme="light"] #authPage .babylon-input::placeholder{ color:#6b7a8c !important; opacity:1; }
+.app-container[data-app-theme="dark"]  #authPage .babylon-input{ color:#f1f5f9 !important; }
+.app-container[data-app-theme="dark"]  #authPage .babylon-input::placeholder{ color:#94a3b8 !important; opacity:1; }
+</style>
 </body>
 </html>
 
