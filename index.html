@@ -2101,7 +2101,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
       <div class="pf-cover" id="pCover"><div class="pattern-layer" id="pCoverPattern"></div></div>
 
       <div class="pf-head">
-        <div id="pStoryRing" class="avatar-story-ring" onclick="handleAvatarClick()">
+        <div id="pStoryRing" class="avatar-story-ring" onclick="handleAvatarClick(event)">
           <div id="pAvatarText" class="profile-large-avatar"><i data-ic="user" data-size="42"></i></div>
           <img id="pAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar" onclick="openAvatarGallery(event)">
         </div>
@@ -2168,7 +2168,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
       </div>
 
       <div class="pf-head">
-        <div id="otherStoryRing" class="avatar-story-ring" onclick="openOtherStories()">
+        <div id="otherStoryRing" class="avatar-story-ring" onclick="openOtherStories(event)">
           <div id="otherAvatarText" class="profile-large-avatar"><i data-ic="user" data-size="42"></i></div>
           <img id="otherAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
         </div>
@@ -5245,26 +5245,48 @@ function renderStoriesBar() {
     const act = myStories.filter(isActive);
     const me = currentUserData || {};
     const mySeen = act.length && isSeenUser(currentUser.uid, Math.max(...act.map(s => s.createdAt)));
-    let html = `<div class="sb-item" onclick="myStoryClick()"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''} ${toneCls(me)}">${avInner(me)}${act.length ? '' : '<div class="sb-plus" aria-label="إضافة قصة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>'}</div><span>قصتي</span></div>`;
+    let html = `<div class="sb-item" onclick="myStoryClick(event)"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''} ${toneCls(me)}">${avInner(me)}${act.length ? '' : '<div class="sb-plus" aria-label="إضافة قصة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>'}</div><span>قصتي</span></div>`;
     const us = await Promise.all(storyPartnerIds.map(id => fetchUser(id, true)));
     const bm = await Promise.all(storyPartnerIds.map(id => myBlocks[id] ? true : blockedByThem(id)));
     us.forEach((u, i) => {
       if (!u || !(u.storyUntil > Date.now())) return;
       if (bm[i]) return;
       const id = storyPartnerIds[i]; u.id = id;
-      html += `<div class="sb-item" onclick="openStories('${id}')"><div class="avatar${ringCls(u)} ${toneCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
+      html += `<div class="sb-item" onclick="storyItemClick(event,'${id}')"><div class="avatar${ringCls(u)} ${toneCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
     });
     bar.innerHTML = html;
     bar.classList.remove('hidden');
   }, 350);
 }
-function myStoryClick() { myStories.some(isActive) ? openStories(currentUser.uid) : (selectedPublishType = 'story', $('storyMediaPicker').click()); }
-function handleAvatarClick() { myStories.some(isActive) ? openStories(currentUser.uid) : openPublishOptions(); }
+function launchStoryWithGlow(el, callback) {
+  if (!el) { callback(); return; }
+  const ring = el.matches('.avatar') ? el : (el.querySelector('.avatar') || el);
+  ring.classList.remove('story-launch-glow');
+  // إعادة تشغيل الوميض حتى عند النقر المتكرر.
+  void ring.offsetWidth;
+  ring.classList.add('story-launch-glow');
+  setTimeout(() => {
+    ring.classList.remove('story-launch-glow');
+    callback();
+  }, 460);
+}
+function storyItemClick(ev, uid) {
+  if (ev) ev.stopPropagation();
+  launchStoryWithGlow(ev && ev.currentTarget, () => openStories(uid));
+}
+function myStoryClick(ev) {
+  if (myStories.some(isActive)) launchStoryWithGlow(ev && ev.currentTarget, () => openStories(currentUser.uid));
+  else { selectedPublishType = 'story'; $('storyMediaPicker').click(); }
+}
+function handleAvatarClick(ev) {
+  if (myStories.some(isActive)) launchStoryWithGlow(ev && ev.currentTarget, () => openStories(currentUser.uid));
+  else openPublishOptions();
+}
 function chatAvatarStory(ev, uid) {
   const el = ev.currentTarget;
   if (!el.classList.contains('sring')) return;
   ev.stopPropagation();
-  openStories(uid);
+  launchStoryWithGlow(el, () => openStories(uid));
 }
 
 /* ---------- بروفايل شخص آخر ---------- */
@@ -5290,7 +5312,7 @@ function loadOtherStories(uid) {
     });
   });
 }
-function openOtherStories() { if (otherStoryUid) openStories(otherStoryUid); }
+function openOtherStories(ev) { if (otherStoryUid) launchStoryWithGlow(ev && ev.currentTarget, () => openStories(otherStoryUid)); }
 
 /* ---------- العارض ---------- */
 function openStories(uid) {
@@ -8551,6 +8573,34 @@ function openMention(username){
 @keyframes vpIn{from{transform:translateY(-100%)}to{transform:none}}
 @keyframes vpEq{from{height:3px}to{height:13px}}
 @media(prefers-reduced-motion:reduce){#vpBar,#vpBar .vp-eq i{animation:none}}
+
+/* وهج ذهبي قصير عند اختيار القصة قبل فتح العارض */
+.avatar.story-launch-glow,
+.avatar-story-ring.story-launch-glow {
+  position: relative;
+  z-index: 3;
+  animation: storyGoldLaunch .46s cubic-bezier(.2,.85,.25,1) both;
+}
+.avatar.story-launch-glow::after,
+.avatar-story-ring.story-launch-glow::after {
+  animation: storyGoldRing .46s ease-out both !important;
+}
+@keyframes storyGoldLaunch {
+  0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(255,190,45,0)); }
+  38% { transform: scale(1.13); filter: drop-shadow(0 0 7px rgba(255,190,45,.95)) drop-shadow(0 0 15px rgba(255,215,100,.72)); }
+  72% { transform: scale(1.07); filter: drop-shadow(0 0 10px rgba(255,196,55,.85)) drop-shadow(0 0 20px rgba(255,215,100,.5)); }
+  100% { transform: scale(1.02); filter: drop-shadow(0 0 3px rgba(255,190,45,.3)); }
+}
+@keyframes storyGoldRing {
+  0% { box-shadow: 0 0 0 0 rgba(255,193,45,0), 0 0 0 rgba(255,215,100,0); }
+  40% { box-shadow: 0 0 0 3px rgba(255,207,74,.98), 0 0 13px 5px rgba(255,190,35,.9), 0 0 24px 9px rgba(255,221,130,.55); }
+  75% { box-shadow: 0 0 0 2px rgba(255,207,74,.9), 0 0 17px 6px rgba(255,190,35,.72); }
+  100% { box-shadow: 0 0 0 0 rgba(255,193,45,0), 0 0 0 rgba(255,215,100,0); }
+}
+@media(prefers-reduced-motion:reduce) {
+  .avatar.story-launch-glow,.avatar-story-ring.story-launch-glow,
+  .avatar.story-launch-glow::after,.avatar-story-ring.story-launch-glow::after { animation:none!important; }
+}
 </style>
 <script id="babylon-voice-minibar-js">
 (function(){
