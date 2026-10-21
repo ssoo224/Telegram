@@ -2144,8 +2144,6 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
         </div>
       </div>
 
-      <div id="myGiftsWrap" class="hidden"><div class="posts-grid-header"><span aria-hidden="true">🎁</span><span>الهدايا</span></div><div id="myGiftsGrid" class="posts-grid gifts-grid"></div></div>
-
       <div class="posts-grid-header"><i data-ic="clock" aria-hidden="true"></i><span>قصصي</span></div>
       <div id="myStoriesGrid" class="posts-grid"></div>
       <div id="myStoriesEmpty" class="hidden" style="padding:14px 16px;color:var(--text-muted);font-size:13px;">ما عندك قصص. اضغط على صورتك أو زر الإضافة حتى تنشر.</div>
@@ -2182,7 +2180,6 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 
         <div class="pf-actions">
           <button type="button" class="pf-btn primary" onclick="startChatFromProfile()"><i data-ic="chat"></i><span>رسالة</span></button>
-          <button type="button" class="pf-btn hidden" id="otherStarsBtn" onclick="devGiftStars()"><span aria-hidden="true">⭐</span><span>إهداء نجوم</span></button>
           <button type="button" class="pf-btn" id="otherBlockBtn" onclick="toggleBlockCurrent()"><i data-ic="ban"></i><span>حظر</span></button>
         </div>
       </div>
@@ -2205,7 +2202,6 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
           <div class="pf-row-body"><div id="otherJoinDisplay" class="pf-val"></div><div class="pf-lbl">تاريخ الانضمام</div></div>
         </div>
       </div>
-      <div id="otherGiftsWrap" class="hidden"><div class="posts-grid-header"><span aria-hidden="true">🎁</span><span>الهدايا</span></div><div id="otherGiftsGrid" class="posts-grid gifts-grid"></div></div>
       <div id="otherPinnedWrap" class="hidden"><div class="posts-grid-header"><svg class="pinned-stories-heading-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg> القصص المثبتة</div><div id="otherPinnedGrid" class="posts-grid"></div></div>
     </div>
 
@@ -2217,12 +2213,6 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
           <div id="sxName" class="sx-name"></div>
           <div id="sxUser" class="sx-sub"></div>
           <div id="sxBio" class="sx-bio"></div>
-        </div>
-
-        <div class="sx-label">الهدايا والنجوم</div>
-        <div class="sx-group">
-          <div class="sx-item" onclick="openStarsHistory()"><span class="sx-ic" style="background:#f5b301;font-size:19px">⭐</span><span class="sx-t">نجوم بابل</span><span class="sx-val" data-stars>0</span><span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span></div>
-          <div class="sx-item" onclick="openGiftStore()"><span class="sx-ic" style="background:#ec4899;font-size:19px">🎁</span><span class="sx-t">متجر الهدايا</span><span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span></div>
         </div>
 
         <div class="sx-label">التخصيص</div>
@@ -2642,6 +2632,8 @@ let currentChatOtherUserId = null;
 let messagesUnsubscribe = null;
 let userUnsubscribe = null;
 let chatsListUnsubscribe = null;
+// يمنع إرسال أكثر من إشعار لنفس رسالة Firestore خلال جلسة التطبيق.
+const nativeNotifiedMessageIds = new Set();
 let userDocUnsubscribe = null;
 let chatDocUnsubscribe = null;
 let heartbeatInterval = null;
@@ -2729,6 +2721,16 @@ function renderNotificationSettings() {
 }
 
 function requestNotificationPermission() {
+  // داخل تطبيق Sketchware، اطلب إذن Android الأصلي بدل Web Notification API غير المدعوم في WebView.
+  if (window.BabylonAndroid && typeof window.BabylonAndroid.requestNativeNotificationPermission === 'function') {
+    window.onNativeNotificationPermissionResult = function(granted) {
+      try { localStorage.setItem('babylon_notification_push', String(!!granted)); } catch (e) {}
+      renderNotificationSettings();
+      showToast(granted ? 'تم تفعيل إشعارات الجهاز' : 'لم يتم منح إذن إشعارات الجهاز');
+    };
+    window.BabylonAndroid.requestNativeNotificationPermission();
+    return;
+  }
   if (!("Notification" in window)) {
     return showToast("متصفحك لا يدعم الإشعارات");
   }
@@ -3102,6 +3104,11 @@ function applyAppTheme(theme) {
   if (!app) return;
   const safeTheme = theme === 'dark' ? 'dark' : 'light';
   app.setAttribute('data-app-theme', safeTheme);
+  try {
+    if (window.BabylonAndroid && typeof window.BabylonAndroid.setTheme === 'function') {
+      window.BabylonAndroid.setTheme(safeTheme);
+    }
+  } catch (e) {}
   /* The delete dialog is mounted directly under body, so mirror the theme onto it. */
   const deleteDialog = document.getElementById('messageDeleteModal');
   if (deleteDialog) deleteDialog.setAttribute('data-app-theme', safeTheme);
@@ -3194,7 +3201,6 @@ function openProfile() {
     updateProfileUI(currentUserData);
     checkUserStories();
     loadUserPosts();
-    try { loadGiftsGrid(currentUser.uid, 'myGiftsGrid', 'myGiftsWrap'); } catch (e) {}
   }
 }
 
@@ -3207,7 +3213,6 @@ function renderSettingsHero() {
   document.getElementById('sxName').textContent = u.displayName || 'مستخدم';
   document.getElementById('sxUser').textContent = u.username ? '@' + u.username : '';
   document.getElementById('sxBio').textContent = u.bio || '';
-  try { paintStars(); } catch (e) {}
 }
 
 /* ===== الخصوصية والأمان ===== */
@@ -3624,11 +3629,6 @@ function openUserProfileDirect(u) {
 
   showView("otherUserProfileView");
   loadOtherStories(u.id);
-  try {
-    document.getElementById('otherStarsBtn').classList.toggle('hidden', !(isDevUser() && u.id && u.id !== currentUser.uid));
-    document.getElementById('otherGiftsWrap').classList.add('hidden');
-    if (u.id) loadGiftsGrid(u.id, 'otherGiftsGrid', 'otherGiftsWrap');
-  } catch (e) {}
 }
 
 function openCurrentChatUserProfile() {
@@ -3799,11 +3799,6 @@ function renderMsgDoc(doc, box, existingTyping) {
         { const _cl = chatClearedAt(activeChatId, chatMetaCache[activeChatId]); if (_cl && (Number(m.createdAt) || 0) <= _cl) return; }
         const isMine = m.senderId === currentUser.uid;
         const grp = isGroupChat(activeChatId);
-        if (m.type === 'stars' && typeof starGiftNode === 'function') {
-          const gn = starGiftNode(m, doc.id, isMine);
-          if (existingTyping) box.insertBefore(gn, existingTyping); else box.appendChild(gn);
-          return;
-        }
         if (m.system) {
           const sp = document.createElement('div'); sp.className = 'sys-msg'; sp.id = 'message_' + doc.id; sp.textContent = sysText(m);
           if (m.sys && m.sys.ref) { sp.classList.add('link'); sp.onclick = () => jumpToMessage(m.sys.ref); }
@@ -3839,7 +3834,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         if (m.audioUrl) {
           htmlContent += `<div class="audio-player-card custom-voice-card" aria-label="رسالة صوتية" data-dur="${Number(m.duration)||0}"><audio class="voice-audio" preload="metadata" src="${esc(m.audioUrl)}"></audio><button type="button" class="voice-play-btn" onclick="toggleVoicePlayback(this)" aria-label="تشغيل الرسالة الصوتية"><svg class="voice-play-icon" viewBox="0 0 24 24" width="23" height="23" fill="currentColor" aria-hidden="true"><path d="M8 5.8c0-.8.9-1.3 1.6-.8l9.2 6.2a1 1 0 0 1 0 1.6l-9.2 6.2c-.7.5-1.6 0-1.6-.8z"/></svg></button><div class="audio-player-content"><div class="audio-player-title">رسالة صوتية</div><div class="voice-progress-row"><input class="voice-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="تقدم الصوت" oninput="seekVoicePlayback(this)"><span class="voice-time">${m.duration?formatVoiceTime(m.duration):'0:00'}</span></div><div class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>`;
         } else {
-          htmlContent += m.type === 'stars' ? starGiftHtml(m) : (m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`);
+          htmlContent += m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`;
         }
 
         if (m.reactions && Object.keys(m.reactions).length > 0) {
@@ -4265,9 +4260,13 @@ function loadChats() {
   if (chatsListUnsubscribe) { chatsListUnsubscribe(); chatsListUnsubscribe = null; }
   if (!currentUser) return;
 
+  // أول لقطة تحتوي المحادثات القديمة؛ لا نرسل إشعارات عنها.
+  let isInitialChatsSnapshot = true;
   chatsListUnsubscribe = db.collection("chats")
     .where("participants", "array-contains", currentUser.uid)
     .onSnapshot(snap => {
+      const isInitialSnapshot = isInitialChatsSnapshot;
+      isInitialChatsSnapshot = false;
       if (snap.empty) {
         container.innerHTML = `
           <div class="empty-chats">
@@ -4339,6 +4338,23 @@ function loadChats() {
                 if (tStr.startsWith('0')) tStr = tStr.substring(1);
                 lastMsgTime = tStr;
 
+                // إشعار نظام واحد فقط للرسالة الواردة الجديدة، عندما لا تكون محادثتها مفتوحة.
+                // لا نرسل إشعارات للرسائل الموجودة في أول تحميل أو عند فتح المحادثة نفسها.
+                const messageDoc = msgSnap.docs[0];
+                if (!isInitialSnapshot && !isMine &&
+                    (chatId !== activeChatId || document.visibilityState === 'hidden') &&
+                    Number(m.createdAt || 0) > sessionStartTime &&
+                    !nativeNotifiedMessageIds.has(messageDoc.id) &&
+                    getNotificationOption('push', false) &&
+                    !getLocalChatSet('babylon_muted_users').has(otherId)) {
+                  nativeNotifiedMessageIds.add(messageDoc.id);
+                  const nativeBody = m.audioUrl ? '♬ رسالة صوتية' : (m.imageUrl ? '▧ صورة' : (m.text || 'رسالة جديدة'));
+                  try {
+                    if (window.BabylonAndroid && typeof window.BabylonAndroid.showMessageNotification === 'function') {
+                      window.BabylonAndroid.showMessageNotification(u.displayName || 'رسالة جديدة', String(nativeBody).slice(0, 300), pvUrl(u) || '');
+                    }
+                  } catch (nativeNotifError) { console.warn('Native notification failed', nativeNotifError); }
+                }
                 if (!isMine && m.createdAt > sessionStartTime && !getLocalChatSet('babylon_muted_users').has(otherId)) playNotificationSound();
               }
 
@@ -5601,7 +5617,7 @@ function seekVoicePlayback(range){var card=range.closest('.custom-voice-card'), 
 .cl-dlg .cl-box{width:22px;height:22px;border-radius:7px;border:2px solid var(--cl-sub,#8798aa);display:inline-flex;align-items:center;justify-content:center;flex:0 0 22px;transition:.15s}
 .cl-dlg input:checked+.cl-box{background:var(--cl-gold,#e4c45b);border-color:var(--cl-gold,#e4c45b)}
 .cl-dlg input:checked+.cl-box::after{content:"";width:6px;height:11px;border:solid #111;border-width:0 2.6px 2.6px 0;transform:rotate(45deg) translate(-1px,-1px)}
-.cl-dlg input[type=checkbox]{position:absolute;opacity:0;pointer-events:none}
+.cl-dlg input{position:absolute;opacity:0;pointer-events:none}
 .cl-dlg .cl-btns{display:flex;justify-content:flex-start;gap:6px;margin:0 -8px}
 .cl-dlg button{background:none;border:0;padding:11px 16px;font:inherit;font-size:15px;font-weight:700;color:var(--cl-gold,#e4c45b);border-radius:12px;cursor:pointer}
 .cl-dlg button:active{background:rgba(255,255,255,.07)}
@@ -5738,7 +5754,6 @@ function seekVoicePlayback(range){var card=range.closest('.custom-voice-card'), 
 .cl-dlg.stack button.cl-cancel{border-top:1px solid var(--cl-sep,rgba(255,255,255,.08));margin-top:4px}
 .cl-ta{resize:none;min-height:96px;line-height:1.6}
 </style>
-<link rel="stylesheet" href="gifts/gifts.css?v=1">
 <script>
 function getLocalChatSet(key) { try { const a=JSON.parse(localStorage.getItem(key)||'[]'); return new Set(Array.isArray(a)?a:[]); } catch(e) { return new Set(); } }
 function saveLocalChatSet(key,set) { try { localStorage.setItem(key,JSON.stringify([...set])); } catch(e) {} }
@@ -6326,7 +6341,6 @@ function notifyPeer(chatId,text){
 function groupAddMembersFromInfo(){openGroupPicker('add',activeChatId);}
 /*GROUPS_END*/
 
-
 function muteKeyNow(){return isGroupChat()?activeChatId:currentChatOtherUserId;}
 /* ===== المجموعات v2: وصف، مشرفون، صلاحيات، ألقاب، تثبيت، حظر ===== */
 const ADMIN_RIGHTS=[['info','تغيير معلومات المجموعة'],['delete','حذف رسائل الأعضاء'],['ban','تقييد الأعضاء وحظرهم'],['invite','إضافة أعضاء'],['pin','تثبيت الرسائل']];
@@ -6715,10 +6729,6 @@ function searchChatMessages() { clearTimeout(chatSearchTimer); chatSearchTimer=s
 async function runChatMessageSearch() { const input=document.getElementById('chatMessageSearchInput'), results=document.getElementById('chatMessageSearchResults'); if(!input||!results||!activeChatId)return; const q=input.value.trim().toLocaleLowerCase(); if(q.length<2){results.innerHTML='<div class="chat-search-empty">اكتب حرفين على الأقل للبحث.</div>';return;} results.innerHTML='<div class="chat-search-empty">جارٍ البحث…</div>'; try { const snap=await db.collection('chats').doc(activeChatId).collection('messages').orderBy('createdAt','desc').limit(1000).get(); if(!input.value.trim().toLocaleLowerCase().includes(q))return; const hits=snap.docs.filter(d=>String(d.data().text||'').toLocaleLowerCase().includes(q)); if(!hits.length){results.innerHTML='<div class="chat-search-empty">لا توجد رسائل مطابقة.</div>';return;} results.innerHTML=''; hits.slice(0,100).forEach(d=>{const m=d.data(), el=document.createElement('div');el.className='chat-search-result';const text=String(m.text|| (m.imageUrl?'▧ صورة':m.audioUrl?'♬ رسالة صوتية':''));el.textContent=text;const small=document.createElement('small');small.textContent=(m.senderId===currentUser.uid?'أنت':'الطرف الآخر')+' · '+new Date(m.createdAt||Date.now()).toLocaleString();el.appendChild(small);el.onclick=()=>{closeChatSearch();let target=document.getElementById('message_'+d.id);if(!target){showToast('الرسالة موجودة ضمن الرسائل الأقدم؛ حمّل رسائل أقدم ثم ابحث عنها.');return;}target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.add('search-match');setTimeout(()=>target.classList.remove('search-match'),3500);};results.appendChild(el);}); } catch(e){console.error(e);results.innerHTML='<div class="chat-search-empty">تعذر البحث في الرسائل.</div>';} }
 document.addEventListener('click',function(e){const menu=document.getElementById('chatMoreMenu'), del=document.getElementById('chatDeletePanel');if(menu&&!menu.contains(e.target)&&!e.target.closest('.chat-more-btn'))menu.classList.add('hidden');if(del&&!del.contains(e.target)&&!e.target.closest('.chat-more-btn'))del.classList.add('hidden');});
 </script>
-<!-- الهدايا: كل شي بمجلد gifts/ -->
-<script src="gifts/models.js?v=1"></script>
-<script src="gifts/gifts.js?v=1"></script>
-<script src="gifts/star-gift.js?v=1"></script>
 
 
 <style id="babylon-delete-dialog-theme-final-fix">
