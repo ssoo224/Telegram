@@ -1,6 +1,12 @@
 /* ===== gifts.js — هدايا Plush Pepe + المحفظة + المتجر ===== */
 /* يُحمَّل بعد models.js وقبل star-gift.js. اقرأ gifts/README.md */
 const PEPE_MAX=30, PEPE_PRICE=100, DEV_BIG=1000000000;
+/* أنواع الهدايا: كل نوع له مجموعة بفايربيس + مبيعات + نماذج. نوع جديد = سطر هنا + قواعد firestore */
+const GIFT_KINDS={
+  pepe:{key:'pepe',name:'Plush Pepe',coll:'pepes',sales:'pepeSales',field:'lastBuy',max:30,price:100,dir:'models',models:PEPE_MODELS},
+  cat:{key:'cat',name:'Scared Cat',coll:'cats',sales:'catSales',field:'lastBuyCat',max:30,price:100,dir:'cat-models',models:CAT_MODELS}
+};
+const gk=k=>GIFT_KINDS[k||'pepe']||GIFT_KINDS.pepe;
 const PEPE_BGS=[{n:'Chocolate',a:'#b8795a',b:'#5b3326',p:30},{n:'Emerald',a:'#3fd0a0',b:'#0a5a40',p:25},{n:'Sapphire',a:'#5784e6',b:'#122565',p:20},{n:'Ruby',a:'#ea4b50',b:'#650d1a',p:15},{n:'Black',a:'#26262c',b:'#000000',p:10}];
 const PEPE_SYMS=[
  {n:'Moon',p:30,d:'M20.5 14.2A8.6 8.6 0 0 1 9.8 3.5a8.6 8.6 0 1 0 10.7 10.7z'},
@@ -32,12 +38,14 @@ auth.onAuthStateChanged(u=>{if(u)startWallet(u.uid);else{if(walletUnsub)walletUn
 
 /* ---------- Lottie ---------- */
 const _pepeTxt={};
-async function pepeText(i){
-  if(_pepeTxt[i])return _pepeTxt[i];
-  const r=await fetch(GIFTS_BASE+'models/'+PEPE_MODELS[i].f+'.tgs');
+async function pepeText(i,kind){
+  const K=gk(kind),key=K.key+':'+i;
+  if(_pepeTxt[key])return _pepeTxt[key];
+  const f=i<0?'original':K.models[i].f;
+  const r=await fetch(GIFTS_BASE+K.dir+'/'+f+'.tgs');
   if(!r.ok)throw new Error('tgs '+r.status);
   const st=new Blob([await r.arrayBuffer()]).stream().pipeThrough(new DecompressionStream('gzip'));
-  return _pepeTxt[i]=await new Response(st).text();
+  return _pepeTxt[key]=await new Response(st).text();
 }
 let _lotP=null;
 function loadLottie(){
@@ -55,7 +63,7 @@ async function mountPepeAnim(h,mi,opt){
   if(!h)return;
   h.innerHTML='<div class="pp-fb">🐸</div>';
   try{
-    const [lot,txt]=await Promise.all([loadLottie(),pepeText(mi)]);
+    const [lot,txt]=await Promise.all([loadLottie(),pepeText(mi,opt.kind)]);
     if(!h.isConnected)return;
     h.innerHTML='';
     const an=lot.loadAnimation({container:h,renderer:'svg',loop:!opt.still,autoplay:!opt.still,animationData:JSON.parse(txt)});
@@ -81,12 +89,22 @@ function bgCss(g){
   const up=g&&g.upgraded,b=up?PEPE_BGS[g.bg]:{a:'#3b414d',b:'#12151b'};
   return 'radial-gradient(circle at 50% 44%,'+b.a+' 0%,'+b.b+' 100%)';
 }
+function thumbUrl(g){
+  const K=gk(g.k),f=g.upgraded?K.models[g.model].f:'original';
+  return GIFTS_BASE+K.dir+'/thumbs/'+f+'.webp';
+}
 function giftArt(g,opt){
   opt=opt||{};
   const el=document.createElement('div');el.className='ga'+(opt.cls?' '+opt.cls:'');
   el.style.background=bgCss(g);
   el.innerHTML=(g.upgraded?patSvg(g.sym):'')+'<div class="ga-pepe"'+(g.upgraded?'':' style="filter:grayscale(1) brightness(.78)"')+'></div>';
-  mountPepeAnim(el.querySelector('.ga-pepe'),g.upgraded?g.model:0,{still:!!opt.still});
+  const holder=el.querySelector('.ga-pepe'),mi=g.upgraded?g.model:-1;
+  if(opt.still){
+    /* مربعات الشبكة: صورة ثابتة خفيفة بدل أنيميشن Lottie؛ وإذا فشلت الصورة نرجع للأنيميشن */
+    const im=new Image();im.alt='';im.decoding='async';im.loading='lazy';
+    im.onerror=()=>mountPepeAnim(holder,mi,{still:true,kind:g.k});
+    im.src=thumbUrl(g);holder.appendChild(im);
+  }else mountPepeAnim(holder,mi,{kind:g.k});
   return el;
 }
 
@@ -95,59 +113,69 @@ const giftGridUnsub={};
 function loadGiftsGrid(uid,gridId,wrapId){
   const grid=document.getElementById(gridId),wrap=document.getElementById(wrapId);if(!grid||!wrap)return;
   if(giftGridUnsub[gridId])giftGridUnsub[gridId]();
-  giftGridUnsub[gridId]=db.collection('users').doc(uid).collection('pepes').onSnapshot(snap=>{
-    const items=snap.docs.map(d=>d.data()).sort((a,b)=>(b.at||0)-(a.at||0));
+  const data={};
+  const draw=()=>{
+    const items=[].concat(...Object.values(data)).sort((a,b)=>(b.at||0)-(a.at||0));
     wrap.classList.toggle('hidden',!items.length);
     grid.innerHTML='';
     items.forEach(g=>{
       const t=giftArt(g,{still:true,cls:'gift-tile'});
       t.insertAdjacentHTML('beforeend','<div class="gt-n">#'+g.number+'</div>');
-      t.onclick=()=>openGiftPage(uid,g.number);
+      t.onclick=()=>openGiftPage(uid,g.number,g.k);
       grid.appendChild(t);
     });
-  },()=>{wrap.classList.add('hidden');});
+  };
+  const unsubs=Object.values(GIFT_KINDS).map(K=>{
+    data[K.key]=[];
+    return db.collection('users').doc(uid).collection(K.coll).onSnapshot(snap=>{
+      data[K.key]=snap.docs.map(d=>Object.assign({k:K.key},d.data()));draw();
+    },()=>{data[K.key]=[];draw();});
+  });
+  giftGridUnsub[gridId]=()=>unsubs.forEach(u=>u());
 }
 
 /* ---------- صفحة تفاصيل الهدية (مثل تليجرام) ---------- */
 let gpUnsub=null;
 function closeGiftPage(){if(gpUnsub){gpUnsub();gpUnsub=null;}document.getElementById('giftPage')?.remove();}
 const IC_BACK='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
-async function openGiftPage(uid,n){
+async function openGiftPage(uid,n,kind){
+  const K=gk(kind);
   closeGiftPage();
   const ov=document.createElement('div');ov.id='giftPage';ov.className='gp-ov';uiRoot().appendChild(ov);
   ov.innerHTML='<div class="gp-hero" style="background:'+bgCss({})+'"><div class="gp-top"><button type="button" class="gp-round" id="gpBack" aria-label="رجوع">'+IC_BACK+'</button></div></div>';
   ov.querySelector('#gpBack').onclick=closeGiftPage;
-  const issuedP=db.collection('pepeSales').get().then(s=>s.size).catch(()=>null);
+  const issuedP=db.collection(K.sales).get().then(s=>s.size).catch(()=>null);
   await loadUsers([uid]);
   const issued=await issuedP;
   if(!document.getElementById('giftPage'))return;
-  gpUnsub=db.collection('users').doc(uid).collection('pepes').doc(String(n)).onSnapshot(doc=>{
+  gpUnsub=db.collection('users').doc(uid).collection(K.coll).doc(String(n)).onSnapshot(doc=>{
     if(!doc.exists){closeGiftPage();showToast('هذه الهدية غير موجودة');return;}
-    renderGiftPage(ov,uid,doc.data(),issued);
+    renderGiftPage(ov,uid,Object.assign({k:K.key},doc.data()),issued);
   },()=>{closeGiftPage();});
 }
 function gpRow(k,v){return '<div class="gp-row"><div class="gp-k">'+k+'</div><div class="gp-v">'+v+'</div></div>';}
 function renderGiftPage(ov,uid,g,issued,reveal){
-  const up=!!g.upgraded,me=meId(),mine=uid===me,m=up?PEPE_MODELS[g.model]:null,b=up?PEPE_BGS[g.bg]:null,s=up?PEPE_SYMS[g.sym]:null;
+  const K=gk(g.k);
+  const up=!!g.upgraded,me=meId(),mine=uid===me,m=up?K.models[g.model]:null,b=up?PEPE_BGS[g.bg]:null,s=up?PEPE_SYMS[g.sym]:null;
   const u=GU[uid]||{};
   const ownerV='<div class="gp-owner" id="gpOwner">'+userAvHtml(uid,'gp-oav')+'<span>'+esc(u.displayName||'مستخدم')+(mine?' <em>(أنت)</em>':'')+'</span></div>';
   const lock='<span class="gp-lock">غير مُرقّاة</span>';
   ov.innerHTML='<div class="gp-hero'+(reveal?' reveal':'')+'" id="gpHero" style="background:'+bgCss(g)+'">'+(up?patSvg(g.sym):'')
     +'<div class="gp-top"><button type="button" class="gp-round" id="gpBack" aria-label="رجوع">'+IC_BACK+'</button></div>'
     +'<div class="gp-pepe"'+(up?'':' style="filter:grayscale(1) brightness(.8)"')+'></div>'
-    +'<div class="gp-title">Plush Pepe <span>#'+g.number+'</span></div>'
-    +'<div class="gp-chip" id="gpChip">'+(up?'نسخة '+g.number+' من '+PEPE_MAX:'هدية بانتظار الترقية')+'</div></div>'
+    +'<div class="gp-title">'+K.name+' <span>#'+g.number+'</span></div>'
+    +'<div class="gp-chip" id="gpChip">'+(up?'نسخة '+g.number+' من '+K.max:'هدية بانتظار الترقية')+'</div></div>'
     +'<div class="gp-body"><div class="gp-table">'
     +gpRow('المالك',ownerV)
-    +gpRow('النموذج',up?esc(m.n)+'<span class="gp-pill">'+m.p+'%</span>':lock)
+    +gpRow('النموذج',up?esc(m.n)+'<span class="gp-pill">'+(m.p/10)+'%</span>':lock)
     +gpRow('الرمز',up?esc(s.n)+'<span class="gp-pill">'+s.p+'%</span>':lock)
     +gpRow('الخلفية',up?esc(b.n)+'<span class="gp-pill">'+b.p+'%</span>':lock)
-    +gpRow('الكمية',(issued!=null?issued:'—')+'/'+PEPE_MAX+' صادرة')
+    +gpRow('الكمية',(issued!=null?issued:'—')+'/'+K.max+' صادرة')
     +'</div>'
     +(mine&&!up?'<button type="button" class="gp-cta" id="gpUp">✨ ترقية الهدية مجاناً</button><div class="gp-note">ستحصل على نموذج وخلفية ورمز عشوائي، وبعضها نادر جداً.</div>':'')
     +'</div>';
   ov.querySelector('#gpBack').onclick=closeGiftPage;
-  mountPepeAnim(ov.querySelector('.gp-pepe'),up?g.model:0,{});
+  mountPepeAnim(ov.querySelector('.gp-pepe'),up?g.model:-1,{kind:g.k});
   ov.querySelector('#gpOwner').onclick=()=>{
     if(mine){closeGiftPage();openProfile();return;}
     db.collection('users').doc(uid).get().then(d=>{if(d.exists){closeGiftPage();openUserProfileDirect(Object.assign({id:uid},d.data()));}});
@@ -157,7 +185,8 @@ function renderGiftPage(ov,uid,g,issued,reveal){
 let upgrading=false;
 async function doUpgrade(ov,uid,g){
   if(upgrading)return;upgrading=true;
-  const res={model:wpick(PEPE_MODELS),bg:wpick(PEPE_BGS),sym:wpick(PEPE_SYMS)};
+  const K=gk(g.k);
+  const res={model:wpick(K.models),bg:wpick(PEPE_BGS),sym:wpick(PEPE_SYMS)};
   const hero=ov.querySelector('#gpHero'),btn=ov.querySelector('#gpUp'),chip=ov.querySelector('#gpChip');
   if(btn){btn.disabled=true;btn.textContent='جاري الترقية…';}
   hero.classList.add('rolling');
@@ -173,72 +202,80 @@ async function doUpgrade(ov,uid,g){
   }
   await sleep(250);
   try{
-    await db.collection('users').doc(uid).collection('pepes').doc(String(g.number)).update({upgraded:true,model:res.model,bg:res.bg,sym:res.sym});
-    showToast('✨ تمت الترقية: '+PEPE_MODELS[res.model].n);
+    await db.collection('users').doc(uid).collection(K.coll).doc(String(g.number)).update({upgraded:true,model:res.model,bg:res.bg,sym:res.sym});
+    showToast('✨ تمت الترقية: '+K.models[res.model].n);
     const doc=ov.querySelector('#gpHero');if(doc)doc.classList.add('reveal');
   }catch(e){console.error(e);showToast('تعذرت الترقية');hero.classList.remove('rolling');renderGiftPage(ov,uid,g,null);}
   upgrading=false;
 }
 
 /* ---------- متجر الهدايا ---------- */
+let storeKind='pepe';
 function closeStore(){document.getElementById('giftStore')?.remove();clearInterval(window.__storeTimer);}
-async function openGiftStore(){
+async function openGiftStore(kind){
+  if(typeof kind==='string')storeKind=kind;
   closeStore();
+  const K=gk(storeKind);
   const ov=document.createElement('div');ov.id='giftStore';ov.className='gp-ov st-ov';uiRoot().appendChild(ov);
   ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="stBack" aria-label="رجوع">'+IC_BACK+'</button><div class="gx-title"><b>متجر الهدايا</b></div></div>'
+    +'<div class="sh-tabs st-kinds">'+Object.values(GIFT_KINDS).map(x=>'<button type="button" class="'+(x.key===K.key?'on':'')+'" data-k="'+x.key+'">'+x.name+'</button>').join('')+'</div>'
     +'<div class="st-body"><div class="st-hero" id="stHero"></div>'
-    +'<div class="st-title">Plush Pepe</div><div class="st-sub" id="stSub">نسخ محدودة · '+PEPE_MAX+' فقط</div>'
+    +'<div class="st-title">'+K.name+'</div><div class="st-sub" id="stSub">نسخ محدودة · '+K.max+' فقط</div>'
     +'<div class="gp-table st-table">'
-    +gpRow('السعر',PEPE_PRICE+' ⭐')
+    +gpRow('السعر',K.price+' ⭐')
     +gpRow('رصيدك','<b data-stars>'+starsLabel()+'</b> ⭐')
     +gpRow('الترقية','مجانية، نموذج وخلفية ورمز عشوائي')
-    +'</div><button type="button" class="gp-cta" id="stBuy">شراء بـ '+PEPE_PRICE+' نجمة</button><div class="gp-note" id="stNote"></div></div>';
+    +'</div><button type="button" class="gp-cta" id="stBuy">شراء بـ '+K.price+' نجمة</button><div class="gp-note" id="stNote"></div></div>';
   ov.querySelector('#stBack').onclick=closeStore;
+  ov.querySelectorAll('.st-kinds button').forEach(b=>b.onclick=()=>{if(b.dataset.k!==storeKind)openGiftStore(b.dataset.k);});
   // عرض متنوع: يبدّل النموذج والخلفية والرمز كل كم ثانية
   const hero=ov.querySelector('#stHero');let i=0;
   const show=()=>{
-    const g={upgraded:true,model:i%5,bg:(i*2+1)%5,sym:(i*3)%5};
+    const g={k:K.key,upgraded:true,model:(i*7+3)%K.models.length,bg:(i*2+1)%5,sym:(i*3)%5};
     const el=giftArt(g,{cls:'st-art'});el.classList.add('fadein');
     hero.innerHTML='';hero.appendChild(el);i++;
   };
   show();window.__storeTimer=setInterval(()=>{if(!document.getElementById('giftStore')){clearInterval(window.__storeTimer);return;}show();},3200);
   refreshStore();
-  ov.querySelector('#stBuy').onclick=buyPepe;
+  ov.querySelector('#stBuy').onclick=()=>buyGift(K.key);
 }
 async function refreshStore(){
   const ov=document.getElementById('giftStore');if(!ov)return;
+  const K=gk(storeKind);
   try{
-    const s=await db.collection('pepeSales').get();
-    const left=PEPE_MAX-s.size,sub=ov.querySelector('#stSub'),btn=ov.querySelector('#stBuy');
-    if(sub)sub.textContent='نسخة محدودة · المتبقي '+Math.max(0,left)+' من '+PEPE_MAX;
+    const s=await db.collection(K.sales).get();
+    const left=K.max-s.size,sub=ov.querySelector('#stSub'),btn=ov.querySelector('#stBuy');
+    if(sub)sub.textContent='نسخة محدودة · المتبقي '+Math.max(0,left)+' من '+K.max;
     if(btn&&left<=0){btn.disabled=true;btn.textContent='نفدت الكمية';}
   }catch(e){}
 }
 let buying=false;
-async function buyPepe(){
+async function buyGift(kind){
   if(buying)return;
-  const me=meId(),dev=isDevUser();
-  if(!dev&&myStars<PEPE_PRICE)return showToast('رصيدك غير كافٍ ⭐');
+  const K=gk(kind),me=meId(),dev=isDevUser();
+  if(!dev&&myStars<K.price)return showToast('رصيدك غير كافٍ ⭐');
   buying=true;
   const btn=document.getElementById('stBuy');if(btn){btn.disabled=true;btn.textContent='جاري الشراء…';}
   try{
-    const snap=await db.collection('pepeSales').get(),taken=new Set(snap.docs.map(d=>d.id));
-    let n=0;for(let k=1;k<=PEPE_MAX;k++)if(!taken.has(String(k))){n=k;break;}
+    const snap=await db.collection(K.sales).get(),taken=new Set(snap.docs.map(d=>d.id));
+    let n=0;for(let k=1;k<=K.max;k++)if(!taken.has(String(k))){n=k;break;}
     if(!n){showToast('نفدت الكمية');refreshStore();buying=false;return;}
     const wref=db.collection('wallets').doc(me),now=Date.now(),inc=firebase.firestore.FieldValue.increment;
     if(dev)await wref.set({stars:DEV_BIG},{merge:true});
     const b=db.batch();
-    b.update(wref,{stars:inc(-PEPE_PRICE),lastBuy:String(n)});
-    b.set(db.collection('pepeSales').doc(String(n)),{ownerId:me,at:now});
-    b.set(db.collection('users').doc(me).collection('pepes').doc(String(n)),{number:n,upgraded:false,at:now});
-    b.set(db.collection('users').doc(me).collection('txs').doc(),{type:'buy',gift:n,stars:PEPE_PRICE,at:now});
+    const wu={stars:inc(-K.price)};wu[K.field]=String(n);
+    b.update(wref,wu);
+    b.set(db.collection(K.sales).doc(String(n)),{ownerId:me,at:now});
+    b.set(db.collection('users').doc(me).collection(K.coll).doc(String(n)),{number:n,upgraded:false,at:now});
+    const tx={type:'buy',gift:n,stars:K.price,at:now};if(K.key!=='pepe')tx.kind=K.key;
+    b.set(db.collection('users').doc(me).collection('txs').doc(),tx);
     await b.commit();
     if(dev)wref.set({stars:DEV_BIG},{merge:true}).catch(()=>{});
-    showToast('🎉 اشتريت Plush Pepe #'+n);
-    closeStore();openGiftPage(me,n);
+    showToast('🎉 اشتريت '+K.name+' #'+n);
+    closeStore();openGiftPage(me,n,K.key);
   }catch(e){
     console.error(e);showToast('ممكن أحد سبقك، حاول مرة ثانية');refreshStore();
-    const b2=document.getElementById('stBuy');if(b2){b2.disabled=false;b2.textContent='شراء بـ '+PEPE_PRICE+' نجمة';}
+    const b2=document.getElementById('stBuy');if(b2){b2.disabled=false;b2.textContent='شراء بـ '+K.price+' نجمة';}
   }
   buying=false;
 }
@@ -264,12 +301,12 @@ function openStarsHistory(){
     if(!f.length){list.innerHTML='<div class="gx-empty">لا توجد عمليات بعد.</div>';return;}
     list.innerHTML=f.map(r=>{
       let ic='⭐',title='',amt='',cls='';
-      if(r.type==='buy'){ic='🎁';title='اشتريت Plush Pepe #'+r.gift;amt='−'+fmtN(r.stars);cls='neg';}
+      if(r.type==='buy'){ic='🎁';title='اشتريت '+gk(r.kind).name+' #'+r.gift;amt='−'+fmtN(r.stars);cls='neg';}
       else if(r.type==='in'){ic='⭐';title='هدية نجوم من '+esc(r.fromName||'المطور');amt='+'+fmtN(r.stars);cls='pos';}
       else if(r.type==='out'){ic='📤';title='أهديت '+esc(r.toName||'مستخدم');amt=fmtN(r.stars);cls='out';}
-      return '<div class="sh-row" data-g="'+(r.type==='buy'?r.gift:'')+'"><div class="sh-ic">'+ic+'</div><div class="sh-t"><b>'+title+'</b><span>'+fmtWhen(r.at)+'</span></div><div class="sh-a '+cls+'">'+amt+' <i>⭐</i></div></div>';
+      return '<div class="sh-row" data-g="'+(r.type==='buy'?r.gift:'')+'" data-k="'+(r.kind||'pepe')+'"><div class="sh-ic">'+ic+'</div><div class="sh-t"><b>'+title+'</b><span>'+fmtWhen(r.at)+'</span></div><div class="sh-a '+cls+'">'+amt+' <i>⭐</i></div></div>';
     }).join('');
-    list.querySelectorAll('.sh-row[data-g]').forEach(el=>{if(el.dataset.g)el.onclick=()=>{closeHistory();openGiftPage(meId(),Number(el.dataset.g));};});
+    list.querySelectorAll('.sh-row[data-g]').forEach(el=>{if(el.dataset.g)el.onclick=()=>{closeHistory();openGiftPage(meId(),Number(el.dataset.g),el.dataset.k);};});
   };
   ov.querySelectorAll('#shTabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;ov.querySelectorAll('#shTabs button').forEach(x=>x.classList.toggle('on',x===b));draw();});
   histUnsub=db.collection('users').doc(meId()).collection('txs').orderBy('at','desc').limit(100).onSnapshot(s=>{rows=s.docs.map(d=>d.data());draw();},()=>{rows=[];draw();});

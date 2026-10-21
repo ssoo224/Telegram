@@ -4,6 +4,7 @@
 .ga .ga-pat{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .ga .ga-pepe{position:absolute;inset:5% 5% 8%;display:flex;align-items:center;justify-content:center}
 .ga-pepe svg,.gp-pepe svg{width:100%!important;height:100%!important}
+.ga-pepe img{width:100%;height:100%;object-fit:contain;display:block}
 .pp-fb{font-size:80px;opacity:.55}
 .gifts-grid.posts-grid{display:grid!important;grid-template-columns:repeat(3,1fr);gap:9px;padding:2px 14px 16px}
 .gift-tile{aspect-ratio:1;border-radius:20px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2);transition:transform .12s}

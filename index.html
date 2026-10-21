@@ -9,8 +9,8 @@
 .splash-page.leaving{opacity:0;visibility:hidden;pointer-events:none}
 .splash-page.gone{display:none!important}
 .splash-logo{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ffffff;
-  background:linear-gradient(135deg,#fff1b0 0%,#f4d56a 28%,#e2b53c 62%,#cf9d27 100%);border:2px solid #fff6cf;box-shadow:0 10px 28px rgba(232,190,70,.45),inset 0 2px 4px rgba(255,255,255,.55);animation:splashBreath 2.2s ease-in-out infinite}
-.splash-logo svg{width:46px;height:46px;display:block;filter:drop-shadow(0 1px 2px rgba(120,80,0,.45))}
+  background:linear-gradient(135deg,#c29d30,#b38f27);border:2px solid #fff5c0;box-shadow:0 10px 28px rgba(212,175,55,.32);animation:splashBreath 2.2s ease-in-out infinite}
+.splash-logo svg{width:46px;height:46px;display:block}
 .splash-title{margin-top:20px;font-size:25px;font-weight:800;letter-spacing:-.3px;color:#c29d30}
 .app-container[data-app-theme="light"] .splash-title{color:#8b680e}
 .splash-dots{display:flex;gap:8px;margin-top:26px}
@@ -955,11 +955,11 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .sv-bar{flex:1;height:3px;background:rgba(255,255,255,.3);border-radius:2px;overflow:hidden}
 .sv-bar i{display:block;height:100%;width:0;background:#fff}
 .sv-top{position:absolute;top:14px;left:0;right:0;z-index:6;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:linear-gradient(rgba(0,0,0,.6),transparent);color:#fff}
-.sv-img{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;touch-action:pan-x}
+.sv-img{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
 .sv-img img,.sv-img video{max-width:100%;max-height:100%;object-fit:contain}
 .sv-img video{width:100%;height:100%;background:#000}
 .vid-badge{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;padding:2px 6px;border-radius:10px;font-size:11px}
-.sv-tap{position:absolute;top:80px;bottom:150px;width:38%;z-index:3;touch-action:pan-x}
+.sv-tap{position:absolute;top:80px;bottom:150px;width:38%;z-index:3}
 .sv-tap.n{left:0}.sv-tap.p{right:0}
 .sv-cap{position:absolute;left:0;right:0;bottom:120px;text-align:center;padding:10px 16px;color:#fff;background:rgba(0,0,0,.5);font-size:15px;z-index:4;white-space:pre-wrap;direction:rtl}
 .sv-foot{position:absolute;left:0;right:0;bottom:0;z-index:6;padding:30px 12px 14px;background:linear-gradient(transparent,rgba(0,0,0,.88));color:#fff;display:flex;flex-direction:column;gap:10px}
@@ -2101,7 +2101,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
       <div class="pf-cover" id="pCover"><div class="pattern-layer" id="pCoverPattern"></div></div>
 
       <div class="pf-head">
-        <div id="pStoryRing" class="avatar-story-ring" onclick="handleAvatarClick(event)">
+        <div id="pStoryRing" class="avatar-story-ring" onclick="handleAvatarClick()">
           <div id="pAvatarText" class="profile-large-avatar"><i data-ic="user" data-size="42"></i></div>
           <img id="pAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar" onclick="openAvatarGallery(event)">
         </div>
@@ -2144,6 +2144,8 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
         </div>
       </div>
 
+      <div id="myGiftsWrap" class="hidden"><div class="posts-grid-header"><span aria-hidden="true">🎁</span><span>الهدايا</span></div><div id="myGiftsGrid" class="posts-grid gifts-grid"></div></div>
+
       <div class="posts-grid-header"><i data-ic="clock" aria-hidden="true"></i><span>قصصي</span></div>
       <div id="myStoriesGrid" class="posts-grid"></div>
       <div id="myStoriesEmpty" class="hidden" style="padding:14px 16px;color:var(--text-muted);font-size:13px;">ما عندك قصص. اضغط على صورتك أو زر الإضافة حتى تنشر.</div>
@@ -2168,7 +2170,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
       </div>
 
       <div class="pf-head">
-        <div id="otherStoryRing" class="avatar-story-ring" onclick="openOtherStories(event)">
+        <div id="otherStoryRing" class="avatar-story-ring" onclick="openOtherStories()">
           <div id="otherAvatarText" class="profile-large-avatar"><i data-ic="user" data-size="42"></i></div>
           <img id="otherAvatarImg" class="profile-large-avatar hidden" src="" alt="Avatar">
         </div>
@@ -2180,6 +2182,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 
         <div class="pf-actions">
           <button type="button" class="pf-btn primary" onclick="startChatFromProfile()"><i data-ic="chat"></i><span>رسالة</span></button>
+          <button type="button" class="pf-btn hidden" id="otherStarsBtn" onclick="devGiftStars()"><span aria-hidden="true">⭐</span><span>إهداء نجوم</span></button>
           <button type="button" class="pf-btn" id="otherBlockBtn" onclick="toggleBlockCurrent()"><i data-ic="ban"></i><span>حظر</span></button>
         </div>
       </div>
@@ -2202,6 +2205,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
           <div class="pf-row-body"><div id="otherJoinDisplay" class="pf-val"></div><div class="pf-lbl">تاريخ الانضمام</div></div>
         </div>
       </div>
+      <div id="otherGiftsWrap" class="hidden"><div class="posts-grid-header"><span aria-hidden="true">🎁</span><span>الهدايا</span></div><div id="otherGiftsGrid" class="posts-grid gifts-grid"></div></div>
       <div id="otherPinnedWrap" class="hidden"><div class="posts-grid-header"><svg class="pinned-stories-heading-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg> القصص المثبتة</div><div id="otherPinnedGrid" class="posts-grid"></div></div>
     </div>
 
@@ -2213,6 +2217,12 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
           <div id="sxName" class="sx-name"></div>
           <div id="sxUser" class="sx-sub"></div>
           <div id="sxBio" class="sx-bio"></div>
+        </div>
+
+        <div class="sx-label">الهدايا والنجوم</div>
+        <div class="sx-group">
+          <div class="sx-item" onclick="openStarsHistory()"><span class="sx-ic" style="background:#f5b301;font-size:19px">⭐</span><span class="sx-t">نجوم بابل</span><span class="sx-val" data-stars>0</span><span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span></div>
+          <div class="sx-item" onclick="openGiftStore()"><span class="sx-ic" style="background:#ec4899;font-size:19px">🎁</span><span class="sx-t">متجر الهدايا</span><span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span></div>
         </div>
 
         <div class="sx-label">التخصيص</div>
@@ -2540,7 +2550,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
     <div id="svBars" class="sv-bars"></div>
     <div class="sv-top">
       <div class="story-user-info">
-        <div id="storyUserAvatar" class="story-avatar" role="button" tabindex="0" title="فتح المحادثة" aria-label="فتح محادثة صاحب القصة" onclick="openStoryOwnerChat(event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStoryOwnerChat(event)}"></div>
+        <div id="storyUserAvatar" class="story-avatar"></div>
         <div style="text-align:right;line-height:1.3;"><div id="storyUserName" style="font-weight:bold;font-size:14px;"></div><div id="svTime" style="font-size:11px;opacity:.8;"></div></div>
       </div>
       <button class="icon-btn" onclick="closeStoryViewer()" style="color:white;" aria-label="إغلاق القصة"><svg class="story-ui-icon close-story-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
@@ -2632,8 +2642,6 @@ let currentChatOtherUserId = null;
 let messagesUnsubscribe = null;
 let userUnsubscribe = null;
 let chatsListUnsubscribe = null;
-// يمنع إرسال أكثر من إشعار لنفس رسالة Firestore خلال جلسة التطبيق.
-const nativeNotifiedMessageIds = new Set();
 let userDocUnsubscribe = null;
 let chatDocUnsubscribe = null;
 let heartbeatInterval = null;
@@ -2721,16 +2729,6 @@ function renderNotificationSettings() {
 }
 
 function requestNotificationPermission() {
-  // داخل تطبيق Sketchware، اطلب إذن Android الأصلي بدل Web Notification API غير المدعوم في WebView.
-  if (window.BabylonAndroid && typeof window.BabylonAndroid.requestNativeNotificationPermission === 'function') {
-    window.onNativeNotificationPermissionResult = function(granted) {
-      try { localStorage.setItem('babylon_notification_push', String(!!granted)); } catch (e) {}
-      renderNotificationSettings();
-      showToast(granted ? 'تم تفعيل إشعارات الجهاز' : 'لم يتم منح إذن إشعارات الجهاز');
-    };
-    window.BabylonAndroid.requestNativeNotificationPermission();
-    return;
-  }
   if (!("Notification" in window)) {
     return showToast("متصفحك لا يدعم الإشعارات");
   }
@@ -3104,11 +3102,6 @@ function applyAppTheme(theme) {
   if (!app) return;
   const safeTheme = theme === 'dark' ? 'dark' : 'light';
   app.setAttribute('data-app-theme', safeTheme);
-  try {
-    if (window.BabylonAndroid && typeof window.BabylonAndroid.setTheme === 'function') {
-      window.BabylonAndroid.setTheme(safeTheme);
-    }
-  } catch (e) {}
   /* The delete dialog is mounted directly under body, so mirror the theme onto it. */
   const deleteDialog = document.getElementById('messageDeleteModal');
   if (deleteDialog) deleteDialog.setAttribute('data-app-theme', safeTheme);
@@ -3201,6 +3194,7 @@ function openProfile() {
     updateProfileUI(currentUserData);
     checkUserStories();
     loadUserPosts();
+    try { loadGiftsGrid(currentUser.uid, 'myGiftsGrid', 'myGiftsWrap'); } catch (e) {}
   }
 }
 
@@ -3213,62 +3207,12 @@ function renderSettingsHero() {
   document.getElementById('sxName').textContent = u.displayName || 'مستخدم';
   document.getElementById('sxUser').textContent = u.username ? '@' + u.username : '';
   document.getElementById('sxBio').textContent = u.bio || '';
+  try { paintStars(); } catch (e) {}
 }
 
 /* ===== الخصوصية والأمان ===== */
 function isMeUser(u){ return !!u && (u === currentUserData || (currentUser && (u.id === currentUser.uid || u.uid === currentUser.uid))); }
 function pvUrl(u){ if (!u || !u.avatarUrl) return ''; return (u.hideAvatar && !isMeUser(u)) ? '' : u.avatarUrl; }
-// صورة مصغّرة (192px) لصورة المرسل تُرسل لإشعار أندرويد بدل الصورة الأصلية الكبيرة.
-const notifAvatarCache = {};
-function notifAvatarThumb(url, key, cb){
-  if (!url) { cb(''); return; }
-  if (url.indexOf('data:image') !== 0) { cb(url); return; }
-  const ck = key + ':' + url.length;
-  if (notifAvatarCache[ck]) { cb(notifAvatarCache[ck]); return; }
-  const im = new Image();
-  im.onload = function(){
-    try {
-      const size = 192, s = Math.min(im.naturalWidth, im.naturalHeight);
-      const sx = (im.naturalWidth - s) / 2, sy = (im.naturalHeight - s) / 2;
-      const c = document.createElement('canvas'); c.width = c.height = size;
-      c.getContext('2d').drawImage(im, sx, sy, s, s, 0, 0, size, size);
-      const out = c.toDataURL('image/jpeg', 0.85);
-      notifAvatarCache[ck] = out; cb(out);
-    } catch (e) { cb(''); }
-  };
-  im.onerror = function(){ cb(''); };
-  im.src = url;
-}
-
-// أزرار إشعار أندرويد: (رد) و(اعتبارها مقروءة) تعمل على المحادثة المحددة دون فتحها.
-async function nativeMarkChatRead(chatId, otherId){
-  const snap = await db.collection('chats').doc(chatId).collection('messages')
-    .where('senderId', '==', otherId).where('read', '==', false).get();
-  snap.forEach(d => d.ref.update({ read: true }).catch(() => {}));
-}
-window.onNativeNotificationAction = async function(action, otherId, chatId, text){
-  try {
-    if (!currentUser || !chatId) return;
-    if (action === 'read') {
-      await nativeMarkChatRead(chatId, otherId);
-    } else if (action === 'reply') {
-      text = String(text || '').trim();
-      if (!text) return;
-      if (myBlocks[otherId]) { showToast('أنت حاظر هذا المستخدم، ألغِ الحظر حتى تراسله'); return; }
-      if (!isGroupChat(chatId) && await blockedByThem(otherId)) { showToast('تم حظرك من قبل هذا المستخدم'); return; }
-      const msgData = { senderId: currentUser.uid, text: text, read: false, createdAt: Date.now() };
-      if (isGroupChat(chatId)) { const mn = extractMentionUids(text); if (mn.length) msgData.mentions = mn; }
-      await db.collection('chats').doc(chatId).collection('messages').add(msgData);
-      await db.collection('chats').doc(chatId).set({
-        updatedAt: Date.now(),
-        ...groupLastMsgFor(chatId, text),
-        ['typing_' + currentUser.uid]: false
-      }, { merge: true });
-      notifyPeer(chatId, text);
-      await nativeMarkChatRead(chatId, otherId);
-    }
-  } catch (err) { console.warn('Native notification action failed', err); }
-};
 function lsHidden(u){ return !!u && !!u.hideLastSeen && !isMeUser(u); }
 function openPrivacySettings(){ renderPrivacySeg(); showView('privacySettingsView'); }
 function renderPrivacySeg(){
@@ -3680,6 +3624,11 @@ function openUserProfileDirect(u) {
 
   showView("otherUserProfileView");
   loadOtherStories(u.id);
+  try {
+    document.getElementById('otherStarsBtn').classList.toggle('hidden', !(isDevUser() && u.id && u.id !== currentUser.uid));
+    document.getElementById('otherGiftsWrap').classList.add('hidden');
+    if (u.id) loadGiftsGrid(u.id, 'otherGiftsGrid', 'otherGiftsWrap');
+  } catch (e) {}
 }
 
 function openCurrentChatUserProfile() {
@@ -3850,6 +3799,11 @@ function renderMsgDoc(doc, box, existingTyping) {
         { const _cl = chatClearedAt(activeChatId, chatMetaCache[activeChatId]); if (_cl && (Number(m.createdAt) || 0) <= _cl) return; }
         const isMine = m.senderId === currentUser.uid;
         const grp = isGroupChat(activeChatId);
+        if (m.type === 'stars' && typeof starGiftNode === 'function') {
+          const gn = starGiftNode(m, doc.id, isMine);
+          if (existingTyping) box.insertBefore(gn, existingTyping); else box.appendChild(gn);
+          return;
+        }
         if (m.system) {
           const sp = document.createElement('div'); sp.className = 'sys-msg'; sp.id = 'message_' + doc.id; sp.textContent = sysText(m);
           if (m.sys && m.sys.ref) { sp.classList.add('link'); sp.onclick = () => jumpToMessage(m.sys.ref); }
@@ -3870,12 +3824,11 @@ function renderMsgDoc(doc, box, existingTyping) {
         b.id = "message_" + doc.id;
         b.dataset.created = String(m.createdAt || 0);
         b.dataset.messageText = String(m.text || '');
-        b.dataset.senderId = String(m.senderId || '');
         
         let htmlContent = "";
         if (grp && !isMine) htmlContent += groupSenderHtml(m.senderId);
         if (m.forwarded) htmlContent += `<div class="fwd-label"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 6 6-6 6"/><path d="M21 11H9a6 6 0 0 0-6 6v1"/></svg>معاد توجيهها</div>`;
-        if (m.replyTo) { const _rsid = m.replyToSenderId || (m.replyToId ? ((document.getElementById('message_'+m.replyToId)||{dataset:{}}).dataset.senderId||'') : ''); const _rn = _rsid ? replyOwnerName(_rsid) : ''; htmlContent += `<div class="reply-quote" data-reply-id="${esc(m.replyToId||'')}" role="button">${_rn ? `<span class="reply-quote-name">${esc(_rn)}</span>` : ''}${esc(m.replyTo)}</div>`; }
+        if (m.replyTo) htmlContent += `<div class="reply-quote" data-reply-id="${esc(m.replyToId||'')}" role="button">${esc(m.replyTo)}</div>`;
         if (m.storyReply) {
           const sr = m.storyReplyData || {};
           const previewText = sr.caption || (sr.videoUrl ? 'قصة فيديو' : 'قصة');
@@ -3886,7 +3839,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         if (m.audioUrl) {
           htmlContent += `<div class="audio-player-card custom-voice-card" aria-label="رسالة صوتية" data-dur="${Number(m.duration)||0}"><audio class="voice-audio" preload="metadata" src="${esc(m.audioUrl)}"></audio><button type="button" class="voice-play-btn" onclick="toggleVoicePlayback(this)" aria-label="تشغيل الرسالة الصوتية"><svg class="voice-play-icon" viewBox="0 0 24 24" width="23" height="23" fill="currentColor" aria-hidden="true"><path d="M8 5.8c0-.8.9-1.3 1.6-.8l9.2 6.2a1 1 0 0 1 0 1.6l-9.2 6.2c-.7.5-1.6 0-1.6-.8z"/></svg></button><div class="audio-player-content"><div class="audio-player-title">رسالة صوتية</div><div class="voice-progress-row"><input class="voice-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="تقدم الصوت" oninput="seekVoicePlayback(this)"><span class="voice-time">${m.duration?formatVoiceTime(m.duration):'0:00'}</span></div><div class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>`;
         } else {
-          htmlContent += m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`;
+          htmlContent += m.type === 'stars' ? starGiftHtml(m) : (m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`);
         }
 
         if (m.reactions && Object.keys(m.reactions).length > 0) {
@@ -4014,22 +3967,9 @@ function deleteMultipleMessagesForMe() {
   showToast(`تم إخفاء ${ids.length} رسالة لديك فقط`);
 }
 
-function replyOwnerName(uid) {
-  if (!uid) return '';
-  if (currentUser && uid === currentUser.uid) return 'أنت';
-  try { if (isGroupChat(activeChatId)) return gUserName(uid); } catch (e) {}
-  const t = document.getElementById('chatTitleText');
-  return (t && t.textContent.trim()) || '';
-}
-let replyingToSenderId = null;
-function triggerSwipeReply(text, id, senderId) {
+function triggerSwipeReply(text, id) {
   replyingToText = text;
   replyingToId = id || null;
-  const _el = id ? document.getElementById('message_' + id) : null;
-  replyingToSenderId = senderId || (_el && _el.dataset.senderId) || null;
-  const _lbl = document.querySelector('#replyPreviewBar .reply-preview-label span');
-  const _nm = replyOwnerName(replyingToSenderId);
-  if (_lbl) _lbl.textContent = _nm ? 'الرد على ' + _nm : 'الرد على الرسالة';
   const previewText = document.getElementById("replyPreviewText");
   if (previewText) previewText.textContent = replyingToText || "رسالة";
   document.getElementById("replyPreviewBar").classList.remove("hidden");
@@ -4143,7 +4083,6 @@ function actionCopy() {
 function cancelReply() {
   replyingToText = null;
   replyingToId = null;
-  replyingToSenderId = null;
   document.getElementById("replyPreviewBar").classList.add("hidden");
 }
 
@@ -4300,7 +4239,7 @@ function sendMessage(e) {
       createdAt: Date.now()
     };
 
-    if (replyingToText) { msgData.replyTo = replyingToText; if (replyingToId) msgData.replyToId = replyingToId; if (replyingToSenderId) msgData.replyToSenderId = replyingToSenderId; }
+    if (replyingToText) { msgData.replyTo = replyingToText; if (replyingToId) msgData.replyToId = replyingToId; }
     if (isGroupChat(activeChatId)) { const _mn = extractMentionUids(text); if (_mn.length) msgData.mentions = _mn; }
 
     db.collection("chats").doc(activeChatId).collection("messages").add(msgData).then(() => {
@@ -4326,13 +4265,9 @@ function loadChats() {
   if (chatsListUnsubscribe) { chatsListUnsubscribe(); chatsListUnsubscribe = null; }
   if (!currentUser) return;
 
-  // أول لقطة تحتوي المحادثات القديمة؛ لا نرسل إشعارات عنها.
-  let isInitialChatsSnapshot = true;
   chatsListUnsubscribe = db.collection("chats")
     .where("participants", "array-contains", currentUser.uid)
     .onSnapshot(snap => {
-      const isInitialSnapshot = isInitialChatsSnapshot;
-      isInitialChatsSnapshot = false;
       if (snap.empty) {
         container.innerHTML = `
           <div class="empty-chats">
@@ -4404,34 +4339,6 @@ function loadChats() {
                 if (tStr.startsWith('0')) tStr = tStr.substring(1);
                 lastMsgTime = tStr;
 
-                // إشعار نظام واحد فقط للرسالة الواردة الجديدة، عندما لا تكون محادثتها مفتوحة.
-                // لا نرسل إشعارات للرسائل الموجودة في أول تحميل أو عند فتح المحادثة نفسها.
-                const messageDoc = msgSnap.docs[0];
-                if (!isInitialSnapshot && !isMine &&
-                    (chatId !== activeChatId || document.visibilityState === 'hidden') &&
-                    Number(m.createdAt || 0) > sessionStartTime &&
-                    !nativeNotifiedMessageIds.has(messageDoc.id) &&
-                    getNotificationOption('push', false) &&
-                    !getLocalChatSet('babylon_muted_users').has(otherId)) {
-                  nativeNotifiedMessageIds.add(messageDoc.id);
-                  const nativeBody = m.audioUrl ? '♬ رسالة صوتية' : (m.imageUrl ? '▧ صورة' : (m.text || 'رسالة جديدة'));
-                  try {
-                    if (window.BabylonAndroid && typeof window.BabylonAndroid.showMessageNotification === 'function') {
-                      const nativeTitle = u.displayName || 'رسالة جديدة';
-                      notifAvatarThumb(pvUrl(u) || '', otherId, function(thumb){
-                        try {
-                          const api = window.BabylonAndroid;
-                          if (typeof api.showMessageNotificationEx === 'function') {
-                            api.showMessageNotificationEx(nativeTitle, String(nativeBody).slice(0, 300), thumb || '', otherId, chatId);
-                          } else {
-                            api.showMessageNotification(nativeTitle, String(nativeBody).slice(0, 300), thumb || '');
-                          }
-                        }
-                        catch (e2) { console.warn('Native notification failed', e2); }
-                      });
-                    }
-                  } catch (nativeNotifError) { console.warn('Native notification failed', nativeNotifError); }
-                }
                 if (!isMine && m.createdAt > sessionStartTime && !getLocalChatSet('babylon_muted_users').has(otherId)) playNotificationSound();
               }
 
@@ -5042,26 +4949,7 @@ function isActive(s) { return s.expiresAt > Date.now(); }
 function ago(ts) { const m = Math.floor((Date.now() - ts) / 60000); return m < 1 ? 'الآن' : m < 60 ? `قبل ${m} د` : m < 1440 ? `قبل ${Math.floor(m / 60)} س` : `قبل ${Math.floor(m / 1440)} يوم`; }
 function leftTxt(ts) { const m = Math.max(1, Math.floor((ts - Date.now()) / 60000)); return m < 60 ? `${m} د` : `${Math.floor(m / 60)} س`; }
 function isSeenUser(uid, latest) { ensureSeen(); return !!latest && (seenUsers[uid] || 0) >= latest; }
-function markSeen(uid, ts) {
-  const k = ensureSeen();
-  if ((seenUsers[uid] || 0) < ts) {
-    seenUsers[uid] = ts;
-    try { localStorage.setItem(k, JSON.stringify(seenUsers)); } catch (e) {}
-  }
-  // تحديث إطارات القصص فور مشاهدتها في شريط القصص وقائمة المحادثات.
-  requestAnimationFrame(() => {
-    document.querySelectorAll('.avatar.sring').forEach(el => {
-      const handler = el.getAttribute('onclick') || '';
-      const item = el.closest('.sb-item');
-      const belongsToUser = handler.includes(uid) || (item && (item.getAttribute('onclick') || '').includes(uid));
-      if (belongsToUser) el.classList.add('seen');
-    });
-    const ownRing = document.querySelector('#storiesBar .sb-item:first-child .avatar.sring');
-    if (uid === (currentUser && currentUser.uid) && ownRing) ownRing.classList.add('seen');
-    const otherRing = document.getElementById('otherStoryRing');
-    if (otherRing && typeof otherStoryUid !== 'undefined' && otherStoryUid === uid) otherRing.classList.add('seen');
-  });
-}
+function markSeen(uid, ts) { const k = ensureSeen(); if ((seenUsers[uid] || 0) < ts) { seenUsers[uid] = ts; try { localStorage.setItem(k, JSON.stringify(seenUsers)); } catch (e) {} } }
 function ringCls(u) {
   if (!u || !(u.storyUntil > Date.now())) return '';
   return ' sring' + (isSeenUser(u.id || '', u.storyAt || 0) ? ' seen' : '');
@@ -5074,21 +4962,7 @@ function loadStories(uid) {
 
 /* ---------- النشر ---------- */
 function openPublishOptions() { $('publishTypeModal').classList.remove('hidden'); }
-async function selectPublishType(type) {
-  if (type === 'story') {
-    if (!currentUser) return showToast('سجّل الدخول أولاً');
-    try {
-      const snap = await db.collection('stories').where('userId', '==', currentUser.uid).get();
-      const activeCount = snap.docs.reduce((n, d) => n + (isActive(d.data()) ? 1 : 0), 0);
-      if (activeCount >= 3) {
-        $('publishTypeModal').classList.add('hidden');
-        return showToast('يمكنك نشر 3 قصص نشطة كحد أقصى. احذف قصة أو انتظر انتهاء إحداها.');
-      }
-    } catch (err) {
-      console.warn('تعذر التحقق من عدد القصص:', err);
-      return showToast('تعذر التحقق من عدد القصص، حاول مرة أخرى');
-    }
-  }
+function selectPublishType(type) {
   selectedPublishType = type;
   $('publishTypeModal').classList.add('hidden');
   $('storyMediaPicker').click();
@@ -5163,24 +5037,10 @@ function closeComposer() {
   const pv = $('scPreviewVid'); pv.pause(); pv.removeAttribute('src'); pv.load();
   if (scVid) { try { URL.revokeObjectURL(scVid.url); } catch (e) {} scVid = null; }
 }
-async function publishStory() {
+function publishStory() {
   if (!scData || !currentUser) return;
   const btn = $('scPublish');
-  if (btn.disabled) return;
   btn.disabled = true;
-  btn.textContent = 'جارٍ التحقق...';
-  try {
-    const snap = await db.collection('stories').where('userId', '==', currentUser.uid).get();
-    const activeCount = snap.docs.reduce((n, d) => n + (isActive(d.data()) ? 1 : 0), 0);
-    if (activeCount >= 3) {
-      btn.disabled = false; btn.textContent = 'نشر القصة';
-      return showToast('وصلت إلى الحد الأقصى: 3 قصص نشطة');
-    }
-  } catch (err) {
-    console.warn('تعذر التحقق من عدد القصص قبل النشر:', err);
-    btn.disabled = false; btn.textContent = 'نشر القصة';
-    return showToast('تعذر التحقق من عدد القصص، حاول مرة أخرى');
-  }
   const caption = $('scCaption').value.trim(), pinned = $('scPin').checked, hours = scHours, poster = scData;
   const save = extra => {
     const now = Date.now();
@@ -5235,24 +5095,18 @@ function syncStoryMeta() {
 }
 function checkUserStories(forceSync) {
   if (!currentUser) return;
-  const uid = currentUser.uid;
-  loadStories(uid).then(list => {
-    if (!currentUser || currentUser.uid !== uid || !Array.isArray(list)) return;
-    myStories = list.filter(s => s && typeof s === 'object');
-    const act = myStories.filter(s => { try { return isActive(s); } catch (_) { return false; } });
+  loadStories(currentUser.uid).then(list => {
+    myStories = list;
+    const act = list.filter(isActive);
     const ring = $('pStoryRing');
     if (ring) {
       ring.classList.toggle('has-story', act.length > 0);
-      ring.classList.toggle('seen', act.length > 0 && isSeenUser(uid, Math.max(...act.map(s => Number(s.createdAt) || 0))));
+      ring.classList.toggle('seen', act.length > 0 && isSeenUser(currentUser.uid, Math.max(...act.map(s => s.createdAt))));
     }
-    renderTiles($('myStoriesGrid'), myStories, true);
-    const empty = $('myStoriesEmpty');
-    if (empty) empty.classList.toggle('hidden', myStories.length > 0);
-    try { syncStoryMeta(); } catch (err) { console.warn('تعذر تحديث بيانات القصص:', err); }
+    renderTiles($('myStoriesGrid'), list, true);
+    $('myStoriesEmpty').classList.toggle('hidden', list.length > 0);
+    syncStoryMeta();
     renderStoriesBar();
-  }).catch(err => {
-    console.warn('تعذر تحميل قصصي:', err);
-    // Keep the last valid stories and UI instead of letting a failed request break the screen.
   });
 }
 function renderTiles(grid, list, mine) {
@@ -5271,79 +5125,34 @@ function renderTiles(grid, list, mine) {
     grid.appendChild(d);
   });
 }
-let storyBarRenderVersion = 0;
 function renderStoriesBar() {
   clearTimeout(barTimer);
-  const renderVersion = ++storyBarRenderVersion;
   barTimer = setTimeout(async () => {
     const bar = $('storiesBar');
     if (!bar || !currentUser) return;
-    try {
-      const safeMyStories = Array.isArray(myStories) ? myStories : [];
-      const act = safeMyStories.filter(s => { try { return isActive(s); } catch (_) { return false; } });
-      const me = currentUserData || {};
-      const mySeen = act.length && isSeenUser(currentUser.uid, Math.max(...act.map(s => s.createdAt)));
-      let html = `<div class="sb-item" onclick="myStoryClick(event)"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''} ${toneCls(me)}">${avInner(me)}${act.length ? '' : '<div class="sb-plus" aria-label="إضافة قصة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>'}</div><span>قصتي</span></div>`;
-      const ids = Array.isArray(storyPartnerIds) ? storyPartnerIds.slice().filter(id => typeof id === 'string' && id && id !== currentUser.uid) : [];
-      const us = await Promise.all(ids.map(id => fetchUser(id, true).catch(() => null)));
-      const bm = await Promise.all(ids.map(id => myBlocks[id] ? Promise.resolve(true) : Promise.resolve().then(() => blockedByThem(id)).catch(() => true)));
-      // Ignore stale asynchronous renders: only the newest request may update the bar.
-      if (renderVersion !== storyBarRenderVersion || bar !== $('storiesBar') || !currentUser) return;
-      us.forEach((u, i) => {
-        if (!u || !(u.storyUntil > Date.now()) || bm[i]) return;
-        const id = ids[i]; u.id = id;
-        html += `<div class="sb-item" onclick="storyItemClick(event,'${id}')"><div class="avatar${ringCls(u)} ${toneCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
-      });
-      bar.innerHTML = html;
-      bar.classList.remove('hidden');
-    } catch (err) {
-      console.warn('تعذر تحديث شريط القصص:', err);
-    }
-  }, 180);
+    const act = myStories.filter(isActive);
+    const me = currentUserData || {};
+    const mySeen = act.length && isSeenUser(currentUser.uid, Math.max(...act.map(s => s.createdAt)));
+    let html = `<div class="sb-item" onclick="myStoryClick()"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''} ${toneCls(me)}">${avInner(me)}${act.length ? '' : '<div class="sb-plus" aria-label="إضافة قصة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>'}</div><span>قصتي</span></div>`;
+    const us = await Promise.all(storyPartnerIds.map(id => fetchUser(id, true)));
+    const bm = await Promise.all(storyPartnerIds.map(id => myBlocks[id] ? true : blockedByThem(id)));
+    us.forEach((u, i) => {
+      if (!u || !(u.storyUntil > Date.now())) return;
+      if (bm[i]) return;
+      const id = storyPartnerIds[i]; u.id = id;
+      html += `<div class="sb-item" onclick="openStories('${id}')"><div class="avatar${ringCls(u)} ${toneCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
+    });
+    bar.innerHTML = html;
+    bar.classList.remove('hidden');
+  }, 350);
 }
-let storyLaunchTimer = null;
-let storyLaunchClearTimer = null;
-function clearStoryLaunchLoading() {
-  if (storyLaunchTimer) { clearTimeout(storyLaunchTimer); storyLaunchTimer = null; }
-  if (storyLaunchClearTimer) { clearTimeout(storyLaunchClearTimer); storyLaunchClearTimer = null; }
-  document.querySelectorAll('.story-launch-loading').forEach(el => el.classList.remove('story-launch-loading'));
-}
-function clearStoryLaunchLoadingAfterOpen() {
-  if (storyLaunchTimer) { clearTimeout(storyLaunchTimer); storyLaunchTimer = null; }
-  if (storyLaunchClearTimer) clearTimeout(storyLaunchClearTimer);
-  // اترك مؤشر التحميل ظاهراً ثانية كاملة بعد بدء فتح القصة.
-  storyLaunchClearTimer = setTimeout(() => {
-    storyLaunchClearTimer = null;
-    document.querySelectorAll('.story-launch-loading').forEach(el => el.classList.remove('story-launch-loading'));
-  }, 1000);
-}
-function launchStoryWithGlow(el, callback) {
-  if (!el) { callback(); return; }
-  // مؤشر تحميل ذهبي دوّار على إطار القصة نفسه، ويظل ظاهراً حتى فتح العارض.
-  const ring = el.matches('.avatar, .avatar-story-ring') ? el : (el.querySelector('.avatar') || el);
-  if (ring.classList.contains('story-launch-loading')) return;
-  clearStoryLaunchLoading();
-  ring.classList.add('story-launch-loading');
-  // مهلة قصيرة حتى تُرى حركة التحميل حتى عند فتح قصة مخزنة محلياً.
-  storyLaunchTimer = setTimeout(() => { storyLaunchTimer = null; callback(); }, 220);
-}
-function storyItemClick(ev, uid) {
-  if (ev) ev.stopPropagation();
-  launchStoryWithGlow(ev && ev.currentTarget, () => openStories(uid));
-}
-function myStoryClick(ev) {
-  if (myStories.some(isActive)) launchStoryWithGlow(ev && ev.currentTarget, () => openStories(currentUser.uid));
-  else { selectedPublishType = 'story'; $('storyMediaPicker').click(); }
-}
-function handleAvatarClick(ev) {
-  if (myStories.some(isActive)) launchStoryWithGlow(ev && ev.currentTarget, () => openStories(currentUser.uid));
-  else openPublishOptions();
-}
+function myStoryClick() { myStories.some(isActive) ? openStories(currentUser.uid) : (selectedPublishType = 'story', $('storyMediaPicker').click()); }
+function handleAvatarClick() { myStories.some(isActive) ? openStories(currentUser.uid) : openPublishOptions(); }
 function chatAvatarStory(ev, uid) {
   const el = ev.currentTarget;
   if (!el.classList.contains('sring')) return;
   ev.stopPropagation();
-  launchStoryWithGlow(el, () => openStories(uid));
+  openStories(uid);
 }
 
 /* ---------- بروفايل شخص آخر ---------- */
@@ -5369,37 +5178,30 @@ function loadOtherStories(uid) {
     });
   });
 }
-function openOtherStories(ev) { if (otherStoryUid) launchStoryWithGlow(ev && ev.currentTarget, () => openStories(otherStoryUid)); }
+function openOtherStories() { if (otherStoryUid) openStories(otherStoryUid); }
 
 /* ---------- العارض ---------- */
 function openStories(uid) {
   const mine = uid === currentUser.uid;
   const go = list => {
     const act = list.filter(isActive).reverse();
-    if (!act.length) { clearStoryLaunchLoading(); return showToast('لا توجد قصص حالياً'); }
+    if (!act.length) return showToast('لا توجد قصص حالياً');
     ensureSeen(); const seen = seenUsers[uid] || 0;
     let i = mine ? 0 : act.findIndex(s => s.createdAt > seen);
     startViewer(uid, act, i < 0 ? 0 : i, mine);
   };
-  mine ? go(myStories) : loadStories(uid).then(go).catch(() => { clearStoryLaunchLoading(); showToast('تعذر تحميل القصة، حاول مرة أخرى'); });
+  mine ? go(myStories) : loadStories(uid).then(go);
 }
 function startViewer(uid, list, i, mine) {
-  if (!Array.isArray(list) || !list.length) return;
-  // Clear the previous timer BEFORE replacing SV, otherwise its interval reference is lost.
-  if (SV && SV.iv) clearInterval(SV.iv);
-  const safeIndex = Math.max(0, Math.min(Number.isFinite(i) ? i : 0, list.length - 1));
-  SV = { uid, list, i: safeIndex, mine, paused: false, hold: false, t: 0, iv: null, react: null, views: [] };
-  const viewer = $('storyViewer');
-  viewer.classList.remove('hidden');
-  viewer.classList.remove('story-opening');
-  void viewer.offsetWidth;
-  viewer.classList.add('story-opening');
-  clearStoryLaunchLoadingAfterOpen();
+  if (!list.length) return;
+  SV = { uid, list, i: Math.max(0, i), mine, paused: false, hold: false, t: 0, iv: null, react: null, views: [] };
+  $('storyViewer').classList.remove('hidden');
   fetchUser(uid).then(u => {
     if (!u) return;
     $('storyUserAvatar').innerHTML = avInner(u); setTone($('storyUserAvatar'), {id: uid, avatarTone: u.avatarTone});
     $('storyUserName').textContent = mine ? 'قصتي' : (u.displayName || 'مستخدم');
   });
+  clearInterval(SV.iv);
   SV.iv = setInterval(tick, 50);
   showStory();
 }
@@ -5410,32 +5212,6 @@ function svReadCachedReaction(storyId, uid) {
 function svCacheReaction(storyId, uid, emoji) {
   try { if (emoji) localStorage.setItem(svReactionCacheKey(storyId, uid), emoji); else localStorage.removeItem(svReactionCacheKey(storyId, uid)); } catch (_) {}
 }
-async function openStoryOwnerChat(ev) {
-  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
-  const targetId = SV && SV.uid;
-  if (!targetId || !currentUser || targetId === currentUser.uid) return;
-  const me = currentUser.uid;
-  const chatId = [me, targetId].sort().join("__");
-  const avatar = $('storyUserAvatar');
-  if (avatar) avatar.style.pointerEvents = 'none';
-  try {
-    // Match the app's normal chat-opening flow: read first and create only if missing.
-    const chatRef = db.collection('chats').doc(chatId);
-    const snap = await chatRef.get();
-    if (!snap.exists) {
-      await chatRef.set({ participants: [me, targetId], updatedAt: Date.now() });
-    }
-    activeChatId = chatId;
-    closeStoryViewer();
-    openChatRoom(targetId);
-  } catch (err) {
-    console.warn('تعذر فتح محادثة صاحب القصة:', err);
-    showToast('تعذر فتح المحادثة، حاول مرة أخرى');
-  } finally {
-    if (avatar) avatar.style.pointerEvents = '';
-  }
-}
-
 function showStory() {
   const s = SV.list[SV.i];
   if (!s) return closeStoryViewer();
@@ -5477,12 +5253,12 @@ function showStory() {
 function svFooter(s) {
   const f = $('svFoot');
   if (SV.mine) {
-    f.innerHTML = `<div class="sv-own"><button type="button" class="sv-action sv-action-views" onclick="openViewersList()" aria-label="المشاهدات والتفاعلات"><span class="sv-eye-wrap"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg><i class="sv-mini-heart" aria-hidden="true">♥</i></span><span id="svViews">0</span></button><button type="button" class="sv-action sv-action-edit" onclick="svEdit()" aria-label="تعديل القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"/><path d="M13 20h7"/></svg></button><button type="button" class="sv-action sv-action-pin" onclick="svPin()" aria-label="${s.pinned ? 'إلغاء التثبيت' : 'تثبيت'}"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/></svg></button><button type="button" class="sv-action sv-action-delete" onclick="svDelete()" aria-label="حذف القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-10 0 1 14h10l1-14M10 10v6m4-6v6"/></svg></button></div>`;
+    f.innerHTML = `<div class="sv-own"><button class="sv-pill" onclick="openViewersList()"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg> <span id="svViews">0</span></button><button class="sv-pill" onclick="svPin()"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg> ${s.pinned ? 'إلغاء التثبيت' : 'تثبيت'}</button><button class="sv-pill" onclick="svDelete()"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-10 0 1 14h10l1-14M10 10v6m4-6v6"/></svg> حذف</button></div>`;
     db.collection('stories').doc(s.id).collection('views').get().then(q => {
       if (SV.list[SV.i] !== s) return;
       SV.views = q.docs.map(d => d.data());
       const r = SV.views.filter(v => v.reaction).length;
-      const el = $('svViews'); if (el) { el.textContent = SV.views.length + (r ? ` · ${r}` : ''); if (el.parentElement) el.parentElement.classList.toggle('has-reaction', r > 0); }
+      const el = $('svViews'); if (el) el.textContent = SV.views.length + (r ? ` · ${r} تفاعل` : '');
     }).catch(() => {});
   } else {
     f.innerHTML = `<div class="sv-reacts" aria-label="إرسال إيموجي في المحادثة">${['😂','❤️','👍🏻','😭','✨'].map(e => `<span data-e="${e}" role="button" tabindex="0" aria-label="إرسال ${e}" onclick="sendStoryEmoji('${e}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sendStoryEmoji('${e}')}">${e}</span>`).join('')}</div><div id="svReactPicker" class="sv-react-picker hidden">${['😂','❤️','👍🏻','😭','✨','😍','😮','😢','🙏','🔥'].map(e=>`<button type="button" onclick="event.preventDefault();event.stopPropagation();svReact('${e}')" aria-label="تفاعل ${e}">${e}</button>`).join('')}</div><div class="sv-reply"><button id="svHeartBtn" class="sv-heart-btn" aria-label="تفاعل مع القصة" onpointerdown="svHeartDown(event)" onpointerup="svHeartUp(event)" onpointercancel="svHeartCancel()" onpointerleave="svHeartCancel()" oncontextmenu="event.preventDefault();svOpenReactPicker()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg></button><input id="svReplyInput" placeholder="رد على القصة..." autocomplete="off" oninput="svReplyInputChanged()" onfocus="svPause(true)" onblur="svPause(false)" onkeydown="if(event.key==='Enter'){event.preventDefault();sendStoryReply()}"><button id="svReplySend" class="sv-pill hidden" aria-label="إرسال" onmousedown="event.preventDefault()" onclick="sendStoryReply()"><svg class="sv-send-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></button></div>`;
@@ -5535,68 +5311,8 @@ function svDown() { svDownAt = Date.now(); SV.hold = true; }
 function svCancel() { SV.hold = false; }
 function svUp(dir) { SV.hold = false; if (Date.now() - svDownAt < 250) storyNav(dir); }
 function svPause(b) { SV.paused = b; }
-let svSwipe = { active: false, startY: 0, startX: 0, lastY: 0, lastAt: 0, dragging: false, target: null, pointerId: null };
-(function setupStorySwipeToClose() {
-  const viewer = document.getElementById('storyViewer');
-  if (!viewer) return;
-  const resetState = () => { svSwipe = { active: false, startY: 0, startX: 0, lastY: 0, lastAt: 0, dragging: false, target: null, pointerId: null }; };
-  viewer.addEventListener('pointerdown', ev => {
-    if (viewer.classList.contains('hidden') || (ev.pointerType === 'mouse' && ev.button !== 0)) return;
-    if (ev.target.closest('button,input,textarea,[role="button"],.sv-foot,.sv-top .icon-btn')) return;
-    const stage = ev.target.closest('.sv-stage');
-    if (!stage) return;
-    svSwipe = { active: true, startY: ev.clientY, startX: ev.clientX, lastY: ev.clientY, lastAt: Date.now(), dragging: false, target: stage, pointerId: ev.pointerId };
-  }, true);
-  viewer.addEventListener('pointermove', ev => {
-    if (!svSwipe.active || !svSwipe.target || (svSwipe.pointerId != null && ev.pointerId !== svSwipe.pointerId)) return;
-    const dy = ev.clientY - svSwipe.startY, dx = ev.clientX - svSwipe.startX;
-    if (!svSwipe.dragging) {
-      if (dy < 5 || Math.abs(dy) <= Math.abs(dx) * 1.12) return;
-      svSwipe.dragging = true;
-      // Disable the opening keyframe animation while dragging; otherwise it overrides transform.
-      viewer.classList.remove('story-opening');
-      svSwipe.target.style.animation = 'none';
-      svSwipe.target.style.transition = 'none';
-      viewer.style.transition = 'none';
-    }
-    if (dy < 0) return;
-    if (ev.cancelable) ev.preventDefault();
-    svSwipe.target.style.transform = `translate3d(0,${dy}px,0)`;
-    svSwipe.target.style.opacity = String(Math.max(.35, 1 - dy / (window.innerHeight * 1.15)));
-    viewer.style.background = `rgba(0,0,0,${Math.max(0, 1 - dy / (window.innerHeight * .95))})`;
-    svSwipe.lastY = ev.clientY; svSwipe.lastAt = Date.now();
-  }, { capture: true, passive: false });
-  const finish = ev => {
-    if (!svSwipe.active) return;
-    const state = svSwipe;
-    if (state.pointerId != null && ev && ev.pointerId !== undefined && ev.pointerId !== state.pointerId) return;
-    resetState();
-    if (!state.dragging || !state.target) return;
-    if (ev) { if (ev.cancelable) ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); }
-    const endY = ev && Number.isFinite(ev.clientY) ? ev.clientY : state.lastY;
-    const dy = Math.max(0, endY - state.startY);
-    const fast = Date.now() - state.lastAt < 180 && dy > 55;
-    const stage = state.target;
-    if (dy > Math.min(150, window.innerHeight * .2) || fast) {
-      stage.style.transition = 'transform .24s cubic-bezier(.2,.8,.2,1), opacity .24s ease';
-      stage.style.transform = `translate3d(0,${Math.max(dy + 80, window.innerHeight * .85)}px,0)`;
-      stage.style.opacity = '.15';
-      viewer.style.transition = 'background .24s ease'; viewer.style.background = 'rgba(0,0,0,0)';
-      setTimeout(() => { stage.style.animation = ''; stage.style.transition = ''; stage.style.transform = ''; stage.style.opacity = ''; viewer.style.transition = ''; viewer.style.background = ''; closeStoryViewer(); }, 245);
-    } else {
-      stage.style.transition = 'transform .24s cubic-bezier(.2,.8,.2,1), opacity .24s ease';
-      stage.style.transform = 'translate3d(0,0,0)'; stage.style.opacity = '1';
-      viewer.style.transition = 'background .24s ease'; viewer.style.background = 'rgba(0,0,0,1)';
-      setTimeout(() => { stage.style.animation = ''; stage.style.transition = ''; stage.style.transform = ''; stage.style.opacity = ''; viewer.style.transition = ''; viewer.style.background = ''; }, 250);
-    }
-  };
-  viewer.addEventListener('pointerup', finish, true);
-  viewer.addEventListener('pointercancel', finish, true);
-})();
-
 function closeStoryViewer() {
   clearInterval(SV.iv);
-  $('storyViewer').classList.remove('story-opening');
   $('storyViewer').classList.add('hidden');
   $('storyImg').src = '';
   { const v = $('storyVid'); v.pause(); v.removeAttribute('src'); v.classList.add('hidden'); $('storyImg').classList.remove('hidden'); }
@@ -5658,40 +5374,6 @@ function sendStoryReply() {
 }
 
 /* ---------- إدارة قصتي: تثبيت / حذف / مشاهدون ---------- */
-async function svEdit() {
-  const s = SV.list[SV.i];
-  if (!s || !currentUser || s.userId !== currentUser.uid) return;
-  const nextCaption = prompt('تعديل وصف القصة (اتركه فارغًا لحذف الوصف):', s.caption || '');
-  if (nextCaption === null) return;
-  const caption = nextCaption.trim().slice(0, 200);
-  const replace = confirm('هل تريد أيضًا تغيير الصورة أو الفيديو المنشور؟\nاختر «موافق» لاختيار ملف جديد، أو «إلغاء» لحفظ الوصف فقط.');
-  const saveCaption = () => db.collection('stories').doc(s.id).update({ caption }).then(() => { s.caption = caption; $('svCap').textContent = caption; $('svCap').classList.toggle('hidden', !caption); showToast('تم تحديث وصف القصة'); });
-  if (!replace) { try { await saveCaption(); } catch (e) { showToast('تعذر تعديل الوصف'); } return; }
-  let input = document.getElementById('svEditMediaInput');
-  if (!input) { input = document.createElement('input'); input.id = 'svEditMediaInput'; input.type = 'file'; input.accept = 'image/*,video/*'; input.hidden = true; document.body.appendChild(input); }
-  input.value = '';
-  input.onchange = async () => {
-    const file = input.files && input.files[0]; if (!file) return;
-    const isVideo = file.type.startsWith('video/');
-    if (!isVideo && !file.type.startsWith('image/')) { showToast('اختر صورة أو فيديو'); return; }
-    if (isVideo && file.size > 100 * 1024 * 1024) { showToast('حجم الفيديو كبير جدًا'); return; }
-    showToast('جارٍ رفع الوسائط الجديدة...');
-    try {
-      let duration = s.duration || 30;
-      if (isVideo) duration = await new Promise((resolve, reject) => { const v=document.createElement('video'); const u=URL.createObjectURL(file); v.preload='metadata'; v.onloadedmetadata=()=>{const d=v.duration;URL.revokeObjectURL(u); if(!isFinite(d)||d<=0||d>MAX_STORY_VIDEO+0.5) reject(new Error('مدة الفيديو تتجاوز الحد المسموح')); else resolve(Math.min(d,MAX_STORY_VIDEO));}; v.onerror=()=>{URL.revokeObjectURL(u);reject(new Error('تعذر قراءة الفيديو'));}; v.src=u; });
-      if (!CLD_CLOUD || !CLD_PRESET) throw new Error('رفع الوسائط غير متاح');
-      const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', CLD_PRESET); fd.append('folder', 'stories');
-      const resource = isVideo ? 'video' : 'image';
-      const uploaded = await new Promise((resolve,reject)=>{const x=new XMLHttpRequest();x.open('POST',`https://api.cloudinary.com/v1_1/${CLD_CLOUD}/${resource}/upload`);x.onload=()=>{let r={};try{r=JSON.parse(x.responseText)}catch(_){} if(x.status>=200&&x.status<300&&r.secure_url)resolve(r);else reject(new Error((r.error&&r.error.message)||'فشل رفع الوسائط'));};x.onerror=()=>reject(new Error('فشل الاتصال أثناء الرفع'));x.send(fd);});
-      const update = { caption, imageUrl: isVideo ? (uploaded.secure_url.replace('/video/upload/','/video/upload/so_0/').replace(/\.[^/.]+$/,'.jpg')) : uploaded.secure_url, mediaType: isVideo ? 'video' : 'image', videoUrl: isVideo ? uploaded.secure_url : firebase.firestore.FieldValue.delete(), videoPath: '', duration: isVideo ? duration : firebase.firestore.FieldValue.delete() };
-      await db.collection('stories').doc(s.id).update(update); Object.assign(s, {caption, imageUrl:update.imageUrl});
-      if (isVideo) { s.videoUrl=uploaded.secure_url; s.mediaType='video'; s.duration=duration; } else { delete s.videoUrl; delete s.mediaType; delete s.duration; }
-      showStory(); checkUserStories(); showToast('تم تعديل القصة بنجاح');
-    } catch (e) { console.error('Story edit failed',e); showToast(e.message || 'تعذر تعديل القصة'); }
-  };
-  input.click();
-}
-
 function svPin() {
   const s = SV.list[SV.i]; if (!s) return;
   db.collection('stories').doc(s.id).update({ pinned: !s.pinned }).then(() => {
@@ -5919,7 +5601,7 @@ function seekVoicePlayback(range){var card=range.closest('.custom-voice-card'), 
 .cl-dlg .cl-box{width:22px;height:22px;border-radius:7px;border:2px solid var(--cl-sub,#8798aa);display:inline-flex;align-items:center;justify-content:center;flex:0 0 22px;transition:.15s}
 .cl-dlg input:checked+.cl-box{background:var(--cl-gold,#e4c45b);border-color:var(--cl-gold,#e4c45b)}
 .cl-dlg input:checked+.cl-box::after{content:"";width:6px;height:11px;border:solid #111;border-width:0 2.6px 2.6px 0;transform:rotate(45deg) translate(-1px,-1px)}
-.cl-dlg input{position:absolute;opacity:0;pointer-events:none}
+.cl-dlg input[type=checkbox]{position:absolute;opacity:0;pointer-events:none}
 .cl-dlg .cl-btns{display:flex;justify-content:flex-start;gap:6px;margin:0 -8px}
 .cl-dlg button{background:none;border:0;padding:11px 16px;font:inherit;font-size:15px;font-weight:700;color:var(--cl-gold,#e4c45b);border-radius:12px;cursor:pointer}
 .cl-dlg button:active{background:rgba(255,255,255,.07)}
@@ -6056,6 +5738,7 @@ function seekVoicePlayback(range){var card=range.closest('.custom-voice-card'), 
 .cl-dlg.stack button.cl-cancel{border-top:1px solid var(--cl-sep,rgba(255,255,255,.08));margin-top:4px}
 .cl-ta{resize:none;min-height:96px;line-height:1.6}
 </style>
+<link rel="stylesheet" href="gifts/gifts.css?v=1">
 <script>
 function getLocalChatSet(key) { try { const a=JSON.parse(localStorage.getItem(key)||'[]'); return new Set(Array.isArray(a)?a:[]); } catch(e) { return new Set(); } }
 function saveLocalChatSet(key,set) { try { localStorage.setItem(key,JSON.stringify([...set])); } catch(e) {} }
@@ -6643,6 +6326,7 @@ function notifyPeer(chatId,text){
 function groupAddMembersFromInfo(){openGroupPicker('add',activeChatId);}
 /*GROUPS_END*/
 
+
 function muteKeyNow(){return isGroupChat()?activeChatId:currentChatOtherUserId;}
 /* ===== المجموعات v2: وصف، مشرفون، صلاحيات، ألقاب، تثبيت، حظر ===== */
 const ADMIN_RIGHTS=[['info','تغيير معلومات المجموعة'],['delete','حذف رسائل الأعضاء'],['ban','تقييد الأعضاء وحظرهم'],['invite','إضافة أعضاء'],['pin','تثبيت الرسائل']];
@@ -6712,8 +6396,7 @@ function jumpToMessage(id){
   if(!el){showToast('الرسالة بعيدة، حمّل رسائل أقدم للوصول لها');return false;}
   el.scrollIntoView({block:'center',behavior:'smooth'});
   const t=el.classList.contains('msg-bubble')?el:el.querySelector('.msg-bubble')||el;
-  t.classList.remove('pin-flash');
-  setTimeout(function(){void t.offsetWidth;t.classList.add('pin-flash');setTimeout(function(){t.classList.remove('pin-flash');},1900);},550);
+  t.classList.remove('pin-flash');void t.offsetWidth;t.classList.add('pin-flash');
   return true;
 }
 function renderPinnedBar(){
@@ -7032,6 +6715,11 @@ function searchChatMessages() { clearTimeout(chatSearchTimer); chatSearchTimer=s
 async function runChatMessageSearch() { const input=document.getElementById('chatMessageSearchInput'), results=document.getElementById('chatMessageSearchResults'); if(!input||!results||!activeChatId)return; const q=input.value.trim().toLocaleLowerCase(); if(q.length<2){results.innerHTML='<div class="chat-search-empty">اكتب حرفين على الأقل للبحث.</div>';return;} results.innerHTML='<div class="chat-search-empty">جارٍ البحث…</div>'; try { const snap=await db.collection('chats').doc(activeChatId).collection('messages').orderBy('createdAt','desc').limit(1000).get(); if(!input.value.trim().toLocaleLowerCase().includes(q))return; const hits=snap.docs.filter(d=>String(d.data().text||'').toLocaleLowerCase().includes(q)); if(!hits.length){results.innerHTML='<div class="chat-search-empty">لا توجد رسائل مطابقة.</div>';return;} results.innerHTML=''; hits.slice(0,100).forEach(d=>{const m=d.data(), el=document.createElement('div');el.className='chat-search-result';const text=String(m.text|| (m.imageUrl?'▧ صورة':m.audioUrl?'♬ رسالة صوتية':''));el.textContent=text;const small=document.createElement('small');small.textContent=(m.senderId===currentUser.uid?'أنت':'الطرف الآخر')+' · '+new Date(m.createdAt||Date.now()).toLocaleString();el.appendChild(small);el.onclick=()=>{closeChatSearch();let target=document.getElementById('message_'+d.id);if(!target){showToast('الرسالة موجودة ضمن الرسائل الأقدم؛ حمّل رسائل أقدم ثم ابحث عنها.');return;}target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.add('search-match');setTimeout(()=>target.classList.remove('search-match'),3500);};results.appendChild(el);}); } catch(e){console.error(e);results.innerHTML='<div class="chat-search-empty">تعذر البحث في الرسائل.</div>';} }
 document.addEventListener('click',function(e){const menu=document.getElementById('chatMoreMenu'), del=document.getElementById('chatDeletePanel');if(menu&&!menu.contains(e.target)&&!e.target.closest('.chat-more-btn'))menu.classList.add('hidden');if(del&&!del.contains(e.target)&&!e.target.closest('.chat-more-btn'))del.classList.add('hidden');});
 </script>
+<!-- الهدايا: كل شي بمجلد gifts/ -->
+<script src="gifts/models.js?v=1"></script>
+<script src="gifts/cat-models.js?v=1"></script>
+<script src="gifts/gifts.js?v=1"></script>
+<script src="gifts/star-gift.js?v=1"></script>
 
 
 <style id="babylon-delete-dialog-theme-final-fix">
@@ -7651,138 +7339,8 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 /* Gold authentication actions keep readable white Arabic labels in both themes. */
 #authPage .babylon-btn, #verifyPage .babylon-btn, #authPage .babylon-tab.active, #verifyPage button.babylon-btn { color:#fff !important; -webkit-text-fill-color:#fff !important; }
 #authPage .babylon-logo svg, #verifyPage .babylon-logo svg { width:42px; height:42px; display:block; }
-/* Bright gold gradient for the login logo, buttons and active tab (same in light and dark themes). */
-#authPage .babylon-logo, #verifyPage .babylon-logo {
-  background: linear-gradient(135deg, #fff1b0 0%, #f4d56a 28%, #e2b53c 62%, #cf9d27 100%) !important;
-  border: 2px solid #fff6cf !important;
-  color:#fff !important;
-  box-shadow: 0 10px 26px rgba(232,190,70,.45), inset 0 2px 4px rgba(255,255,255,.55) !important;
-}
-#authPage .babylon-logo svg, #verifyPage .babylon-logo svg { filter: drop-shadow(0 1px 2px rgba(120,80,0,.45)); }
-#authPage .babylon-btn, #verifyPage .babylon-btn:not([style*="transparent"]), #authPage .babylon-tab.active {
-  background: linear-gradient(135deg, #f8e08a 0%, #eac24d 45%, #d7a52f 100%) !important;
-  border: none !important;
-  box-shadow: 0 6px 16px rgba(226,181,60,.38), inset 0 1px 0 rgba(255,255,255,.55) !important;
-  text-shadow: 0 1px 2px rgba(110,72,0,.5);
-}
-#authPage .babylon-btn:hover, #verifyPage .babylon-btn:not([style*="transparent"]):hover { filter: brightness(1.06); }
-/* Continuous gold shimmer on the "Babylon Chat" title of the login screen (15s cycle). */
-#authPage .auth-title {
-  background: linear-gradient(110deg, #d4a62a 0%, #d4a62a 36%, #fff3b0 50%, #d4a62a 64%, #d4a62a 100%) !important;
-  background-size: 300% 100% !important;
-  -webkit-background-clip: text !important; background-clip: text !important;
-  -webkit-text-fill-color: transparent !important; color: transparent !important;
-  filter: drop-shadow(0 2px 6px rgba(226,181,60,.28));
-  animation: babylonTitleShine 15s linear infinite;
-}
-.app-container[data-app-theme="light"] #authPage .auth-title {
-  background-image: linear-gradient(110deg, #b98a14 0%, #b98a14 36%, #f6d25a 50%, #b98a14 64%, #b98a14 100%) !important;
-}
-@keyframes babylonTitleShine { from { background-position: 0% 0; } to { background-position: 100% 0; } }
-@media (prefers-reduced-motion: reduce) { #authPage .auth-title { animation: none; } }
 #otherBlockBtn span [data-ic] svg, #otherBlockBtn span i svg { width:16px; height:16px; vertical-align:middle; }
 </style>
-
-<style id="babylon-gold-darker-shimmer">
-/* ذهبي أغمق بدرجة واحدة في واجهة البداية وتسجيل الدخول + عنوان متموج 15s */
-#splashPage .splash-logo, #authPage .babylon-logo, #verifyPage .babylon-logo {
-  background: linear-gradient(135deg,#ecd176 0%,#dcb040 28%,#c99f2c 62%,#b4871d 100%) !important;
-  border-color: #f0dc95 !important;
-  box-shadow: 0 10px 28px rgba(190,150,40,.45) !important;
-}
-#authPage .babylon-btn, #verifyPage .babylon-btn:not([style*="transparent"]), #authPage .babylon-tab.active {
-  background: linear-gradient(135deg,#e6c566 0%,#d3a93b 45%,#bc8e24 100%) !important;
-  box-shadow: 0 8px 20px rgba(190,150,40,.38) !important;
-}
-#splashPage .splash-dots i { background:#a8841f !important; }
-#authPage .input-group label, #authPage .forgot-btn, #authPage a { color:#a8841f !important; }
-
-#authPage .auth-title {
-  display: block !important; width: fit-content !important; max-width: 100% !important;
-  margin-left: auto !important; margin-right: auto !important;
-  filter: none !important; will-change: background-position;
-  background-image: linear-gradient(100deg,#8f6c10 0%,#c39a2a 20%,#f6dc7a 40%,#c39a2a 60%,#8f6c10 80%,#8f6c10 100%) !important;
-  background-size: 200% 100% !important;
-  background-repeat: repeat-x !important;
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  animation: babylonGoldWave 15s linear infinite !important;
-}
-.app-container[data-app-theme="light"] #authPage .auth-title {
-  background-image: linear-gradient(100deg,#7a5a0a 0%,#b08718 20%,#e8c555 40%,#b08718 60%,#7a5a0a 80%,#7a5a0a 100%) !important;
-}
-@keyframes babylonGoldWave { from { background-position: 0% 0; } to { background-position: 200% 0; } }
-@media (prefers-reduced-motion: reduce) { #authPage .auth-title { animation: none !important; } }
-#splashPage .splash-title {
-  display:block !important; width:fit-content !important; max-width:100% !important;
-  margin-left:auto !important; margin-right:auto !important; will-change:background-position;
-  background-image: linear-gradient(100deg,#8f6c10 0%,#c39a2a 20%,#f6dc7a 40%,#c39a2a 60%,#8f6c10 80%,#8f6c10 100%) !important;
-  background-size:200% 100% !important; background-repeat:repeat-x !important;
-  -webkit-background-clip:text !important; background-clip:text !important;
-  color:transparent !important; -webkit-text-fill-color:transparent !important;
-  animation: babylonGoldWave 15s linear infinite !important;
-}
-.app-container[data-app-theme="light"] #splashPage .splash-title {
-  background-image: linear-gradient(100deg,#7a5a0a 0%,#b08718 20%,#e8c555 40%,#b08718 60%,#7a5a0a 80%,#7a5a0a 100%) !important;
-}
-@media (prefers-reduced-motion: reduce) { #splashPage .splash-title { animation:none !important; } }
-
-/* زر الرجوع في بروفايل أي شخص: أبيض ليلًا / أسود نهارًا */
-#otherUserProfileView .pf-round { color:#fff !important; background:rgba(0,0,0,.35) !important; }
-.app-container[data-app-theme="light"] #otherUserProfileView .pf-round { color:#000 !important; background:rgba(255,255,255,.75) !important; }
-#otherUserProfileView .pf-round svg, #otherUserProfileView .pf-round i { color:inherit !important; stroke:currentColor; }
-
-/* انبثاق بسيط للرسالة الصوتية عند الإرسال وللرسالة التي تم الرجوع إليها */
-@keyframes babylonMsgPop { 0%{opacity:0;transform:scale(.88) translateY(8px)} 60%{opacity:1;transform:scale(1.03)} 100%{opacity:1;transform:scale(1)} }
-.msg-bubble.voice-pop { animation: babylonMsgPop .32s cubic-bezier(.2,.8,.3,1) both; transform-origin:bottom center; }
-@keyframes babylonReplyTarget { 0%{transform:scale(1)} 35%{transform:scale(1.045)} 100%{transform:scale(1)} }
-@keyframes babylonReplyRing { 0%{box-shadow:0 0 0 0 rgba(228,196,91,0)} 20%{box-shadow:0 0 0 4px rgba(228,196,91,.95),0 0 22px 6px rgba(228,196,91,.55)} 75%{box-shadow:0 0 0 3px rgba(228,196,91,.8),0 0 16px 4px rgba(228,196,91,.35)} 100%{box-shadow:0 0 0 0 rgba(228,196,91,0)} }
-.msg-bubble.pin-flash { position:relative; z-index:2; animation: babylonReplyRing 1.8s ease, babylonReplyTarget .5s cubic-bezier(.2,.8,.3,1) !important; }
-.msg-bubble.pin-flash::after { content:''; position:absolute; inset:0; border-radius:inherit; background:rgba(228,196,91,.22); pointer-events:none; animation:babylonReplyTint 1.8s ease forwards; }
-@keyframes babylonReplyTint { 0%{opacity:0} 20%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
-
-/* كل الرسائل بخط عريض (النصوص والأرقام وزمن الصوتيات) */
-#messagesArea .msg-bubble, #messagesArea .msg-bubble *:not(svg):not(path) { font-weight:700 !important; }
-@media (prefers-reduced-motion: reduce) { .msg-bubble.voice-pop, .msg-bubble.pin-flash { animation:none !important; } .msg-bubble.pin-flash::after{animation:none!important;opacity:1} }
-</style>
-
-<style id="babylon-slim-reply-round-rec">
-#chatView .reply-preview-bar, .reply-preview-bar { gap:10px !important; padding:6px 10px 6px !important; margin:6px 8px 4px !important; border:1px solid var(--babylon-border,rgba(148,163,184,.25)) !important; border-radius:14px !important; }
-.reply-preview-content { padding:5px 10px !important; border-radius:8px 0 0 8px !important; }
-.reply-preview-label { margin-bottom:2px !important; font-size:11px !important; gap:5px !important; line-height:1.3 !important; }
-.reply-preview-label svg { width:14px !important; height:14px !important; }
-.reply-preview-message { font-size:13px !important; line-height:1.4 !important; }
-.reply-preview-cancel { width:30px !important; height:30px !important; flex:0 0 30px !important; }
-.reply-preview-cancel svg { width:16px !important; height:16px !important; }
-.recording-bar { border-radius:18px !important; margin:6px 10px !important; border:1px solid var(--babylon-border,rgba(148,163,184,.2)) !important; }
-.reply-quote-name{display:block;font-size:11px;color:var(--babylon-gold,#c9a45c);margin-bottom:2px}
-</style>
-
-<script id="babylon-voice-pop">
-(function(){
-  var seen=new Set();
-  function check(n){
-    if(!n||n.nodeType!==1)return;
-    var list=n.matches&&n.matches('.msg-bubble')?[n]:(n.querySelectorAll?n.querySelectorAll('.msg-bubble'):[]);
-    Array.prototype.forEach.call(list,function(b){
-      if(!b.id||seen.has(b.id)||!b.querySelector('.custom-voice-card'))return;
-      seen.add(b.id);
-      var t=Number(b.dataset.created)||0;
-      if(Date.now()-t>6000)return;
-      b.classList.add('voice-pop');
-      setTimeout(function(){b.classList.remove('voice-pop');},600);
-    });
-  }
-  function init(){
-    var area=document.getElementById('messagesArea');
-    if(!area){setTimeout(init,500);return;}
-    new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(check);});}).observe(area,{childList:true,subtree:true});
-  }
-  init();
-})();
-</script>
 
 <script id="babylon-android-back-button-support">
 (function(){
@@ -7903,20 +7461,12 @@ function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-ite
 </style>
 <style id="babylon-chatlist-tweaks-3">.app-container #homeView#homeView .cl-chip b{-webkit-text-fill-color:currentColor}</style>
 
-<style id="babylon-story-swipe-fix">
-#storyViewer, #storyViewer .sv-stage, #storyViewer .sv-img, #storyViewer .sv-tap { touch-action:none!important; }
-#storyViewer .sv-stage { will-change:transform,opacity; }
-#storyUserAvatar { cursor:pointer; -webkit-tap-highlight-color:transparent; }
-</style>
 <style id="babylon-stories-collapse">
 .app-container #homeView#homeView .cl-chip{font-weight:800!important}
 .sb-handle{display:flex;align-items:center;justify-content:center;width:100%;height:22px;border:0;background:transparent;color:var(--cl-sub);cursor:pointer;padding:0;margin:-6px 0 2px;-webkit-tap-highlight-color:transparent;flex-shrink:0}
 .sb-handle.hidden{display:none!important}
-.app-container #homeView#homeView #storiesBar{transition:max-height .58s cubic-bezier(.22,1,.36,1),padding .48s cubic-bezier(.22,1,.36,1),opacity .35s ease;max-height:120px;will-change:max-height,opacity}
-.app-container #homeView#homeView #storiesBar .avatar,.app-container #homeView#homeView #storiesBar .sb-item span{transition:width .42s cubic-bezier(.22,1,.36,1),height .42s cubic-bezier(.22,1,.36,1),font-size .35s ease,opacity .3s ease,transform .42s cubic-bezier(.22,1,.36,1)}
-.app-container #homeView#homeView #storiesBar .sb-item{animation:storyItemEnter .28s ease-out both;backface-visibility:hidden}
-.app-container #homeView#homeView #storiesBar .sb-item:nth-child(2){animation-delay:.035s}.app-container #homeView#homeView #storiesBar .sb-item:nth-child(3){animation-delay:.07s}.app-container #homeView#homeView #storiesBar .sb-item:nth-child(4){animation-delay:.105s}.app-container #homeView#homeView #storiesBar .sb-item:nth-child(n+5){animation-delay:.14s}
-@keyframes storyItemEnter{from{opacity:0}to{opacity:1}}
+.app-container #homeView#homeView #storiesBar{transition:max-height .32s cubic-bezier(.2,.8,.2,1),padding .32s ease;max-height:120px}
+.app-container #homeView#homeView #storiesBar .avatar,.app-container #homeView#homeView #storiesBar .sb-item span{transition:width .28s ease,height .28s ease,font-size .28s ease,opacity .2s ease}
 /* collapsed: 3 small stories + count */
 .app-container #homeView#homeView #storiesBar.collapsed{max-height:56px;padding:9px 16px!important;gap:16px!important;overflow:hidden!important;align-items:center;cursor:pointer}
 .app-container #homeView#homeView #storiesBar.collapsed .sb-item{width:auto;gap:0;flex:0 0 auto}
@@ -7925,7 +7475,7 @@ function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-ite
 .app-container #homeView#homeView #storiesBar.collapsed .sb-item .avatar{width:34px!important;height:34px!important;font-size:14px!important}
 .app-container #homeView#homeView #storiesBar.collapsed .avatar.sring::after{inset:-3px;padding:2px}
 .app-container #homeView#homeView #storiesBar.collapsed::after{content:attr(data-label);margin-inline-start:auto;font-size:13px;font-weight:800;color:var(--cl-sub);background:var(--cl-chip);padding:6px 12px;border-radius:14px;white-space:nowrap}
-@media(prefers-reduced-motion:reduce){.app-container #homeView#homeView #storiesBar,.app-container #homeView#homeView #storiesBar .avatar{transition:none;animation:none}.app-container #homeView#homeView #storiesBar .sb-item{animation:none}}
+@media(prefers-reduced-motion:reduce){.app-container #homeView#homeView #storiesBar,.app-container #homeView#homeView #storiesBar .avatar{transition:none}}
 </style>
 <script id="babylon-stories-collapse-js">
 (function(){
@@ -8432,8 +7982,7 @@ function openMention(username){
   }
   function flash(el){
     el.scrollIntoView({block:'center',behavior:'smooth'});
-    el.classList.remove('pin-flash');
-    setTimeout(function(){void el.offsetWidth;el.classList.add('pin-flash');setTimeout(function(){el.classList.remove('pin-flash');},1900);},550);
+    el.classList.remove('pin-flash');void el.offsetWidth;el.classList.add('pin-flash');
   }
   window.goToReplied=function(id,text,selfId){
     var el=findEl(id)||(!id?findByText(text,selfId):null);
@@ -8762,49 +8311,6 @@ function openMention(username){
 @keyframes vpIn{from{transform:translateY(-100%)}to{transform:none}}
 @keyframes vpEq{from{height:3px}to{height:13px}}
 @media(prefers-reduced-motion:reduce){#vpBar,#vpBar .vp-eq i{animation:none}}
-
-/* مؤشر تحميل ذهبي: قوس دوّار متحرك فوق إطار القصة نفسه، وليس إطاراً ذهبياً كاملاً */
-.avatar.sring.story-launch-loading,
-.avatar-story-ring.story-launch-loading {
-  position: relative !important;
-  z-index: 3;
-}
-.avatar.sring.story-launch-loading::after {
-  inset: -5px;
-  padding: 3px;
-  background: conic-gradient(from 0deg, transparent 0deg 205deg, #b98710 225deg, #d4af37 255deg, #ffe9a0 285deg, #d4af37 320deg, transparent 340deg 360deg) !important;
-  box-shadow: none !important;
-  animation: storyGoldSpinner 2.15s linear infinite !important;
-}
-.avatar.sring.story-launch-loading.seen::after {
-  background: conic-gradient(from 0deg, transparent 0deg 205deg, #b98710 225deg, #d4af37 255deg, #ffe9a0 285deg, #d4af37 320deg, transparent 340deg 360deg) !important;
-}
-/* صورة الملف الشخصي الكبيرة تستخدم قوساً متحركاً داخل مساحة الإطار الموجودة */
-.avatar-story-ring.story-launch-loading::before {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  border-radius: 50%;
-  padding: 3px;
-  pointer-events: none;
-  z-index: 8;
-  background: conic-gradient(from 0deg, transparent 0deg 205deg, #b98710 225deg, #d4af37 255deg, #ffe9a0 285deg, #d4af37 320deg, transparent 340deg 360deg);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: storyGoldSpinner 2.15s linear infinite;
-}
-@keyframes storyGoldSpinner { to { transform: rotate(360deg); } }
-/* فتح القصّة كنافذة منبثقة بطيئة وناعمة */
-#storyViewer.story-opening { animation: storyBackdropIn .62s ease both; }
-#storyViewer.story-opening .sv-stage { animation: storyPopupIn .72s cubic-bezier(.18,.78,.22,1) both; transform-origin: center center; }
-@keyframes storyBackdropIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes storyPopupIn { from { opacity: .35; transform: scale(.88); } to { opacity: 1; transform: scale(1); } }
-@media(prefers-reduced-motion:reduce) {
-  .avatar.sring.story-launch-loading::after,
-  .avatar-story-ring.story-launch-loading::before { animation:none!important; }
-  #storyViewer.story-opening, #storyViewer.story-opening .sv-stage { animation-duration:.01ms!important; }
-}
 </style>
 <script id="babylon-voice-minibar-js">
 (function(){
@@ -8915,28 +8421,3 @@ function openMention(username){
   if(area&&window.MutationObserver)new MutationObserver(function(){if(cur)sync();}).observe(area,{childList:true});
 })();
 </script>
-
-
-<style id="story-owner-ui-fix">
-/* أدوات مالك القصة: حجم صغير وثابت ومرتب */
-#storyViewer .sv-own{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;}
-#storyViewer .sv-action{box-sizing:border-box;width:38px;height:36px;min-width:38px;min-height:36px;max-width:38px;display:inline-flex;align-items:center;justify-content:center;gap:0;padding:0;border-radius:11px;border:1px solid rgba(255,255,255,.2);background:rgba(20,25,32,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:transform .16s ease,background .16s ease;}
-#storyViewer .sv-action:active{transform:scale(.94)}
-#storyViewer .sv-action .story-ui-icon{width:18px;height:18px;flex:0 0 18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
-#storyViewer .sv-action-pin{color:#f5cf55;border-color:rgba(245,207,85,.45);background:rgba(145,103,8,.24);}
-#storyViewer .sv-action-delete{color:#ff7777;border-color:rgba(255,100,100,.4);background:rgba(120,20,25,.3);}
-#storyViewer .sv-action-edit{color:#f4f4f5;background:rgba(255,255,255,.12);}
-#storyViewer .sv-action-views{width:auto;min-width:54px;max-width:none;padding:0 8px;flex-direction:row;gap:5px;font-variant-numeric:tabular-nums;}
-#storyViewer .sv-eye-wrap{position:relative;width:19px;height:19px;display:inline-flex;align-items:center;justify-content:center;}
-#storyViewer .sv-eye-wrap .story-ui-icon{width:18px;height:18px;}
-#storyViewer .sv-mini-heart{position:absolute;right:-4px;bottom:-3px;font-size:9px;line-height:10px;font-style:normal;color:#ff414d;text-shadow:0 0 2px rgba(0,0,0,.8);display:none;}
-#storyViewer .sv-action-views.has-reaction .sv-mini-heart{display:block;}
-#storyViewer .sv-action-label{display:none!important;}
-#storyViewer .sv-cap{left:14px;right:14px;bottom:calc(92px + env(safe-area-inset-bottom, 0px));width:auto;box-sizing:border-box;padding:8px 11px;text-align:right;border:1px solid rgba(255,255,255,.22);border-radius:12px;background:rgba(15,18,24,.42);backdrop-filter:blur(14px) saturate(130%);-webkit-backdrop-filter:blur(14px) saturate(130%);box-shadow:0 5px 18px rgba(0,0,0,.12);font-size:13px;line-height:1.45;}
-#storyViewer .sv-foot{z-index:6;}
-#storyViewer .sv-reacts{gap:8px;padding:7px 10px;border:1px solid rgba(255,255,255,.18);border-radius:18px;background:rgba(18,22,28,.42);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
-#storyViewer .sv-reacts span{display:inline-flex;align-items:center;justify-content:center;min-width:32px;min-height:32px;padding:2px;border-radius:10px;transition:transform .16s ease,background .16s ease;}
-#storyViewer .sv-reacts span:active{transform:scale(1.1)}
-#storyViewer .sv-reacts span.on{background:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
-@media(max-width:380px){#storyViewer .sv-own{gap:6px}#storyViewer .sv-action{width:35px;height:34px;min-width:35px;min-height:34px;max-width:35px}#storyViewer .sv-action-views{width:auto;min-width:50px;max-width:none}#storyViewer .sv-cap{left:10px;right:10px;bottom:calc(88px + env(safe-area-inset-bottom, 0px));padding:7px 9px;font-size:12px}}
-</style>
