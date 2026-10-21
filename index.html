@@ -7262,6 +7262,23 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 .app-container #homeView#homeView .cl-chip b{background:#e5484d!important;color:#fff!important;-webkit-text-fill-color:#fff!important;box-shadow:0 2px 6px rgba(229,72,77,.4)!important}
 .app-container #homeView#homeView .cl-chip.active b{background:#fff!important;color:#c0282d!important;-webkit-text-fill-color:#c0282d!important;border-color:#c0282d}
 </style>
+<style id="chat-filter-chips-swap">
+/* الزر الذي يغادره الذهبي => كلمته بيضاء (على خلفية داكنة)، والزر الذي يصله الذهبي => كلمته داكنة */
+.app-container #homeView#homeView .cl-chip{transition:background .25s,color .25s!important}
+.app-container #homeView#homeView .cl-chip:not(.active){background:#34465b!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
+.app-container[data-app-theme="dark"] #homeView#homeView .cl-chip:not(.active){background:#2a3a4d!important}
+.app-container #homeView#homeView .cl-chip.active{background:linear-gradient(145deg,#e8c566,#d3a93b)!important;color:#241a00!important;-webkit-text-fill-color:#241a00!important}
+</style>
+<style id="chat-filter-chips-final">
+/* الزر الذي يصله الذهبي => كلمته بيضاء (على ذهبي أعمق ليبقى النص واضحاً)
+   الزر الذي ليس عليه ذهبي => كلمته داكنة على خلفية فاتحة */
+.app-container #homeView#homeView .cl-chip{transition:background .25s,color .25s!important}
+.app-container #homeView#homeView .cl-chip.active{
+  background:linear-gradient(145deg,#b8861b,#8f6410)!important;
+  color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 1px rgba(60,38,0,.35)!important}
+.app-container #homeView#homeView .cl-chip:not(.active){
+  background:#e8edf4!important;color:#1f2a37!important;-webkit-text-fill-color:#1f2a37!important;text-shadow:none!important}
+</style>
 </body>
 </html>
 
