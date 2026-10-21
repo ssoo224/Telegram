@@ -7252,6 +7252,16 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 .app-container[data-app-theme="dark"]  #authPage .babylon-input{ color:#f1f5f9 !important; }
 .app-container[data-app-theme="dark"]  #authPage .babylon-input::placeholder{ color:#94a3b8 !important; opacity:1; }
 </style>
+<style id="chat-filter-chips-contrast">
+/* أزرار (الكل) و(غير المقروءة): نص واضح في الوضعين */
+.app-container #homeView#homeView .cl-chip{font-weight:800!important;font-size:13.5px!important}
+.app-container[data-app-theme="light"] #homeView#homeView .cl-chip:not(.active){color:#2f3e50!important;-webkit-text-fill-color:#2f3e50!important;background:#e3e9f1!important}
+.app-container[data-app-theme="dark"]  #homeView#homeView .cl-chip:not(.active){color:#dbe4ee!important;-webkit-text-fill-color:#dbe4ee!important;background:#223245!important}
+.app-container #homeView#homeView .cl-chip.active{color:#241a00!important;-webkit-text-fill-color:#241a00!important;text-shadow:none!important;background:linear-gradient(145deg,#e8c566,#d3a93b)!important}
+/* عدّاد غير المقروءة: أحمر واضح بنص أبيض بدل الذهبي */
+.app-container #homeView#homeView .cl-chip b{background:#e5484d!important;color:#fff!important;-webkit-text-fill-color:#fff!important;box-shadow:0 2px 6px rgba(229,72,77,.4)!important}
+.app-container #homeView#homeView .cl-chip.active b{background:#fff!important;color:#c0282d!important;-webkit-text-fill-color:#c0282d!important;border-color:#c0282d}
+</style>
 </body>
 </html>
 
