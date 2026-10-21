@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl"> 
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <style id="babylon-splash">
@@ -4177,6 +4177,8 @@ function appConfirmDialog(message, title='تأكيد العملية', dangerLabe
     const root = (typeof uiRoot === 'function' && uiRoot()) || document.body;
     const overlay = document.createElement('div');
     overlay.className = 'babylon-confirm-overlay';
+    const themeHost = document.querySelector('.app-container[data-app-theme]');
+    overlay.setAttribute('data-app-theme', themeHost?.getAttribute('data-app-theme') || 'dark');
     overlay.innerHTML = `<div class="babylon-confirm-card" role="dialog" aria-modal="true" aria-label="${title.replace(/[<>"&]/g,'')}" dir="rtl">
       <div class="babylon-confirm-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01"/><path d="M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3l-7.5-13.1a2 2 0 0 0-3.4 0Z"/></svg></div>
       <h3>${title}</h3><p>${message}</p><div class="babylon-confirm-actions"><button type="button" class="babylon-confirm-cancel">إلغاء</button><button type="button" class="babylon-confirm-ok">${dangerLabel}</button></div></div>`;
@@ -7177,6 +7179,42 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 @keyframes bcFadeIn{from{opacity:0}to{opacity:1}}@keyframes bcPopIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .app-container[data-app-theme="light"] .babylon-confirm-card{background:#fff;color:#17212b;border-color:#e2e7ef}.app-container[data-app-theme="light"] .babylon-confirm-card p{color:#667085}.app-container[data-app-theme="light"] .babylon-confirm-cancel{background:#f5f7fa;color:#17212b;border-color:#e2e7ef}
 </style>
+
+<style id="babylon-modal-theme-sync-style">
+/* Confirmation and story-management dialogs follow the app's active day/night theme. */
+#storyManageModal[data-app-theme="light"] .sm-card{background:linear-gradient(160deg,#ffffff,#f4f6fa)!important;color:#17212b!important;border-color:#dfe5ee!important;box-shadow:0 20px 70px rgba(25,40,65,.22)!important}
+#storyManageModal[data-app-theme="light"] .sm-title{color:#17212b!important}
+#storyManageModal[data-app-theme="light"] .sm-sub{color:#657286!important}
+#storyManageModal[data-app-theme="light"] #storyManageCaption{background:#fff!important;color:#17212b!important;border-color:#d7deea!important}
+#storyManageModal[data-app-theme="light"] .sm-cancel{background:#edf1f7!important;color:#263548!important}
+#storyManageModal[data-app-theme="light"] .sm-media{background:rgba(184,134,27,.09)!important;color:#946b0b!important;border-color:rgba(184,134,27,.28)!important}
+#messageDeleteModal[data-app-theme="light"],#multiDeleteDlg[data-app-theme="light"],#fwdPicker[data-app-theme="light"]{background:rgba(30,42,58,.28)!important}
+#messageDeleteModal[data-app-theme="light"] .message-delete-card,#multiDeleteDlg[data-app-theme="light"] .message-delete-card,#fwdPicker[data-app-theme="light"] .message-delete-card{background:#fff!important;color:#17212b!important;border-color:#dfe5ee!important;box-shadow:0 18px 55px rgba(20,35,55,.2)!important}
+#messageDeleteModal[data-app-theme="light"] .message-delete-heading,#multiDeleteDlg[data-app-theme="light"] .message-delete-heading{color:#17212b!important}
+#messageDeleteModal[data-app-theme="light"] .message-delete-description,#multiDeleteDlg[data-app-theme="light"] .message-delete-description{color:#657286!important}
+.babylon-confirm-overlay[data-app-theme="light"]{background:rgba(30,42,58,.28)!important}
+.babylon-confirm-overlay[data-app-theme="light"] .babylon-confirm-card{background:linear-gradient(160deg,#fff,#f5f7fb)!important;color:#17212b!important;border-color:#dfe5ee!important;box-shadow:0 20px 60px rgba(20,35,55,.2)!important}
+.babylon-confirm-overlay[data-app-theme="light"] .babylon-confirm-card h3{color:#9a7110!important}
+.babylon-confirm-overlay[data-app-theme="light"] .babylon-confirm-card p{color:#596779!important}
+.babylon-confirm-overlay[data-app-theme="light"] .babylon-confirm-cancel{background:#edf1f7!important;color:#263548!important;border-color:#dbe2ec!important}
+</style>
+<script id="babylon-modal-theme-sync">
+(function(){
+ const selectors=['#storyManageModal','#messageDeleteModal','#multiDeleteDlg','#fwdPicker'];
+ function sync(){
+   const host=document.querySelector('.app-container[data-app-theme]');
+   const theme=host?.getAttribute('data-app-theme')||'dark';
+   selectors.forEach(sel=>document.querySelectorAll(sel).forEach(el=>el.setAttribute('data-app-theme',theme)));
+   document.querySelectorAll('.babylon-confirm-overlay').forEach(el=>el.setAttribute('data-app-theme',theme));
+ }
+ sync();
+ const observer=new MutationObserver(sync);
+ document.querySelectorAll('.app-container').forEach(el=>observer.observe(el,{attributes:true,attributeFilter:['data-app-theme','class']}));
+ new MutationObserver(sync).observe(document.body,{childList:true,subtree:true});
+ document.addEventListener('visibilitychange',sync);
+})();
+</script>
+
 </body>
 </html>
 
@@ -9082,3 +9120,31 @@ function openMention(username){
  if(input)input.addEventListener('change',function(){const n=document.getElementById('storyManageMediaName');if(n)n.textContent=this.files&&this.files[0]?this.files[0].name:'لم يتم اختيار ملف جديد';});
 })();
 </script>
+
+<style id="gold-buttons-arabic-white-bold-fix">
+/* النص العربي في الأزرار الذهبية: أبيض وعريض، مع الحفاظ على الأيقونات */
+.app-container button,
+#storyViewer button,
+#storyManageModal button,
+button.babylon-btn,
+button.story-type-btn,
+.multi-select-bar button {
+  --gold-button-text:#fff;
+}
+.app-container button[style*="background:var(--babylon-gold)"],
+.app-container button[style*="background: var(--babylon-gold)"],
+.app-container button[style*="background:linear-gradient"],
+.app-container .babylon-btn,
+button.babylon-btn,
+button.story-type-btn,
+.multi-select-bar button:first-of-type {
+  color:#fff !important;
+  font-weight:700 !important;
+}
+.app-container button[style*="background:var(--babylon-gold)"] svg,
+.app-container button[style*="background: var(--babylon-gold)"] svg,
+.app-container .babylon-btn svg,
+button.babylon-btn svg,
+button.story-type-btn svg,
+.multi-select-bar button:first-of-type svg { color:#fff; }
+</style>
