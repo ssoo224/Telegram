@@ -5260,15 +5260,15 @@ function renderStoriesBar() {
 }
 function launchStoryWithGlow(el, callback) {
   if (!el) { callback(); return; }
-  const ring = el.matches('.avatar') ? el : (el.querySelector('.avatar') || el);
-  ring.classList.remove('story-launch-glow');
-  // إعادة تشغيل الوميض حتى عند النقر المتكرر.
-  void ring.offsetWidth;
-  ring.classList.add('story-launch-glow');
+  // إظهار حلقة تحميل ذهبية دوّارة حول القصة قبل فتحها.
+  const ring = el.matches('.avatar, .avatar-story-ring') ? el : (el.querySelector('.avatar') || el);
+  ring.classList.remove('story-launch-loading');
+  void ring.offsetWidth; // إعادة تشغيل الحركة عند كل نقرة.
+  ring.classList.add('story-launch-loading');
   setTimeout(() => {
-    ring.classList.remove('story-launch-glow');
+    ring.classList.remove('story-launch-loading');
     callback();
-  }, 460);
+  }, 680);
 }
 function storyItemClick(ev, uid) {
   if (ev) ev.stopPropagation();
@@ -8574,32 +8574,33 @@ function openMention(username){
 @keyframes vpEq{from{height:3px}to{height:13px}}
 @media(prefers-reduced-motion:reduce){#vpBar,#vpBar .vp-eq i{animation:none}}
 
-/* وهج ذهبي قصير عند اختيار القصة قبل فتح العارض */
-.avatar.story-launch-glow,
-.avatar-story-ring.story-launch-glow {
+/* حلقة تحميل ذهبية دوّارة حول القصة قبل فتحها */
+.avatar.story-launch-loading,
+.avatar-story-ring.story-launch-loading {
   position: relative;
   z-index: 3;
-  animation: storyGoldLaunch .46s cubic-bezier(.2,.85,.25,1) both;
 }
-.avatar.story-launch-glow::after,
-.avatar-story-ring.story-launch-glow::after {
-  animation: storyGoldRing .46s ease-out both !important;
+.avatar.story-launch-loading::before,
+.avatar-story-ring.story-launch-loading::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border: 3px solid rgba(194,157,48,.16);
+  border-top-color: #ffe28a;
+  border-right-color: #c29d30;
+  border-bottom-color: rgba(194,157,48,.55);
+  border-left-color: transparent;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 8;
+  animation: storyGoldSpinner .62s linear infinite;
+  box-shadow: 0 0 5px rgba(228,196,91,.25);
 }
-@keyframes storyGoldLaunch {
-  0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(255,190,45,0)); }
-  38% { transform: scale(1.13); filter: drop-shadow(0 0 7px rgba(255,190,45,.95)) drop-shadow(0 0 15px rgba(255,215,100,.72)); }
-  72% { transform: scale(1.07); filter: drop-shadow(0 0 10px rgba(255,196,55,.85)) drop-shadow(0 0 20px rgba(255,215,100,.5)); }
-  100% { transform: scale(1.02); filter: drop-shadow(0 0 3px rgba(255,190,45,.3)); }
-}
-@keyframes storyGoldRing {
-  0% { box-shadow: 0 0 0 0 rgba(255,193,45,0), 0 0 0 rgba(255,215,100,0); }
-  40% { box-shadow: 0 0 0 3px rgba(255,207,74,.98), 0 0 13px 5px rgba(255,190,35,.9), 0 0 24px 9px rgba(255,221,130,.55); }
-  75% { box-shadow: 0 0 0 2px rgba(255,207,74,.9), 0 0 17px 6px rgba(255,190,35,.72); }
-  100% { box-shadow: 0 0 0 0 rgba(255,193,45,0), 0 0 0 rgba(255,215,100,0); }
-}
+.avatar-story-ring.story-launch-loading::before { inset: -5px; border-width: 4px; }
+@keyframes storyGoldSpinner { to { transform: rotate(360deg); } }
 @media(prefers-reduced-motion:reduce) {
-  .avatar.story-launch-glow,.avatar-story-ring.story-launch-glow,
-  .avatar.story-launch-glow::after,.avatar-story-ring.story-launch-glow::after { animation:none!important; }
+  .avatar.story-launch-loading::before,
+  .avatar-story-ring.story-launch-loading::before { animation:none!important; }
 }
 </style>
 <script id="babylon-voice-minibar-js">
