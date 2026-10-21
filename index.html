@@ -39,6 +39,7 @@
 .app-container[data-app-theme="dark"] #notificationSettingsView .notification-intro,.app-container[data-app-theme="dark"] #notificationSettingsView .notification-setting-card{background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.1);}
 </style>
 
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Babylon Chat - تليجرام البابلي</title>
 
@@ -2347,6 +2348,14 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
           </div>
         </div>
         <button class="icon-btn chat-more-btn" onclick="toggleChatMenu(event)" title="خيارات المحادثة" aria-label="خيارات المحادثة">⋮</button>
+        <div id="msgSelTop" class="msg-sel-top" role="toolbar" aria-label="إجراءات الرسائل المحددة">
+          <button type="button" class="msel-btn msel-close" onclick="clearMessageSelection()" aria-label="إلغاء التحديد"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          <b id="mselCount" class="msel-count">1</b>
+          <button type="button" id="mselEdit" class="msel-btn" onclick="mselEdit()" aria-label="تعديل"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 16.5-.8 4.3 4.3-.8L19.8 7.7a2.1 2.1 0 0 0-3-3Z"/><path d="m15.5 6 3 3"/></svg></button>
+          <button type="button" id="mselPin" class="msel-btn" onclick="mselPin()" aria-label="تثبيت"></button>
+          <button type="button" id="mselFwd" class="msel-btn" onclick="openForwardPicker()" aria-label="إعادة توجيه"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5 6 6-6 6"/><path d="M21 11H9a6 6 0 0 0-6 6v1"/></svg></button>
+          <button type="button" id="mselDel" class="msel-btn msel-danger" onclick="openMultiDeleteDialog()" aria-label="حذف"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>
+        </div>
       </header>
       <div id="chatMoreMenu" class="chat-more-menu hidden" role="menu">
         <button type="button" id="chatGroupInfoAction" class="hidden" onclick="closeChatMenus();openGroupInfo()"><svg class="chat-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4M20 20v-1.5a3.5 3.5 0 0 0-2.6-3.4M14.6 5.3a3.2 3.2 0 0 1 0 6.2"/></svg><span>معلومات المجموعة</span></button>
@@ -3906,18 +3915,44 @@ function renderMsgDoc(doc, box, existingTyping) {
         let pressTimer = null;
         let touchStartX = 0;
         let touchStartY = 0;
-        let ignoreTouch = false;
+        let onVoiceControls = false;
+        let longPressFired = false;
+        let voiceStart = null;
+
+        // Long press selects the message from ANY spot: text, numbers, time, image,
+        // the voice play button and the voice slider included.
+        const fireLongPress = () => {
+          longPressFired = true;
+          suppressNextMessageClick = true;
+          if (voiceStart) {
+            const au = b.querySelector('.voice-audio');
+            if (au) {
+              const t0 = voiceStart.t + (voiceStart.playing ? (Date.now() - voiceStart.at) / 1000 : 0);
+              if (Math.abs(au.currentTime - t0) > 0.8) { try { au.currentTime = t0; } catch (e) {} }
+            }
+            voiceStart = null;
+          }
+          try { if (navigator.vibrate) navigator.vibrate(18); } catch (e) {}
+          if (messageSelectionMode) toggleMessageSelection(doc.id);
+          else enterMessageSelection(doc.id);
+        };
+        const beginPress = (target) => {
+          suppressNextMessageClick = false;
+          longPressFired = false;
+          voiceStart = null;
+          if (target && target.closest && target.closest('.voice-progress')) {
+            const au = b.querySelector('.voice-audio');
+            if (au) voiceStart = { t: au.currentTime, at: Date.now(), playing: !au.paused };
+          }
+          clearTimeout(pressTimer);
+          pressTimer = setTimeout(fireLongPress, 450);
+        };
 
         b.ontouchstart = (e) => {
-          ignoreTouch = !!(e.target.closest && e.target.closest('.voice-play-btn,.voice-progress'));
-          if (ignoreTouch) return;
+          onVoiceControls = !!(e.target.closest && e.target.closest('.voice-play-btn,.voice-progress'));
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
-          pressTimer = setTimeout(() => {
-            suppressNextMessageClick = true;
-            if (messageSelectionMode) toggleMessageSelection(doc.id);
-            else { enterMessageSelection(doc.id); }
-          }, 450);
+          beginPress(e.target);
         };
 
         b.ontouchmove = (e) => {
@@ -3928,20 +3963,25 @@ function renderMsgDoc(doc, box, existingTyping) {
 
         b.ontouchend = (e) => {
           clearTimeout(pressTimer);
-          if (ignoreTouch) { ignoreTouch = false; return; }
+          if (longPressFired) { longPressFired = false; onVoiceControls = false; if (e.cancelable) e.preventDefault(); return; }
+          if (onVoiceControls) { onVoiceControls = false; return; }
           if (touchStartX - e.changedTouches[0].clientX > 50) triggerSwipeReply(m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), doc.id);
         };
+        b.ontouchcancel = () => clearTimeout(pressTimer);
 
         b.onmousedown = (e) => {
           if (e.button !== 0) return;
-          if (e.target.closest && e.target.closest('.voice-play-btn,.voice-progress')) return;
-          pressTimer = setTimeout(() => {
-            suppressNextMessageClick = true;
-            if (messageSelectionMode) toggleMessageSelection(doc.id);
-            else enterMessageSelection(doc.id);
-          }, 450);
+          beginPress(e.target);
         };
         b.onmouseup = b.onmouseleave = () => clearTimeout(pressTimer);
+        // Stops the native long-press menu / callout on text, numbers and links.
+        b.oncontextmenu = (e) => { e.preventDefault(); };
+        // Runs before the play button / slider / image handlers: swallows the click that
+        // ends a long press, and while selecting, every tap toggles selection instead.
+        b.addEventListener('click', (e) => {
+          if (suppressNextMessageClick) { suppressNextMessageClick = false; e.preventDefault(); e.stopImmediatePropagation(); return; }
+          if (messageSelectionMode) { e.preventDefault(); e.stopImmediatePropagation(); toggleMessageSelection(doc.id); }
+        }, true);
         b.onclick = (e) => {
           if (suppressNextMessageClick) { suppressNextMessageClick = false; return; }
           { const rq = e.target.closest && e.target.closest('.reply-quote'); if (rq && !messageSelectionMode) { e.preventDefault(); e.stopPropagation(); goToReplied(rq.dataset.replyId, rq.textContent, doc.id); return; } }
@@ -3994,6 +4034,7 @@ function refreshMessageSelectionUI() {
   if (count) count.textContent = String(selectedMessageIds.size);
   document.getElementById('chatView')?.classList.toggle('msg-selecting', !!messageSelectionMode);
   if (bar) bar.classList.toggle('hidden', !messageSelectionMode);
+  try { updateMsgSelTop(); } catch (e) {}
 }
 function clearMessageSelection() {
   messageSelectionMode = false;
@@ -7215,6 +7256,245 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 })();
 </script>
 
+<style id="gold-buttons-white-final">
+/* كل زر ذهبي (خلفية ذهبية) => النص العربي والرموز بيضاء. الأزرار غير الذهبية لا تتأثر. */
+html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2),
+html body .babylon-tab.active:not(#_w1):not(#_w2),
+html body .pf-btn.primary:not(#_w1):not(#_w2),
+html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2),
+html body .record-send-btn:not(#_w1):not(#_w2),
+html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2),
+html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2),
+html body .sc-chips button.on:not(#_w1):not(#_w2),
+html body .sx-seg button.on:not(#_w1):not(#_w2),
+html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2),
+html body .cl-chip.active:not(#_w1):not(#_w2),
+html body .sp-publish:not(#_w1):not(#_w2),
+html body #storyManageModal .sm-save:not(#_w1):not(#_w2),
+html body .gx-fab:not(#_w1):not(#_w2),
+html body button.gi-cam:not(#_w1):not(#_w2),
+html body .gx-photo:not(#_w1):not(#_w2),
+html body .hdr-story-count:not(#_w1):not(#_w2),
+html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2){color:#fff!important;-webkit-text-fill-color:#fff!important;}
+html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2) span,
+html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2) i,
+html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2) b,
+html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2) strong,
+html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2) small,
+html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2) em,
+html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2) svg,
+html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2) svg *,
+html body .babylon-tab.active:not(#_w1):not(#_w2) span,
+html body .babylon-tab.active:not(#_w1):not(#_w2) i,
+html body .babylon-tab.active:not(#_w1):not(#_w2) b,
+html body .babylon-tab.active:not(#_w1):not(#_w2) strong,
+html body .babylon-tab.active:not(#_w1):not(#_w2) small,
+html body .babylon-tab.active:not(#_w1):not(#_w2) em,
+html body .babylon-tab.active:not(#_w1):not(#_w2) svg,
+html body .babylon-tab.active:not(#_w1):not(#_w2) svg *,
+html body .pf-btn.primary:not(#_w1):not(#_w2) span,
+html body .pf-btn.primary:not(#_w1):not(#_w2) i,
+html body .pf-btn.primary:not(#_w1):not(#_w2) b,
+html body .pf-btn.primary:not(#_w1):not(#_w2) strong,
+html body .pf-btn.primary:not(#_w1):not(#_w2) small,
+html body .pf-btn.primary:not(#_w1):not(#_w2) em,
+html body .pf-btn.primary:not(#_w1):not(#_w2) svg,
+html body .pf-btn.primary:not(#_w1):not(#_w2) svg *,
+html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2) span,
+html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2) i,
+html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2) b,
+html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2) strong,
+html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2) small,
+html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2) em,
+html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2) svg,
+html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2) svg *,
+html body .record-send-btn:not(#_w1):not(#_w2) span,
+html body .record-send-btn:not(#_w1):not(#_w2) i,
+html body .record-send-btn:not(#_w1):not(#_w2) b,
+html body .record-send-btn:not(#_w1):not(#_w2) strong,
+html body .record-send-btn:not(#_w1):not(#_w2) small,
+html body .record-send-btn:not(#_w1):not(#_w2) em,
+html body .record-send-btn:not(#_w1):not(#_w2) svg,
+html body .record-send-btn:not(#_w1):not(#_w2) svg *,
+html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2) span,
+html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2) i,
+html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2) b,
+html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2) strong,
+html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2) small,
+html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2) em,
+html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2) svg,
+html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2) svg *,
+html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2) span,
+html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2) i,
+html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2) b,
+html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2) strong,
+html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2) small,
+html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2) em,
+html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2) svg,
+html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2) svg *,
+html body .sc-chips button.on:not(#_w1):not(#_w2) span,
+html body .sc-chips button.on:not(#_w1):not(#_w2) i,
+html body .sc-chips button.on:not(#_w1):not(#_w2) b,
+html body .sc-chips button.on:not(#_w1):not(#_w2) strong,
+html body .sc-chips button.on:not(#_w1):not(#_w2) small,
+html body .sc-chips button.on:not(#_w1):not(#_w2) em,
+html body .sc-chips button.on:not(#_w1):not(#_w2) svg,
+html body .sc-chips button.on:not(#_w1):not(#_w2) svg *,
+html body .sx-seg button.on:not(#_w1):not(#_w2) span,
+html body .sx-seg button.on:not(#_w1):not(#_w2) i,
+html body .sx-seg button.on:not(#_w1):not(#_w2) b,
+html body .sx-seg button.on:not(#_w1):not(#_w2) strong,
+html body .sx-seg button.on:not(#_w1):not(#_w2) small,
+html body .sx-seg button.on:not(#_w1):not(#_w2) em,
+html body .sx-seg button.on:not(#_w1):not(#_w2) svg,
+html body .sx-seg button.on:not(#_w1):not(#_w2) svg *,
+html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2) span,
+html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2) i,
+html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2) b,
+html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2) strong,
+html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2) small,
+html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2) em,
+html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2) svg,
+html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2) svg *,
+html body .cl-chip.active:not(#_w1):not(#_w2) span,
+html body .cl-chip.active:not(#_w1):not(#_w2) i,
+html body .cl-chip.active:not(#_w1):not(#_w2) b,
+html body .cl-chip.active:not(#_w1):not(#_w2) strong,
+html body .cl-chip.active:not(#_w1):not(#_w2) small,
+html body .cl-chip.active:not(#_w1):not(#_w2) em,
+html body .cl-chip.active:not(#_w1):not(#_w2) svg,
+html body .cl-chip.active:not(#_w1):not(#_w2) svg *,
+html body .sp-publish:not(#_w1):not(#_w2) span,
+html body .sp-publish:not(#_w1):not(#_w2) i,
+html body .sp-publish:not(#_w1):not(#_w2) b,
+html body .sp-publish:not(#_w1):not(#_w2) strong,
+html body .sp-publish:not(#_w1):not(#_w2) small,
+html body .sp-publish:not(#_w1):not(#_w2) em,
+html body .sp-publish:not(#_w1):not(#_w2) svg,
+html body .sp-publish:not(#_w1):not(#_w2) svg *,
+html body #storyManageModal .sm-save:not(#_w1):not(#_w2) span,
+html body #storyManageModal .sm-save:not(#_w1):not(#_w2) i,
+html body #storyManageModal .sm-save:not(#_w1):not(#_w2) b,
+html body #storyManageModal .sm-save:not(#_w1):not(#_w2) strong,
+html body #storyManageModal .sm-save:not(#_w1):not(#_w2) small,
+html body #storyManageModal .sm-save:not(#_w1):not(#_w2) em,
+html body #storyManageModal .sm-save:not(#_w1):not(#_w2) svg,
+html body #storyManageModal .sm-save:not(#_w1):not(#_w2) svg *,
+html body .gx-fab:not(#_w1):not(#_w2) span,
+html body .gx-fab:not(#_w1):not(#_w2) i,
+html body .gx-fab:not(#_w1):not(#_w2) b,
+html body .gx-fab:not(#_w1):not(#_w2) strong,
+html body .gx-fab:not(#_w1):not(#_w2) small,
+html body .gx-fab:not(#_w1):not(#_w2) em,
+html body .gx-fab:not(#_w1):not(#_w2) svg,
+html body .gx-fab:not(#_w1):not(#_w2) svg *,
+html body button.gi-cam:not(#_w1):not(#_w2) span,
+html body button.gi-cam:not(#_w1):not(#_w2) i,
+html body button.gi-cam:not(#_w1):not(#_w2) b,
+html body button.gi-cam:not(#_w1):not(#_w2) strong,
+html body button.gi-cam:not(#_w1):not(#_w2) small,
+html body button.gi-cam:not(#_w1):not(#_w2) em,
+html body button.gi-cam:not(#_w1):not(#_w2) svg,
+html body button.gi-cam:not(#_w1):not(#_w2) svg *,
+html body .gx-photo:not(#_w1):not(#_w2) span,
+html body .gx-photo:not(#_w1):not(#_w2) i,
+html body .gx-photo:not(#_w1):not(#_w2) b,
+html body .gx-photo:not(#_w1):not(#_w2) strong,
+html body .gx-photo:not(#_w1):not(#_w2) small,
+html body .gx-photo:not(#_w1):not(#_w2) em,
+html body .gx-photo:not(#_w1):not(#_w2) svg,
+html body .gx-photo:not(#_w1):not(#_w2) svg *,
+html body .hdr-story-count:not(#_w1):not(#_w2) span,
+html body .hdr-story-count:not(#_w1):not(#_w2) i,
+html body .hdr-story-count:not(#_w1):not(#_w2) b,
+html body .hdr-story-count:not(#_w1):not(#_w2) strong,
+html body .hdr-story-count:not(#_w1):not(#_w2) small,
+html body .hdr-story-count:not(#_w1):not(#_w2) em,
+html body .hdr-story-count:not(#_w1):not(#_w2) svg,
+html body .hdr-story-count:not(#_w1):not(#_w2) svg *,
+html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2) span,
+html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2) i,
+html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2) b,
+html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2) strong,
+html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2) small,
+html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2) em,
+html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2) svg,
+html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2) svg *{color:#fff!important;-webkit-text-fill-color:#fff!important;}
+html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body .babylon-tab.active:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .babylon-tab.active:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body .pf-btn.primary:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .pf-btn.primary:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body .record-send-btn:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .record-send-btn:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body .sc-chips button.on:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .sc-chips button.on:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body .sx-seg button.on:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .sx-seg button.on:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body .cl-chip.active:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .cl-chip.active:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body .sp-publish:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .sp-publish:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body #storyManageModal .sm-save:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body #storyManageModal .sm-save:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body .gx-fab:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .gx-fab:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body button.gi-cam:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body button.gi-cam:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body .gx-photo:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .gx-photo:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body .hdr-story-count:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .hdr-story-count:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]),
+html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2) svg [stroke]:not([stroke="none"]),html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2) svg[stroke]:not([stroke="none"]){stroke:#fff!important}
+html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .babylon-btn:not([style*="transparent"]):not(.edit-profile-cancel):not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body .babylon-tab.active:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .babylon-tab.active:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body .pf-btn.primary:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .pf-btn.primary:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .pf-actions .pf-btn.primary:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body .record-send-btn:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .record-send-btn:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body #textInputBar > button[type="submit"]:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body html:not([data-chat-theme]:not([data-chat-theme="babylon"])) #chatView .msg-bubble:not(.mine) .voice-play-btn:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body .sc-chips button.on:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .sc-chips button.on:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body .sx-seg button.on:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .sx-seg button.on:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body #notificationSettingsView .notification-toggle button.active:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body .cl-chip.active:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .cl-chip.active:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body .sp-publish:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .sp-publish:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body #storyManageModal .sm-save:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body #storyManageModal .sm-save:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body .gx-fab:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .gx-fab:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body button.gi-cam:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body button.gi-cam:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body .gx-photo:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .gx-photo:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body .hdr-story-count:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .hdr-story-count:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]),
+html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2) svg [fill]:not([fill="none"]),html body .app-container[data-app-theme="light"] #homeView .sb-item .sb-plus:not(#_w1):not(#_w2) svg[fill]:not([fill="none"]){fill:#fff!important}
+
+/* ===== شريط التحديد العلوي (بجانب ×) ===== */
+#multiSelectBar,#chatView #multiSelectBar,#chatView#chatView #multiSelectBar.multi-select-bar{display:none!important}
+.telegram-chat-header{position:relative}
+.msg-sel-top{display:none;position:absolute;inset:0;z-index:20;align-items:center;gap:8px;padding:8px 10px 6px;box-sizing:border-box}
+#chatView.msg-selecting .telegram-chat-header>:not(.msg-sel-top){visibility:hidden}
+#chatView.msg-selecting .msg-sel-top{display:flex}
+.msg-sel-top .msel-btn{flex:0 0 44px;width:44px;height:44px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--cr-card,#1e2a38);border:1px solid var(--cr-line,rgba(255,255,255,.08));color:var(--cr-ink,#f4f7fb);box-shadow:var(--cr-shadow,none);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s,background .15s}
+.msg-sel-top .msel-btn:active{transform:scale(.92)}
+.msg-sel-top .msel-btn svg{width:21px;height:21px;display:block;pointer-events:none}
+.msg-sel-top .msel-btn.msel-danger{color:#f0605d}
+.msg-sel-top .msel-btn.hidden{display:none}
+.msg-sel-top .msel-count{min-width:26px;margin-inline:2px 8px;font-size:19px;font-weight:800;color:var(--cr-ink,#f4f7fb);text-align:center}
+.app-container[data-app-theme="light"] .msg-sel-top .msel-btn{background:#fff;color:#3a4a5c;border-color:#dce4ee}
+.app-container[data-app-theme="light"] .msg-sel-top .msel-btn.msel-danger{color:#d23c39}
+.app-container[data-app-theme="light"] .msg-sel-top .msel-count{color:#16202b}
+</style>
+<script id="msg-sel-top-js">
+(function(){
+  var PIN='<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5M8 3h8l-1 6 3 3.5V14H6v-1.5L9 9z"/>';
+  function one(){ if(typeof selectedMessageIds==='undefined'||selectedMessageIds.size!==1) return null;
+    var id=Array.from(selectedMessageIds)[0], el=document.getElementById('message_'+id); return el?{id:id,el:el}:null; }
+  window.updateMsgSelTop=function(){
+    var n=(typeof selectedMessageIds!=='undefined')?selectedMessageIds.size:0;
+    var c=document.getElementById('mselCount'); if(c) c.textContent=String(n);
+    var s=one(), ed=document.getElementById('mselEdit'), pn=document.getElementById('mselPin');
+    var me=(typeof currentUser!=='undefined'&&currentUser)?currentUser.uid:null;
+    var canEdit=!!(s&&me&&s.el.dataset.senderId===me&&!s.el.querySelector('.custom-voice-card,.msg-image')&&String(s.el.dataset.messageText||'').trim());
+    if(ed) ed.classList.toggle('hidden',!canEdit);
+    var canPin=false,pinned=false;
+    try{ canPin=!!(s&&isGroupChat()&&gRight('pin')); if(canPin) pinned=((chatMetaCache[activeChatId].pins||[]).some(function(p){return p.id===s.id;})); }catch(e){}
+    if(pn){ pn.classList.toggle('hidden',!canPin); pn.innerHTML=PIN+(pinned?'<path d="m3 3 18 18"/>':'')+'</svg>'; pn.setAttribute('aria-label',pinned?'إلغاء التثبيت':'تثبيت'); }
+  };
+  function prep(s){ selectedMsgId=s.id; selectedMsgText=s.el.dataset.messageText||''; selectedMsgSender=s.el.dataset.senderId||null;
+    try{ selectedMsgIsAudio=!!s.el.querySelector('.custom-voice-card'); }catch(e){} }
+  window.mselEdit=function(){ var s=one(); if(!s) return; prep(s); clearMessageSelection(); actionEdit(); };
+  window.mselPin=async function(){ var s=one(); if(!s) return; prep(s); try{ await actionPinMsg(); }catch(e){} clearMessageSelection(); };
+})();
+</script>
 </body>
 </html>
 
