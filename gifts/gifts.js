@@ -212,8 +212,23 @@ async function doUpgrade(ov,uid,g){
 /* ---------- متجر الهدايا ---------- */
 let storeKind='pepe';
 function closeStore(){document.getElementById('giftStore')?.remove();clearInterval(window.__storeTimer);}
+function openStoreGrid(){
+  closeStore();
+  const ov=document.createElement('div');ov.id='giftStore';ov.className='gp-ov st-ov';uiRoot().appendChild(ov);
+  const kinds=Object.values(GIFT_KINDS);
+  ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="stBack" aria-label="رجوع">'+IC_BACK+'</button><div class="gx-title"><b>متجر الهدايا</b></div></div>'
+    +'<div class="sg-sub">اختر هدية لتشتريها</div>'
+    +'<div class="sg-grid">'+kinds.map(K=>'<div class="sg-card" data-k="'+K.key+'"><div class="sg-ribbon">محدودة</div><div class="sg-art"><img alt="" src="'+GIFTS_BASE+K.dir+'/thumbs/original.webp"></div><div class="sg-name">'+K.name+'</div><div class="sg-price">⭐ '+K.price+'</div></div>').join('')+'</div>';
+  ov.querySelector('#stBack').onclick=closeStore;
+  ov.querySelectorAll('.sg-card').forEach(c=>c.onclick=()=>openGiftStore(c.dataset.k));
+  /* نحدّث "نفدت" لكل نوع */
+  kinds.forEach(K=>db.collection(K.sales).get().then(s=>{
+    if(K.max-s.size<=0){const c=ov.querySelector('.sg-card[data-k="'+K.key+'"]');if(c){c.classList.add('out');c.querySelector('.sg-ribbon').textContent='نفدت';}}
+  }).catch(()=>{}));
+}
 async function openGiftStore(kind){
-  if(typeof kind==='string')storeKind=kind;
+  if(typeof kind!=='string')return openStoreGrid();
+  storeKind=kind;
   closeStore();
   const K=gk(storeKind);
   const ov=document.createElement('div');ov.id='giftStore';ov.className='gp-ov st-ov';uiRoot().appendChild(ov);
@@ -226,7 +241,7 @@ async function openGiftStore(kind){
     +gpRow('رصيدك','<b data-stars>'+starsLabel()+'</b> ⭐')
     +gpRow('الترقية','مجانية، نموذج وخلفية ورمز عشوائي')
     +'</div><button type="button" class="gp-cta" id="stBuy">شراء بـ '+K.price+' نجمة</button><div class="gp-note" id="stNote"></div></div>';
-  ov.querySelector('#stBack').onclick=closeStore;
+  ov.querySelector('#stBack').onclick=openStoreGrid;
   ov.querySelectorAll('.st-kinds button').forEach(b=>b.onclick=()=>{if(b.dataset.k!==storeKind)openGiftStore(b.dataset.k);});
   // عرض متنوع: يبدّل النموذج والخلفية والرمز كل كم ثانية
   const hero=ov.querySelector('#stHero');let i=0;
