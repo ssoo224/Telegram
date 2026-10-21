@@ -5237,26 +5237,34 @@ function renderTiles(grid, list, mine) {
     grid.appendChild(d);
   });
 }
+let storyBarRenderVersion = 0;
 function renderStoriesBar() {
   clearTimeout(barTimer);
+  const renderVersion = ++storyBarRenderVersion;
   barTimer = setTimeout(async () => {
     const bar = $('storiesBar');
     if (!bar || !currentUser) return;
-    const act = myStories.filter(isActive);
-    const me = currentUserData || {};
-    const mySeen = act.length && isSeenUser(currentUser.uid, Math.max(...act.map(s => s.createdAt)));
-    let html = `<div class="sb-item" onclick="myStoryClick(event)"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''} ${toneCls(me)}">${avInner(me)}${act.length ? '' : '<div class="sb-plus" aria-label="إضافة قصة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>'}</div><span>قصتي</span></div>`;
-    const us = await Promise.all(storyPartnerIds.map(id => fetchUser(id, true)));
-    const bm = await Promise.all(storyPartnerIds.map(id => myBlocks[id] ? true : blockedByThem(id)));
-    us.forEach((u, i) => {
-      if (!u || !(u.storyUntil > Date.now())) return;
-      if (bm[i]) return;
-      const id = storyPartnerIds[i]; u.id = id;
-      html += `<div class="sb-item" onclick="storyItemClick(event,'${id}')"><div class="avatar${ringCls(u)} ${toneCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
-    });
-    bar.innerHTML = html;
-    bar.classList.remove('hidden');
-  }, 350);
+    try {
+      const act = myStories.filter(isActive);
+      const me = currentUserData || {};
+      const mySeen = act.length && isSeenUser(currentUser.uid, Math.max(...act.map(s => s.createdAt)));
+      let html = `<div class="sb-item" onclick="myStoryClick(event)"><div class="avatar${act.length ? ' sring' + (mySeen ? ' seen' : '') : ''} ${toneCls(me)}">${avInner(me)}${act.length ? '' : '<div class="sb-plus" aria-label="إضافة قصة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>'}</div><span>قصتي</span></div>`;
+      const ids = storyPartnerIds.slice();
+      const us = await Promise.all(ids.map(id => fetchUser(id, true).catch(() => null)));
+      const bm = await Promise.all(ids.map(id => myBlocks[id] ? Promise.resolve(true) : Promise.resolve().then(() => blockedByThem(id)).catch(() => true)));
+      // Ignore stale asynchronous renders: only the newest request may update the bar.
+      if (renderVersion !== storyBarRenderVersion || bar !== $('storiesBar') || !currentUser) return;
+      us.forEach((u, i) => {
+        if (!u || !(u.storyUntil > Date.now()) || bm[i]) return;
+        const id = ids[i]; u.id = id;
+        html += `<div class="sb-item" onclick="storyItemClick(event,'${id}')"><div class="avatar${ringCls(u)} ${toneCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
+      });
+      bar.innerHTML = html;
+      bar.classList.remove('hidden');
+    } catch (err) {
+      console.warn('تعذر تحديث شريط القصص:', err);
+    }
+  }, 180);
 }
 let storyLaunchTimer = null;
 let storyLaunchClearTimer = null;
@@ -7745,9 +7753,9 @@ function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-ite
 .sb-handle.hidden{display:none!important}
 .app-container #homeView#homeView #storiesBar{transition:max-height .58s cubic-bezier(.22,1,.36,1),padding .48s cubic-bezier(.22,1,.36,1),opacity .35s ease;max-height:120px;will-change:max-height,opacity}
 .app-container #homeView#homeView #storiesBar .avatar,.app-container #homeView#homeView #storiesBar .sb-item span{transition:width .42s cubic-bezier(.22,1,.36,1),height .42s cubic-bezier(.22,1,.36,1),font-size .35s ease,opacity .3s ease,transform .42s cubic-bezier(.22,1,.36,1)}
-.app-container #homeView#homeView #storiesBar .sb-item{animation:storyItemEnter .48s cubic-bezier(.22,1,.36,1) both}
+.app-container #homeView#homeView #storiesBar .sb-item{animation:storyItemEnter .28s ease-out both;backface-visibility:hidden}
 .app-container #homeView#homeView #storiesBar .sb-item:nth-child(2){animation-delay:.035s}.app-container #homeView#homeView #storiesBar .sb-item:nth-child(3){animation-delay:.07s}.app-container #homeView#homeView #storiesBar .sb-item:nth-child(4){animation-delay:.105s}.app-container #homeView#homeView #storiesBar .sb-item:nth-child(n+5){animation-delay:.14s}
-@keyframes storyItemEnter{from{opacity:0;transform:translateY(7px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes storyItemEnter{from{opacity:0}to{opacity:1}}
 /* collapsed: 3 small stories + count */
 .app-container #homeView#homeView #storiesBar.collapsed{max-height:56px;padding:9px 16px!important;gap:16px!important;overflow:hidden!important;align-items:center;cursor:pointer}
 .app-container #homeView#homeView #storiesBar.collapsed .sb-item{width:auto;gap:0;flex:0 0 auto}
