@@ -5259,9 +5259,20 @@ function renderStoriesBar() {
   }, 350);
 }
 let storyLaunchTimer = null;
+let storyLaunchClearTimer = null;
 function clearStoryLaunchLoading() {
   if (storyLaunchTimer) { clearTimeout(storyLaunchTimer); storyLaunchTimer = null; }
+  if (storyLaunchClearTimer) { clearTimeout(storyLaunchClearTimer); storyLaunchClearTimer = null; }
   document.querySelectorAll('.story-launch-loading').forEach(el => el.classList.remove('story-launch-loading'));
+}
+function clearStoryLaunchLoadingAfterOpen() {
+  if (storyLaunchTimer) { clearTimeout(storyLaunchTimer); storyLaunchTimer = null; }
+  if (storyLaunchClearTimer) clearTimeout(storyLaunchClearTimer);
+  // اترك مؤشر التحميل ظاهراً ثانية كاملة بعد بدء فتح القصة.
+  storyLaunchClearTimer = setTimeout(() => {
+    storyLaunchClearTimer = null;
+    document.querySelectorAll('.story-launch-loading').forEach(el => el.classList.remove('story-launch-loading'));
+  }, 1000);
 }
 function launchStoryWithGlow(el, callback) {
   if (!el) { callback(); return; }
@@ -5337,7 +5348,7 @@ function startViewer(uid, list, i, mine) {
   viewer.classList.remove('story-opening');
   void viewer.offsetWidth;
   viewer.classList.add('story-opening');
-  clearStoryLaunchLoading();
+  clearStoryLaunchLoadingAfterOpen();
   fetchUser(uid).then(u => {
     if (!u) return;
     $('storyUserAvatar').innerHTML = avInner(u); setTone($('storyUserAvatar'), {id: uid, avatarTone: u.avatarTone});
@@ -8592,12 +8603,12 @@ function openMention(username){
 .avatar.sring.story-launch-loading::after {
   inset: -5px;
   padding: 3px;
-  background: conic-gradient(from 0deg, transparent 0deg 245deg, #b98710 270deg, #ffe9a0 305deg, #d4af37 332deg, transparent 350deg 360deg) !important;
+  background: conic-gradient(from 0deg, transparent 0deg 205deg, #b98710 225deg, #d4af37 255deg, #ffe9a0 285deg, #d4af37 320deg, transparent 340deg 360deg) !important;
   box-shadow: none !important;
   animation: storyGoldSpinner 2.15s linear infinite !important;
 }
 .avatar.sring.story-launch-loading.seen::after {
-  background: conic-gradient(from 0deg, transparent 0deg 245deg, #b98710 270deg, #ffe9a0 305deg, #d4af37 332deg, transparent 350deg 360deg) !important;
+  background: conic-gradient(from 0deg, transparent 0deg 205deg, #b98710 225deg, #d4af37 255deg, #ffe9a0 285deg, #d4af37 320deg, transparent 340deg 360deg) !important;
 }
 /* صورة الملف الشخصي الكبيرة تستخدم قوساً متحركاً داخل مساحة الإطار الموجودة */
 .avatar-story-ring.story-launch-loading::before {
@@ -8608,7 +8619,7 @@ function openMention(username){
   padding: 3px;
   pointer-events: none;
   z-index: 8;
-  background: conic-gradient(from 0deg, transparent 0deg 245deg, #b98710 270deg, #ffe9a0 305deg, #d4af37 332deg, transparent 350deg 360deg);
+  background: conic-gradient(from 0deg, transparent 0deg 205deg, #b98710 225deg, #d4af37 255deg, #ffe9a0 285deg, #d4af37 320deg, transparent 340deg 360deg);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
