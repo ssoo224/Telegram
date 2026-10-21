@@ -5258,17 +5258,16 @@ function renderStoriesBar() {
     bar.classList.remove('hidden');
   }, 350);
 }
+function clearStoryLaunchLoading() {
+  document.querySelectorAll('.story-launch-loading').forEach(el => el.classList.remove('story-launch-loading'));
+}
 function launchStoryWithGlow(el, callback) {
   if (!el) { callback(); return; }
-  // إظهار حلقة تحميل ذهبية دوّارة حول القصة قبل فتحها.
+  // يبدأ الدوران على إطار القصة نفسه، ويستمر حتى يظهر عارض القصة فعلياً.
   const ring = el.matches('.avatar, .avatar-story-ring') ? el : (el.querySelector('.avatar') || el);
-  ring.classList.remove('story-launch-loading');
-  void ring.offsetWidth; // إعادة تشغيل الحركة عند كل نقرة.
+  clearStoryLaunchLoading();
   ring.classList.add('story-launch-loading');
-  setTimeout(() => {
-    ring.classList.remove('story-launch-loading');
-    callback();
-  }, 680);
+  callback();
 }
 function storyItemClick(ev, uid) {
   if (ev) ev.stopPropagation();
@@ -5319,17 +5318,18 @@ function openStories(uid) {
   const mine = uid === currentUser.uid;
   const go = list => {
     const act = list.filter(isActive).reverse();
-    if (!act.length) return showToast('لا توجد قصص حالياً');
+    if (!act.length) { clearStoryLaunchLoading(); return showToast('لا توجد قصص حالياً'); }
     ensureSeen(); const seen = seenUsers[uid] || 0;
     let i = mine ? 0 : act.findIndex(s => s.createdAt > seen);
     startViewer(uid, act, i < 0 ? 0 : i, mine);
   };
-  mine ? go(myStories) : loadStories(uid).then(go);
+  mine ? go(myStories) : loadStories(uid).then(go).catch(() => { clearStoryLaunchLoading(); showToast('تعذر تحميل القصة، حاول مرة أخرى'); });
 }
 function startViewer(uid, list, i, mine) {
   if (!list.length) return;
   SV = { uid, list, i: Math.max(0, i), mine, paused: false, hold: false, t: 0, iv: null, react: null, views: [] };
   $('storyViewer').classList.remove('hidden');
+  clearStoryLaunchLoading();
   fetchUser(uid).then(u => {
     if (!u) return;
     $('storyUserAvatar').innerHTML = avInner(u); setTone($('storyUserAvatar'), {id: uid, avatarTone: u.avatarTone});
@@ -8574,32 +8574,35 @@ function openMention(username){
 @keyframes vpEq{from{height:3px}to{height:13px}}
 @media(prefers-reduced-motion:reduce){#vpBar,#vpBar .vp-eq i{animation:none}}
 
-/* حلقة تحميل ذهبية دوّارة حول القصة قبل فتحها */
-.avatar.story-launch-loading,
+/* دوران ذهبي على إطار القصة الأصلي نفسه، بلا حلقة خارجية إضافية */
+.avatar.sring.story-launch-loading,
 .avatar-story-ring.story-launch-loading {
-  position: relative;
+  position: relative !important;
   z-index: 3;
 }
-.avatar.story-launch-loading::before,
+.avatar.sring.story-launch-loading::after {
+  inset: -5px;
+  padding: 3px;
+  background: conic-gradient(from 0deg, #ffe9a0 0%, #c29d30 18%, #fff0ad 34%, #a87508 52%, #f4d56b 72%, #ffe9a0 100%) !important;
+  box-shadow: none;
+  animation: storyGoldSpinner 1.65s linear infinite;
+}
 .avatar-story-ring.story-launch-loading::before {
   content: '';
   position: absolute;
-  inset: -7px;
-  border: 3px solid rgba(194,157,48,.16);
+  inset: 0;
+  border: 3px solid transparent;
   border-top-color: #ffe28a;
   border-right-color: #c29d30;
-  border-bottom-color: rgba(194,157,48,.55);
-  border-left-color: transparent;
+  border-bottom-color: #e4c45b;
   border-radius: 50%;
   pointer-events: none;
   z-index: 8;
-  animation: storyGoldSpinner .62s linear infinite;
-  box-shadow: 0 0 5px rgba(228,196,91,.25);
+  animation: storyGoldSpinner 1.65s linear infinite;
 }
-.avatar-story-ring.story-launch-loading::before { inset: -5px; border-width: 4px; }
 @keyframes storyGoldSpinner { to { transform: rotate(360deg); } }
 @media(prefers-reduced-motion:reduce) {
-  .avatar.story-launch-loading::before,
+  .avatar.sring.story-launch-loading::after,
   .avatar-story-ring.story-launch-loading::before { animation:none!important; }
 }
 </style>
