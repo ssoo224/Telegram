@@ -5523,7 +5523,7 @@ function svHeartDown(ev){ if(ev){ev.preventDefault();if(ev.pointerId!==undefined
 function svHeartUp(ev){ if(ev&&ev.preventDefault)ev.preventDefault(); clearTimeout(svHeartTimer); if(!svHeartLong){svHeartTap();} }
 function svHeartCancel(){clearTimeout(svHeartTimer);}
 function svOpenReactPicker(){const p=$('svReactPicker'),f=$('svFoot');if(f)f.classList.add('heart-long-press');if(p)p.classList.remove('hidden');}
-function svHeartTap(){const p=$('svReactPicker');if(p&&!p.classList.contains('hidden'))return;svReact('❤️');}
+function svHeartTap(){const p=$('svReactPicker'),f=$('svFoot');if(p&&!p.classList.contains('hidden')){p.classList.add('hidden');if(f)f.classList.remove('heart-long-press');return;}if(!SV.react){svOpenReactPicker();return;}svReact('❤️');}
 function svReplyInputChanged(){const inp=$('svReplyInput'),btn=$('svReplySend'),heart=$('svHeartBtn');if(!inp||!btn||!heart)return;const typed=!!inp.value.trim();btn.classList.toggle('hidden',!typed);heart.classList.toggle('hidden',typed);if(typed){const p=$('svReactPicker');if(p)p.classList.add('hidden');}}
 function sendStoryEmoji(emoji){const me=currentUser&&currentUser.uid;if(!me||!SV.uid||SV.uid===me){showToast('لا يمكن إرسال رسالة إلى نفسك');return;}const chatId=[me,SV.uid].sort().join('__');db.collection('chats').doc(chatId).set({participants:[me,SV.uid],updatedAt:Date.now()},{merge:true}).then(()=>db.collection('chats').doc(chatId).collection('messages').add({senderId:me,text:emoji,storyReply:true,read:false,createdAt:Date.now()})).then(()=>{notifyPeer(chatId,'↩ تفاعل على قصتك: '+emoji);showToast('تم إرسال الإيموجي ✓');}).catch(()=>showToast('تعذر إرسال الإيموجي'));}
 function markReact() { document.querySelectorAll('.sv-reacts span').forEach(x => x.classList.toggle('on', x.dataset.e === SV.react || x.textContent.trim() === SV.react)); }
@@ -9220,6 +9220,11 @@ body.light #viewersModal .viewer-item {
 /* استثناء: إظهار منتقي الإيموجي عند الضغط المطول على القلب الفارغ */
 #storyViewer .sv-foot.heart-long-press .sv-react-picker:not(.hidden){display:flex!important}
 
+
+/* زر المشاهدات منفصل تماماً عن حقل الوصف، والوصف يختفي إذا كان فارغاً */
+#storyViewer .sv-cap.hidden{display:none!important}
+#storyViewer .sv-story-stats{bottom:calc(18px + env(safe-area-inset-bottom,0px))!important}
+#storyViewer .sv-cap{bottom:calc(72px + env(safe-area-inset-bottom,0px))!important}
 </style>
 <script id="babylon-requested-final-fixes-js">
 (function(){
@@ -9249,7 +9254,7 @@ body.light #viewersModal .viewer-item {
     if(!stats){stats=document.createElement('button');stats.type='button';stats.className='sv-story-stats';stats.setAttribute('aria-label','عرض المشاهدات والتفاعلات');stats.onclick=function(e){e.preventDefault();e.stopPropagation();openViewersList();};stats.innerHTML='<span class="sv-stats-label">المشاهدات </span><span id="svViews">0 | 0 ❤️</span>';stage.insertBefore(stats,foot);}
     if(stats.parentElement!==stage)stage.insertBefore(stats,foot);
     const count=views.querySelector('#svViews'),statsCount=stats.querySelector('#svViews');if(statsCount)statsCount.textContent=(count?count.textContent:'0 | 0 ❤️').replace(/^المشاهدات\s*/,'');
-    views.remove();cap.classList.remove('hidden');
+    views.remove();cap.classList.toggle('hidden',!(cap.textContent||'').trim());
   }
   top.querySelectorAll('.sv-own').forEach(el=>{if(el!==own)el.remove();});
   if(!own.querySelector('.sv-action-edit,.sv-action-pin,.sv-action-delete')){own.remove();return;}
