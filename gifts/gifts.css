@@ -65,13 +65,13 @@
 .sh-a.pos{color:#34c47a}.sh-a.neg{color:#f0605d}.sh-a.out{color:var(--cl-sub,#8798aa)}
 .sx-item .sx-val{margin-inline-start:auto;margin-inline-end:8px;color:var(--cl-sub,#6b7a8c);font-weight:700;font-size:14.5px}
 /* ===== كارت هدية النجوم (طابع بابلي: لازورد + ذهب) ===== */
-.gm-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;margin:12px auto;width:100%;direction:rtl}
-.gm-card{position:relative;width:min(76vw,272px);border-radius:22px;overflow:hidden;text-align:center;color:#fbefc6;
+.gm-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;margin:8px auto;width:100%;direction:rtl}
+.gm-card{position:relative;width:min(54vw,196px);border-radius:18px;overflow:hidden;text-align:center;color:#fbefc6;
   background:radial-gradient(120% 90% at 50% 18%,#1f4a9e 0%,#12306f 48%,#0a1b45 100%);
   border:1.5px solid #d9a93a;box-shadow:0 10px 28px rgba(5,14,40,.45),inset 0 0 0 4px rgba(10,27,69,.9),inset 0 0 0 5px rgba(217,169,58,.55)}
-.gm-frieze{height:11px;background:repeating-linear-gradient(90deg,#d9a93a 0 9px,#14398a 9px 13px,#f0d27a 13px 22px,#14398a 22px 26px);opacity:.95}
+.gm-frieze{height:7px;background:repeating-linear-gradient(90deg,#d9a93a 0 9px,#14398a 9px 13px,#f0d27a 13px 22px,#14398a 22px 26px);opacity:.95}
 .gm-frieze.bot{transform:scaleY(-1)}
-.gm-art{display:block;width:100%;height:auto;margin-top:2px}
+.gm-art{display:block;width:88%;height:auto;margin:2px auto 0}
 .gm-star{transform-origin:100px 76px;animation:gmPulse 3.4s ease-in-out infinite}
 .gm-glow{animation:gmGlow 3.4s ease-in-out infinite}
 .gm-sp{animation:gmTw 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
@@ -79,9 +79,9 @@
 @keyframes gmPulse{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.045) rotate(2deg)}}
 @keyframes gmGlow{0%,100%{opacity:.55}50%{opacity:1}}
 @keyframes gmTw{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:1;transform:scale(1.1)}}
-.gm-amt{font-size:23px;font-weight:800;color:#f6d977;margin-top:2px;letter-spacing:.3px;text-shadow:0 2px 8px rgba(0,0,0,.35)}
-.gm-sub{font-size:13.5px;line-height:1.7;padding:2px 22px 0;color:#e6dcc0;opacity:.92}
-.gm-btn{display:inline-block;margin:12px 0 15px;padding:8px 30px;border:0;border-radius:18px;font:inherit;font-weight:700;font-size:15px;cursor:pointer;
+.gm-amt{font-size:18px;font-weight:800;color:#f6d977;margin-top:2px;letter-spacing:.3px;text-shadow:0 2px 8px rgba(0,0,0,.35)}
+.gm-sub{font-size:11.5px;line-height:1.6;padding:1px 14px 0;color:#e6dcc0;opacity:.92}
+.gm-btn{display:inline-block;margin:8px 0 10px;padding:5px 22px;border:0;border-radius:14px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;
   color:#2a1d00;background:linear-gradient(135deg,#f6d977,#c9971c);box-shadow:0 4px 12px rgba(201,151,28,.35)}
 .gm-btn:active{transform:scale(.96)}
 @media (prefers-reduced-motion:reduce){.gm-star,.gm-glow,.gm-sp{animation:none}}
