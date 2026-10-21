@@ -5258,16 +5258,20 @@ function renderStoriesBar() {
     bar.classList.remove('hidden');
   }, 350);
 }
+let storyLaunchTimer = null;
 function clearStoryLaunchLoading() {
+  if (storyLaunchTimer) { clearTimeout(storyLaunchTimer); storyLaunchTimer = null; }
   document.querySelectorAll('.story-launch-loading').forEach(el => el.classList.remove('story-launch-loading'));
 }
 function launchStoryWithGlow(el, callback) {
   if (!el) { callback(); return; }
-  // يبدأ الدوران على إطار القصة نفسه، ويستمر حتى يظهر عارض القصة فعلياً.
+  // مؤشر تحميل ذهبي دوّار على إطار القصة نفسه، ويظل ظاهراً حتى فتح العارض.
   const ring = el.matches('.avatar, .avatar-story-ring') ? el : (el.querySelector('.avatar') || el);
+  if (ring.classList.contains('story-launch-loading')) return;
   clearStoryLaunchLoading();
   ring.classList.add('story-launch-loading');
-  callback();
+  // مهلة قصيرة حتى تُرى حركة التحميل حتى عند فتح قصة مخزنة محلياً.
+  storyLaunchTimer = setTimeout(() => { storyLaunchTimer = null; callback(); }, 220);
 }
 function storyItemClick(ev, uid) {
   if (ev) ev.stopPropagation();
@@ -5328,7 +5332,11 @@ function openStories(uid) {
 function startViewer(uid, list, i, mine) {
   if (!list.length) return;
   SV = { uid, list, i: Math.max(0, i), mine, paused: false, hold: false, t: 0, iv: null, react: null, views: [] };
-  $('storyViewer').classList.remove('hidden');
+  const viewer = $('storyViewer');
+  viewer.classList.remove('hidden');
+  viewer.classList.remove('story-opening');
+  void viewer.offsetWidth;
+  viewer.classList.add('story-opening');
   clearStoryLaunchLoading();
   fetchUser(uid).then(u => {
     if (!u) return;
@@ -5447,6 +5455,7 @@ function svUp(dir) { SV.hold = false; if (Date.now() - svDownAt < 250) storyNav(
 function svPause(b) { SV.paused = b; }
 function closeStoryViewer() {
   clearInterval(SV.iv);
+  $('storyViewer').classList.remove('story-opening');
   $('storyViewer').classList.add('hidden');
   $('storyImg').src = '';
   { const v = $('storyVid'); v.pause(); v.removeAttribute('src'); v.classList.add('hidden'); $('storyImg').classList.remove('hidden'); }
@@ -8574,7 +8583,7 @@ function openMention(username){
 @keyframes vpEq{from{height:3px}to{height:13px}}
 @media(prefers-reduced-motion:reduce){#vpBar,#vpBar .vp-eq i{animation:none}}
 
-/* دوران ذهبي على إطار القصة الأصلي نفسه، بلا حلقة خارجية إضافية */
+/* مؤشر تحميل ذهبي: قوس دوّار متحرك فوق إطار القصة نفسه، وليس إطاراً ذهبياً كاملاً */
 .avatar.sring.story-launch-loading,
 .avatar-story-ring.story-launch-loading {
   position: relative !important;
@@ -8583,27 +8592,38 @@ function openMention(username){
 .avatar.sring.story-launch-loading::after {
   inset: -5px;
   padding: 3px;
-  background: conic-gradient(from 0deg, #ffe9a0 0%, #c29d30 18%, #fff0ad 34%, #a87508 52%, #f4d56b 72%, #ffe9a0 100%) !important;
-  box-shadow: none;
-  animation: storyGoldSpinner 1.65s linear infinite;
+  background: conic-gradient(from 0deg, transparent 0deg 245deg, #b98710 270deg, #ffe9a0 305deg, #d4af37 332deg, transparent 350deg 360deg) !important;
+  box-shadow: none !important;
+  animation: storyGoldSpinner 2.15s linear infinite !important;
 }
+.avatar.sring.story-launch-loading.seen::after {
+  background: conic-gradient(from 0deg, transparent 0deg 245deg, #b98710 270deg, #ffe9a0 305deg, #d4af37 332deg, transparent 350deg 360deg) !important;
+}
+/* صورة الملف الشخصي الكبيرة تستخدم قوساً متحركاً داخل مساحة الإطار الموجودة */
 .avatar-story-ring.story-launch-loading::before {
   content: '';
   position: absolute;
-  inset: 0;
-  border: 3px solid transparent;
-  border-top-color: #ffe28a;
-  border-right-color: #c29d30;
-  border-bottom-color: #e4c45b;
+  inset: 1px;
   border-radius: 50%;
+  padding: 3px;
   pointer-events: none;
   z-index: 8;
-  animation: storyGoldSpinner 1.65s linear infinite;
+  background: conic-gradient(from 0deg, transparent 0deg 245deg, #b98710 270deg, #ffe9a0 305deg, #d4af37 332deg, transparent 350deg 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: storyGoldSpinner 2.15s linear infinite;
 }
 @keyframes storyGoldSpinner { to { transform: rotate(360deg); } }
+/* فتح القصّة كنافذة منبثقة بطيئة وناعمة */
+#storyViewer.story-opening { animation: storyBackdropIn .62s ease both; }
+#storyViewer.story-opening .sv-stage { animation: storyPopupIn .72s cubic-bezier(.18,.78,.22,1) both; transform-origin: center center; }
+@keyframes storyBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes storyPopupIn { from { opacity: .35; transform: scale(.88); } to { opacity: 1; transform: scale(1); } }
 @media(prefers-reduced-motion:reduce) {
   .avatar.sring.story-launch-loading::after,
   .avatar-story-ring.story-launch-loading::before { animation:none!important; }
+  #storyViewer.story-opening, #storyViewer.story-opening .sv-stage { animation-duration:.01ms!important; }
 }
 </style>
 <script id="babylon-voice-minibar-js">
