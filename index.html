@@ -5042,7 +5042,26 @@ function isActive(s) { return s.expiresAt > Date.now(); }
 function ago(ts) { const m = Math.floor((Date.now() - ts) / 60000); return m < 1 ? 'الآن' : m < 60 ? `قبل ${m} د` : m < 1440 ? `قبل ${Math.floor(m / 60)} س` : `قبل ${Math.floor(m / 1440)} يوم`; }
 function leftTxt(ts) { const m = Math.max(1, Math.floor((ts - Date.now()) / 60000)); return m < 60 ? `${m} د` : `${Math.floor(m / 60)} س`; }
 function isSeenUser(uid, latest) { ensureSeen(); return !!latest && (seenUsers[uid] || 0) >= latest; }
-function markSeen(uid, ts) { const k = ensureSeen(); if ((seenUsers[uid] || 0) < ts) { seenUsers[uid] = ts; try { localStorage.setItem(k, JSON.stringify(seenUsers)); } catch (e) {} } }
+function markSeen(uid, ts) {
+  const k = ensureSeen();
+  if ((seenUsers[uid] || 0) < ts) {
+    seenUsers[uid] = ts;
+    try { localStorage.setItem(k, JSON.stringify(seenUsers)); } catch (e) {}
+  }
+  // تحديث إطارات القصص فور مشاهدتها في شريط القصص وقائمة المحادثات.
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.avatar.sring').forEach(el => {
+      const handler = el.getAttribute('onclick') || '';
+      const item = el.closest('.sb-item');
+      const belongsToUser = handler.includes(uid) || (item && (item.getAttribute('onclick') || '').includes(uid));
+      if (belongsToUser) el.classList.add('seen');
+    });
+    const ownRing = document.querySelector('#storiesBar .sb-item:first-child .avatar.sring');
+    if (uid === (currentUser && currentUser.uid) && ownRing) ownRing.classList.add('seen');
+    const otherRing = document.getElementById('otherStoryRing');
+    if (otherRing && typeof otherStoryUid !== 'undefined' && otherStoryUid === uid) otherRing.classList.add('seen');
+  });
+}
 function ringCls(u) {
   if (!u || !(u.storyUntil > Date.now())) return '';
   return ' sring' + (isSeenUser(u.id || '', u.storyAt || 0) ? ' seen' : '');
@@ -7682,8 +7701,11 @@ function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-ite
 .app-container #homeView#homeView .cl-chip{font-weight:800!important}
 .sb-handle{display:flex;align-items:center;justify-content:center;width:100%;height:22px;border:0;background:transparent;color:var(--cl-sub);cursor:pointer;padding:0;margin:-6px 0 2px;-webkit-tap-highlight-color:transparent;flex-shrink:0}
 .sb-handle.hidden{display:none!important}
-.app-container #homeView#homeView #storiesBar{transition:max-height .32s cubic-bezier(.2,.8,.2,1),padding .32s ease;max-height:120px}
-.app-container #homeView#homeView #storiesBar .avatar,.app-container #homeView#homeView #storiesBar .sb-item span{transition:width .28s ease,height .28s ease,font-size .28s ease,opacity .2s ease}
+.app-container #homeView#homeView #storiesBar{transition:max-height .58s cubic-bezier(.22,1,.36,1),padding .48s cubic-bezier(.22,1,.36,1),opacity .35s ease;max-height:120px;will-change:max-height,opacity}
+.app-container #homeView#homeView #storiesBar .avatar,.app-container #homeView#homeView #storiesBar .sb-item span{transition:width .42s cubic-bezier(.22,1,.36,1),height .42s cubic-bezier(.22,1,.36,1),font-size .35s ease,opacity .3s ease,transform .42s cubic-bezier(.22,1,.36,1)}
+.app-container #homeView#homeView #storiesBar .sb-item{animation:storyItemEnter .48s cubic-bezier(.22,1,.36,1) both}
+.app-container #homeView#homeView #storiesBar .sb-item:nth-child(2){animation-delay:.035s}.app-container #homeView#homeView #storiesBar .sb-item:nth-child(3){animation-delay:.07s}.app-container #homeView#homeView #storiesBar .sb-item:nth-child(4){animation-delay:.105s}.app-container #homeView#homeView #storiesBar .sb-item:nth-child(n+5){animation-delay:.14s}
+@keyframes storyItemEnter{from{opacity:0;transform:translateY(7px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 /* collapsed: 3 small stories + count */
 .app-container #homeView#homeView #storiesBar.collapsed{max-height:56px;padding:9px 16px!important;gap:16px!important;overflow:hidden!important;align-items:center;cursor:pointer}
 .app-container #homeView#homeView #storiesBar.collapsed .sb-item{width:auto;gap:0;flex:0 0 auto}
@@ -7692,7 +7714,7 @@ function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-ite
 .app-container #homeView#homeView #storiesBar.collapsed .sb-item .avatar{width:34px!important;height:34px!important;font-size:14px!important}
 .app-container #homeView#homeView #storiesBar.collapsed .avatar.sring::after{inset:-3px;padding:2px}
 .app-container #homeView#homeView #storiesBar.collapsed::after{content:attr(data-label);margin-inline-start:auto;font-size:13px;font-weight:800;color:var(--cl-sub);background:var(--cl-chip);padding:6px 12px;border-radius:14px;white-space:nowrap}
-@media(prefers-reduced-motion:reduce){.app-container #homeView#homeView #storiesBar,.app-container #homeView#homeView #storiesBar .avatar{transition:none}}
+@media(prefers-reduced-motion:reduce){.app-container #homeView#homeView #storiesBar,.app-container #homeView#homeView #storiesBar .avatar{transition:none;animation:none}.app-container #homeView#homeView #storiesBar .sb-item{animation:none}}
 </style>
 <script id="babylon-stories-collapse-js">
 (function(){
