@@ -86,3 +86,19 @@
   color:#2a1d00;background:linear-gradient(135deg,#f6d977,#c9971c);box-shadow:0 4px 12px rgba(201,151,28,.35)}
 .gm-btn:active{transform:scale(.96)}
 @media (prefers-reduced-motion:reduce){.gm-star,.gm-glow,.gm-sp{animation:none}}
+
+/* ===== إصلاح: عناصر الصفحة الكاملة كانت تنضغط (flex-shrink) فتختفي التبويبات ===== */
+.gp-ov>*{flex-shrink:0}
+.sh-tabs,.sh-bal,.gx-top{flex-shrink:0}
+/* ===== شبكة المتجر (مثل تليجرام) ===== */
+.sg-sub{padding:0 18px 4px;color:var(--cl-sub,#8798aa);font-size:13.5px}
+.sg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px 14px 30px}
+.sg-card{position:relative;border-radius:20px;background:var(--cl-card,#17212b);padding:16px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;overflow:hidden;transition:transform .12s}
+.sg-card:active{transform:scale(.96)}
+.sg-art{width:74%;aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+.sg-art img{width:100%;height:100%;object-fit:contain;display:block}
+.sg-name{font-size:12.5px;font-weight:600;color:var(--cl-sub,#8798aa);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px}
+.sg-price{display:flex;align-items:center;gap:5px;background:rgba(228,196,91,.14);color:var(--cl-gold,#e4c45b);font-weight:800;font-size:14.5px;padding:4px 13px;border-radius:14px}
+.sg-ribbon{position:absolute;top:9px;inset-inline-end:-26px;width:100px;transform:rotate(45deg);background:#2fb86a;color:#fff;font-size:10px;font-weight:700;text-align:center;padding:2px 0}
+.sg-card.out{opacity:.55}
+.sg-card.out .sg-ribbon{background:#8a8f98}
