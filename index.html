@@ -9225,6 +9225,10 @@ body.light #viewersModal .viewer-item {
 #storyViewer .sv-cap.hidden{display:none!important}
 #storyViewer .sv-story-stats{bottom:calc(18px + env(safe-area-inset-bottom,0px))!important}
 #storyViewer .sv-cap{bottom:calc(72px + env(safe-area-inset-bottom,0px))!important}
+
+/* الأيقونات بجانب زر الإغلاق وليس بجانب الاسم والصورة */
+#storyViewer .sv-top .story-user-info{margin-inline-end:auto!important}
+#storyViewer .sv-top .sv-own{flex:0 0 auto!important;justify-content:flex-end!important;margin:0!important}
 </style>
 <script id="babylon-requested-final-fixes-js">
 (function(){
@@ -9251,9 +9255,9 @@ body.light #viewersModal .viewer-item {
   let views=own.querySelector('.sv-action-views');
   let stats=stage.querySelector('.sv-story-stats');
   if(views){
-    if(!stats){stats=document.createElement('button');stats.type='button';stats.className='sv-story-stats';stats.setAttribute('aria-label','عرض المشاهدات والتفاعلات');stats.onclick=function(e){e.preventDefault();e.stopPropagation();openViewersList();};stats.innerHTML='<span class="sv-stats-label">المشاهدات </span><span id="svViews">0 | 0 ❤️</span>';stage.insertBefore(stats,foot);}
+    if(!stats){stats=document.createElement('button');stats.type='button';stats.className='sv-story-stats';stats.setAttribute('aria-label','عرض المشاهدات والتفاعلات');stats.onclick=function(e){e.preventDefault();e.stopPropagation();openViewersList();};stats.innerHTML='<span id="svViews">المشاهدات 0 | 0 ❤️</span>';stage.insertBefore(stats,foot);}
     if(stats.parentElement!==stage)stage.insertBefore(stats,foot);
-    const count=views.querySelector('#svViews'),statsCount=stats.querySelector('#svViews');if(statsCount)statsCount.textContent=(count?count.textContent:'0 | 0 ❤️').replace(/^المشاهدات\s*/,'');
+    const count=views.querySelector('#svViews'),statsCount=stats.querySelector('#svViews');if(statsCount)statsCount.textContent=(count?count.textContent:'المشاهدات 0 | 0 ❤️');
     views.remove();cap.classList.toggle('hidden',!(cap.textContent||'').trim());
   }
   top.querySelectorAll('.sv-own').forEach(el=>{if(el!==own)el.remove();});
