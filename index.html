@@ -7508,6 +7508,17 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 @media (prefers-reduced-motion: reduce) { .msg-bubble.voice-pop, .msg-bubble.pin-flash { animation:none !important; } .msg-bubble.pin-flash::after{animation:none!important;opacity:1} }
 </style>
 
+<style id="babylon-slim-reply-round-rec">
+#chatView .reply-preview-bar, .reply-preview-bar { gap:8px !important; padding:4px 10px 3px !important; }
+.reply-preview-content { padding:3px 9px !important; border-radius:6px 0 0 6px !important; }
+.reply-preview-label { margin-bottom:0 !important; font-size:10px !important; gap:4px !important; line-height:1.2 !important; }
+.reply-preview-label svg { width:12px !important; height:12px !important; }
+.reply-preview-message { font-size:12px !important; line-height:1.3 !important; }
+.reply-preview-cancel { width:26px !important; height:26px !important; flex:0 0 26px !important; }
+.reply-preview-cancel svg { width:14px !important; height:14px !important; }
+.recording-bar { border-radius:18px !important; margin:6px 10px !important; border:1px solid var(--babylon-border,rgba(148,163,184,.2)) !important; }
+</style>
+
 <script id="babylon-voice-pop">
 (function(){
   var seen=new Set();
