@@ -4172,29 +4172,9 @@ function deleteSelectedMessageForMe() {
   closeMessageDeleteOptions();
   showToast('تم إخفاء الرسالة لديك فقط');
 }
-function appConfirmDialog(message, title='تأكيد العملية', dangerLabel='متابعة') {
-  return new Promise(resolve => {
-    const root = (typeof uiRoot === 'function' && uiRoot()) || document.body;
-    const overlay = document.createElement('div');
-    overlay.className = 'babylon-confirm-overlay';
-    overlay.innerHTML = `<div class="babylon-confirm-card" role="dialog" aria-modal="true" aria-label="${title.replace(/[<>"&]/g,'')}" dir="rtl">
-      <div class="babylon-confirm-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01"/><path d="M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3l-7.5-13.1a2 2 0 0 0-3.4 0Z"/></svg></div>
-      <h3>${title}</h3><p>${message}</p><div class="babylon-confirm-actions"><button type="button" class="babylon-confirm-cancel">إلغاء</button><button type="button" class="babylon-confirm-ok">${dangerLabel}</button></div></div>`;
-    const finish = value => { overlay.remove(); resolve(value); };
-    overlay.addEventListener('click', e => { if (e.target === overlay) finish(false); });
-    overlay.querySelector('.babylon-confirm-cancel').onclick = () => finish(false);
-    overlay.querySelector('.babylon-confirm-ok').onclick = () => finish(true);
-    const onKey = e => { if(e.key === 'Escape' && overlay.isConnected){ document.removeEventListener('keydown', onKey); finish(false); } };
-    document.addEventListener('keydown', onKey);
-    overlay.querySelector('.babylon-confirm-cancel').addEventListener('click',()=>document.removeEventListener('keydown',onKey),{once:true});
-    overlay.querySelector('.babylon-confirm-ok').addEventListener('click',()=>document.removeEventListener('keydown',onKey),{once:true});
-    root.appendChild(overlay);
-  });
-}
-
 async function deleteSelectedMessageForEveryone() {
   if (!selectedMsgId || !activeChatId || !db) return showToast('تعذر تحديد الرسالة أو الاتصال');
-  if (!(await appConfirmDialog('سيتم حذف الرسالة لدى الجميع إذا سمحت صلاحيات قاعدة البيانات. هل تريد المتابعة؟', 'حذف الرسالة لدى الجميع', 'حذف الرسالة'))) return;
+  if (!confirm('سيتم حذف الرسالة لدى الجميع إذا سمحت صلاحيات قاعدة البيانات. هل تريد المتابعة؟')) return;
   const id = selectedMsgId;
   const button = document.querySelector('#messageDeleteModal button.danger');
   if (button) { button.disabled = true; button.textContent = 'جارٍ الحذف…'; }
@@ -7162,21 +7142,6 @@ document.addEventListener('click',function(e){const menu=document.getElementById
   <div id="avatarGalleryCaption" class="ag-caption">اسحب لليسار لعرض الصور السابقة</div><div id="avatarGalleryDots" class="ag-dots"></div>
 </div>
 
-
-<style id="babylon-confirm-dialog-style">
-.babylon-confirm-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(3,7,13,.68);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);animation:bcFadeIn .16s ease-out}
-.babylon-confirm-card{box-sizing:border-box;width:min(100%,360px);padding:22px 20px 18px;border:1px solid rgba(255,255,255,.1);border-radius:22px;background:linear-gradient(155deg,#1b202a,#10141c);color:#f5f6f8;box-shadow:0 22px 70px rgba(0,0,0,.42);text-align:center;animation:bcPopIn .2s ease-out}
-.babylon-confirm-icon{width:48px;height:48px;margin:0 auto 12px;display:grid;place-items:center;border-radius:16px;color:#ff7777;background:rgba(255,85,85,.12);border:1px solid rgba(255,100,100,.22)}
-.babylon-confirm-card h3{margin:0 0 9px;font-size:18px;font-weight:800;color:#f4d58a}
-.babylon-confirm-card p{margin:0;color:#c0c6d0;font-size:14px;line-height:1.7;overflow-wrap:anywhere}
-.babylon-confirm-actions{display:flex;gap:10px;margin-top:22px}
-.babylon-confirm-actions button{flex:1;min-height:43px;border-radius:13px;border:1px solid rgba(255,255,255,.12);font:inherit;font-size:14px;font-weight:750;cursor:pointer}
-.babylon-confirm-cancel{background:rgba(255,255,255,.06);color:#e6e9ef}
-.babylon-confirm-ok{background:rgba(210,53,62,.16);border-color:rgba(255,100,110,.35)!important;color:#ff777d}
-.babylon-confirm-actions button:active{transform:scale(.98)}
-@keyframes bcFadeIn{from{opacity:0}to{opacity:1}}@keyframes bcPopIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-.app-container[data-app-theme="light"] .babylon-confirm-card{background:#fff;color:#17212b;border-color:#e2e7ef}.app-container[data-app-theme="light"] .babylon-confirm-card p{color:#667085}.app-container[data-app-theme="light"] .babylon-confirm-cancel{background:#f5f7fa;color:#17212b;border-color:#e2e7ef}
-</style>
 </body>
 </html>
 
@@ -8634,7 +8599,7 @@ function openMention(username){
     var ids=Array.from(selectedMessageIds);
     if(!ids.length||!activeChatId||!db)return;
     if(!canDeleteForAll(ids))return showToast('يمكنك الحذف لدى الكل لرسائلك فقط');
-    if(!(await appConfirmDialog('سيتم حذف '+ids.length+' رسالة لدى الجميع. هل تريد المتابعة؟','حذف الرسائل لدى الجميع','حذف الرسائل')))return;
+    if(!confirm('سيتم حذف '+ids.length+' رسالة لدى الجميع. هل تريد المتابعة؟'))return;
     try{
       var col=db.collection('chats').doc(activeChatId).collection('messages'),batch=db.batch();
       ids.forEach(function(id){batch.delete(col.doc(id));});
