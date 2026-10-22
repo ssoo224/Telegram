@@ -3901,7 +3901,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         
         let checkHtml = "";
         if (isMine) {
-          checkHtml = (grp ? groupReadAll(m) : m.read) ? `<span class="check-mark read">✓✓</span>` : `<span class="check-mark">✓</span>`;
+          checkHtml = (grp ? groupReadAll(m) : m.read) ? `<span class="check-mark read">${TICK_SVG.read}</span>` : `<span class="check-mark">${TICK_SVG.sent}</span>`;
         }
 
         let rawTimeStr = new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
@@ -4936,6 +4936,12 @@ function openImageViewer(src) {
   document.body.appendChild(v);
 }
 
+const TICK_SVG = {
+  sent: '<svg class="tick-svg tick-s" viewBox="0 0 16 12" aria-label="تم الإرسال" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5 5.8 10.2 14 1.8"/></svg>',
+  read: '<svg class="tick-svg tick-d" viewBox="0 0 20 12" aria-label="تمت القراءة" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6.5 5.3 10.2 13 1.8"/><path d="M9 9.2 10.2 10.2 18.4 1.8"/></svg>',
+  wait: '<svg class="tick-svg tick-w" viewBox="0 0 16 16" aria-label="قيد الإرسال" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.3"/><path d="M8 4.4V8l2.4 1.6"/></svg>'
+};
+
 function sendChatVideo(file) {
   const chatId = activeChatId;
   if (!chatId) return;
@@ -4945,7 +4951,7 @@ function sendChatVideo(file) {
   const ph = document.createElement('div');
   ph.id = 'chatVideoPending'; ph.className = 'msg-bubble mine video-msg video-pending';
   const poster = (() => { try { return URL.createObjectURL(file); } catch (e) { return ''; } })();
-  ph.innerHTML = '<div class="msg-video"><video src="' + poster + '#t=0.1" preload="metadata" muted playsinline></video><div class="vp-cover"><div class="vp-logo"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 54h48M12 48h40M16 48V28h32v20M12 24h40L32 10 12 24Zm8 4v20m8-20v20m8-20v20m8-20v20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="vp-pct">0%</div></div></div><div class="msg-meta"><span>' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) + '</span> <span class="check-mark">🕓</span></div>';
+  ph.innerHTML = '<div class="msg-video"><video src="' + poster + '#t=0.1" preload="metadata" muted playsinline></video><div class="vp-cover"><div class="vp-logo"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 54h48M12 48h40M16 48V28h32v20M12 24h40L32 10 12 24Zm8 4v20m8-20v20m8-20v20m8-20v20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="vp-pct">0%</div></div></div><div class="msg-meta"><span>' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) + '</span> <span class="check-mark">' + TICK_SVG.wait + '</span></div>';
   const place = () => { if (area && !ph.isConnected) { area.appendChild(ph); area.scrollTop = area.scrollHeight; } };
   place();
   const fin = () => { ph.remove(); if (poster) setTimeout(() => URL.revokeObjectURL(poster), 3000); };
@@ -6534,7 +6540,7 @@ function refreshGroupTicks(){
   document.querySelectorAll('#messagesArea .msg-bubble.mine[data-created]').forEach(b=>{
     const c=b.querySelector('.check-mark');if(!c)return;
     const all=groupReadAll({createdAt:Number(b.dataset.created)},meta);
-    c.className='check-mark'+(all?' read':'');c.textContent=all?'✓✓':'✓';
+    c.className='check-mark'+(all?' read':'');c.innerHTML=all?TICK_SVG.read:TICK_SVG.sent;
   });
 }
 function finalizeGroupRows(box){
@@ -7908,10 +7914,10 @@ async function avatarDownload(){
 }
 #chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta{
   position:absolute !important;bottom:7px;left:8px;right:auto;margin:0;padding:2px 7px;border-radius:10px;
-  background:rgba(0,0,0,.22);color:rgba(255,255,255,.78) !important;-webkit-text-fill-color:rgba(255,255,255,.78) !important;opacity:1 !important;
+  background:rgba(0,0,0,.28);color:#fff !important;-webkit-text-fill-color:#fff !important;opacity:1 !important;
   font-size:10.5px;line-height:1.4;
 }
-#chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta .check-mark{color:rgba(255,255,255,.7) !important;-webkit-text-fill-color:currentColor !important}
+#chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta .check-mark{color:#fff !important;-webkit-text-fill-color:currentColor !important}
 #chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta .check-mark.read{color:var(--tick-read,#4ade80) !important}
 #chatView #messagesArea .msg-bubble.video-msg .reactions-row{align-self:flex-start;margin-top:4px}
 
@@ -7923,6 +7929,10 @@ async function avatarDownload(){
 #chatView #messagesArea .msg-bubble.video-pending .vp-logo{width:60px;height:60px;display:flex;align-items:center;justify-content:center;color:#fff;background:none;border:0;box-shadow:none;animation:splashBreath 1.6s ease-in-out infinite}
 #chatView #messagesArea .msg-bubble.video-pending .vp-logo svg{width:100%;height:100%;filter:none}
 #chatView #messagesArea .msg-bubble.video-pending .vp-pct{color:#fff;font-size:12px;font-weight:800;line-height:1}
+
+.check-mark{display:inline-flex;align-items:center;line-height:0}
+.check-mark .tick-svg{display:block;height:11px;width:auto}
+.check-mark .tick-s{width:14px}.check-mark .tick-d{width:19px}.check-mark .tick-w{width:11px;height:11px}
 </style>
 </body>
 </html>
@@ -8605,7 +8615,7 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
     if(!n||n.nodeType!==1)return;
     var list=n.matches&&n.matches('.msg-bubble')?[n]:(n.querySelectorAll?n.querySelectorAll('.msg-bubble'):[]);
     Array.prototype.forEach.call(list,function(b){
-      if(!b.id||seen.has(b.id)||!b.querySelector('.custom-voice-card'))return;
+      if(!b.id||seen.has(b.id)||b.classList.contains('video-pending')||!b.querySelector('.custom-voice-card,.msg-video,.msg-image'))return;
       seen.add(b.id);
       var t=Number(b.dataset.created)||0;
       if(Date.now()-t>6000)return;
