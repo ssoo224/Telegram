@@ -4945,15 +4945,17 @@ function openImageViewer(src) {
   im.style.cssText = 'max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:8px;transform:translate(0px,0px) scale(1);transform-origin:center center;will-change:transform;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;touch-action:none;cursor:zoom-in;';
   v.appendChild(im);
   document.body.appendChild(v);
+  window.__babylonMediaViewerOpen = true;
 
   // اجعل زر الرجوع في الهاتف يغلق عارض الصورة أولاً
   let viewerClosed = false, viewerHistoryEntry = false;
   const closeImageViewer = (fromBack = false) => {
     if (viewerClosed) return;
     viewerClosed = true;
+    window.__babylonMediaViewerOpen = false;
     window.removeEventListener('popstate', onImageViewerBack);
     v.remove();
-    if (viewerHistoryEntry && !fromBack) { viewerHistoryEntry = false; history.back(); }
+    if (viewerHistoryEntry && !fromBack) { viewerHistoryEntry = false; window.__babylonIgnoreNextBack = true; history.back(); }
   };
   const onImageViewerBack = () => { viewerHistoryEntry = false; closeImageViewer(true); };
   try { history.pushState({ babylonImageViewer: true }, ''); viewerHistoryEntry = true; window.addEventListener('popstate', onImageViewerBack); } catch (_) {}
@@ -4962,35 +4964,21 @@ function openImageViewer(src) {
   const pointers = new Map();
   const starts = new Map();
   let startDist = 0, startScale = 1, startX = 0, startY = 0, startTx = 0, startTy = 0;
-  let gestureMoved = false, multiTouch = false, lastTap = 0, lastTapX = 0, lastTapY = 0;
+  let gestureMoved = false, multiTouch = false;
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
   const render = () => {
     im.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
     im.style.cursor = scale > 1 ? 'grab' : 'zoom-in';
   };
   const reset = () => { scale = 1; tx = 0; ty = 0; render(); };
-  const toggleZoom = (x, y) => {
-    if (scale > 1) reset();
-    else {
-      scale = 2.5;
-      tx = (window.innerWidth / 2 - x) * 0.7;
-      ty = (window.innerHeight / 2 - y) * 0.7;
-      render();
-    }
-  };
   v.addEventListener('click', e => { if (e.target === v) closeImageViewer(); });
-  im.addEventListener('dblclick', e => {
-    e.preventDefault(); e.stopPropagation();
-    toggleZoom(e.clientX, e.clientY);
-    lastTap = 0;
-  });
   im.addEventListener('pointerdown', e => {
     e.preventDefault();
     try { im.setPointerCapture(e.pointerId); } catch (_) {}
     pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
     starts.set(e.pointerId, {x:e.clientX, y:e.clientY});
     gestureMoved = false;
-    if (pointers.size > 1) { multiTouch = true; lastTap = 0; }
+    if (pointers.size > 1) { multiTouch = true; }
     if (pointers.size === 1) {
       startX = e.clientX; startY = e.clientY; startTx = tx; startTy = ty;
     } else if (pointers.size === 2) {
@@ -5023,15 +5011,6 @@ function openImageViewer(src) {
     const wasSingle = pointers.size === 1;
     pointers.delete(e.pointerId); starts.delete(e.pointerId);
     if (pointers.size < 2) startDist = 0;
-    if (wasSingle && (e.pointerType === 'touch' || e.pointerType === 'pen') && !multiTouch && moved < 12 && !gestureMoved) {
-      const now = Date.now();
-      if (lastTap && now-lastTap < 420 && Math.hypot(e.clientX-lastTapX, e.clientY-lastTapY) < 36) {
-        toggleZoom(e.clientX, e.clientY);
-        lastTap = 0;
-      } else {
-        lastTap = now; lastTapX = e.clientX; lastTapY = e.clientY;
-      }
-    }
     if (pointers.size === 0) multiTouch = false;
   };
   im.addEventListener('pointerup', endPointer);
@@ -5095,13 +5074,15 @@ function openVideoViewer(src) {
   x.textContent = '✕'; x.setAttribute('aria-label', 'إغلاق');
   x.style.cssText = 'position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:20px;cursor:pointer;z-index:2;';
   let viewerClosed = false, viewerHistoryEntry = false;
+  window.__babylonMediaViewerOpen = true;
   const close = (fromBack = false) => {
     if (viewerClosed) return;
     viewerClosed = true;
+    window.__babylonMediaViewerOpen = false;
     window.removeEventListener('popstate', onVideoViewerBack);
     try { vid.pause(); vid.removeAttribute('src'); vid.load(); } catch (e) {}
     v.remove();
-    if (viewerHistoryEntry && !fromBack) { viewerHistoryEntry = false; history.back(); }
+    if (viewerHistoryEntry && !fromBack) { viewerHistoryEntry = false; window.__babylonIgnoreNextBack = true; history.back(); }
   };
   const onVideoViewerBack = () => { viewerHistoryEntry = false; close(true); };
   try { history.pushState({ babylonVideoViewer: true }, ''); viewerHistoryEntry = true; window.addEventListener('popstate', onVideoViewerBack); } catch (_) {}
@@ -8769,6 +8750,10 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
   };
   const currentView = () => ['chatView','editProfileView','chatSettingsView','notificationSettingsView','settingsView','otherUserProfileView','profileView','searchView','homeView'].find(id=>visible(id));
   window.addEventListener('popstate', function(){
+    // Ignore the history step used internally when a media viewer is closed manually.
+    if (window.__babylonIgnoreNextBack) { window.__babylonIgnoreNextBack = false; return; }
+    // Media viewers own the Back action; do not navigate away from the chat on the same event.
+    if (window.__babylonMediaViewerOpen) return;
     if (closeTopLayer()) { guard(); return; }
     const view=currentView();
     if (view==='chatView') { if(typeof goHome==='function') goHome(); else if(typeof showView==='function') showView('homeView'); guard(); return; }
