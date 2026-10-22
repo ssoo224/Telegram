@@ -5006,6 +5006,21 @@ function createMediaViewerToolbar(src, type, messageId, isMine, closeViewer) {
   makeOption('تنزيل '+(type==='video'?'الفيديو':'الصورة'),'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M4 17v3h16v-3"/></svg>',async()=>{
     const isVideo=type==='video';
     const baseName=(isVideo?'babylon-video-':'babylon-image-')+Date.now();
+    // داخل تطبيق Android استخدم الحفظ الأصلي إلى معرض الهاتف عبر MediaStore.
+    if (window.BabylonAndroid && typeof window.BabylonAndroid.saveMedia === 'function') {
+      let ext = isVideo ? 'mp4' : 'jpg';
+      const sourceLower = String(src || '').toLowerCase();
+      if (sourceLower.startsWith('data:image/png')) ext='png';
+      else if (sourceLower.startsWith('data:image/gif')) ext='gif';
+      else if (sourceLower.startsWith('data:video/webm') || /\.webm(?:[?#]|$)/.test(sourceLower)) ext='webm';
+      else if (/\.mov(?:[?#]|$)/.test(sourceLower)) ext='mov';
+      else if (/\.png(?:[?#]|$)/.test(sourceLower)) ext='png';
+      else if (/\.gif(?:[?#]|$)/.test(sourceLower)) ext='gif';
+      const mime = isVideo ? (ext==='webm'?'video/webm':ext==='mov'?'video/quicktime':'video/mp4') : (ext==='png'?'image/png':ext==='gif'?'image/gif':'image/jpeg');
+      try { window.BabylonAndroid.saveMedia(String(src), baseName+'.'+ext, mime); }
+      catch (nativeError) { showToast('تعذر بدء الحفظ في المعرض'); }
+      return;
+    }
     try {
       let downloadUrl=src, objectUrl='';
       const response=await fetch(src,{mode:'cors'});
