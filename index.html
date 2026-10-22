@@ -7908,19 +7908,20 @@ async function avatarDownload(){
 }
 #chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta{
   position:absolute !important;bottom:7px;left:8px;right:auto;margin:0;padding:2px 7px;border-radius:10px;
-  background:rgba(0,0,0,.5);color:#fff !important;-webkit-text-fill-color:#fff !important;opacity:1 !important;
+  background:rgba(0,0,0,.22);color:rgba(255,255,255,.78) !important;-webkit-text-fill-color:rgba(255,255,255,.78) !important;opacity:1 !important;
   font-size:10.5px;line-height:1.4;
 }
-#chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta .check-mark{color:rgba(255,255,255,.9) !important;-webkit-text-fill-color:currentColor !important}
+#chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta .check-mark{color:rgba(255,255,255,.7) !important;-webkit-text-fill-color:currentColor !important}
 #chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta .check-mark.read{color:var(--tick-read,#4ade80) !important}
 #chatView #messagesArea .msg-bubble.video-msg .reactions-row{align-self:flex-start;margin-top:4px}
 
 #chatView #messagesArea .msg-bubble.image-msg .msg-image{border-radius:16px;overflow:hidden;line-height:0;background:#000}
 #chatView #messagesArea .msg-bubble.image-msg .msg-image img{display:block;width:100%;max-width:none;border-radius:0}
 #chatView #messagesArea .msg-bubble.video-pending{align-self:flex-end}
-#chatView #messagesArea .msg-bubble.video-pending .vp-cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(0,0,0,.45)}
-#chatView #messagesArea .msg-bubble.video-pending .vp-logo{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#fff1b0 0%,#f4d56a 28%,#e2b53c 62%,#cf9d27 100%);border:2px solid #fff6cf;box-shadow:0 6px 18px rgba(232,190,70,.45);animation:splashBreath 1.6s ease-in-out infinite}
-#chatView #messagesArea .msg-bubble.video-pending .vp-logo svg{width:28px;height:28px;filter:drop-shadow(0 1px 2px rgba(120,80,0,.45))}
+#chatView #messagesArea .msg-bubble.video-pending .msg-video video{filter:blur(14px) brightness(.8);transform:scale(1.15)}
+#chatView #messagesArea .msg-bubble.video-pending .vp-cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(0,0,0,.18);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+#chatView #messagesArea .msg-bubble.video-pending .vp-logo{width:60px;height:60px;display:flex;align-items:center;justify-content:center;color:#fff;background:none;border:0;box-shadow:none;animation:splashBreath 1.6s ease-in-out infinite}
+#chatView #messagesArea .msg-bubble.video-pending .vp-logo svg{width:100%;height:100%;filter:none}
 #chatView #messagesArea .msg-bubble.video-pending .vp-pct{color:#fff;font-size:12px;font-weight:800;line-height:1}
 </style>
 </body>
