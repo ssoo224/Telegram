@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<meta name="referrer" content="no-referrer">
 <style id="babylon-splash">
 .splash-page{position:absolute;inset:0;z-index:5000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
   background:radial-gradient(circle at center,#1e293b 0%,#090d16 100%);transition:opacity .35s ease,visibility .35s ease}
@@ -49,7 +50,7 @@
 <!-- Firebase SDKs -->
 <script>
 (function () {
-  if (location.search.indexOf('debug') === -1) return;
+  if (location.search.indexOf('debug') === -1 || !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
   function show(msg) {
     var d = document.getElementById('__err');
     if (!d) {
@@ -1974,6 +1975,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 .chat-item-sub .chat-media-preview-icon{width:15px;height:15px;flex:0 0 15px;display:inline-block;color:currentColor}
 .chat-item-sub .chat-media-preview-prefix{margin-inline-end:3px}
 </style>
+<link rel="stylesheet" href="gifts/gifts.css?v=12">
 </head>
 
 <body>
@@ -2160,6 +2162,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
       <div class="pf-tabs" id="pfTabs">
         <button type="button" class="pf-tab active" data-tab="posts"><i data-ic="grid"></i><span>المنشورات</span></button>
         <button type="button" class="pf-tab" data-tab="stories"><i data-ic="clock"></i><span>قصصي</span></button>
+        <button type="button" class="pf-tab" data-tab="gifts"><span class="pf-tab-emoji" aria-hidden="true">🎁</span><span>الهدايا</span></button>
       </div>
       <div id="pTabStories" class="pf-pane" style="display:none">
       <div id="myStoriesGrid" class="posts-grid"></div>
@@ -2169,6 +2172,11 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
       <!-- شبكة المنشورات المدمجة -->
       <div id="pTabPosts" class="pf-pane">
       <div id="postsGrid" class="posts-grid"></div>
+      </div>
+
+      <div id="pTabGifts" class="pf-pane" style="display:none">
+        <div id="myGiftsWrap"><div id="myGiftsGrid" class="posts-grid gifts-grid"></div></div>
+        <div id="myGiftsEmpty" class="pf-empty hidden">ما عندك هدايا للحين 🎁</div>
       </div>
 
       <button class="add-post-fab" onclick="openPublishOptions()" aria-label="إضافة منشور">
@@ -2199,6 +2207,8 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 
         <div class="pf-actions pf-quick pf-quick-other">
           <button type="button" class="pf-btn pf-q primary" onclick="startChatFromProfile()"><i data-ic="chat"></i><span>رسالة</span></button>
+          <button type="button" class="pf-btn pf-q hidden" id="otherStarsBtn" onclick="devGiftStars()"><span aria-hidden="true" style="font-size:20px;line-height:1">⭐</span><span>إهداء نجوم</span></button>
+          <button type="button" class="pf-btn pf-q hidden" id="otherGiftBtn" onclick="openSendGift()"><span aria-hidden="true" style="font-size:20px;line-height:1">🎁</span><span>إهداء هدية</span></button>
           <button type="button" class="pf-btn pf-q" id="otherBlockBtn" onclick="toggleBlockCurrent()"><i data-ic="ban"></i><span>حظر</span></button>
         </div>
       </div>
@@ -2222,6 +2232,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
         </div>
       </div>
       <div id="otherPinnedWrap" class="hidden"><div class="posts-grid-header"><svg class="pinned-stories-heading-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg> القصص المثبتة</div><div id="otherPinnedGrid" class="posts-grid"></div></div>
+      <div id="otherGiftsWrap" class="hidden"><div class="posts-grid-header"><span aria-hidden="true">🎁</span><span>الهدايا</span></div><div id="otherGiftsGrid" class="posts-grid gifts-grid"></div></div>
     </div>
 
     <!-- شاشة الإعدادات العامة -->
@@ -2232,6 +2243,12 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
           <div id="sxName" class="sx-name"></div>
           <div id="sxUser" class="sx-sub"></div>
           <div id="sxBio" class="sx-bio"></div>
+        </div>
+
+        <div class="sx-label">الهدايا والنجوم</div>
+        <div class="sx-group">
+          <div class="sx-item" onclick="openStarsHistory()"><span class="sx-ic" style="background:#f5b301;font-size:19px">⭐</span><span class="sx-t">نجوم بابل</span><span class="sx-val" data-stars>0</span><span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span></div>
+          <div class="sx-item" onclick="openGiftStore()"><span class="sx-ic" style="background:#ec4899;font-size:19px">🎁</span><span class="sx-t">متجر الهدايا</span><span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span></div>
         </div>
 
         <div class="sx-label">التخصيص</div>
@@ -3246,6 +3263,7 @@ function openProfile() {
     updateProfileUI(currentUserData);
     checkUserStories();
     loadUserPosts();
+    try { loadGiftsGrid(currentUser.uid, 'myGiftsGrid', 'myGiftsWrap'); } catch (e) {}
   }
 }
 
@@ -3258,6 +3276,7 @@ function renderSettingsHero() {
   document.getElementById('sxName').textContent = u.displayName || 'مستخدم';
   document.getElementById('sxUser').textContent = u.username ? '@' + u.username : '';
   document.getElementById('sxBio').textContent = u.bio || '';
+  try { paintStars(); } catch (e) {}
 }
 
 /* ===== الخصوصية والأمان ===== */
@@ -3516,7 +3535,7 @@ function uploadAvatarLive(e) {
     img.onerror = () => showToast('تعذر فتح الصورة');
     img.onload = function() {
       // Preserve the entire original image (no square crop) and retain high detail.
-      const maxSide = 1280;
+      const maxSide = 1600;
       const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
       const width = Math.max(1, Math.round(img.naturalWidth * scale));
       const height = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -3524,7 +3543,7 @@ function uploadAvatarLive(e) {
       const ctx = canvas.getContext('2d');
       ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, width, height);
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.96);
       const previous = currentUserData && currentUserData.avatarUrl;
       let historyList = Array.isArray(currentUserData && currentUserData.avatarHistory) ? currentUserData.avatarHistory.slice() : [];
       if (previous && previous !== compressedDataUrl) {
@@ -3585,16 +3604,12 @@ function setProfileExpandedStatusBlur(enabled, imageUrl) {
   // لا نضيف طبقة تمويه فوق شريط الإشعارات؛ الصورة الأصلية هي التي تمتد خلفه.
   var blur = document.getElementById('profileStatusBarBlur');
   if (blur) blur.remove();
-  enabled = !!enabled;
-  // إلغاء التكرار فقط: نغيّر شريط النظام فوراً أثناء التحريك، لكن مرة واحدة لكل تغيّر حالة (بدون حلقات).
-  if (!!window.__pfBarsState === enabled) return;
-  window.__pfBarsState = enabled;
   try {
-    if (window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') {
-      window.BabylonAndroid.setProfileExpandedSystemBars(enabled);
+    if (window.__pfSBState !== !!enabled && window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') {
+      window.__pfSBState = !!enabled;
+      window.BabylonAndroid.setProfileExpandedSystemBars(!!enabled);
     }
   } catch (err) { console.warn('profile system bars update failed', err); }
-  try { if (window.__pfRefit) window.__pfRefit(); } catch (_) {}
 }
 
 function openAvatarGallery(ev) {
@@ -3750,6 +3765,12 @@ function openUserProfileDirect(u) {
 
   showView("otherUserProfileView");
   loadOtherStories(u.id);
+  try {
+    document.getElementById('otherStarsBtn').classList.toggle('hidden', !(isDevUser() && u.id && u.id !== currentUser.uid));
+    document.getElementById('otherGiftBtn').classList.toggle('hidden', !(u.id && u.id !== currentUser.uid));
+    document.getElementById('otherGiftsWrap').classList.add('hidden');
+    if (u.id) loadGiftsGrid(u.id, 'otherGiftsGrid', 'otherGiftsWrap');
+  } catch (e) {}
 }
 
 function openCurrentChatUserProfile() {
@@ -3920,6 +3941,21 @@ function renderMsgDoc(doc, box, existingTyping) {
         { const _cl = chatClearedAt(activeChatId, chatMetaCache[activeChatId]); if (_cl && (Number(m.createdAt) || 0) <= _cl) return; }
         const isMine = m.senderId === currentUser.uid;
         const grp = isGroupChat(activeChatId);
+        if (m.type === 'stars' && typeof starGiftNode === 'function') {
+          const gn = starGiftNode(m, doc.id, isMine);
+          if (existingTyping) box.insertBefore(gn, existingTyping); else box.appendChild(gn);
+          return;
+        }
+        if (m.type === 'sold' && typeof soldMsgNode === 'function') {
+          const sn = soldMsgNode(m, doc.id, isMine);
+          if (existingTyping) box.insertBefore(sn, existingTyping); else box.appendChild(sn);
+          return;
+        }
+        if (m.type === 'gift' && typeof giftMsgNode === 'function') {
+          const gn = giftMsgNode(m, doc.id, isMine);
+          if (existingTyping) box.insertBefore(gn, existingTyping); else box.appendChild(gn);
+          return;
+        }
         if (m.system) {
           const sp = document.createElement('div'); sp.className = 'sys-msg'; sp.id = 'message_' + doc.id; sp.textContent = sysText(m);
           if (m.sys && m.sys.ref) { sp.classList.add('link'); sp.onclick = () => jumpToMessage(m.sys.ref); }
@@ -3960,7 +3996,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         } else if (m.videoUrl) {
           htmlContent += `<div class="msg-video"><video src="${esc(m.videoUrl)}#t=0.1" ${m.posterUrl ? `poster="${esc(m.posterUrl)}"` : ''} preload="metadata" muted playsinline></video><button type="button" class="msg-video-play" aria-label="تشغيل الفيديو"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button></div>`;
         } else {
-          htmlContent += m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`;
+          htmlContent += m.type === 'stars' && typeof starGiftHtml === 'function' ? starGiftHtml(m) : m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`;
         }
 
         if (m.reactions && Object.keys(m.reactions).length > 0) {
@@ -4262,7 +4298,7 @@ function appConfirmDialog(message, title='تأكيد العملية', dangerLabe
     overlay.setAttribute('data-app-theme', themeHost?.getAttribute('data-app-theme') || 'dark');
     overlay.innerHTML = `<div class="babylon-confirm-card" role="dialog" aria-modal="true" aria-label="${title.replace(/[<>"&]/g,'')}" dir="rtl">
       <div class="babylon-confirm-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01"/><path d="M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3l-7.5-13.1a2 2 0 0 0-3.4 0Z"/></svg></div>
-      <h3>${title}</h3><p>${message}</p><div class="babylon-confirm-actions"><button type="button" class="babylon-confirm-cancel">إلغاء</button><button type="button" class="babylon-confirm-ok">${dangerLabel}</button></div></div>`;
+      <h3>${esc(title)}</h3><p>${esc(message)}</p><div class="babylon-confirm-actions"><button type="button" class="babylon-confirm-cancel">إلغاء</button><button type="button" class="babylon-confirm-ok">${esc(dangerLabel)}</button></div></div>`;
     const finish = value => { overlay.remove(); resolve(value); };
     overlay.addEventListener('click', e => { if (e.target === overlay) finish(false); });
     overlay.querySelector('.babylon-confirm-cancel').onclick = () => finish(false);
@@ -4554,7 +4590,7 @@ function loadChats() {
                   const verifiedBadge = isUVerified ? `<span class="verified-badge" style="width:13px;height:13px;font-size:8px;">✓</span>` : '';
 
                   existingItem.innerHTML = `
-                    <div class="cl-av"><div class="avatar${ringCls(u)} ${toneCls(u)}" onclick="chatAvatarStory(event,'${otherId}')">${pvUrl(u) ? `<img src="${esc(pvUrl(u))}">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>${(!lsHidden(u) && u.online && Date.now() - (u.lastSeen || 0) < 45000) ? '<span class="cl-online"></span>' : ''}</div>
+                    <div class="cl-av"><div class="avatar${ringCls(u)} ${toneCls(u)}" onclick="chatAvatarStory(event,'${String(otherId).replace(/[^\w-]/g,'')}')">${pvUrl(u) ? `<img src="${esc(pvUrl(u))}">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>${(!lsHidden(u) && u.online && Date.now() - (u.lastSeen || 0) < 45000) ? '<span class="cl-online"></span>' : ''}</div>
                     <div class="chat-item-info">
                       <div class="chat-item-header-row">
                         <div class="chat-item-name">${esc(u.displayName || "مستخدم")} ${verifiedBadge}</div>
@@ -5601,7 +5637,7 @@ function renderStoriesBar() {
       us.forEach((u, i) => {
         if (!u || !(u.storyUntil > Date.now()) || bm[i]) return;
         const id = ids[i]; u.id = id;
-        html += `<div class="sb-item" onclick="storyItemClick(event,'${id}')"><div class="avatar${ringCls(u)} ${toneCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
+        html += `<div class="sb-item" onclick="storyItemClick(event,'${String(id).replace(/[^\w-]/g,'')}')"><div class="avatar${ringCls(u)} ${toneCls(u)}">${avInner(u)}</div><span>${esc(u.displayName || 'مستخدم')}</span></div>`;
       });
       bar.innerHTML = html;
       bar.classList.remove('hidden');
@@ -7436,6 +7472,11 @@ document.addEventListener('click',function(e){const menu=document.getElementById
   color:#fff !important; fill:#fff !important; stroke:#fff !important;
 }
 </style>
+<!-- الهدايا: كل شي بمجلد gifts/ -->
+<script src="gifts/models.js?v=1"></script>
+<script src="gifts/cat-models.js?v=1"></script>
+<script src="gifts/gifts.js?v=12"></script>
+<script src="gifts/star-gift.js?v=1"></script>
 <script id="babylon-remove-visited-badge-fix-v2">
 (function(){
   const cleanVisitedBadge = () => {
@@ -7685,7 +7726,8 @@ async function avatarDownload(){
 </script>
 
 <style id="pf-pull-expand-css">
-#profileView,#otherUserProfileView{position:relative;overscroll-behavior-y:contain}
+html,body{overscroll-behavior-y:none}
+#profileView,#otherUserProfileView{position:relative;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
 .pf-hero{position:absolute;z-index:1;overflow:hidden;display:none;pointer-events:none;background:#16213a;will-change:width,height,top,left,border-radius;-webkit-tap-highlight-color:transparent}
 .pf-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none}
 .pf-hero .pf-hero-letter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--babylon-gold);font-weight:800;font-size:clamp(48px,26vw,140px)}
@@ -7703,6 +7745,20 @@ async function avatarDownload(){
 (function(){
   var RANGE = 110;      // كم بكسل سحب لتكتمل الصورة
   var THRESH = 0.45;    // بعد هذه النسبة تثبت مفتوحة عند ترك الإصبع
+  // صور البروفايل مخزنة base64 (ميغابايتات). نحولها مرة وحدة إلى blob حتى ما نكرر نص ضخم بالـCSS كل سحبة
+  var _lc={};
+  function lite(u){
+    if(!u||String(u).slice(0,5)!=='data:') return u;
+    if(_lc[u]) return _lc[u];
+    try{
+      var i=u.indexOf(','), mime=(u.slice(5,i).split(';')[0])||'image/jpeg';
+      var bin=atob(u.slice(i+1)), n=bin.length, a=new Uint8Array(n);
+      for(var k=0;k<n;k++) a[k]=bin.charCodeAt(k);
+      var url=URL.createObjectURL(new Blob([a],{type:mime}));
+      var ks=Object.keys(_lc); if(ks.length>8){ try{URL.revokeObjectURL(_lc[ks[0]]);}catch(_){} delete _lc[ks[0]]; }
+      _lc[u]=url; return url;
+    }catch(e){ return u; }
+  }
   function setup(cfg){
     var view = document.getElementById(cfg.view); if(!view) return;
     var cover = document.getElementById(cfg.cover);
@@ -7741,12 +7797,12 @@ async function avatarDownload(){
 
     function sync(){
       var hasImg = img && !img.classList.contains('hidden') && img.getAttribute('src');
-      if(hasImg){ var _s=img.getAttribute('src'); if(hImg.getAttribute('src')!==_s) hImg.src=_s; hImg.style.display='block'; hLet.style.display='none'; }
+      if(hasImg){ hImg.src = lite(img.getAttribute('src')); hImg.style.display='block'; hLet.style.display='none'; }
       else {
         hImg.style.display='none'; hLet.style.display='flex'; hLet.innerHTML = txt ? txt.innerHTML : '';
         if(txt){ var cs=getComputedStyle(txt); hero.style.background = cs.backgroundImage!=='none'? cs.backgroundImage : cs.backgroundColor; }
       }
-      if(hasImg){ if(hExt.dataset.src!==img.getAttribute('src')){ hExt.dataset.src=img.getAttribute('src'); hExt.style.background=''; hExt.style.backgroundImage='url("'+img.getAttribute('src')+'")'; hExt.style.backgroundSize='cover'; } }
+      if(hasImg){ hExt.style.background=''; hExt.style.backgroundImage='url("'+lite(img.getAttribute('src'))+'")'; hExt.style.backgroundSize='cover'; }
       else { hExt.style.backgroundImage='none'; hExt.style.background=hero.style.background||'#16213a'; }
       if(own){ loadItems(); }
       hName.textContent = nameTxt ? nameTxt.textContent : '';
@@ -7788,9 +7844,11 @@ async function avatarDownload(){
       var wasExpanded = view.classList.contains('pf-expanded');
       if(wasExpanded !== (v>=0.5)) {
         view.classList.toggle('pf-expanded', v>=0.5);
+        if (typeof setProfileExpandedStatusBlur === 'function') {
+          if (v>=0.5) setProfileExpandedStatusBlur(true, hImg && hImg.style.display!=='none' ? hImg.src : '');
+          else setProfileExpandedStatusBlur(false);
+        }
       }
-      var wantBars = window.__pfBarsState ? v>=0.2 : v>=0.3;
-      if(!!window.__pfBarsState!==wantBars && typeof setProfileExpandedStatusBlur==='function') setProfileExpandedStatusBlur(wantBars,'');
       cover.style.height=(g.coverH+g.delta*v)+'px';
       cover.style.opacity=clamp(1-v*1.5);
       ring.style.opacity=0;
@@ -7821,7 +7879,7 @@ async function avatarDownload(){
       nameBox.style.height=nameBox.style.overflow=nameBox.style.marginBottom=nameBox.style.opacity='';
       status.style.height=status.style.overflow=status.style.opacity='';
       if(hTop){ hTop.style.opacity=0; hMenu.classList.remove('open'); }
-      if(view.classList.contains('pf-expanded')) view.classList.remove('pf-expanded'); if(view.classList.contains('pf-settled')) view.classList.remove('pf-settled');
+      if(view.classList.contains('pf-expanded')) view.classList.remove('pf-expanded');
       if (typeof setProfileExpandedStatusBlur === 'function') setProfileExpandedStatusBlur(false);
       hImg.style.webkitMaskImage=hImg.style.maskImage=hLet.style.webkitMaskImage=hLet.style.maskImage=''; hImg.style.height=hLet.style.height=hExt.style.height=hShade.style.top=hShade.style.height=''; hShade.style.bottom=''; if(quick){ quick.style.transform=''; quick.style.removeProperty('margin-bottom'); view.style.removeProperty('--pv'); hInfo.style.bottom=''; }
     }
@@ -7832,7 +7890,7 @@ async function avatarDownload(){
         var k=clamp((now-t0)/dur), e=1-Math.pow(1-k,4);
         try { apply(from+(t-from)*e); } catch (err) { console.warn('profile pull animation stopped', err); pulling=false; track=false; try { reset(); } catch (_) {} return; }
         if(k<1) raf=requestAnimationFrame(step);
-        else { expanded = t>=1; if(t<=0) reset(); else { view.classList.add('pf-settled'); if (typeof setProfileExpandedStatusBlur === 'function') setProfileExpandedStatusBlur(true, ''); } }
+        else { expanded = t>=1; if(t<=0) reset(); }
       })(t0);
     }
 
@@ -7844,6 +7902,9 @@ async function avatarDownload(){
 
     view.addEventListener('touchmove',function(ev){
       if(!track) return;
+      try{ onMove(ev); }catch(err){ console.warn('profile pull move failed',err); pulling=false; track=false; cancelAnimationFrame(followRaf); followRaf=0; try{ reset(); }catch(_){} }
+    },{passive:false});
+    function onMove(ev){
       var t=ev.touches[0], dy=t.clientY-sy, dx=t.clientX-sx;
       if(!pulling){
         var wantPull = !expanded && dy>8 && Math.abs(dy)>Math.abs(dx);
@@ -7860,7 +7921,7 @@ async function avatarDownload(){
       lastT=nowT; lastY=t.clientY;
       tv=clamp(p0+dy/RANGE);
       if(!followRaf) followRaf=requestAnimationFrame(follow);
-    },{passive:false});
+    }
     function follow(now){
       followRaf=0;
       var dt=Math.min(40,now-(followLast||now-16)); followLast=now;
@@ -7881,6 +7942,7 @@ async function avatarDownload(){
     }
     view.addEventListener('touchend',finish,{passive:true});
     view.addEventListener('touchcancel',finish,{passive:true});
+    window.addEventListener('pagehide',function(){ try{ cancelAnimationFrame(raf); cancelAnimationFrame(followRaf); reset(); }catch(_){} });
 
     // الضغط على المربع المكبّر يفتح معرض الصور
     var items=[], idx=0, busy=false;
@@ -7891,6 +7953,7 @@ async function avatarDownload(){
     function showPhoto(i,dir){
       var url=items[i]; if(!url) return;
       var from=hImg.getAttribute('src');
+      url=lite(url);
       hExt.style.backgroundImage='url("'+url+'")';
       if(dir && from && hImg.style.display!=='none' && hImg.animate){
         var clone=hImg.cloneNode(); clone.style.pointerEvents='none'; hImg.parentNode.insertBefore(clone,hImg);
@@ -7950,8 +8013,7 @@ async function avatarDownload(){
     new MutationObserver(function(){
       if(view.classList.contains('hidden')){ cancelAnimationFrame(raf); reset(); view.scrollTop=0; }
     }).observe(view,{attributes:true,attributeFilter:['class']});
-    var lastW=window.innerWidth;
-    window.addEventListener('resize',function(){ if(pulling||window.innerWidth===lastW) return; lastW=window.innerWidth; if(expanded||p>0){ cancelAnimationFrame(raf); reset(); } });
+    window.addEventListener('resize',function(){ if(expanded||p>0){ cancelAnimationFrame(raf); reset(); } });
   }
   function init(){
     try{
@@ -8006,18 +8068,35 @@ async function avatarDownload(){
 #profileView .avatar-story-ring,#otherUserProfileView .avatar-story-ring{flex:0 0 118px!important;width:118px!important;height:118px!important;margin-bottom:14px!important}
 #profileView .pf-quick,#otherUserProfileView .pf-quick{position:relative;z-index:1;margin-top:6px!important}
 #profileView .pf-pane{min-height:120px;padding-bottom:96px}
+.pf-tab-emoji{font-size:16px;line-height:1}
+.pf-empty{padding:28px 16px;text-align:center;color:var(--pf-mut);font-size:13.5px}
+#profileView #myGiftsWrap.hidden{display:block!important}
+#otherUserProfileView .pf-actions.pf-quick-other{grid-template-columns:repeat(auto-fit,minmax(90px,1fr))!important}
 #profileView .posts-grid{padding:2px!important;gap:2px!important}
 </style>
 <script id="babylon-profile-v2-js">
 (function(){
  function $(i){return document.getElementById(i)}
+ var PANES={posts:'pTabPosts',stories:'pTabStories',gifts:'pTabGifts'};
+ function showTab(name){
+  if(!PANES[name]) name='posts';
+  Object.keys(PANES).forEach(function(k){var el=$(PANES[k]); if(el) el.style.display=(k===name)?'':'none';});
+  var tabs=$('pfTabs'); if(tabs) tabs.querySelectorAll('.pf-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===name)});
+  if(name==='gifts'){ try{ if(currentUser) loadGiftsGrid(currentUser.uid,'myGiftsGrid','myGiftsWrap'); }catch(e){} setTimeout(syncGiftsEmpty,350); }
+ }
+ function syncGiftsEmpty(){
+  var g=$('myGiftsGrid'), e=$('myGiftsEmpty'), w=$('myGiftsWrap'); if(!g||!e) return;
+  if(w) w.classList.remove('hidden');
+  e.classList.toggle('hidden', g.children.length>0);
+ }
+ window.pfShowTab=showTab;
  function bind(){
+  var gg=$('myGiftsGrid'); if(gg && window.MutationObserver) new MutationObserver(syncGiftsEmpty).observe(gg,{childList:true});
   var tabs=$('pfTabs');if(!tabs||tabs.__b)return;tabs.__b=1;
   tabs.addEventListener('click',function(e){
    var b=e.target.closest('.pf-tab');if(!b)return;
    tabs.querySelectorAll('.pf-tab').forEach(function(t){t.classList.toggle('active',t===b)});
-   var st=b.dataset.tab==='stories';
-   $('pTabStories').style.display=st?'':'none';$('pTabPosts').style.display=st?'none':'';
+   showTab(b.dataset.tab);
   });
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
@@ -8099,30 +8178,48 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
   outline: none !important;
 }
 </style>
-<style id="pf-viewport-fit">
-html,body{height:var(--app-h,100dvh);min-height:var(--app-h,100dvh)}
-.app-container{height:var(--app-h,100dvh)!important}
-</style>
-<script id="pf-viewport-fit-js">
-/* يمنع الشريط الأسود أسفل الشاشة: عند تبدّل شريط النظام لا يحدّث الويب‑فيو 100dvh فورا، فنحسب الارتفاع الفعلي يدويا ونلوّن الخلفية بلون التطبيق */
+<script id="babylon-security-js">
 (function(){
-  function fit(){
-    try{
-      var h=window.innerHeight; if(window.visualViewport&&window.visualViewport.height>h) h=window.visualViewport.height;
-      var r=document.documentElement;
-      if(r.style.getPropertyValue('--app-h')!==h+'px') r.style.setProperty('--app-h',h+'px');
-      var app=document.querySelector('.app-container');
-      if(app){ var bg=getComputedStyle(app).backgroundColor; if(bg&&bg!=='rgba(0, 0, 0, 0)'){ r.style.backgroundColor=bg; document.body.style.backgroundColor=bg; } }
-    }catch(e){}
+  'use strict';
+  /* 1) معدل إرسال الرسائل: منع الفيضان/السبام */
+  var sent=[], MAX_PER_MIN=40, MIN_GAP=350, MAX_LEN=4000;
+  function wrapSend(){
+    if(typeof window.sendMessage!=='function' || window.sendMessage.__guarded) return;
+    var orig=window.sendMessage;
+    var g=function(e){
+      var now=Date.now();
+      sent=sent.filter(function(t){return now-t<60000});
+      function stop(m){ if(e&&e.preventDefault)e.preventDefault(); if(m&&typeof showToast==='function')showToast(m); }
+      if(sent.length && now-sent[sent.length-1]<MIN_GAP){ stop(); return; }
+      if(sent.length>=MAX_PER_MIN){ stop('ترسل رسائل بسرعة كبيرة، انتظر قليلاً'); return; }
+      var inp=document.getElementById('messageInput');
+      if(inp && (inp.textContent||'').length>MAX_LEN){ stop('الرسالة طويلة جداً (الحد '+MAX_LEN+' حرف)'); return; }
+      sent.push(now);
+      return orig.apply(this,arguments);
+    };
+    g.__guarded=true; window.sendMessage=g;
   }
-  window.__pfRefit=function(){ fit(); [60,150,300,600].forEach(function(d){ setTimeout(fit,d); }); };
-  window.addEventListener('resize',fit);
-  window.addEventListener('orientationchange',function(){ setTimeout(fit,100); });
-  window.addEventListener('pageshow',fit);
-  if(window.visualViewport) window.visualViewport.addEventListener('resize',fit);
-  var app=document.querySelector('.app-container');
-  if(app&&window.MutationObserver) new MutationObserver(fit).observe(app,{attributes:true,attributeFilter:['data-app-theme']});
-  fit();
+  /* 2) روابط ووسائط آمنة */
+  var BAD=/^\s*(javascript|vbscript|data:text\/html|data:application)/i;
+  function clean(root){
+    try{
+      root.querySelectorAll('a[href],img[src],video[src],audio[src],source[src],iframe,object,embed').forEach(function(el){
+        var tag=el.tagName;
+        if(tag==='IFRAME'||tag==='OBJECT'||tag==='EMBED'){ el.remove(); return; }
+        var attr=(tag==='A')?'href':'src', v=el.getAttribute(attr);
+        if(v && BAD.test(v)) el.removeAttribute(attr);
+        if(tag==='A') el.setAttribute('rel','noopener noreferrer');
+      });
+    }catch(_){}
+  }
+  var pending=false;
+  function schedule(){ if(pending) return; pending=true; (window.requestIdleCallback||function(f){return setTimeout(f,150)})(function(){pending=false; clean(document);}); }
+  if(window.MutationObserver) new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});
+  /* 3) منع إفلات ملفات غريبة على الصفحة */
+  ['dragover','drop'].forEach(function(ev){ window.addEventListener(ev,function(e){ e.preventDefault(); }); });
+  function init(){ wrapSend(); clean(document); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+  window.addEventListener('load',wrapSend);
 })();
 </script>
 </body>
@@ -10257,7 +10354,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 #otherUserProfileView .pf-quick .pf-btn.pf-q.primary{background:color-mix(in srgb,rgba(212,169,55,.55) calc(var(--pv,0)*100%),var(--pf-gold))!important}
 #otherUserProfileView #otherBlockBtn.pf-q,#otherUserProfileView #otherBlockBtn.pf-q span{color:color-mix(in srgb,#ffb4b4 calc(var(--pv,0)*100%),#f87171)!important}
 .pf-hero .pf-hero-ext{position:absolute;left:0;right:0;top:0;overflow:hidden;background-size:cover;background-position:center;pointer-events:none;z-index:0}
-.pf-hero .pf-hero-ext::before{content:"";position:absolute;inset:-30px;background:inherit;filter:blur(24px) saturate(1.2) brightness(.9);transform:scale(1.1)}
+.pf-hero .pf-hero-ext::before{content:"";position:absolute;inset:-30px;background:inherit;filter:blur(14px) brightness(.9);transform:scale(1.1)}
 .pf-hero img,.pf-hero .pf-hero-letter{z-index:1}
 .pf-hero .pf-hero-shade{z-index:2;background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.55))!important}
 .pf-hero .pf-hero-info{z-index:3}
