@@ -10098,3 +10098,18 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 /* حلقة القصة في الملف الشخصي أنحف قليلاً: نفس حجم الحلقة الخارجي، والصورة أكبر بمقدار بسيط */
 :is(#profileView,#otherUserProfileView) .avatar-story-ring .profile-large-avatar{width:107px!important;height:107px!important}
 </style>
+<style id="babylon-profile-ring-no-glow">
+/* بدون توهج عند وجود قصة، وحلقات أنحف (الذهبية والبيضاء) */
+:is(#profileView,#otherUserProfileView) .avatar-story-ring,
+:is(#profileView,#otherUserProfileView) .avatar-story-ring.has-story,
+:is(#profileView,#otherUserProfileView) .avatar-story-ring.has-story.seen{
+  animation:none !important;
+  filter:none !important;
+  box-shadow:0 0 0 2px var(--pf-bg) !important; /* الحلقة البيضاء/الخارجية: 4px ← 2px، بدون ظل أو توهج */
+}
+:is(#profileView,#otherUserProfileView) .avatar-story-ring .profile-large-avatar{
+  width:110px !important;height:110px !important; /* الحلقة الذهبية: من ~5.5px إلى ~4px */
+  box-shadow:none !important;
+  filter:none !important;
+}
+</style>
