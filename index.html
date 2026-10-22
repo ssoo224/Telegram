@@ -7951,6 +7951,7 @@ html,body{overscroll-behavior-y:none}
     function reset(){
       restoreOriginalAvatar();
       p=0; expanded=false;
+      if(!pulling) view.classList.remove('pf-pulling');
       hero.style.display='none'; hero.style.pointerEvents='none'; hInfo.style.opacity=0;
       cover.style.height=''; cover.style.opacity='';
       ring.style.opacity='';
@@ -8001,6 +8002,7 @@ html,body{overscroll-behavior-y:none}
         cancelAnimationFrame(raf);
         if(!expanded){ reset(); sync(); measure(); }
         pulling=true; p0=expanded?1:0; sy=t.clientY; tv=p; vel=0; lastT=0;   // نبدأ من نقطة بدء السحب الفعلي
+        view.classList.add('pf-pulling');
         // إخفاء الحلقة فور بدء السحب المقبول، ومنع ظهورها في إطارات التحديث الأولى.
         ring.style.opacity='0';
         ring.style.visibility='hidden';
@@ -10704,4 +10706,31 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
   stroke:#fff !important;
   -webkit-text-fill-color:#fff !important;
 }
+</style>
+
+<style id="babylon-pull-ring-hide-and-other-actions-final">
+#profileView.pf-pulling .avatar-story-ring,#otherUserProfileView.pf-pulling .avatar-story-ring,
+#profileView.pf-expanded .avatar-story-ring,#otherUserProfileView.pf-expanded .avatar-story-ring{opacity:0!important;visibility:hidden!important;box-shadow:none!important;background:transparent!important;animation:none!important;transition:none!important}
+#profileView.pf-pulling .avatar-story-ring::before,#otherUserProfileView.pf-pulling .avatar-story-ring::before{display:none!important}
+#otherUserProfileView .pf-head .pf-actions.pf-quick{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(76px,1fr))!important;gap:9px!important;width:100%!important;max-width:360px!important;margin:6px auto 12px!important}
+#otherUserProfileView .pf-head .pf-actions.pf-quick>.pf-btn.pf-q,
+#otherUserProfileView .pf-head .pf-actions.pf-quick>.pf-btn.pf-q.primary,
+#otherUserProfileView .pf-head .pf-actions.pf-quick>#otherBlockBtn.pf-q{
+ display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:6px!important;
+ width:auto!important;min-width:0!important;height:56px!important;min-height:56px!important;padding:8px 6px!important;box-sizing:border-box!important;
+ border:0!important;outline:0!important;box-shadow:none!important;border-radius:16px!important;
+ background:color-mix(in srgb,rgba(255,255,255,.16) calc(var(--pv,0)*100%),var(--pf-card))!important;
+ color:color-mix(in srgb,#fff calc(var(--pv,0)*100%),var(--pf-gold))!important;-webkit-text-fill-color:currentColor!important;
+ -webkit-backdrop-filter:blur(calc(var(--pv,0)*18px)) saturate(1.3);backdrop-filter:blur(calc(var(--pv,0)*18px)) saturate(1.3);
+ font-size:12px!important;font-weight:700!important;line-height:1.2!important;position:relative;z-index:3}
+#otherUserProfileView .pf-head .pf-actions.pf-quick>.pf-btn.pf-q span,
+#otherUserProfileView .pf-head .pf-actions.pf-quick>.pf-btn.pf-q.primary span,
+#otherUserProfileView .pf-head .pf-actions.pf-quick>#otherBlockBtn.pf-q span{color:color-mix(in srgb,#fff calc(var(--pv,0)*100%),var(--pf-txt))!important;-webkit-text-fill-color:currentColor!important;font-size:12px!important;font-weight:700!important}
+#otherUserProfileView .pf-head .pf-actions.pf-quick>.pf-btn.pf-q i,
+#otherUserProfileView .pf-head .pf-actions.pf-quick>.pf-btn.pf-q svg,
+#otherUserProfileView .pf-head .pf-actions.pf-quick>.pf-btn.pf-q svg *,
+#otherUserProfileView .pf-head .pf-actions.pf-quick>.pf-btn.pf-q.primary svg,
+#otherUserProfileView .pf-head .pf-actions.pf-quick>.pf-btn.pf-q.primary svg *{color:inherit!important;stroke:currentColor!important}
+#otherUserProfileView .pf-head .pf-actions.pf-quick>.pf-btn.pf-q svg{width:19px!important;height:19px!important;flex:0 0 19px!important}
+#otherUserProfileView .pf-head .pf-actions.pf-quick>.pf-btn.pf-q:active{transform:scale(.95)!important}
 </style>
