@@ -2803,13 +2803,36 @@ function showFieldError(elementId, msg) {
 }
 
 let toastHideTimer = null;
-function showToast(msg) {
+const TOAST_ICONS = {
+  success:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  error:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v6.5M12 17.2v.1"/></svg>',
+  loading:'<svg class="bt-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9" /></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v5.5M12 7.6v.1"/></svg>'
+};
+function toastKind(msg){
+  if (/جاري|جارٍ|\.\.\./.test(msg)) return 'loading';
+  if (/تعذر|فشل|خطأ|غير صح|لا يمكن|حدث خطأ|الرجاء|يجب|مرفوض|ممنوع/.test(msg)) return 'error';
+  if (/تم|نجاح|✧|✓|✔/.test(msg)) return 'success';
+  return 'info';
+}
+function showToast(msg, kind) {
   const t = document.getElementById("toast");
   if (!t) return;
-  t.textContent = msg;
-  t.classList.remove("hidden");
+  kind = kind || toastKind(String(msg));
+  const app = document.querySelector('.app-container');
+  if (app) t.setAttribute('data-app-theme', app.getAttribute('data-app-theme') || 'light');
+  const dur = kind === 'loading' ? 6000 : kind === 'error' ? 4200 : 3000;
+  t.className = "toast bt-" + kind;
+  t.innerHTML = '<span class="bt-ic">' + TOAST_ICONS[kind] + '</span><span class="bt-msg"></span><i class="bt-bar"></i>';
+  t.querySelector('.bt-msg').textContent = String(msg).replace(/\s*[✧✓✔]\s*$/, '');
+  t.querySelector('.bt-bar').style.animationDuration = dur + 'ms';
+  void t.offsetWidth;
+  t.classList.add('bt-show');
   if (toastHideTimer) clearTimeout(toastHideTimer);
-  toastHideTimer = setTimeout(() => t.classList.add("hidden"), 3000);
+  toastHideTimer = setTimeout(() => {
+    t.classList.remove('bt-show');
+    setTimeout(() => { if (!t.classList.contains('bt-show')) t.classList.add('hidden'); }, 320);
+  }, dur);
 }
 
 function switchTab(type) {
@@ -2968,16 +2991,15 @@ function closeEditModal(e) {
 function closeEditModalDirect() {
   const editPage = document.getElementById("editProfileView");
   if (editPage) editPage.classList.add("hidden");
-  if (document.getElementById("mainPage") && !document.getElementById("mainPage").classList.contains("hidden")) {
-    showView("profileView");
-    if (currentUserData) updateProfileUI(currentUserData);
-  }
+  showView("profileView");
+  if (currentUserData) { try { updateProfileUI(currentUserData); } catch (e) {} }
 }
 
 function saveProfileChanges() {
   const newName = document.getElementById("modalNameInput").value.trim();
   const newUsername = document.getElementById("modalUsernameInput").value.trim().toLowerCase();
   const newBio = document.getElementById("modalBioInput").value.trim();
+  const newGov = document.getElementById("modalGovInput").value;
 
   if (!newName) return showToast("الرجاء أدخل اسم العرض");
 
@@ -2985,32 +3007,36 @@ function saveProfileChanges() {
     showFieldError("modalUserError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 5 أحرف فأكثر");
     return;
   }
+  if (window.__savingProfile) return;
+  window.__savingProfile = true;
+  showToast("جاري حفظ التغييرات...");
 
-  showToast("جاري حفظ التغيرات...");
-
-  db.collection("users").where("username", "==", newUsername).get().then(snap => {
-    let taken = false;
-    snap.forEach(doc => {
-      if (doc.id !== currentUser.uid) taken = true;
-    });
-
-    if (taken) {
-      showFieldError("modalUserError", "اسم المستخدم هذا مستخدم بالفعل!");
-      return;
-    }
-
-    const oldUsername = currentUserData && currentUserData.username;
-    db.collection("users").doc(currentUser.uid).set({
-      displayName: newName,
-      username: newUsername,
-      bio: newBio,
-      governorate: document.getElementById("modalGovInput").value
-    }, { merge: true }).then(() => {
-      syncUsernameDoc(oldUsername, newUsername);
+  const oldUsername = currentUserData && currentUserData.username;
+  const finish = () => {
+    const patch = { displayName: newName, username: newUsername, bio: newBio, governorate: newGov };
+    return db.collection("users").doc(currentUser.uid).set(patch, { merge: true }).then(() => {
+      currentUserData = Object.assign({}, currentUserData || {}, patch);
+      try { if (typeof userCache !== 'undefined') delete userCache[currentUser.uid]; } catch (e) {}
+      try { syncUsernameDoc(oldUsername, newUsername); } catch (e) {}
+      try { updateProfileUI(currentUserData); } catch (e) { console.warn(e); }
       closeEditModalDirect();
-      showToast("تم تحديث معلوماتك بنجاح ✧");
+      try { updateProfileUI(currentUserData); } catch (e) {}
+      showToast("تم تحديث معلوماتك بنجاح");
     });
-  });
+  };
+  const check = (newUsername === oldUsername)
+    ? Promise.resolve(false)
+    : db.collection("usernames").doc(newUsername).get().then(d => d.exists && d.data() && d.data().uid !== currentUser.uid)
+        .catch(() => db.collection("users").where("username", "==", newUsername).get().then(snap => {
+          let taken = false; snap.forEach(doc => { if (doc.id !== currentUser.uid) taken = true; }); return taken;
+        }).catch(() => false));
+  check.then(taken => {
+    if (taken) { showFieldError("modalUserError", "اسم المستخدم هذا مستخدم بالفعل!"); return; }
+    return finish();
+  }).catch(err => {
+    console.error(err);
+    showToast("تعذر حفظ التغييرات، تحقق من اتصالك");
+  }).then(() => { window.__savingProfile = false; });
 }
 
 function loginUser() {
@@ -7728,6 +7754,30 @@ async function avatarDownload(){
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 </script>
+
+<style id="babylon-toast-v3">
+/* ===== إشعارات التطبيق — تصميم جديد يتبع الوضع النهاري/الليلي ===== */
+#toast.toast{--bt-bg:rgba(255,255,255,.92);--bt-fg:#17212b;--bt-bd:rgba(15,23,42,.08);--bt-sh:0 14px 40px rgba(26,44,70,.18),0 2px 8px rgba(26,44,70,.08);--bt-acc:#3b82f6;
+  position:fixed!important;top:calc(14px + env(safe-area-inset-top,0px))!important;bottom:auto!important;left:50%!important;right:auto!important;
+  display:flex!important;align-items:center;gap:11px;direction:rtl;width:max-content;max-width:min(420px,calc(100vw - 28px));min-width:200px;
+  padding:11px 15px 13px 16px!important;border-radius:18px!important;font-size:14px!important;font-weight:600;line-height:1.45;text-align:right!important;
+  background:var(--bt-bg)!important;color:var(--bt-fg)!important;border:1px solid var(--bt-bd)!important;box-shadow:var(--bt-sh)!important;
+  -webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);overflow:hidden;z-index:99999!important;
+  opacity:0;transform:translate(-50%,-26px) scale(.96)!important;pointer-events:none;transition:opacity .28s ease,transform .38s cubic-bezier(.2,.9,.25,1.15)}
+#toast.toast.hidden{display:none!important}
+#toast.toast.bt-show{opacity:1;transform:translate(-50%,0) scale(1)!important}
+#toast.toast[data-app-theme="dark"],.app-container[data-app-theme="dark"] #toast.toast{--bt-bg:rgba(24,32,46,.9);--bt-fg:#f1f5f9;--bt-bd:rgba(255,255,255,.09);--bt-sh:0 16px 44px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.3)}
+#toast.toast[data-app-theme="light"],.app-container[data-app-theme="light"] #toast.toast{--bt-bg:rgba(255,255,255,.92);--bt-fg:#17212b;--bt-bd:rgba(15,23,42,.08)}
+#toast.bt-success{--bt-acc:#22c55e}#toast.bt-error{--bt-acc:#ef4444}#toast.bt-loading{--bt-acc:#d4a937}#toast.bt-info{--bt-acc:#3b82f6}
+#toast .bt-ic{flex:0 0 30px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--bt-acc);background:color-mix(in srgb,var(--bt-acc) 16%,transparent)}
+#toast .bt-ic svg{width:18px;height:18px}
+#toast .bt-msg{flex:1;min-width:0;overflow-wrap:anywhere}
+#toast .bt-bar{position:absolute;inset-inline-start:0;bottom:0;height:3px;width:100%;background:var(--bt-acc);opacity:.85;transform-origin:right center;animation:btBar linear forwards}
+#toast.bt-loading .bt-bar{opacity:.45}
+@keyframes btBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@keyframes btSpin{to{transform:rotate(360deg)}}
+#toast .bt-spin{animation:btSpin .8s linear infinite}
+</style>
 </body>
 </html>
 
@@ -9846,4 +9896,5 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 <style id="babylon-hero-name-fix">
 .pf-hero .pf-hero-name{color:#fff!important}
 .pf-hero .pf-hero-status,.pf-hero .pf-hero-status.online{color:#fff!important;font-weight:800!important}
+.pf-hero .pf-hero-status.online::before{content:"";display:inline-block;width:14px;height:14px;margin-inline-end:6px;vertical-align:-2px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%234ade80' fill-opacity='.35'/%3E%3Ccircle cx='12' cy='12' r='5.5' fill='%234ade80'/%3E%3C/svg%3E") center/contain no-repeat;filter:drop-shadow(0 0 3px rgba(74,222,128,.8))}
 </style>
