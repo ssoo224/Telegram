@@ -3582,26 +3582,14 @@ function setAvatarGallerySystemBars(enabled) {
   } catch (_) {}
 }
 function setProfileExpandedStatusBlur(enabled, imageUrl) {
+  // لا نضيف طبقة تمويه فوق شريط الإشعارات؛ الصورة الأصلية هي التي تمتد خلفه.
   var blur = document.getElementById('profileStatusBarBlur');
-  if (enabled) {
-    if (!blur) {
-      blur = document.createElement('div');
-      blur.id = 'profileStatusBarBlur';
-      blur.setAttribute('aria-hidden', 'true');
-      blur.style.cssText = 'position:fixed;left:0;right:0;top:0;height:24px;z-index:2147482000;pointer-events:none;overflow:hidden;background-size:cover;background-position:center top;';
-      var inner = document.createElement('div');
-      inner.style.cssText = 'position:absolute;inset:-18px;background-size:cover;background-position:center top;filter:blur(18px) saturate(1.15) brightness(.82);transform:scale(1.12);';
-      blur.appendChild(inner);
-      document.body.appendChild(blur);
+  if (blur) blur.remove();
+  try {
+    if (window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') {
+      window.BabylonAndroid.setProfileExpandedSystemBars(!!enabled);
     }
-    var inner = blur.firstElementChild;
-    var src = imageUrl || (document.getElementById('pAvatarImg') && document.getElementById('pAvatarImg').src) || '';
-    if (src) inner.style.backgroundImage = 'url("' + String(src).replace(/"/g, '\\"') + '")';
-    try { if (window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') window.BabylonAndroid.setProfileExpandedSystemBars(true); } catch (_) {}
-  } else {
-    if (blur) blur.remove();
-    try { if (window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') window.BabylonAndroid.setProfileExpandedSystemBars(false); } catch (_) {}
-  }
+  } catch (err) { console.warn('profile system bars update failed', err); }
 }
 
 function openAvatarGallery(ev) {
@@ -7839,7 +7827,7 @@ async function avatarDownload(){
       var from=p, t0=performance.now(), dur=Math.max(260,Math.min(420,Math.abs(t-from)*420+140));
       (function step(now){
         var k=clamp((now-t0)/dur), e=1-Math.pow(1-k,4);
-        apply(from+(t-from)*e);
+        try { apply(from+(t-from)*e); } catch (err) { console.warn('profile pull animation stopped', err); pulling=false; track=false; try { reset(); } catch (_) {} return; }
         if(k<1) raf=requestAnimationFrame(step);
         else { expanded = t>=1; if(t<=0) reset(); }
       })(t0);
@@ -7876,7 +7864,7 @@ async function avatarDownload(){
       var a=1-Math.exp(-dt/22);
       var nv=p+(tv-p)*a;
       if(Math.abs(tv-nv)<0.0015) nv=tv;
-      apply(nv);
+      try { apply(nv); } catch (err) { console.warn('profile pull tracking stopped', err); pulling=false; track=false; cancelAnimationFrame(followRaf); followRaf=0; try { reset(); } catch (_) {} return; }
       if(pulling && nv!==tv){ followRaf=requestAnimationFrame(follow); } else followLast=0;
     }
 
