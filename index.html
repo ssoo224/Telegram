@@ -3586,19 +3586,14 @@ function setProfileExpandedStatusBlur(enabled, imageUrl) {
   var blur = document.getElementById('profileStatusBarBlur');
   if (blur) blur.remove();
   enabled = !!enabled;
-  // تأخير وإلغاء التكرار: لا نغيّر شريط النظام إلا مرة واحدة وبعد استقرار الرسم، حتى لا يحدث كراش عند تبدّل الشريط.
-  clearTimeout(window.__pfBarsTimer);
-  window.__pfBarsTimer = setTimeout(function () {
-    if (!!window.__pfBarsState === enabled) return;
-    window.__pfBarsState = enabled;
-    requestAnimationFrame(function () {
-      try {
-        if (window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') {
-          window.BabylonAndroid.setProfileExpandedSystemBars(enabled);
-        }
-      } catch (err) { console.warn('profile system bars update failed', err); }
-    });
-  }, enabled ? 350 : 0);
+  // إلغاء التكرار فقط: نغيّر شريط النظام فوراً أثناء التحريك، لكن مرة واحدة لكل تغيّر حالة (بدون حلقات).
+  if (!!window.__pfBarsState === enabled) return;
+  window.__pfBarsState = enabled;
+  try {
+    if (window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') {
+      window.BabylonAndroid.setProfileExpandedSystemBars(enabled);
+    }
+  } catch (err) { console.warn('profile system bars update failed', err); }
 }
 
 function openAvatarGallery(ev) {
@@ -7793,6 +7788,8 @@ async function avatarDownload(){
       if(wasExpanded !== (v>=0.5)) {
         view.classList.toggle('pf-expanded', v>=0.5);
       }
+      var wantBars = window.__pfBarsState ? v>=0.2 : v>=0.3;
+      if(!!window.__pfBarsState!==wantBars && typeof setProfileExpandedStatusBlur==='function') setProfileExpandedStatusBlur(wantBars,'');
       cover.style.height=(g.coverH+g.delta*v)+'px';
       cover.style.opacity=clamp(1-v*1.5);
       ring.style.opacity=0;
