@@ -8453,6 +8453,12 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 #otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q.primary > span,#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > span{
   color:color-mix(in srgb,#fff calc(var(--pv,0)*100%),var(--pf-txt))!important;-webkit-text-fill-color:currentColor!important}
 </style>
+<style id="babylon-message-icon-blue-fix">
+/* قاعدة قديمة كانت تفرض الأبيض على كل عناصر رمز الرسالة (fill/stroke) فتمنع اللون الأزرق */
+#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q.primary > i svg,#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q.primary > i svg *,
+#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > i svg,#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > i svg *{
+  fill:none!important;stroke:currentColor!important;color:inherit!important}
+</style>
 </body>
 </html>
 
