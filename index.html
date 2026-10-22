@@ -4920,7 +4920,6 @@ function sendImage(e) {
   if (file.type.startsWith('video/')) return sendChatVideo(file);
   if (!file.type.startsWith('image/')) return showToast('اختر صورة أو فيديو فقط');
   if (file.size > 15 * 1024 * 1024) return showToast('الصورة كبيرة جداً');
-  showToast('جاري تجهيز الصورة...');
   compressImage(file, dataUrl => {
     if (!dataUrl) return showToast('تعذر تجهيز الصورة، جرب صورة أخرى');
     const chatId = activeChatId;
