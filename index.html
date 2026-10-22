@@ -2183,6 +2183,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
         <div class="pf-actions">
           <button type="button" class="pf-btn primary" onclick="startChatFromProfile()"><i data-ic="chat"></i><span>رسالة</span></button>
           <button type="button" class="pf-btn hidden" id="otherStarsBtn" onclick="devGiftStars()"><span aria-hidden="true">⭐</span><span>إهداء نجوم</span></button>
+          <button type="button" class="pf-btn hidden" id="otherGiftBtn" onclick="openSendGift()"><span aria-hidden="true">🎁</span><span>إهداء هدية</span></button>
           <button type="button" class="pf-btn" id="otherBlockBtn" onclick="toggleBlockCurrent()"><i data-ic="ban"></i><span>حظر</span></button>
         </div>
       </div>
@@ -3626,6 +3627,7 @@ function openUserProfileDirect(u) {
   loadOtherStories(u.id);
   try {
     document.getElementById('otherStarsBtn').classList.toggle('hidden', !(isDevUser() && u.id && u.id !== currentUser.uid));
+    document.getElementById('otherGiftBtn').classList.toggle('hidden', !(u.id && u.id !== currentUser.uid));
     document.getElementById('otherGiftsWrap').classList.add('hidden');
     if (u.id) loadGiftsGrid(u.id, 'otherGiftsGrid', 'otherGiftsWrap');
   } catch (e) {}
@@ -3801,6 +3803,11 @@ function renderMsgDoc(doc, box, existingTyping) {
         const grp = isGroupChat(activeChatId);
         if (m.type === 'stars' && typeof starGiftNode === 'function') {
           const gn = starGiftNode(m, doc.id, isMine);
+          if (existingTyping) box.insertBefore(gn, existingTyping); else box.appendChild(gn);
+          return;
+        }
+        if (m.type === 'gift' && typeof giftMsgNode === 'function') {
+          const gn = giftMsgNode(m, doc.id, isMine);
           if (existingTyping) box.insertBefore(gn, existingTyping); else box.appendChild(gn);
           return;
         }
@@ -5738,7 +5745,7 @@ function seekVoicePlayback(range){var card=range.closest('.custom-voice-card'), 
 .cl-dlg.stack button.cl-cancel{border-top:1px solid var(--cl-sep,rgba(255,255,255,.08));margin-top:4px}
 .cl-ta{resize:none;min-height:96px;line-height:1.6}
 </style>
-<link rel="stylesheet" href="gifts/gifts.css?v=9">
+<link rel="stylesheet" href="gifts/gifts.css?v=10">
 <script>
 function getLocalChatSet(key) { try { const a=JSON.parse(localStorage.getItem(key)||'[]'); return new Set(Array.isArray(a)?a:[]); } catch(e) { return new Set(); } }
 function saveLocalChatSet(key,set) { try { localStorage.setItem(key,JSON.stringify([...set])); } catch(e) {} }
@@ -6718,7 +6725,7 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 <!-- الهدايا: كل شي بمجلد gifts/ -->
 <script src="gifts/models.js?v=1"></script>
 <script src="gifts/cat-models.js?v=1"></script>
-<script src="gifts/gifts.js?v=9"></script>
+<script src="gifts/gifts.js?v=10"></script>
 <script src="gifts/star-gift.js?v=1"></script>
 
 
