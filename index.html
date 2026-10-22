@@ -2239,8 +2239,8 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 
         <div class="pf-actions pf-quick pf-quick-other">
           <button type="button" class="pf-btn pf-q primary" onclick="startChatFromProfile()"><i data-ic="chat"></i><span>رسالة</span></button>
-          <button type="button" class="pf-btn pf-q hidden" id="otherStarsBtn" onclick="devGiftStars()"><span aria-hidden="true" style="font-size:20px;line-height:1">⭐</span><span>إهداء نجوم</span></button>
-          <button type="button" class="pf-btn pf-q hidden" id="otherGiftBtn" onclick="openSendGift()"><span aria-hidden="true" style="font-size:20px;line-height:1">🎁</span><span>إهداء هدية</span></button>
+          <button type="button" class="pf-btn pf-q hidden" id="otherStarsBtn" onclick="devGiftStars()"><svg class="pf-action-icon pf-star-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 2.8 2.85 5.78 6.38.93-4.62 4.5 1.09 6.35L12 17.36l-5.7 3 1.09-6.35-4.62-4.5 6.38-.93L12 2.8Z"/></svg><span>إهداء نجوم</span></button>
+          <button type="button" class="pf-btn pf-q hidden" id="otherGiftBtn" onclick="openSendGift()"><svg class="pf-action-icon pf-gift-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10h18v11H3zM2 6.5h20V10H2zM12 6.5V21M12 6.5H7.4a2.4 2.4 0 1 1 2.4-2.4c0 1.3 2.2 2.4 2.2 2.4Zm0 0h4.6a2.4 2.4 0 1 0-2.4-2.4C14.2 5.4 12 6.5 12 6.5Z"/></svg><span>إهداء هدية</span></button>
           <button type="button" class="pf-btn pf-q" id="otherBlockBtn" onclick="toggleBlockCurrent()"><i data-ic="ban"></i><span>حظر</span></button>
         </div>
       </div>
@@ -7886,7 +7886,15 @@ html,body{overscroll-behavior-y:none}
     function clamp(v){ return v<0?0:v>1?1:v; }
     function apply(v){
       p=v;
-      if(v<=0.001){ reset(); return; }
+      // أثناء السحب لا نُظهر الحلقة/القرص الأصلي مجددًا عندما تكون قيمة التقدم قريبة من الصفر.
+      // هذا يمنع وميض الدائرة الرمادية في أول إطارات الحركة.
+      if(v<=0.001){
+        if(pulling){
+          hero.style.display='none'; hero.style.pointerEvents='none';
+          ring.style.opacity='0'; ring.style.visibility='hidden';
+        } else { reset(); }
+        return;
+      }
       moveOriginalAvatarIntoHero();
       var size=g.size+(g.S-g.size)*v;
       hero.style.display='block'; hero.style.willChange='width,height,top,left';
@@ -7946,6 +7954,7 @@ html,body{overscroll-behavior-y:none}
       hero.style.display='none'; hero.style.pointerEvents='none'; hInfo.style.opacity=0;
       cover.style.height=''; cover.style.opacity='';
       ring.style.opacity='';
+      ring.style.visibility='';
       nameBox.style.height=nameBox.style.overflow=nameBox.style.marginBottom=nameBox.style.opacity='';
       status.style.height=status.style.overflow=status.style.opacity='';
       if(hTop){ hTop.style.opacity=0; hMenu.classList.remove('open'); }
@@ -7985,8 +7994,9 @@ html,body{overscroll-behavior-y:none}
         cancelAnimationFrame(raf);
         if(!expanded){ reset(); sync(); measure(); }
         pulling=true; p0=expanded?1:0; sy=t.clientY; tv=p; vel=0; lastT=0;   // نبدأ من نقطة بدء السحب الفعلي
-        // إخفاء الحلقة فور بدء السحب المقبول، دون انتظار أول إطار حركة.
+        // إخفاء الحلقة فور بدء السحب المقبول، ومنع ظهورها في إطارات التحديث الأولى.
         ring.style.opacity='0';
+        ring.style.visibility='hidden';
         dy=0;
       }
       if(ev.cancelable) ev.preventDefault();
@@ -8330,6 +8340,46 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 #otherUserProfileView #otherBlockBtn.pf-q{color:var(--pf-gold)!important}
 #otherUserProfileView #otherBlockBtn.pf-q span{color:var(--pf-txt)!important}
 </style>
+
+<style id="babylon-other-profile-actions-unified-final">
+/* توحيد أزرار رسالة/إهداء نجوم/إهداء هدية/حظر مع أزرار الملف الشخصي */
+#otherUserProfileView .pf-head .pf-actions.pf-quick{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;width:100%!important;max-width:360px!important;margin:0 auto 12px!important;
+  align-items:stretch!important;
+}
+#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q{
+  box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
+  align-items:center!important;justify-content:center!important;gap:6px!important;
+  width:100%!important;min-width:0!important;height:56px!important;min-height:56px!important;
+  padding:7px 6px!important;border:0!important;border-radius:14px!important;
+  outline:0!important;box-shadow:none!important;
+  background:var(--pf-card)!important;color:var(--pf-gold)!important;
+  font-size:12px!important;font-weight:700!important;line-height:1.2!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q.primary{
+  background:var(--pf-card)!important;color:var(--pf-gold)!important;border:0!important;
+}
+#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q > span{
+  color:var(--pf-txt)!important;font-size:12px!important;font-weight:700!important;line-height:1.2!important;
+}
+#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q > i,
+#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q > svg{
+  display:block!important;width:19px!important;height:19px!important;flex:0 0 19px!important;
+  color:var(--pf-gold)!important;stroke:currentColor!important;
+}
+#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q > svg{
+  fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important;
+}
+#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn,
+#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn span{color:var(--pf-txt)!important}
+#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn > i{color:var(--pf-gold)!important}
+#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q:active{transform:scale(.97)!important}
+#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q:focus,
+#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q:focus-visible{outline:none!important;border:0!important;box-shadow:none!important}
+</style>
+
 </body>
 </html>
 
