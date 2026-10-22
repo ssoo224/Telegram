@@ -1977,13 +1977,13 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 </style>
 <link rel="stylesheet" href="gifts/gifts.css?v=12">
 <style id="babylon-profile-buttons-and-avatar-expansion">
-/* أزرار تعديل/الصورة/الغلاف أصغر بدرجة واحدة وبدون إطار أبيض */
+/* أزرار الملف الشخصي: تصغير خفيف فقط مع الحفاظ على مساحة مريحة */
 #profileView .pf-quick .pf-q,
 #otherUserProfileView .pf-quick .pf-q,
 #otherUserProfileView .pf-quick .pf-btn.pf-q{
-  min-height:40px!important;
-  height:42px!important;
-  padding:7px 8px!important;
+  min-height:56px!important;
+  height:56px!important;
+  padding:8px 6px!important;
   gap:6px!important;
   border:0!important;
   outline:0!important;
@@ -2005,7 +2005,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 #otherUserProfileView .pf-quick .pf-q svg,
 #otherUserProfileView .pf-quick .pf-btn.pf-q i,
 #otherUserProfileView .pf-quick .pf-btn.pf-q svg{
-  width:17px!important;height:17px!important;flex:0 0 17px!important;
+  width:19px!important;height:19px!important;flex:0 0 19px!important;
 }
 </style>
 </head>
@@ -7985,6 +7985,8 @@ html,body{overscroll-behavior-y:none}
         cancelAnimationFrame(raf);
         if(!expanded){ reset(); sync(); measure(); }
         pulling=true; p0=expanded?1:0; sy=t.clientY; tv=p; vel=0; lastT=0;   // نبدأ من نقطة بدء السحب الفعلي
+        // إخفاء الحلقة فور بدء السحب المقبول، دون انتظار أول إطار حركة.
+        ring.style.opacity='0';
         dy=0;
       }
       if(ev.cancelable) ev.preventDefault();
@@ -8085,7 +8087,9 @@ html,body{overscroll-behavior-y:none}
     new MutationObserver(function(){
       if(view.classList.contains('hidden')){ cancelAnimationFrame(raf); reset(); view.scrollTop=0; }
     }).observe(view,{attributes:true,attributeFilter:['class']});
-    window.addEventListener('resize',function(){ if(expanded||p>0){ cancelAnimationFrame(raf); reset(); } });
+    // لا نعيد ضبط حركة الصورة عند resize؛ متصفحات الهاتف تطلق resize أثناء السحب
+    // وقد يؤدي نقل عنصر الصورة الأصلي في منتصف الحركة إلى تعارض/كراش.
+
   }
   function init(){
     try{
@@ -8297,6 +8301,35 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
   window.addEventListener('load',wrapSend);
 })();
 </script>
+
+<style id="babylon-profile-button-balance-and-other-user-actions">
+/* حجم متوازن للأزرار الثلاثة في البروفايل الشخصي */
+#profileView .pf-quick .pf-q{min-height:56px!important;height:56px!important;padding:8px 6px!important}
+/* أزرار بروفايل الشخص الآخر الأربعة: لون وتنسيق موحدان */
+#otherUserProfileView .pf-quick .pf-q,
+#otherUserProfileView .pf-quick .pf-btn.pf-q,
+#otherUserProfileView .pf-actions .pf-btn.pf-q,
+#otherUserProfileView #otherBlockBtn.pf-q{
+  min-height:56px!important;height:56px!important;padding:8px 6px!important;
+  border:1px solid var(--pf-line)!important;border-radius:16px!important;
+  background:var(--pf-card)!important;color:var(--pf-gold)!important;
+  box-shadow:none!important;outline:none!important;
+}
+#otherUserProfileView .pf-quick .pf-q span,
+#otherUserProfileView .pf-actions .pf-btn.pf-q span,
+#otherUserProfileView #otherBlockBtn.pf-q span{color:var(--pf-txt)!important;font-weight:700!important}
+#otherUserProfileView .pf-quick .pf-q svg,
+#otherUserProfileView .pf-actions .pf-btn.pf-q svg,
+#otherUserProfileView #otherBlockBtn.pf-q svg,
+#otherUserProfileView .pf-quick .pf-q i,
+#otherUserProfileView .pf-actions .pf-btn.pf-q i{width:19px!important;height:19px!important;color:var(--pf-gold)!important;stroke:currentColor}
+#otherUserProfileView .pf-quick .pf-btn.pf-q.primary,
+#otherUserProfileView .pf-actions .pf-btn.pf-q.primary{background:var(--pf-card)!important;color:var(--pf-gold)!important;border:1px solid var(--pf-line)!important}
+#otherUserProfileView .pf-quick .pf-btn.pf-q.primary span,
+#otherUserProfileView .pf-actions .pf-btn.pf-q.primary span{color:var(--pf-txt)!important}
+#otherUserProfileView #otherBlockBtn.pf-q{color:var(--pf-gold)!important}
+#otherUserProfileView #otherBlockBtn.pf-q span{color:var(--pf-txt)!important}
+</style>
 </body>
 </html>
 
