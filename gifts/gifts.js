@@ -231,7 +231,7 @@ function renderGiftPage(ov,uid,g,issued,reveal,lst){
     if(mine){closeGiftPage();openProfile();return;}
     db.collection('users').doc(uid).get().then(d=>{if(d.exists){closeGiftPage();openUserProfileDirect(Object.assign({id:uid},d.data()));}});
   };
-  loadGiftHistory(ov,K,g);
+  /* سجل المالكين محذوف بطلب المستخدم */
   const upb=ov.querySelector('#gpUp');if(upb)upb.onclick=()=>doUpgrade(ov,uid,g);
   const sb=ov.querySelector('#gpSell');if(sb)sb.onclick=()=>sellGift(ov,g,null);
   const eb=ov.querySelector('#gpEdit');if(eb)eb.onclick=()=>sellGift(ov,g,lst);
