@@ -349,7 +349,9 @@ async function buyGift(kind){
     await b.commit();
     if(dev)wref.set({stars:DEV_BIG},{merge:true}).catch(()=>{});
     showToast('🎉 اشتريت '+K.name+' #'+n);
-    closeStore();openGiftPage(me,n,K.key);
+    /* نبقى بصفحة المتجر (ما نروح للترقية)؛ نحدّث المتبقي ونرجع زر الشراء */
+    const sb=document.getElementById('stBuy');if(sb){sb.disabled=false;sb.textContent='شراء بـ '+K.price+' نجمة';}
+    refreshStore();
   }catch(e){
     console.error(e);showToast('ممكن أحد سبقك، حاول مرة ثانية');refreshStore();
     const b2=document.getElementById('stBuy');if(b2){b2.disabled=false;b2.textContent='شراء بـ '+K.price+' نجمة';}
@@ -389,3 +391,91 @@ function openStarsHistory(){
   histUnsub=db.collection('users').doc(meId()).collection('txs').orderBy('at','desc').limit(100).onSnapshot(s=>{rows=s.docs.map(d=>d.data());draw();},()=>{rows=[];draw();});
 }
 
+
+
+/* ===== إهداء هدية لمستخدم: تنتقل الملكية له وتوصله رسالة كارت بالمحادثة ===== */
+function closeSend(){document.getElementById('giftSend')?.remove();}
+async function transferGift(g,to){
+  const K=gk(g.k),me=meId(),now=Date.now(),id=gid(K,g.number);
+  const cref=db.collection('chats').doc([me,to].sort().join('__'));
+  const cs=await cref.get();
+  if(cs.exists)await cref.update({updatedAt:now});else await cref.set({participants:[me,to],updatedAt:now});
+  const doc={number:g.number,upgraded:!!g.upgraded,at:g.at||now};
+  if(K.gen)doc.k=K.key;
+  const msg={senderId:me,type:'gift',k:K.key,number:g.number,upgraded:!!g.upgraded,to:to,text:'🎁 هدية '+K.name+' #'+g.number,createdAt:now,read:false};
+  if(g.upgraded){doc.model=g.model;doc.bg=g.bg;doc.sym=g.sym;msg.model=g.model;msg.bg=g.bg;msg.sym=g.sym;}
+  const b=db.batch();
+  b.delete(db.collection('users').doc(me).collection(K.coll).doc(id));
+  b.set(db.collection('users').doc(to).collection(K.coll).doc(id),doc);
+  b.update(db.collection(K.gen?'giftSales':K.sales).doc(id),{ownerId:to});
+  b.set(cref.collection('messages').doc(),msg);
+  await b.commit();
+}
+async function openSendGift(){
+  const to=currentChatOtherUserId,me=meId();
+  if(!to||to===me)return showToast('افتح بروفايل المستخدم أولاً');
+  const toName=String((document.getElementById('otherHeaderNameText')||{}).textContent||'مستخدم').trim();
+  closeSend();
+  const ov=document.createElement('div');ov.id='giftSend';ov.className='gp-ov';uiRoot().appendChild(ov);
+  const top='<div class="gx-top"><button type="button" class="gx-ib" id="gsBack" aria-label="رجوع">'+IC_BACK+'</button><div class="gx-title"><b>إهداء هدية</b></div></div>';
+  ov.innerHTML=top+'<div class="sg-sub">جاري التحميل…</div>';
+  ov.querySelector('#gsBack').onclick=closeSend;
+  await GIFTS_READY;
+  if(!document.getElementById('giftSend'))return;
+  const items=[];
+  try{
+    const kinds=Object.values(GIFT_KINDS),colls=[...new Set(kinds.map(K=>K.coll))];
+    const snaps=await Promise.all(colls.map(c=>db.collection('users').doc(me).collection(c).get()));
+    snaps.forEach((sn,i)=>{
+      const c=colls[i],legacy=kinds.find(K=>K.coll===c&&!K.gen);
+      sn.docs.forEach(d=>{const x=d.data(),key=c==='gifts'?x.k:(legacy&&legacy.key);if(key&&GIFT_KINDS[key])items.push(Object.assign({},x,{k:key}));});
+    });
+  }catch(e){console.error(e);}
+  items.sort((a,b)=>(b.at||0)-(a.at||0));
+  ov.querySelector('#gsBack').onclick=closeSend;
+  if(!items.length){ov.innerHTML=top+'<div class="sg-sub">ما عندك هدايا لتهديها. اشتر هدية من المتجر أولاً.</div>';ov.querySelector('#gsBack').onclick=closeSend;return;}
+  ov.innerHTML=top+'<div class="sg-sub">اختر هدية لإرسالها إلى <b>'+esc(toName)+'</b></div><div id="gsGrid" class="posts-grid gifts-grid"></div><div class="gs-bar"><button type="button" class="gs-send" id="gsSend" disabled>اختر هدية</button></div>';
+  ov.querySelector('#gsBack').onclick=closeSend;
+  const grid=ov.querySelector('#gsGrid'),btn=ov.querySelector('#gsSend');let sel=null,sending=false;
+  items.forEach(g=>{
+    const t=giftArt(g,{still:true,cls:'gift-tile'});
+    t.insertAdjacentHTML('beforeend','<div class="gt-n">#'+g.number+'</div>');
+    t.onclick=()=>{
+      grid.querySelectorAll('.gs-sel').forEach(x=>x.classList.remove('gs-sel'));
+      t.classList.add('gs-sel');sel=g;btn.disabled=false;btn.textContent='إرسال '+gk(g.k).name+' #'+g.number;
+    };
+    grid.appendChild(t);
+  });
+  btn.onclick=async()=>{
+    if(!sel||sending)return;
+    const K=gk(sel.k);
+    const r=await clAsk({title:'إرسال الهدية 🎁',body:'إرسال <b>'+esc(K.name)+' #'+sel.number+'</b> إلى <b>'+esc(toName)+'</b>؟ تصير ملكه ولا ترجع إلك.',buttons:[{text:'إرسال'},{text:'إلغاء',cls:'cl-cancel'}]});
+    if(!r||r.i!==0)return;
+    sending=true;btn.disabled=true;btn.textContent='جاري الإرسال…';
+    try{await transferGift(sel,to);showToast('🎁 وصلت الهدية إلى '+toName);closeSend();}
+    catch(e){console.error(e);showToast('تعذر إرسال الهدية');sending=false;btn.disabled=false;btn.textContent='إرسال '+K.name+' #'+sel.number;}
+  };
+}
+/* كارت الهدية داخل المحادثة */
+function giftMsgNode(m,id,isMine){
+  const K=GIFT_KINDS[m.k]||GIFT_KINDS.pepe;
+  const other=String((document.getElementById('otherHeaderNameText')||{}).textContent||'').trim();
+  const myName=(typeof currentUserData!=='undefined'&&currentUserData&&currentUserData.displayName)||'أنت';
+  const from=isMine?myName:other;
+  const who=other?(' <b>'+esc(other)+'</b>'):'';
+  const line=isMine?('أنت أهديت'+who+' هدية'):('أهداك'+who+' هدية');
+  const g={k:K.key,number:m.number,upgraded:!!m.upgraded,model:m.model,bg:m.bg,sym:m.sym};
+  const up=g.upgraded&&K.models[g.model]&&PEPE_BGS[g.bg]&&PEPE_SYMS[g.sym];
+  const w=document.createElement('div');w.className='gm-wrap';w.id='message_'+id;w.dataset.created=String(m.createdAt||0);
+  const row=(a,b)=>'<div class="gg-row"><span>'+a+'</span><b>'+esc(b)+'</b></div>';
+  w.innerHTML='<div class="sys-msg">'+line+'</div>'
+    +'<div class="gg-card" style="background:'+bgCss(g)+'">'+(up?patSvg(g.sym):'')
+    +'<div class="gg-art"><img alt="" src="'+thumbUrl(g)+'"></div>'
+    +'<div class="gg-from">هدية من <b>'+esc(from||'مستخدم')+'</b></div>'
+    +'<div class="gg-title">'+esc(K.name)+' #'+g.number+'</div>'
+    +(up?row('النموذج',K.models[g.model].n)+row('الخلفية',PEPE_BGS[g.bg].n)+row('الرمز',PEPE_SYMS[g.sym].n):'')
+    +'<button type="button" class="gg-btn">عرض</button></div>';
+  const im=w.querySelector('.gg-art img');im.onerror=()=>{im.onerror=null;im.src=thumbLocal(g);};
+  w.querySelector('.gg-btn').onclick=ev=>{ev.stopPropagation();openGiftPage(m.to||meId(),m.number,K.key);};
+  return w;
+}
