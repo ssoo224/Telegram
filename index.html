@@ -3516,7 +3516,7 @@ function uploadAvatarLive(e) {
     img.onerror = () => showToast('تعذر فتح الصورة');
     img.onload = function() {
       // Preserve the entire original image (no square crop) and retain high detail.
-      const maxSide = 1600;
+      const maxSide = 1280;
       const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
       const width = Math.max(1, Math.round(img.naturalWidth * scale));
       const height = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -3524,7 +3524,7 @@ function uploadAvatarLive(e) {
       const ctx = canvas.getContext('2d');
       ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, width, height);
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.96);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
       const previous = currentUserData && currentUserData.avatarUrl;
       let historyList = Array.isArray(currentUserData && currentUserData.avatarHistory) ? currentUserData.avatarHistory.slice() : [];
       if (previous && previous !== compressedDataUrl) {
@@ -7736,12 +7736,12 @@ async function avatarDownload(){
 
     function sync(){
       var hasImg = img && !img.classList.contains('hidden') && img.getAttribute('src');
-      if(hasImg){ hImg.src = img.getAttribute('src'); hImg.style.display='block'; hLet.style.display='none'; }
+      if(hasImg){ var _s=img.getAttribute('src'); if(hImg.getAttribute('src')!==_s) hImg.src=_s; hImg.style.display='block'; hLet.style.display='none'; }
       else {
         hImg.style.display='none'; hLet.style.display='flex'; hLet.innerHTML = txt ? txt.innerHTML : '';
         if(txt){ var cs=getComputedStyle(txt); hero.style.background = cs.backgroundImage!=='none'? cs.backgroundImage : cs.backgroundColor; }
       }
-      if(hasImg){ hExt.style.background=''; hExt.style.backgroundImage='url("'+img.getAttribute('src')+'")'; hExt.style.backgroundSize='cover'; }
+      if(hasImg){ if(hExt.dataset.src!==img.getAttribute('src')){ hExt.dataset.src=img.getAttribute('src'); hExt.style.background=''; hExt.style.backgroundImage='url("'+img.getAttribute('src')+'")'; hExt.style.backgroundSize='cover'; } }
       else { hExt.style.backgroundImage='none'; hExt.style.background=hero.style.background||'#16213a'; }
       if(own){ loadItems(); }
       hName.textContent = nameTxt ? nameTxt.textContent : '';
@@ -7783,10 +7783,6 @@ async function avatarDownload(){
       var wasExpanded = view.classList.contains('pf-expanded');
       if(wasExpanded !== (v>=0.5)) {
         view.classList.toggle('pf-expanded', v>=0.5);
-        if (typeof setProfileExpandedStatusBlur === 'function') {
-          if (v>=0.5) setProfileExpandedStatusBlur(true, hImg && hImg.style.display!=='none' ? hImg.src : '');
-          else setProfileExpandedStatusBlur(false);
-        }
       }
       cover.style.height=(g.coverH+g.delta*v)+'px';
       cover.style.opacity=clamp(1-v*1.5);
@@ -7818,7 +7814,7 @@ async function avatarDownload(){
       nameBox.style.height=nameBox.style.overflow=nameBox.style.marginBottom=nameBox.style.opacity='';
       status.style.height=status.style.overflow=status.style.opacity='';
       if(hTop){ hTop.style.opacity=0; hMenu.classList.remove('open'); }
-      if(view.classList.contains('pf-expanded')) view.classList.remove('pf-expanded');
+      if(view.classList.contains('pf-expanded')) view.classList.remove('pf-expanded'); view.classList.remove('pf-settled');
       if (typeof setProfileExpandedStatusBlur === 'function') setProfileExpandedStatusBlur(false);
       hImg.style.webkitMaskImage=hImg.style.maskImage=hLet.style.webkitMaskImage=hLet.style.maskImage=''; hImg.style.height=hLet.style.height=hExt.style.height=hShade.style.top=hShade.style.height=''; hShade.style.bottom=''; if(quick){ quick.style.transform=''; quick.style.removeProperty('margin-bottom'); view.style.removeProperty('--pv'); hInfo.style.bottom=''; }
     }
@@ -7829,7 +7825,7 @@ async function avatarDownload(){
         var k=clamp((now-t0)/dur), e=1-Math.pow(1-k,4);
         try { apply(from+(t-from)*e); } catch (err) { console.warn('profile pull animation stopped', err); pulling=false; track=false; try { reset(); } catch (_) {} return; }
         if(k<1) raf=requestAnimationFrame(step);
-        else { expanded = t>=1; if(t<=0) reset(); }
+        else { expanded = t>=1; if(t<=0) reset(); else { view.classList.add('pf-settled'); if (typeof setProfileExpandedStatusBlur === 'function') setProfileExpandedStatusBlur(true, ''); } }
       })(t0);
     }
 
@@ -7947,7 +7943,8 @@ async function avatarDownload(){
     new MutationObserver(function(){
       if(view.classList.contains('hidden')){ cancelAnimationFrame(raf); reset(); view.scrollTop=0; }
     }).observe(view,{attributes:true,attributeFilter:['class']});
-    window.addEventListener('resize',function(){ if(expanded||p>0){ cancelAnimationFrame(raf); reset(); } });
+    var lastW=window.innerWidth;
+    window.addEventListener('resize',function(){ if(pulling||window.innerWidth===lastW) return; lastW=window.innerWidth; if(expanded||p>0){ cancelAnimationFrame(raf); reset(); } });
   }
   function init(){
     try{
@@ -10228,6 +10225,8 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 #otherUserProfileView #otherBlockBtn.pf-q,#otherUserProfileView #otherBlockBtn.pf-q span{color:color-mix(in srgb,#ffb4b4 calc(var(--pv,0)*100%),#f87171)!important}
 .pf-hero .pf-hero-ext{position:absolute;left:0;right:0;top:0;overflow:hidden;background-size:cover;background-position:center;pointer-events:none;z-index:0}
 .pf-hero .pf-hero-ext::before{content:"";position:absolute;inset:-30px;background:inherit;filter:blur(24px) saturate(1.2) brightness(.9);transform:scale(1.1)}
+.pf-hero .pf-hero-ext::before{filter:none!important}
+.pf-settled .pf-hero .pf-hero-ext::before{filter:blur(24px) saturate(1.2) brightness(.9)!important}
 .pf-hero img,.pf-hero .pf-hero-letter{z-index:1}
 .pf-hero .pf-hero-shade{z-index:2;background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.55))!important}
 .pf-hero .pf-hero-info{z-index:3}
