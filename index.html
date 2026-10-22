@@ -3941,6 +3941,12 @@ function renderMsgDoc(doc, box, existingTyping) {
 
         htmlContent += `<div class="msg-meta"><span>${rawTimeStr}</span> ${checkHtml}</div>`;
         b.innerHTML = htmlContent;
+        try {
+          if (!m.imageUrl && !m.audioUrl && !m.replyTo && !m.forwarded && !m.storyReply) {
+            const _em = babylonSingleEmoji(m.text);
+            if (_em) babylonApplyBigEmoji(b, _em, (Date.now() - (Number(m.createdAt) || 0)) < 6000);
+          }
+        } catch (e) {}
         try { primeVoiceDuration(b); } catch (e) {}
         const msgImg = b.querySelector(".msg-image img");
         if (msgImg) msgImg.onclick = (ev) => { ev.stopPropagation(); openImageViewer(msgImg.src); };
@@ -8809,6 +8815,44 @@ function setTone(el,u){if(!el)return;el.classList.remove('tone-blue','tone-gold'
 </style>
 <script id="babylon-mentions-js">
 /* @username in a message: blue + tappable. Tap opens that person's profile; unknown username shakes the chat. */
+/* ===== إيموجي واحد فقط: عرض كبير متحرك بدون فقاعة ===== */
+function babylonSingleEmoji(t){
+  t = String(t == null ? '' : t).trim();
+  if (!t || t.length > 40) return null;
+  var re = /^(?:[\u{1F1E6}-\u{1F1FF}]{2}|[0-9#*]\uFE0F?\u20E3|\p{Extended_Pictographic}[\uFE0F\u{1F3FB}-\u{1F3FF}\u{E0020}-\u{E007F}]*(?:\u200D\p{Extended_Pictographic}[\uFE0F\u{1F3FB}-\u{1F3FF}]*)*)$/u;
+  try { if (!re.test(t)) return null; } catch (e) { return null; }
+  var first = t.codePointAt(0);
+  if (first < 0x231A && t.indexOf('\uFE0F') < 0 && !/\u20E3/.test(t)) return null; // © ® ™ بدون FE0F ليست إيموجي
+  return t;
+}
+function babylonApplyBigEmoji(b, emoji, isNew){
+  var box = b.querySelector('.msg-text'); if (!box) return;
+  var cps = Array.from(emoji).map(function (c) { return c.codePointAt(0).toString(16); });
+  var base = 'https://fonts.gstatic.com/s/e/notoemoji/latest/';
+  var tries = [cps.join('_')];
+  var noVS = cps.filter(function (c) { return c !== 'fe0f'; }).join('_');
+  if (noVS && noVS !== tries[0]) tries.push(noVS);
+  b.classList.add('emoji-only');
+  if (isNew) b.classList.add('emoji-new');
+  var wrap = document.createElement('div');
+  wrap.className = 'emoji-big';
+  var fb = document.createElement('span');
+  fb.className = 'emoji-big-fallback';
+  fb.textContent = emoji;
+  var img = document.createElement('img');
+  img.className = 'emoji-big-img';
+  img.alt = emoji; img.draggable = false; img.decoding = 'async';
+  var i = 0;
+  img.onerror = function () {
+    i++;
+    if (i < tries.length) { img.src = base + tries[i] + '/512.webp'; }
+    else { img.remove(); wrap.classList.add('use-native'); } // لا يوجد انميشن لهذا الإيموجي: نستخدم الإيموجي نفسه مع حركة CSS
+  };
+  img.onload = function () { wrap.classList.add('loaded'); };
+  img.src = base + tries[0] + '/512.webp';
+  wrap.appendChild(img); wrap.appendChild(fb);
+  box.replaceWith(wrap);
+}
 function renderMsgText(text){
   var safe = esc(text);
   return safe.replace(/(^|[^A-Za-z0-9_.@])@([A-Za-z][A-Za-z0-9_.]{2,})/g, function(all, pre, name){
@@ -9931,4 +9975,67 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 .pf-hero .pf-hero-name{color:#fff!important}
 .pf-hero .pf-hero-status,.pf-hero .pf-hero-status.online{color:#fff!important;font-weight:800!important}
 .pf-hero .pf-hero-status.online::before{content:"";display:inline-block;width:14px;height:14px;margin-inline-end:6px;vertical-align:-2px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%234ade80' fill-opacity='.35'/%3E%3Ccircle cx='12' cy='12' r='5.5' fill='%234ade80'/%3E%3C/svg%3E") center/contain no-repeat;filter:drop-shadow(0 0 3px rgba(74,222,128,.8))}
+</style>
+
+<style id="babylon-emoji-only-message">
+/* رسالة إيموجي واحد: بدون فقاعة، حجم كبير، مع انميشن */
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  padding:2px 4px !important;
+  min-width:0 !important;
+  max-width:none !important;
+  width:fit-content;
+  border-radius:24px !important;
+  align-items:center;
+}
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .emoji-big{
+  position:relative;
+  width:clamp(96px,34vw,150px);
+  height:clamp(96px,34vw,150px);
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .emoji-big-img{
+  width:100%;height:100%;object-fit:contain;display:block;
+  -webkit-user-drag:none;user-select:none;
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.18));
+}
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .emoji-big-fallback{
+  display:none;
+  font-size:clamp(72px,26vw,112px);line-height:1;
+  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  animation:babylonEmojiIdle 2.4s ease-in-out infinite;
+  transform-origin:50% 80%;
+}
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .emoji-big.use-native .emoji-big-fallback{display:block}
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only.emoji-new .emoji-big{animation:babylonEmojiPop .6s cubic-bezier(.2,1.4,.4,1) both}
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .msg-meta{
+  position:static !important;
+  align-self:center !important;
+  margin-top:-2px;
+  padding:1px 8px;
+  border-radius:10px;
+  background:rgba(0,0,0,.32);
+  color:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+  font-size:10.5px;
+}
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .msg-meta .check-mark{color:rgba(255,255,255,.85) !important;-webkit-text-fill-color:currentColor !important}
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .reactions-row{align-self:center}
+@keyframes babylonEmojiPop{
+  0%{transform:scale(.15) rotate(-18deg);opacity:0}
+  60%{transform:scale(1.18) rotate(6deg);opacity:1}
+  100%{transform:scale(1) rotate(0)}
+}
+@keyframes babylonEmojiIdle{
+  0%,100%{transform:translateY(0) scale(1) rotate(0)}
+  25%{transform:translateY(-6px) scale(1.05) rotate(-4deg)}
+  50%{transform:translateY(0) scale(1)}
+  75%{transform:translateY(-3px) scale(1.03) rotate(4deg)}
+}
+@media (prefers-reduced-motion:reduce){
+  #chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only.emoji-new .emoji-big,#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .emoji-big-fallback{animation:none !important}
+}
 </style>
