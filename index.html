@@ -7982,7 +7982,14 @@ html,body{overscroll-behavior-y:none}
     },{passive:true});
 
     view.addEventListener('touchmove',function(ev){
-      if(!track) return;
+      if(!track || !ev.touches || !ev.touches.length) return;
+      // Hide the source ring on the very first downward movement frame, before the
+      // pull threshold is reached. Restore it if this turns out not to be a pull.
+      var firstTouch=ev.touches[0], earlyDy=firstTouch.clientY-sy, earlyDx=firstTouch.clientX-sx;
+      if(!expanded && earlyDy>0 && Math.abs(earlyDy)>Math.abs(earlyDx)){
+        ring.style.setProperty('opacity','0','important');
+        ring.style.setProperty('visibility','hidden','important');
+      }
       try{ onMove(ev); }catch(err){ console.warn('profile pull move failed',err); pulling=false; track=false; cancelAnimationFrame(followRaf); followRaf=0; try{ reset(); }catch(_){} }
     },{passive:false});
     function onMove(ev){
@@ -8017,7 +8024,12 @@ html,body{overscroll-behavior-y:none}
     }
 
     function finish(){
-      if(!pulling){ track=false; return; }
+      if(!pulling){
+        track=false;
+        ring.style.removeProperty('opacity');
+        ring.style.removeProperty('visibility');
+        return;
+      }
       pulling=false; track=false;
       cancelAnimationFrame(followRaf); followRaf=0; followLast=0;
       var open = vel>0.7 ? true : vel<-0.7 ? false : (p>=THRESH && (p0===0 || p>=0.7));
@@ -8354,12 +8366,13 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
   width:100%!important;min-width:0!important;height:56px!important;min-height:56px!important;
   padding:7px 6px!important;border:0!important;border-radius:14px!important;
   outline:0!important;box-shadow:none!important;
-  background:var(--pf-card)!important;color:var(--pf-gold)!important;
+  background:transparent!important;color:var(--pf-gold)!important;
+  -webkit-backdrop-filter:blur(10px)!important;backdrop-filter:blur(10px)!important;
   font-size:12px!important;font-weight:700!important;line-height:1.2!important;
   -webkit-tap-highlight-color:transparent!important;
 }
 #otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q.primary{
-  background:var(--pf-card)!important;color:var(--pf-gold)!important;border:0!important;
+  background:transparent!important;color:var(--pf-gold)!important;border:0!important;
 }
 #otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q > span{
   color:var(--pf-txt)!important;font-size:12px!important;font-weight:700!important;line-height:1.2!important;
