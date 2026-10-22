@@ -7680,7 +7680,7 @@ async function avatarDownload(){
 </script>
 
 <style id="pf-pull-expand-css">
-#profileView,#otherUserProfileView{position:relative;overscroll-behavior-y:contain}
+#profileView,#otherUserProfileView{position:relative;overscroll-behavior-y:contain;touch-action:pan-y}
 .pf-hero{position:absolute;z-index:1;overflow:hidden;display:none;pointer-events:none;background:#16213a;will-change:width,height,top,left,border-radius;-webkit-tap-highlight-color:transparent}
 .pf-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none}
 .pf-hero .pf-hero-letter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--babylon-gold);font-weight:800;font-size:clamp(48px,26vw,140px)}
@@ -7732,7 +7732,7 @@ async function avatarDownload(){
         hStat=hero.querySelector('.pf-hero-status'), hExt=hero.querySelector('.pf-hero-ext'), hShade=hero.querySelector('.pf-hero-shade');
 
     var tv=0, vel=0, lastT=0, lastY=0, followRaf=0, followLast=0;
-    var g=null, p=0, expanded=false, pulling=false, sy=0, sx=0, p0=0, raf=0, track=false;
+    var g=null, p=0, expanded=false, pulling=false, sy=0, sx=0, startY=0, startX=0, p0=0, raf=0, track=false, pullStartedAt=0;
 
     function sync(){
       var hasImg = img && !img.classList.contains('hidden') && img.getAttribute('src');
@@ -7845,20 +7845,20 @@ async function avatarDownload(){
     view.addEventListener('touchstart',function(ev){
       if(ev.touches.length!==1){ track=false; return; }
       track = view.scrollTop<=1;
-      pulling=false; sy=ev.touches[0].clientY; sx=ev.touches[0].clientX;
+      pulling=false; sy=startY=ev.touches[0].clientY; sx=startX=ev.touches[0].clientX; pullStartedAt=performance.now();
     },{passive:true});
 
     view.addEventListener('touchmove',function(ev){
       if(!track) return;
-      var t=ev.touches[0], dy=t.clientY-sy, dx=t.clientX-sx;
+      var t=ev.touches[0], dy=t.clientY-startY, dx=t.clientX-startX;
       if(!pulling){
         var wantPull = !expanded && dy>8 && Math.abs(dy)>Math.abs(dx);
         var wantBack = expanded && dy<-8 && Math.abs(dy)>Math.abs(dx) && view.scrollTop<=1;
         if(!wantPull && !wantBack) return;
         cancelAnimationFrame(raf);
         if(!expanded){ reset(); sync(); measure(); }
-        pulling=true; p0=expanded?1:0; sy=t.clientY; tv=p; vel=0; lastT=0;   // نبدأ من نقطة بدء السحب الفعلي
-        dy=0;
+        pulling=true; p0=expanded?1:0; tv=p; vel=0; lastT=0; lastY=t.clientY;
+        // لا نعيد تعيين نقطة البداية: احتفظ بمسافة السحب الأولى حتى لا تضيع الإيماءة السريعة.
       }
       if(ev.cancelable) ev.preventDefault();
       var nowT=performance.now();
@@ -7881,12 +7881,21 @@ async function avatarDownload(){
       if(!pulling){ track=false; return; }
       pulling=false; track=false;
       cancelAnimationFrame(followRaf); followRaf=0; followLast=0;
-      var open = vel>0.7 ? true : vel<-0.7 ? false : (p>=THRESH && (p0===0 || p>=0.7));
+      var totalDy = lastY - startY;
+      var elapsed = Math.max(1, performance.now() - pullStartedAt);
+      // الحسم يعتمد على مسافة السحب والسرعة معًا، وليس على قيمة p المتأخرة عن إطار الرسم.
+      var fastDown = p0===0 && totalDy>24 && (vel>0.45 || (totalDy/elapsed)>0.65);
+      var fastUp = p0===1 && totalDy<-28 && (vel<-0.45 || (totalDy/elapsed)<-0.65);
+      var open = fastDown || (!fastUp && (p>=THRESH || (p0===0 && totalDy>RANGE*0.55))); 
       vel=0; lastT=0;
       animateTo(open ? 1 : 0);
     }
     view.addEventListener('touchend',finish,{passive:true});
-    view.addEventListener('touchcancel',finish,{passive:true});
+    view.addEventListener('touchcancel',function(){
+      // Android قد يرسل touchcancel أثناء سحب سريع؛ لا نعامل الإلغاء كإفلات ناجح.
+      if(pulling){ pulling=false; track=false; cancelAnimationFrame(followRaf); followRaf=0; followLast=0; animateTo(p>=THRESH ? 1 : 0); }
+      else track=false;
+    },{passive:true});
 
     // الضغط على المربع المكبّر يفتح معرض الصور
     var items=[], idx=0, busy=false;
