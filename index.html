@@ -4938,47 +4938,110 @@ function sendImage(e) {
 
 function openImageViewer(src) {
   const v = document.createElement('div');
-  v.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;padding:12px;overflow:hidden;touch-action:none;';
+  v.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;padding:12px;overflow:hidden;touch-action:none;';
   const im = document.createElement('img');
   im.src = src;
   im.alt = 'صورة';
-  im.style.cssText = 'max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:8px;transform:translate(0px,0px) scale(1);transform-origin:center center;will-change:transform;user-select:none;-webkit-user-drag:none;touch-action:none;cursor:zoom-in;';
+  im.style.cssText = 'max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:8px;transform:translate(0px,0px) scale(1);transform-origin:center center;will-change:transform;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;touch-action:none;cursor:zoom-in;';
   v.appendChild(im);
-  let scale = 1, tx = 0, ty = 0, pointers = new Map(), startDist = 0, startScale = 1;
-  let startX = 0, startY = 0, startTx = 0, startTy = 0, lastTap = 0;
+  document.body.appendChild(v);
+
+  // اجعل زر الرجوع في الهاتف يغلق عارض الصورة أولاً
+  let viewerClosed = false, viewerHistoryEntry = false;
+  const closeImageViewer = (fromBack = false) => {
+    if (viewerClosed) return;
+    viewerClosed = true;
+    window.removeEventListener('popstate', onImageViewerBack);
+    v.remove();
+    if (viewerHistoryEntry && !fromBack) { viewerHistoryEntry = false; history.back(); }
+  };
+  const onImageViewerBack = () => { viewerHistoryEntry = false; closeImageViewer(true); };
+  try { history.pushState({ babylonImageViewer: true }, ''); viewerHistoryEntry = true; window.addEventListener('popstate', onImageViewerBack); } catch (_) {}
+
+  let scale = 1, tx = 0, ty = 0;
+  const pointers = new Map();
+  const starts = new Map();
+  let startDist = 0, startScale = 1, startX = 0, startY = 0, startTx = 0, startTy = 0;
+  let gestureMoved = false, multiTouch = false, lastTap = 0, lastTapX = 0, lastTapY = 0;
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-  const render = () => { im.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; im.style.cursor = scale > 1 ? 'grab' : 'zoom-in'; };
+  const render = () => {
+    im.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+    im.style.cursor = scale > 1 ? 'grab' : 'zoom-in';
+  };
   const reset = () => { scale = 1; tx = 0; ty = 0; render(); };
   const toggleZoom = (x, y) => {
     if (scale > 1) reset();
-    else { scale = 2.5; tx = (window.innerWidth / 2 - x) * 0.7; ty = (window.innerHeight / 2 - y) * 0.7; render(); }
+    else {
+      scale = 2.5;
+      tx = (window.innerWidth / 2 - x) * 0.7;
+      ty = (window.innerHeight / 2 - y) * 0.7;
+      render();
+    }
   };
-  v.addEventListener('click', e => { if (e.target === v) v.remove(); });
-  im.addEventListener('dblclick', e => { e.preventDefault(); e.stopPropagation(); toggleZoom(e.clientX, e.clientY); });
+  v.addEventListener('click', e => { if (e.target === v) closeImageViewer(); });
+  im.addEventListener('dblclick', e => {
+    e.preventDefault(); e.stopPropagation();
+    toggleZoom(e.clientX, e.clientY);
+    lastTap = 0;
+  });
   im.addEventListener('pointerdown', e => {
-    e.preventDefault(); im.setPointerCapture(e.pointerId); pointers.set(e.pointerId, {x:e.clientX,y:e.clientY});
-    if (pointers.size === 1) { startX=e.clientX; startY=e.clientY; startTx=tx; startTy=ty; }
-    if (pointers.size === 2) { const a=[...pointers.values()]; startDist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y); startScale=scale; }
+    e.preventDefault();
+    try { im.setPointerCapture(e.pointerId); } catch (_) {}
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    starts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    gestureMoved = false;
+    if (pointers.size > 1) { multiTouch = true; lastTap = 0; }
+    if (pointers.size === 1) {
+      startX = e.clientX; startY = e.clientY; startTx = tx; startTy = ty;
+    } else if (pointers.size === 2) {
+      const a = [...pointers.values()];
+      startDist = Math.hypot(a[0].x-a[1].x, a[0].y-a[1].y);
+      startScale = scale;
+    }
   });
   im.addEventListener('pointermove', e => {
     if (!pointers.has(e.pointerId)) return;
-    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if (pointers.size === 2) { const a=[...pointers.values()]; const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y); if(startDist) scale=clamp(startScale*d/startDist,1,5); if(scale===1){tx=0;ty=0;} render(); }
-    else if (pointers.size === 1 && scale > 1) { tx=startTx+(e.clientX-startX); ty=startTy+(e.clientY-startY); render(); }
+    const st = starts.get(e.pointerId);
+    if (st && Math.hypot(e.clientX-st.x, e.clientY-st.y) > 10) gestureMoved = true;
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (pointers.size === 2) {
+      const a = [...pointers.values()];
+      const d = Math.hypot(a[0].x-a[1].x, a[0].y-a[1].y);
+      if (startDist) scale = clamp(startScale*d/startDist, 1, 5);
+      if (scale === 1) { tx = 0; ty = 0; }
+      render();
+    } else if (pointers.size === 1 && scale > 1) {
+      tx = startTx + (e.clientX-startX);
+      ty = startTy + (e.clientY-startY);
+      render();
+    }
   });
   const endPointer = e => {
     if (!pointers.has(e.pointerId)) return;
-    const now=Date.now(), moved=Math.hypot(e.clientX-startX,e.clientY-startY);
-    pointers.delete(e.pointerId);
-    if (pointers.size < 2) startDist=0;
-    if (moved < 12 && now-lastTap < 320) { toggleZoom(e.clientX,e.clientY); lastTap=0; }
-    else if (moved < 12) lastTap=now;
+    const st = starts.get(e.pointerId) || {x:e.clientX,y:e.clientY};
+    const moved = Math.hypot(e.clientX-st.x, e.clientY-st.y);
+    const wasSingle = pointers.size === 1;
+    pointers.delete(e.pointerId); starts.delete(e.pointerId);
+    if (pointers.size < 2) startDist = 0;
+    if (wasSingle && (e.pointerType === 'touch' || e.pointerType === 'pen') && !multiTouch && moved < 12 && !gestureMoved) {
+      const now = Date.now();
+      if (lastTap && now-lastTap < 420 && Math.hypot(e.clientX-lastTapX, e.clientY-lastTapY) < 36) {
+        toggleZoom(e.clientX, e.clientY);
+        lastTap = 0;
+      } else {
+        lastTap = now; lastTapX = e.clientX; lastTapY = e.clientY;
+      }
+    }
+    if (pointers.size === 0) multiTouch = false;
   };
-  im.addEventListener('pointerup',endPointer); im.addEventListener('pointercancel',e=>pointers.delete(e.pointerId));
-  im.addEventListener('wheel',e=>{ e.preventDefault(); scale=clamp(scale+(e.deltaY<0?.2:-.2),1,5); if(scale===1){tx=0;ty=0;} render(); },{passive:false});
-  document.body.appendChild(v);
+  im.addEventListener('pointerup', endPointer);
+  im.addEventListener('pointercancel', e => { pointers.delete(e.pointerId); starts.delete(e.pointerId); if (!pointers.size) { multiTouch = false; startDist = 0; } });
+  im.addEventListener('wheel', e => {
+    e.preventDefault(); scale = clamp(scale+(e.deltaY<0?.2:-.2),1,5);
+    if (scale===1) { tx=0; ty=0; }
+    render();
+  }, {passive:false});
 }
-
 const TICK_SVG = {
   sent: '<svg class="tick-svg tick-s" viewBox="0 0 16 12" aria-label="تم الإرسال" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5 5.8 10.2 14 1.8"/></svg>',
   read: '<svg class="tick-svg tick-d" viewBox="0 0 20 12" aria-label="تمت القراءة" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6.5 5.3 10.2 13 1.8"/><path d="M9 9.2 10.2 10.2 18.4 1.8"/></svg>',
@@ -5024,14 +5087,24 @@ function sendChatVideo(file) {
 
 function openVideoViewer(src) {
   const v = document.createElement('div');
-  v.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.96);display:flex;align-items:center;justify-content:center;';
+  v.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;';
   const vid = document.createElement('video');
   vid.src = src; vid.controls = true; vid.autoplay = true; vid.playsInline = true;
   vid.style.cssText = 'max-width:100%;max-height:100%;background:#000;';
   const x = document.createElement('button');
   x.textContent = '✕'; x.setAttribute('aria-label', 'إغلاق');
   x.style.cssText = 'position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:20px;cursor:pointer;z-index:2;';
-  const close = () => { try { vid.pause(); } catch (e) {} v.remove(); };
+  let viewerClosed = false, viewerHistoryEntry = false;
+  const close = (fromBack = false) => {
+    if (viewerClosed) return;
+    viewerClosed = true;
+    window.removeEventListener('popstate', onVideoViewerBack);
+    try { vid.pause(); vid.removeAttribute('src'); vid.load(); } catch (e) {}
+    v.remove();
+    if (viewerHistoryEntry && !fromBack) { viewerHistoryEntry = false; history.back(); }
+  };
+  const onVideoViewerBack = () => { viewerHistoryEntry = false; close(true); };
+  try { history.pushState({ babylonVideoViewer: true }, ''); viewerHistoryEntry = true; window.addEventListener('popstate', onVideoViewerBack); } catch (_) {}
   x.onclick = close;
   v.onclick = ev => { if (ev.target === v) close(); };
   v.appendChild(vid); v.appendChild(x);
