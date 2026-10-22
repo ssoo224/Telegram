@@ -7533,6 +7533,8 @@ async function avatarDownload(){
           ringBottom: rr.bottom-vr.top+view.scrollTop,
           coverH: cover.offsetHeight, ext: (quick?quick.offsetHeight:0)+28, nh: nameBox.offsetHeight, sh: status.offsetHeight, qh: quick?quick.offsetHeight:0 };
       g.delta = Math.max(0, g.S - g.ringBottom);
+      g.slope=null; g.pvq=-1; g.nat0=0;
+      if(quick){ quick.style.transform='none'; quick.style.setProperty('margin-bottom','12px','important'); g.nat0=quick.getBoundingClientRect().bottom-vr.top+view.scrollTop; }
     }
     function clamp(v){ return v<0?0:v>1?1:v; }
     function apply(v){
@@ -7560,13 +7562,18 @@ async function avatarDownload(){
       nameBox.style.marginBottom=(6*(1-v))+'px'; nameBox.style.opacity=clamp(1-v*2);
       status.style.overflow='hidden'; status.style.height=(g.sh*(1-v))+'px'; status.style.opacity=clamp(1-v*2);
       if(quick){
-        var vr2=view.getBoundingClientRect();
-        quick.style.transform='none'; quick.style.setProperty('margin-bottom','12px','important');
-        var nat=quick.getBoundingClientRect().bottom-vr2.top+view.scrollTop;
+        var nat;
+        if(g.slope==null && v>=0.03){
+          var vr2=view.getBoundingClientRect();
+          quick.style.transform='none'; quick.style.setProperty('margin-bottom','12px','important');
+          nat=quick.getBoundingClientRect().bottom-vr2.top+view.scrollTop;
+          g.slope=(nat-g.nat0)/v;
+        } else nat=g.nat0+(g.slope||0)*v;
         var heroBottom=g.top*(1-v)+size+e;
         quick.style.transform='translateY('+((heroBottom-14-nat)*v)+'px)';
         quick.style.setProperty('margin-bottom',(12+((heroBottom+10-nat)-12)*v)+'px','important');
-        view.style.setProperty('--pv',e>0?clamp((v-0.5)*2):0);
+        var pvq=e>0?Math.round(clamp((v-0.5)*2)*8)/8:0;
+        if(g.pvq!==pvq){ g.pvq=pvq; view.style.setProperty('--pv',pvq); }
         hInfo.style.bottom=(16+e)+'px';
       }
     }
