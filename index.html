@@ -5098,6 +5098,10 @@ function ensureSeen() {   // المشاهدات تنحفظ لكل حساب لح�
 const userCache = {};
 let myStories = [], storyPartnerIds = [], otherStoryUid = null, otherStories = [];
 let scData = null, scHours = 24, barTimer = null;
+function svStatsHTML(v, r) {
+  v = Number(v) || 0; r = Number(r) || 0;
+  return 'المشاهدات ' + v + (r > 0 ? ' | ' + r + ' ' + '<svg class="sv-heart-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 2.7 4.5 6.3 4.5c2 0 3.5 1 4.5 2.5.3.4.9.4 1.2 0 1-1.5 2.5-2.5 4.5-2.5 3.6 0 5.4 3.8 3.9 7.2C19.500 16.400 12 21 12 21Z"/></svg>' : '');
+}
 let SV = { uid: null, list: [], i: 0, mine: false, paused: false, hold: false, t: 0, iv: null, react: null, views: [] };
 const SDUR = 5000;
 const DURS = [6, 12, 24, 48];
@@ -5573,12 +5577,12 @@ function showStory() {
 function svFooter(s) {
   const f = $('svFoot');
   if (SV.mine) {
-    f.innerHTML = `<div class="sv-own"><button type="button" class="sv-action sv-action-views" onclick="openViewersList()" aria-label="المشاهدات والتفاعلات"><span class="sv-eye-wrap"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg><i class="sv-mini-heart" aria-hidden="true">♥</i></span><span id="svViews">المشاهدات 0 | 0 ❤️</span></button><button type="button" class="sv-action sv-action-edit" onclick="svEdit()" aria-label="تعديل القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"/><path d="M13 20h7"/></svg></button><button type="button" class="sv-action sv-action-pin" onclick="svPin()" aria-label="${s.pinned ? 'إلغاء التثبيت' : 'تثبيت'}"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/></svg></button><button type="button" class="sv-action sv-action-delete" onclick="svDelete()" aria-label="حذف القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-10 0 1 14h10l1-14M10 10v6m4-6v6"/></svg></button></div>`;
+    f.innerHTML = `<div class="sv-own"><button type="button" class="sv-action sv-action-views" onclick="openViewersList()" aria-label="المشاهدات والتفاعلات"><span class="sv-eye-wrap"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg></span><span id="svViews">${svStatsHTML(0, 0)}</span></button><button type="button" class="sv-action sv-action-edit" onclick="svEdit()" aria-label="تعديل القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"/><path d="M13 20h7"/></svg></button><button type="button" class="sv-action sv-action-pin" onclick="svPin()" aria-label="${s.pinned ? 'إلغاء التثبيت' : 'تثبيت'}"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/></svg></button><button type="button" class="sv-action sv-action-delete" onclick="svDelete()" aria-label="حذف القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-10 0 1 14h10l1-14M10 10v6m4-6v6"/></svg></button></div>`;
     db.collection('stories').doc(s.id).collection('views').get().then(q => {
       if (SV.list[SV.i] !== s) return;
       SV.views = q.docs.map(d => d.data());
       const r = SV.views.filter(v => v.reaction).length;
-      const el = $('svViews'); if (el) { el.textContent = `المشاهدات ${SV.views.length} | ${r} ❤️`; if (el.parentElement) el.parentElement.classList.toggle('has-reaction', r > 0); }
+      const el = $('svViews'); if (el) { el.innerHTML = svStatsHTML(SV.views.length, r); if (el.parentElement) el.parentElement.classList.toggle('has-reaction', r > 0); }
     }).catch(() => {});
   } else {
     f.innerHTML = `<div class="sv-reacts" aria-label="إرسال إيموجي في المحادثة">${['😂','❤️','👍🏻','😭','✨'].map(e => `<span data-e="${e}" role="button" tabindex="0" aria-label="إرسال ${e}" onclick="sendStoryEmoji('${e}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sendStoryEmoji('${e}')}">${e}</span>`).join('')}</div><div id="svReactPicker" class="sv-react-picker hidden">${['😂','❤️','👍🏻','😭','✨','😍','😮','😢','🙏','🔥'].map(e=>`<button type="button" onclick="event.preventDefault();event.stopPropagation();svReact('${e}')" aria-label="تفاعل ${e}">${e}</button>`).join('')}</div><div class="sv-reply"><button id="svHeartBtn" class="sv-heart-btn" aria-label="تفاعل مع القصة" onpointerdown="svHeartDown(event)" onpointerup="svHeartUp(event)" onpointercancel="svHeartCancel()" onpointerleave="svHeartCancel()" oncontextmenu="event.preventDefault();svOpenReactPicker()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg></button><input id="svReplyInput" placeholder="رد على القصة..." autocomplete="off" oninput="svReplyInputChanged()" onfocus="svPause(true)" onblur="svPause(false)" onkeydown="if(event.key==='Enter'){event.preventDefault();sendStoryReply()}"><button id="svReplySend" class="sv-pill hidden" aria-label="إرسال" onmousedown="event.preventDefault()" onclick="sendStoryReply()"><svg class="sv-send-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></button></div>`;
@@ -9856,7 +9860,8 @@ body.light #viewersModal .viewer-item {
 }
 /* العداد يأتي كسطر مستقل أسفل نص وصف القصة */
 #storyViewer .sv-story-stats{display:flex!important;position:absolute!important;left:50%!important;right:auto!important;bottom:calc(82px + env(safe-area-inset-bottom,0px))!important;transform:translateX(-50%)!important;margin:0!important;z-index:8!important;flex-shrink:0;color:#fff!important;background:rgba(8,12,18,.72)!important;border:1px solid rgba(255,255,255,.3)!important}
-#storyViewer .sv-story-stats span{color:#fff!important;font-weight:700!important}
+#storyViewer .sv-story-stats span{color:#fff!important;font-weight:700!important;display:inline-flex;align-items:center;gap:4px}
+#storyViewer .sv-heart-svg{width:14px;height:14px;flex:0 0 14px;fill:#ff414d;stroke:#ff414d;stroke-width:1.2;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(0,0,0,.45))}
 #storyViewer .sv-cap{overflow:visible!important}
 /* استثناء: إظهار منتقي الإيموجي عند الضغط المطول على القلب الفارغ */
 #storyViewer .sv-foot.heart-long-press .sv-react-picker:not(.hidden){display:flex!important}
@@ -9913,9 +9918,9 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
   let views=own.querySelector('.sv-action-views');
   let stats=stage.querySelector('.sv-story-stats');
   if(views){
-    if(!stats){stats=document.createElement('button');stats.type='button';stats.className='sv-story-stats';stats.setAttribute('aria-label','عرض المشاهدات والتفاعلات');stats.onclick=function(e){e.preventDefault();e.stopPropagation();openViewersList();};stats.innerHTML='<span id="svViews">المشاهدات 0 | 0 ❤️</span>';stage.insertBefore(stats,foot);}
+    if(!stats){stats=document.createElement('button');stats.type='button';stats.className='sv-story-stats';stats.setAttribute('aria-label','عرض المشاهدات والتفاعلات');stats.onclick=function(e){e.preventDefault();e.stopPropagation();openViewersList();};stats.innerHTML='<span id="svViews">المشاهدات 0</span>';stage.insertBefore(stats,foot);}
     if(stats.parentElement!==stage)stage.insertBefore(stats,foot);
-    const count=views.querySelector('#svViews'),statsCount=stats.querySelector('#svViews');if(statsCount)statsCount.textContent=(count?count.textContent:'المشاهدات 0 | 0 ❤️');
+    const count=views.querySelector('#svViews'),statsCount=stats.querySelector('#svViews');if(statsCount)statsCount.innerHTML=(count?count.innerHTML:'المشاهدات 0');
     views.remove();cap.classList.toggle('hidden',!(cap.textContent||'').trim());
   }
   top.querySelectorAll('.sv-own').forEach(el=>{if(el!==own)el.remove();});
