@@ -7304,7 +7304,7 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 #avatarGalleryModal .ag-menu-wrap{position:relative}
 #avatarGalleryModal .ag-menu{position:absolute;top:50px;inset-inline-end:0;min-width:190px;padding:6px;border-radius:16px;background:#1e2a38;border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 40px rgba(0,0,0,.5);z-index:5;display:flex;flex-direction:column;gap:2px;animation:agMenuIn .14s ease-out}
 #avatarGalleryModal .ag-menu.hidden{display:none!important}
-#avatarGalleryModal .ag-menu button{display:flex;align-items:center;gap:11px;width:100%;padding:12px 13px;border:0;border-radius:11px;background:transparent;color:#f1f5f9;font:600 14.5px inherit;font-family:inherit;text-align:start;cursor:pointer}
+#avatarGalleryModal .ag-menu button{display:flex;align-items:center;gap:11px;width:100%;padding:12px 13px;border:0;border-radius:11px;background:transparent;color:#f1f5f9;font-weight:600;font-size:14.5px;font-family:inherit;text-align:start;cursor:pointer}
 #avatarGalleryModal .ag-menu button:hover,#avatarGalleryModal .ag-menu button:active{background:rgba(255,255,255,.09)}
 #avatarGalleryModal .ag-menu button.danger{color:#ff6b6f}
 #avatarGalleryModal .ag-menu button.hidden{display:none!important}
@@ -7443,6 +7443,14 @@ async function avatarDownload(){
     hero.innerHTML = '<img alt="" draggable="false"><div class="pf-hero-letter"></div><div class="pf-hero-ext"></div><div class="pf-hero-shade"></div>'+
       '<div class="pf-hero-info"><div class="pf-hero-name"></div><div class="pf-hero-status"></div></div>';
     view.appendChild(hero);
+    var own = cfg.view==='profileView';
+    if(own){
+      hero.insertAdjacentHTML('beforeend',
+        '<div class="pf-hero-top"><div class="pf-hero-count">1/1</div>'+
+        '<button type="button" class="pf-hero-dots" aria-label="المزيد"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button></div>'+
+        '<div class="pf-hero-menu"><button type="button" data-a="dl">تنزيل الصورة</button><button type="button" data-a="del" class="danger">حذف الصورة</button></div>');
+    }
+    var hTop=hero.querySelector('.pf-hero-top'), hCount=hero.querySelector('.pf-hero-count'), hMenu=hero.querySelector('.pf-hero-menu');
     var hImg=hero.querySelector('img'), hLet=hero.querySelector('.pf-hero-letter'),
         hInfo=hero.querySelector('.pf-hero-info'), hName=hero.querySelector('.pf-hero-name'),
         hStat=hero.querySelector('.pf-hero-status'), hExt=hero.querySelector('.pf-hero-ext'), hShade=hero.querySelector('.pf-hero-shade');
@@ -7458,6 +7466,7 @@ async function avatarDownload(){
       }
       if(hasImg){ hExt.style.background=''; hExt.style.backgroundImage='url("'+img.getAttribute('src')+'")'; hExt.style.backgroundSize='cover'; }
       else { hExt.style.backgroundImage='none'; hExt.style.background=hero.style.background||'#16213a'; }
+      if(own){ loadItems(); }
       hName.textContent = nameTxt ? nameTxt.textContent : '';
       var st = status.querySelector('span:last-child');
       hStat.textContent = st ? st.textContent : '';
@@ -7491,6 +7500,7 @@ async function avatarDownload(){
       hero.style.borderRadius=(50*(1-v))+'%';
       hero.style.pointerEvents = v>=0.99 ? 'auto' : 'none';
       hInfo.style.opacity = clamp((v-0.55)/0.4);
+      if(hTop) hTop.style.opacity = clamp((v-0.55)/0.4);
       cover.style.height=(g.coverH+g.delta*v)+'px';
       cover.style.opacity=clamp(1-v*1.5);
       ring.style.opacity=0;
@@ -7515,6 +7525,7 @@ async function avatarDownload(){
       ring.style.opacity='';
       nameBox.style.height=nameBox.style.overflow=nameBox.style.marginBottom=nameBox.style.opacity='';
       status.style.height=status.style.overflow=status.style.opacity='';
+      if(hTop){ hTop.style.opacity=0; hMenu.classList.remove('open'); }
       hImg.style.webkitMaskImage=hImg.style.maskImage=hLet.style.webkitMaskImage=hLet.style.maskImage=''; hImg.style.height=hLet.style.height=hExt.style.height=hShade.style.top=hShade.style.height=''; hShade.style.bottom=''; if(quick){ quick.style.transform=''; quick.style.removeProperty('margin-bottom'); view.style.removeProperty('--pv'); hInfo.style.bottom=''; }
     }
     function animateTo(t){
@@ -7559,7 +7570,56 @@ async function avatarDownload(){
     view.addEventListener('touchcancel',finish,{passive:true});
 
     // الضغط على المربع المكبّر يفتح معرض الصور
-    hero.addEventListener('click',function(){ if(typeof window[cfg.gallery]==='function') window[cfg.gallery](); });
+    var items=[], idx=0, busy=false;
+    function avatarList(){ var cur=(window.currentUserData&&currentUserData.avatarUrl)||''; var o=(window.currentUserData&&Array.isArray(currentUserData.avatarHistory))?currentUserData.avatarHistory:[]; return cur?[cur].concat(o.filter(function(u,i){return u&&u!==cur&&o.indexOf(u)===i;})):[]; }
+    function updateCount(){ if(hCount) hCount.textContent=(items.length?idx+1:0)+'/'+items.length; }
+    function loadItems(){ items=avatarList(); idx=0; updateCount(); }
+    function showPhoto(i,dir){
+      var url=items[i]; if(!url) return;
+      var from=hImg.getAttribute('src');
+      hExt.style.backgroundImage='url("'+url+'")';
+      if(dir && from && hImg.style.display!=='none' && hImg.animate){
+        var clone=hImg.cloneNode(); clone.style.pointerEvents='none'; hImg.parentNode.insertBefore(clone,hImg);
+        clone.animate([{transform:'translateX(0)',opacity:1},{transform:'translateX('+(-dir*28)+'%)',opacity:0}],{duration:300,easing:'cubic-bezier(.22,.8,.3,1)'}).onfinish=function(){clone.remove();};
+        hImg.src=url;
+        hImg.animate([{transform:'translateX('+(dir*100)+'%)'},{transform:'translateX(0)'}],{duration:300,easing:'cubic-bezier(.22,.8,.3,1)'});
+      } else { hImg.src=url; }
+      hImg.style.display='block'; hLet.style.display='none';
+    }
+    function go(d){
+      if(busy) return;
+      var n=items.length;
+      if(n<2){ if(hImg.animate) hImg.animate([{transform:'translateX(0)'},{transform:'translateX('+(d*-18)+'px)'},{transform:'translateX(0)'}],{duration:240}); return; }
+      busy=true; setTimeout(function(){busy=false;},300);
+      idx=(idx+d+n)%n; updateCount(); showPhoto(idx,d);
+    }
+    function refreshAfterEdit(){
+      var prev=items.length; items=avatarList();
+      if(!items.length){ hMenu&&hMenu.classList.remove('open'); animateTo(0); return; }
+      if(items.length!==prev) idx=0;
+      if(idx>=items.length) idx=0;
+      updateCount(); showPhoto(idx,0);
+    }
+    function sharePrep(){ avatarGalleryItems=items.slice(); avatarGalleryIndex=idx; avatarGalleryReadOnly=false; }
+    if(own){
+      hero.querySelector('.pf-hero-dots').addEventListener('click',function(e){ e.stopPropagation(); hMenu.classList.toggle('open'); });
+      hMenu.addEventListener('click',function(e){
+        e.stopPropagation(); var b=e.target.closest('button'); if(!b) return;
+        hMenu.classList.remove('open'); sharePrep();
+        if(b.dataset.a==='dl'){ if(typeof avatarDownload==='function') avatarDownload(); }
+        else if(typeof avatarDelete==='function'){ Promise.resolve(avatarDelete()).then(refreshAfterEdit,refreshAfterEdit); }
+      });
+    }
+    hero.addEventListener('click',function(ev){
+      if(own){
+        if(hMenu.classList.contains('open')){ hMenu.classList.remove('open'); return; }
+        var r=hero.getBoundingClientRect(), x=ev.clientX-r.left, y=ev.clientY-r.top;
+        if(y>r.width) return;
+        if(x>r.width*0.65){ go(1); return; }
+        if(x<r.width*0.35){ go(-1); return; }
+      }
+      if(typeof window[cfg.gallery]==='function') window[cfg.gallery]();
+    });
 
     // عند إخفاء الشاشة أو إعادة فتحها نرجع للوضع الطبيعي
     new MutationObserver(function(){
@@ -9725,4 +9785,14 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 .pf-hero img,.pf-hero .pf-hero-letter{z-index:1}
 .pf-hero .pf-hero-shade{z-index:2;background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.55))!important}
 .pf-hero .pf-hero-info{z-index:3}
+</style>
+<style id="babylon-hero-top">
+.pf-hero .pf-hero-top{position:absolute;left:0;right:0;top:0;z-index:4;display:flex;justify-content:space-between;align-items:center;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 0;opacity:0;direction:ltr}
+.pf-hero .pf-hero-count{min-width:54px;text-align:center;padding:8px 14px;border-radius:20px;background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#fff;font:700 15px/1 -apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.5px}
+.pf-hero .pf-hero-dots{width:40px;height:40px;border:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#fff;cursor:pointer}
+.pf-hero .pf-hero-menu{position:absolute;z-index:5;right:12px;top:calc(60px + env(safe-area-inset-top,0px));min-width:170px;padding:6px;border-radius:16px;background:rgba(22,28,40,.9);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 12px 32px rgba(0,0,0,.4);direction:rtl;opacity:0;transform:scale(.92) translateY(-6px);transform-origin:top right;pointer-events:none!important;transition:opacity .16s,transform .16s}
+.pf-hero .pf-hero-menu.open{opacity:1;transform:none;pointer-events:auto!important}
+.pf-hero .pf-hero-menu button{display:block;width:100%;text-align:right;padding:12px 14px;border:0;border-radius:11px;background:none;color:#fff;font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer}
+.pf-hero .pf-hero-menu button:active{background:rgba(255,255,255,.1)}
+.pf-hero .pf-hero-menu button.danger{color:#ff7b7b}
 </style>
