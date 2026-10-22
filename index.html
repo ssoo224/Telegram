@@ -2122,12 +2122,14 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
         </div>
         <div id="pHeaderStatus" class="pf-status online"><span class="pf-dot"></span><span>متصل الآن</span></div>
 
-        <div class="pf-actions pf-actions-edit">
-          <button type="button" class="pf-btn primary" onclick="openEditProfileModal()"><i data-ic="pencil"></i><span>تعديل الملف الشخصي</span></button>
+        <div class="pf-stats">
+          <div class="pf-stat"><b id="pStatPosts">0</b><span>منشورات</span></div>
+          <div class="pf-stat"><b id="pStatStories">0</b><span>قصص</span></div>
         </div>
-        <div class="pf-actions pf-actions-media">
-          <label for="avatarInput" class="pf-btn"><i data-ic="camera"></i><span>الصورة</span></label>
-          <button type="button" class="pf-btn" onclick="openCoverPicker()"><i data-ic="palette"></i><span>الغلاف</span></button>
+        <div class="pf-quick">
+          <button type="button" class="pf-q" onclick="openEditProfileModal()"><i data-ic="pencil"></i><span>تعديل</span></button>
+          <label for="avatarInput" class="pf-q"><i data-ic="camera"></i><span>الصورة</span></label>
+          <button type="button" class="pf-q" onclick="openCoverPicker()"><i data-ic="palette"></i><span>الغلاف</span></button>
           <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="uploadAvatarLive(event)">
         </div>
       </div>
@@ -2155,13 +2157,19 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
         </div>
       </div>
 
-      <div class="posts-grid-header"><i data-ic="clock" aria-hidden="true"></i><span>قصصي</span></div>
+      <div class="pf-tabs" id="pfTabs">
+        <button type="button" class="pf-tab active" data-tab="posts"><i data-ic="grid"></i><span>المنشورات</span></button>
+        <button type="button" class="pf-tab" data-tab="stories"><i data-ic="clock"></i><span>قصصي</span></button>
+      </div>
+      <div id="pTabStories" class="pf-pane" style="display:none">
       <div id="myStoriesGrid" class="posts-grid"></div>
       <div id="myStoriesEmpty" class="hidden" style="padding:14px 16px;color:var(--text-muted);font-size:13px;">ما عندك قصص. اضغط على صورتك أو زر الإضافة حتى تنشر.</div>
 
+      </div>
       <!-- شبكة المنشورات المدمجة -->
-      <div class="posts-grid-header"><i data-ic="grid" aria-hidden="true"></i><span>المنشورات</span></div>
+      <div id="pTabPosts" class="pf-pane">
       <div id="postsGrid" class="posts-grid"></div>
+      </div>
 
       <button class="add-post-fab" onclick="openPublishOptions()" aria-label="إضافة منشور">
         <span class="add-post-fab-content"><svg class="add-post-fab-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M12 8v8M8 12h8"></path></svg><span>إضافة منشور</span></span>
@@ -2189,9 +2197,9 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
         </div>
         <div id="otherHeaderStatus" class="pf-status"><span class="pf-dot"></span><span>غير متصل</span></div>
 
-        <div class="pf-actions">
-          <button type="button" class="pf-btn primary" onclick="startChatFromProfile()"><i data-ic="chat"></i><span>رسالة</span></button>
-          <button type="button" class="pf-btn" id="otherBlockBtn" onclick="toggleBlockCurrent()"><i data-ic="ban"></i><span>حظر</span></button>
+        <div class="pf-actions pf-quick pf-quick-other">
+          <button type="button" class="pf-btn pf-q primary" onclick="startChatFromProfile()"><i data-ic="chat"></i><span>رسالة</span></button>
+          <button type="button" class="pf-btn pf-q" id="otherBlockBtn" onclick="toggleBlockCurrent()"><i data-ic="ban"></i><span>حظر</span></button>
         </div>
       </div>
 
@@ -7550,6 +7558,70 @@ async function avatarDownload(){
            nameBox:'otherHeaderName',nameTxt:'otherHeaderNameText',status:'otherHeaderStatus',gallery:'openOtherAvatarGallery'});
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
+
+<style id="babylon-profile-v2">
+/* ===== Profile v2 — Telegram-style ===== */
+#profileView,#otherUserProfileView{--pf-bg:#0e1621;--pf-card:#17212b;--pf-line:rgba(255,255,255,.07);--pf-txt:#f5f7fa;--pf-mut:#7f91a4;--pf-gold:#d4a937}
+.app-container[data-app-theme="light"] #profileView,.app-container[data-app-theme="light"] #otherUserProfileView{--pf-bg:#eef1f6;--pf-card:#fff;--pf-line:rgba(15,23,42,.08);--pf-txt:#17212b;--pf-mut:#6b7a8c;--pf-gold:#a8801a}
+#profileView,#otherUserProfileView{background:var(--pf-bg)!important}
+:is(#profileView,#otherUserProfileView) .pf-cover{height:176px!important}
+:is(#profileView,#otherUserProfileView) .pf-cover::after{height:55%!important;background:linear-gradient(to bottom,transparent,var(--pf-bg))!important}
+:is(#profileView,#otherUserProfileView) .pf-head{margin-top:-62px!important;padding:0 16px 6px!important}
+:is(#profileView,#otherUserProfileView) .avatar-story-ring{box-shadow:0 0 0 4px var(--pf-bg),0 10px 26px rgba(0,0,0,.28)}
+:is(#profileView,#otherUserProfileView) .profile-large-avatar{width:104px!important;height:104px!important}
+:is(#profileView,#otherUserProfileView) .pf-name{font-size:23px!important;font-weight:800!important;color:var(--pf-txt)!important;margin:12px 0 4px!important;letter-spacing:-.2px}
+:is(#profileView,#otherUserProfileView) .pf-status{font-size:13px!important;margin-bottom:14px!important;color:var(--pf-mut)}
+:is(#profileView,#otherUserProfileView) .pf-status.online{color:#4ade80}
+.pf-stats{display:flex;width:100%;max-width:360px;margin:0 auto 14px;background:var(--pf-card);border:1px solid var(--pf-line);border-radius:16px}
+.pf-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:11px 6px}
+.pf-stat+.pf-stat{border-inline-start:1px solid var(--pf-line)}
+.pf-stat b{font-size:18px;font-weight:800;color:var(--pf-txt)}
+.pf-stat span{font-size:11.5px;color:var(--pf-mut)}
+.pf-quick,#otherUserProfileView .pf-actions.pf-quick{display:grid!important;grid-template-columns:repeat(3,1fr);gap:9px;width:100%;max-width:360px;margin:0 auto 12px!important}
+#otherUserProfileView .pf-actions.pf-quick{grid-template-columns:repeat(2,1fr)}
+.pf-q,#otherUserProfileView .pf-actions .pf-btn.pf-q{display:flex!important;flex-direction:column!important;align-items:center;justify-content:center;gap:5px!important;width:auto!important;height:auto!important;min-height:64px!important;padding:10px 4px!important;border-radius:16px!important;border:1px solid var(--pf-line)!important;background:var(--pf-card)!important;color:var(--pf-gold)!important;font:700 12px/1.2 inherit!important;cursor:pointer;transition:transform .15s,background .15s;-webkit-tap-highlight-color:transparent}
+.pf-q:active{transform:scale(.95)}
+.pf-q svg{width:22px!important;height:22px!important}
+.pf-q span{color:var(--pf-txt)!important;font-weight:650;font-size:12px}
+#otherUserProfileView .pf-actions .pf-btn.pf-q.primary{background:var(--pf-gold)!important;border-color:transparent!important}
+#otherUserProfileView .pf-actions .pf-btn.pf-q.primary,#otherUserProfileView .pf-actions .pf-btn.pf-q.primary span{color:#17212b!important}
+:is(#profileView,#otherUserProfileView) .pf-card{margin:8px 14px 14px!important;border-radius:18px!important;background:var(--pf-card)!important;border:1px solid var(--pf-line)!important;box-shadow:none}
+:is(#profileView,#otherUserProfileView) .pf-row{padding:13px 16px!important;gap:15px!important;border-bottom:1px solid var(--pf-line)!important}
+:is(#profileView,#otherUserProfileView) .pf-row:last-child{border-bottom:0!important}
+:is(#profileView,#otherUserProfileView) .pf-ico{width:36px;height:36px;border-radius:11px;align-items:center;justify-content:center;background:rgba(212,169,55,.13);color:var(--pf-gold)!important}
+:is(#profileView,#otherUserProfileView) .pf-val{font-size:15px!important;font-weight:600;color:var(--pf-txt)!important}
+:is(#profileView,#otherUserProfileView) .pf-lbl{font-size:11.5px!important;color:var(--pf-mut)!important;margin-top:2px}
+.pf-tabs{display:flex;position:sticky;top:0;z-index:4;margin:4px 0 0;background:var(--pf-bg);border-bottom:1px solid var(--pf-line)}
+.pf-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:46px;border:0;background:none;color:var(--pf-mut);font:700 13.5px inherit;cursor:pointer;position:relative}
+.pf-tab svg{width:18px;height:18px}
+.pf-tab.active{color:var(--pf-gold)}
+.pf-tab.active::after{content:"";position:absolute;bottom:-1px;left:22%;right:22%;height:3px;border-radius:3px 3px 0 0;background:var(--pf-gold)}
+#profileView .posts-grid-header{display:none}
+#otherUserProfileView #otherBlockBtn.pf-q,#otherUserProfileView #otherBlockBtn.pf-q span{color:#f87171!important}
+#profileView .pf-pane{min-height:120px;padding-bottom:96px}
+#profileView .posts-grid{padding:2px!important;gap:2px!important}
+</style>
+<script id="babylon-profile-v2-js">
+(function(){
+ function $(i){return document.getElementById(i)}
+ function bind(){
+  var tabs=$('pfTabs');if(!tabs||tabs.__b)return;tabs.__b=1;
+  tabs.addEventListener('click',function(e){
+   var b=e.target.closest('.pf-tab');if(!b)return;
+   tabs.querySelectorAll('.pf-tab').forEach(function(t){t.classList.toggle('active',t===b)});
+   var st=b.dataset.tab==='stories';
+   $('pTabStories').style.display=st?'':'none';$('pTabPosts').style.display=st?'none':'';
+  });
+  function count(gridId,outId){
+   var g=$(gridId),o=$(outId);if(!g||!o)return;
+   var f=function(){o.textContent=g.children.length};f();
+   new MutationObserver(f).observe(g,{childList:true});
+  }
+  count('postsGrid','pStatPosts');count('myStoriesGrid','pStatStories');
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 </script>
 </body>
