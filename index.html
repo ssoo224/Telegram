@@ -7763,7 +7763,7 @@ async function avatarDownload(){
       g={ W:W, S:W, size:ar.width||108, top:ar.top-vr.top+view.scrollTop,
           ringBottom: rr.bottom-vr.top+view.scrollTop,
           coverH: cover.offsetHeight, ext: (quick?quick.offsetHeight:0)+28, nh: nameBox.offsetHeight, sh: status.offsetHeight, qh: quick?quick.offsetHeight:0 };
-      g.delta = Math.max(0, g.S - g.ringBottom); hExt.style.setProperty('--ext-h',Math.ceil(g.S+g.ext)+'px');
+      g.delta = Math.max(0, g.S - g.ringBottom);
       g.slope=null; g.pvq=-1; g.nat0=0;
       if(quick){ quick.style.transform='none'; quick.style.setProperty('margin-bottom','12px','important'); g.nat0=quick.getBoundingClientRect().bottom-vr.top+view.scrollTop; }
     }
@@ -10258,7 +10258,6 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 #otherUserProfileView #otherBlockBtn.pf-q,#otherUserProfileView #otherBlockBtn.pf-q span{color:color-mix(in srgb,#ffb4b4 calc(var(--pv,0)*100%),#f87171)!important}
 .pf-hero .pf-hero-ext{position:absolute;left:0;right:0;top:0;overflow:hidden;background-size:cover;background-position:center;pointer-events:none;z-index:0}
 .pf-hero .pf-hero-ext::before{content:"";position:absolute;inset:-30px;background:inherit;filter:blur(24px) saturate(1.2) brightness(.9);transform:scale(1.1)}
-.pf-hero .pf-hero-ext::before{inset:auto!important;top:-30px;left:-30px;right:-30px;height:calc(var(--ext-h,560px) + 60px);filter:blur(24px) saturate(1.2) brightness(.9)!important;will-change:transform;backface-visibility:hidden}
 .pf-hero img,.pf-hero .pf-hero-letter{z-index:1}
 .pf-hero .pf-hero-shade{z-index:2;background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.55))!important}
 .pf-hero .pf-hero-info{z-index:3}
