@@ -5535,11 +5535,12 @@ function svFooter(s) {
   }
 }
 let svHeartTimer = null, svHeartLong = false;
-function svHeartDown(ev){ if(ev){ev.preventDefault();if(ev.pointerId!==undefined&&ev.currentTarget&&ev.currentTarget.setPointerCapture){try{ev.currentTarget.setPointerCapture(ev.pointerId);}catch(_){}}} svHeartLong=false; clearTimeout(svHeartTimer); svHeartTimer=setTimeout(()=>{svHeartLong=true;const p=$('svReactPicker'),f=$('svFoot');if(f)f.classList.add('heart-long-press');if(p)p.classList.remove('hidden');},500); }
+function svHeartDown(ev){ if(ev){ev.preventDefault();if(ev.pointerId!==undefined&&ev.currentTarget&&ev.currentTarget.setPointerCapture){try{ev.currentTarget.setPointerCapture(ev.pointerId);}catch(_){}}} svHeartLong=false; clearTimeout(svHeartTimer); svHeartTimer=setTimeout(()=>{svHeartLong=true;svToggleReactPicker();},500); }
 function svHeartUp(ev){ if(ev&&ev.preventDefault)ev.preventDefault(); clearTimeout(svHeartTimer); if(!svHeartLong){svHeartTap();} }
 function svHeartCancel(){clearTimeout(svHeartTimer);}
+function svToggleReactPicker(){const p=$('svReactPicker'),f=$('svFoot');if(!p)return;if(p.classList.contains('hidden')){if(f)f.classList.add('heart-long-press');p.classList.remove('hidden');}else{p.classList.add('hidden');if(f)f.classList.remove('heart-long-press');}}
 function svOpenReactPicker(){const p=$('svReactPicker'),f=$('svFoot');if(f)f.classList.add('heart-long-press');if(p)p.classList.remove('hidden');}
-function svHeartTap(){const p=$('svReactPicker'),f=$('svFoot');if(p&&!p.classList.contains('hidden')){p.classList.add('hidden');if(f)f.classList.remove('heart-long-press');return;}if(!SV.react){svOpenReactPicker();return;}svReact('❤️');}
+function svHeartTap(){const p=$('svReactPicker');if(p&&!p.classList.contains('hidden'))return;if(SV.react)return;svReact('❤️');}
 function svReplyInputChanged(){const inp=$('svReplyInput'),btn=$('svReplySend'),heart=$('svHeartBtn');if(!inp||!btn||!heart)return;const typed=!!inp.value.trim();btn.classList.toggle('hidden',!typed);heart.classList.toggle('hidden',typed);if(typed){const p=$('svReactPicker');if(p)p.classList.add('hidden');}}
 function sendStoryEmoji(emoji){const me=currentUser&&currentUser.uid;if(!me||!SV.uid||SV.uid===me){showToast('لا يمكن إرسال رسالة إلى نفسك');return;}const chatId=[me,SV.uid].sort().join('__');db.collection('chats').doc(chatId).set({participants:[me,SV.uid],updatedAt:Date.now()},{merge:true}).then(()=>db.collection('chats').doc(chatId).collection('messages').add({senderId:me,text:emoji,storyReply:true,read:false,createdAt:Date.now()})).then(()=>{notifyPeer(chatId,'↩ تفاعل على قصتك: '+emoji);showToast('تم إرسال الإيموجي ✓');}).catch(()=>showToast('تعذر إرسال الإيموجي'));}
 function markReact() { document.querySelectorAll('.sv-reacts span').forEach(x => x.classList.toggle('on', x.dataset.e === SV.react || x.textContent.trim() === SV.react)); }
@@ -5652,12 +5653,12 @@ function svApplySelectedReaction(e) {
     hb.classList.remove('liked');
     hb.innerHTML = `<span aria-hidden="true">${e}</span>`;
     hb.setAttribute('aria-label', `تفاعلك المحدد ${e}`);
-    hb.onpointerdown = svHeartDown; hb.onpointerup = svHeartUp; hb.onpointercancel = svHeartCancel; hb.onpointerleave = svHeartCancel; hb.oncontextmenu = ev => { ev.preventDefault(); svOpenReactPicker(); };
+    hb.onpointerdown = svHeartDown; hb.onpointerup = svHeartUp; hb.onpointercancel = svHeartCancel; hb.onpointerleave = svHeartCancel; hb.oncontextmenu = ev => { ev.preventDefault(); };
   } else {
     hb.classList.remove('selected-reaction');
     hb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>';
     hb.setAttribute('aria-label', 'تفاعل مع القصة');
-    hb.onpointerdown = svHeartDown; hb.onpointerup = svHeartUp; hb.onpointercancel = svHeartCancel; hb.onpointerleave = svHeartCancel; hb.oncontextmenu = ev => { ev.preventDefault(); svOpenReactPicker(); };
+    hb.onpointerdown = svHeartDown; hb.onpointerup = svHeartUp; hb.onpointercancel = svHeartCancel; hb.onpointerleave = svHeartCancel; hb.oncontextmenu = ev => { ev.preventDefault(); };
   }
 }
 const svReactionPending = new Set();
