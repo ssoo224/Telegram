@@ -3942,7 +3942,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         htmlContent += `<div class="msg-meta"><span>${rawTimeStr}</span> ${checkHtml}</div>`;
         b.innerHTML = htmlContent;
         try {
-          if (!m.imageUrl && !m.audioUrl && !m.replyTo && !m.forwarded && !m.storyReply) {
+          if (!m.imageUrl && !m.audioUrl && !m.forwarded) {
             const _em = babylonSingleEmoji(m.text);
             if (_em) babylonApplyBigEmoji(b, _em, (Date.now() - (Number(m.createdAt) || 0)) < 6000);
           }
@@ -4082,7 +4082,6 @@ function triggerSwipeReply(text, id, senderId) {
   if (previewText) previewText.textContent = replyingToText || "رسالة";
   document.getElementById("replyPreviewBar").classList.remove("hidden");
   document.getElementById("messageInput").focus();
-  showToast("تم تفعيل الرد على الرسالة");
 }
 
 function openMsgModal(msgId, text, senderId, reactions, isAudioMessage, anchorElement) {
@@ -8833,6 +8832,7 @@ function babylonApplyBigEmoji(b, emoji, isNew){
   var noVS = cps.filter(function (c) { return c !== 'fe0f'; }).join('_');
   if (noVS && noVS !== tries[0]) tries.push(noVS);
   b.classList.add('emoji-only');
+  if (b.querySelector('.reply-quote,.story-reply-preview')) b.classList.add('has-reply');
   if (isNew) b.classList.add('emoji-new');
   var wrap = document.createElement('div');
   wrap.className = 'emoji-big';
@@ -10038,4 +10038,18 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 @media (prefers-reduced-motion:reduce){
   #chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only.emoji-new .emoji-big,#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .emoji-big-fallback{animation:none !important}
 }
+</style>
+
+<style id="babylon-emoji-reply">
+/* رد على رسالة/قصة بإيموجي: الإيموجي كبير ومتحرك والاقتباس شفاف في الأعلى */
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only.has-reply{min-width:min(230px,72vw) !important;max-width:min(300px,82vw) !important}
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .reply-quote,#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .story-reply-preview{
+  width:100%;box-sizing:border-box;margin:0 0 4px !important;
+  background:rgba(0,0,0,.28) !important;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  color:#fff !important;-webkit-text-fill-color:#fff !important;
+  border-radius:12px !important;opacity:.9;
+}
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .reply-quote .reply-quote-name,#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .story-reply-label{color:#f0d37a !important;-webkit-text-fill-color:#f0d37a !important}
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only .story-reply-caption{color:#fff !important;-webkit-text-fill-color:#fff !important}
 </style>
