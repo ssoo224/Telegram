@@ -105,3 +105,20 @@
 /* ===== بحث المتجر ===== */
 .sg-search{padding:6px 14px 2px}
 .sg-search input{width:100%;box-sizing:border-box;background:var(--cl-card,#17212b);border:0;border-radius:14px;padding:12px 16px;color:inherit;font-size:15px;outline:none}
+
+/* ===== إهداء هدية ===== */
+.gs-sel{outline:3px solid var(--cl-gold,#e4c45b);outline-offset:-3px}
+.gs-bar{position:sticky;bottom:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--cl-bg,#0e1621) 35%)}
+.gs-send{width:100%;border:0;border-radius:14px;padding:14px;font-size:16px;font-weight:800;background:var(--cl-gold,#e4c45b);color:#2a1d00;cursor:pointer}
+.gs-send:disabled{opacity:.45}
+#giftSend .gifts-grid{padding:8px 14px 12px}
+/* كارت الهدية بالمحادثة */
+.gg-card{position:relative;overflow:hidden;border-radius:20px;padding:16px 16px 14px;margin:6px auto;width:min(78%,300px);text-align:center;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.gg-card .ga-pat{position:absolute;inset:0;width:100%;height:100%;opacity:.3;pointer-events:none}
+.gg-art,.gg-from,.gg-title,.gg-row,.gg-btn{position:relative;z-index:1}
+.gg-art img{width:130px;height:130px;object-fit:contain;display:block;margin:0 auto 6px}
+.gg-from{font-size:14px;opacity:.9}
+.gg-title{font-size:16px;font-weight:800;margin:2px 0 8px}
+.gg-row{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:3px 6px}
+.gg-row span{opacity:.75}
+.gg-btn{margin-top:10px;border:0;border-radius:16px;padding:8px 34px;background:rgba(255,255,255,.22);color:#fff;font-weight:700;font-size:15px;cursor:pointer}
