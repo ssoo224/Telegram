@@ -5566,8 +5566,9 @@ function showStory() {
   if (!SV.mine && currentUser) {
     const viewRef = db.collection('stories').doc(s.id).collection('views').doc(currentUser.uid);
     viewRef.set({ uid: currentUser.uid, at: Date.now() }, { merge: true }).catch(() => {});
+    const rv0 = svRv;
     viewRef.get().then(d => {
-      if (SV.list[SV.i] !== s || !d.exists) return;
+      if (SV.list[SV.i] !== s || !d.exists || svRv !== rv0) return;
       const saved = d.data().reaction;
       if (saved) { SV.react = saved; markReact(); svApplySelectedReaction(saved); const rp=$('svReactPicker'); if(rp) rp.classList.add('hidden'); }
     }).catch(() => {});
@@ -5588,8 +5589,9 @@ function svFooter(s) {
     f.innerHTML = `<div class="sv-reacts" aria-label="إرسال إيموجي في المحادثة">${['😂','❤️','👍🏻','😭','✨'].map(e => `<span data-e="${e}" role="button" tabindex="0" aria-label="إرسال ${e}" onclick="sendStoryEmoji('${e}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sendStoryEmoji('${e}')}">${e}</span>`).join('')}</div><div id="svReactPicker" class="sv-react-picker hidden">${['😂','❤️','👍🏻','😭','✨','😍','😮','😢','🙏','🔥'].map(e=>`<button type="button" onclick="event.preventDefault();event.stopPropagation();svReact('${e}')" aria-label="تفاعل ${e}">${e}</button>`).join('')}</div><div class="sv-reply"><button id="svHeartBtn" class="sv-heart-btn" aria-label="تفاعل مع القصة" onpointerdown="svHeartDown(event)" onpointerup="svHeartUp(event)" onpointercancel="svHeartCancel()" onpointerleave="svHeartCancel()" oncontextmenu="event.preventDefault();svOpenReactPicker()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg></button><input id="svReplyInput" placeholder="رد على القصة..." autocomplete="off" oninput="svReplyInputChanged()" onfocus="svPause(true)" onblur="svPause(false)" onkeydown="if(event.key==='Enter'){event.preventDefault();sendStoryReply()}"><button id="svReplySend" class="sv-pill hidden" aria-label="إرسال" onmousedown="event.preventDefault()" onclick="sendStoryReply()"><svg class="sv-send-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></button></div>`;
     svReplyInputChanged();
     if (SV.react) { svApplySelectedReaction(SV.react); markReact(); }
+    const rv1 = svRv;
     db.collection('stories').doc(s.id).collection('views').doc(currentUser.uid).get().then(d => {
-      if (SV.list[SV.i] !== s || !d.exists) return;
+      if (SV.list[SV.i] !== s || !d.exists || svRv !== rv1) return;
       const cloudReaction = d.data().reaction || null;
       if (cloudReaction) { SV.react = cloudReaction; svCacheReaction(s.id, currentUser.uid, cloudReaction); svApplySelectedReaction(cloudReaction); }
       else if (!SV.react) { svApplySelectedReaction(null); }
@@ -5603,7 +5605,7 @@ function svHeartUp(ev){ if(ev&&ev.preventDefault)ev.preventDefault(); clearTimeo
 function svHeartCancel(){clearTimeout(svHeartTimer);}
 function svToggleReactPicker(){const p=$('svReactPicker'),f=$('svFoot');if(!p)return;if(p.classList.contains('hidden')){if(f)f.classList.add('heart-long-press');p.classList.remove('hidden');}else{p.classList.add('hidden');if(f)f.classList.remove('heart-long-press');}}
 function svOpenReactPicker(){const p=$('svReactPicker'),f=$('svFoot');if(f)f.classList.add('heart-long-press');if(p)p.classList.remove('hidden');}
-function svHeartTap(){const p=$('svReactPicker');if(p&&!p.classList.contains('hidden'))return;if(SV.react){svUnreact();return;}svReact('❤️');}
+function svHeartTap(){const p=$('svReactPicker'),f=$('svFoot');if(p)p.classList.add('hidden');if(f)f.classList.remove('heart-long-press');svSetReaction(SV.react?null:'❤️');}
 function svReplyInputChanged(){const inp=$('svReplyInput'),btn=$('svReplySend'),heart=$('svHeartBtn');if(!inp||!btn||!heart)return;const typed=!!inp.value.trim();btn.classList.toggle('hidden',!typed);heart.classList.toggle('hidden',typed);if(typed){const p=$('svReactPicker');if(p)p.classList.add('hidden');}}
 function sendStoryEmoji(emoji){const me=currentUser&&currentUser.uid;if(!me||!SV.uid||SV.uid===me){showToast('لا يمكن إرسال رسالة إلى نفسك');return;}const chatId=[me,SV.uid].sort().join('__');db.collection('chats').doc(chatId).set({participants:[me,SV.uid],updatedAt:Date.now()},{merge:true}).then(()=>db.collection('chats').doc(chatId).collection('messages').add({senderId:me,text:emoji,storyReply:true,read:false,createdAt:Date.now()})).then(()=>{notifyPeer(chatId,'↩ تفاعل على قصتك: '+emoji);showToast('تم إرسال الإيموجي ✓');}).catch(()=>showToast('تعذر إرسال الإيموجي'));}
 function markReact() { document.querySelectorAll('.sv-reacts span').forEach(x => x.classList.toggle('on', x.dataset.e === SV.react || x.textContent.trim() === SV.react)); }
@@ -5711,68 +5713,50 @@ function closeStoryViewer() {
 function svApplySelectedReaction(e) {
   const hb = $('svHeartBtn');
   if (!hb) return;
-  if (e) {
-    hb.classList.add('selected-reaction');
-    hb.classList.remove('liked');
-    hb.innerHTML = `<span aria-hidden="true">${e}</span>`;
-    hb.setAttribute('aria-label', `تفاعلك المحدد ${e}`);
-    hb.onpointerdown = svHeartDown; hb.onpointerup = svHeartUp; hb.onpointercancel = svHeartCancel; hb.onpointerleave = svHeartCancel; hb.oncontextmenu = ev => { ev.preventDefault(); };
-  } else {
-    hb.classList.remove('selected-reaction');
-    hb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>';
+  hb.onpointerdown = svHeartDown; hb.onpointerup = svHeartUp; hb.onpointercancel = svHeartCancel; hb.onpointerleave = svHeartCancel; hb.oncontextmenu = ev => { ev.preventDefault(); };
+  const heartSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>';
+  const isHeart = !!e && String(e).replace(/\uFE0F/g, '') === '\u2764';
+  hb.classList.remove('liked', 'selected-reaction');
+  if (!e) {
+    hb.innerHTML = heartSvg;
     hb.setAttribute('aria-label', 'تفاعل مع القصة');
-    hb.onpointerdown = svHeartDown; hb.onpointerup = svHeartUp; hb.onpointercancel = svHeartCancel; hb.onpointerleave = svHeartCancel; hb.oncontextmenu = ev => { ev.preventDefault(); };
+  } else if (isHeart) {
+    hb.classList.add('liked');            // قلب أحمر ممتلئ
+    hb.innerHTML = heartSvg;
+    hb.setAttribute('aria-label', 'إلغاء التفاعل');
+  } else {
+    hb.classList.add('selected-reaction'); // إيموجي آخر
+    hb.innerHTML = `<span aria-hidden="true">${e}</span>`;
+    hb.setAttribute('aria-label', `تفاعلك ${e} - اضغط لإلغائه`);
   }
 }
+let svRv = 0; // يزيد مع كل تغيير محلي للتفاعل حتى لا تعيد ردود الشبكة القديمة التفاعل المحذوف
 const svReactionPending = new Set();
-function svReact(e) {
+function svSetReaction(e) {
   const s = SV.list[SV.i];
   if (!s || !currentUser || SV.mine) return;
   const storyId = s.id, uid = currentUser.uid;
-  const key = storyId + ':' + uid;
-  if (svReactionPending.has(key)) return;
-  if (SV.react === e) { svUnreact(); return; }
-  // حدّث الواجهة فورًا، واحفظ نسخة محلية حتى لا يعود القلب فارغًا عند إعادة فتح القصة.
-  SV.react = e;
-  svCacheReaction(storyId, uid, e);
-  markReact();
-  const rp = $('svReactPicker'); if (rp) rp.classList.add('hidden'); const foot=$('svFoot'); if(foot)foot.classList.remove('heart-long-press');
-  svApplySelectedReaction(e);
-  const ref = db.collection('stories').doc(storyId).collection('views').doc(uid);
-  svReactionPending.add(key);
-  ref.set({ uid, at: Date.now(), reaction: e }, { merge: true }).then(() => {
-    svCacheReaction(storyId, uid, e);
-    if (SV.list[SV.i] === s) { SV.react = e; markReact(); svApplySelectedReaction(e); }
-  }).catch(err => {
-    console.error('Story reaction save failed:', err);
-    // يبقى التفاعل ظاهرًا ومحفوظًا على هذا الجهاز، مع توضيح أن مزامنة Firebase فشلت.
-    showToast('ظهر التفاعل، لكن تعذّر حفظه في الحساب. تحقق من اتصالك وصلاحيات Firebase.');
-  }).finally(() => svReactionPending.delete(key));
-}
-function svUnreact() {
-  const s = SV.list[SV.i];
-  if (!s || !currentUser || SV.mine) return;
-  const storyId = s.id, uid = currentUser.uid, key = storyId + ':' + uid;
-  if (svReactionPending.has(key)) return;
-  const prev = SV.react;
-  if (!prev) return;
-  SV.react = null;
-  svCacheReaction(storyId, uid, null);
+  const prev = SV.react || null, next = e || null;
+  if (prev === next) return;
+  const my = ++svRv;
+  // تحديث فوري للواجهة والنسخة المحلية (لا ننتظر الشبكة)
+  SV.react = next;
+  svCacheReaction(storyId, uid, next);
   markReact();
   const rp = $('svReactPicker'); if (rp) rp.classList.add('hidden');
   const foot = $('svFoot'); if (foot) foot.classList.remove('heart-long-press');
-  svApplySelectedReaction(null);
-  svReactionPending.add(key);
-  db.collection('stories').doc(storyId).collection('views').doc(uid)
-    .set({ uid, reaction: firebase.firestore.FieldValue.delete() }, { merge: true })
-    .catch(err => {
-      console.error('Story reaction remove failed:', err);
-      if (SV.list[SV.i] === s) { SV.react = prev; markReact(); svApplySelectedReaction(prev); }
-      svCacheReaction(storyId, uid, prev);
-      showToast('تعذّر إلغاء التفاعل. تحقق من اتصالك.');
-    })
-    .finally(() => svReactionPending.delete(key));
+  svApplySelectedReaction(next);
+  const data = { uid, at: Date.now(), reaction: next ? next : firebase.firestore.FieldValue.delete() };
+  db.collection('stories').doc(storyId).collection('views').doc(uid).set(data, { merge: true }).catch(err => {
+    console.error('Story reaction save failed:', err);
+    if (svRv !== my) return; // تغيّر التفاعل بعدها، لا نرجع للقديم
+    svCacheReaction(storyId, uid, prev);
+    if (SV.list[SV.i] === s) { SV.react = prev; markReact(); svApplySelectedReaction(prev); }
+    showToast('تعذّر حفظ التفاعل. تحقق من اتصالك وصلاحيات Firebase.');
+  });
 }
+function svReact(e) { svSetReaction(SV.react === e ? null : e); }   // نفس الإيموجي مرة ثانية = حذف
+function svUnreact() { svSetReaction(null); }
 function sendStoryReply() {
   const inp = $('svReplyInput'); if (!inp) return;
   const text = inp.value.trim(); if (!text) return;
