@@ -7571,8 +7571,8 @@ async function avatarDownload(){
 
     // الضغط على المربع المكبّر يفتح معرض الصور
     var items=[], idx=0, busy=false;
-    function avatarList(){ var cur=(window.currentUserData&&currentUserData.avatarUrl)||''; var o=(window.currentUserData&&Array.isArray(currentUserData.avatarHistory))?currentUserData.avatarHistory:[]; return cur?[cur].concat(o.filter(function(u,i){return u&&u!==cur&&o.indexOf(u)===i;})):[]; }
-    function updateCount(){ if(hCount) hCount.textContent=(items.length?idx+1:0)+'/'+items.length; }
+    function avatarList(){ var cu=(typeof currentUserData!=='undefined'&&currentUserData)||{}; var cur=cu.avatarUrl||''; var o=Array.isArray(cu.avatarHistory)?cu.avatarHistory:[]; return cur?[cur].concat(o.filter(function(u,i){return u&&u!==cur&&o.indexOf(u)===i;})):[]; }
+    function updateCount(){ if(hCount){ hCount.textContent=(items.length?idx+1:0)+'/'+items.length; hCount.style.visibility=items.length>1?'visible':'hidden'; } }
     function loadItems(){ items=avatarList(); idx=0; updateCount(); }
     function showPhoto(i,dir){
       var url=items[i]; if(!url) return;
@@ -9787,12 +9787,18 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 .pf-hero .pf-hero-info{z-index:3}
 </style>
 <style id="babylon-hero-top">
-.pf-hero .pf-hero-top{position:absolute;left:0;right:0;top:0;z-index:4;display:flex;justify-content:space-between;align-items:center;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 0;opacity:0;direction:ltr}
-.pf-hero .pf-hero-count{min-width:54px;text-align:center;padding:8px 14px;border-radius:20px;background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#fff;font:700 15px/1 -apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.5px}
-.pf-hero .pf-hero-dots{width:40px;height:40px;border:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#fff;cursor:pointer}
-.pf-hero .pf-hero-menu{position:absolute;z-index:5;right:12px;top:calc(60px + env(safe-area-inset-top,0px));min-width:170px;padding:6px;border-radius:16px;background:rgba(22,28,40,.9);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 12px 32px rgba(0,0,0,.4);direction:rtl;opacity:0;transform:scale(.92) translateY(-6px);transform-origin:top right;pointer-events:none!important;transition:opacity .16s,transform .16s}
-.pf-hero .pf-hero-menu.open{opacity:1;transform:none;pointer-events:auto!important}
-.pf-hero .pf-hero-menu button{display:block;width:100%;text-align:right;padding:12px 14px;border:0;border-radius:11px;background:none;color:#fff;font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer}
-.pf-hero .pf-hero-menu button:active{background:rgba(255,255,255,.1)}
-.pf-hero .pf-hero-menu button.danger{color:#ff7b7b}
+.pf-hero .pf-hero-top{position:absolute;left:0;right:0;top:0;z-index:6;display:flex;justify-content:space-between;align-items:center;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 0;opacity:0;direction:ltr}
+.pf-hero .pf-hero-count{min-width:0;padding:4px 10px;border-radius:14px;background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:rgba(255,255,255,.92);font:600 12px/1.2 -apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.pf-hero .pf-hero-dots{width:40px;height:40px;padding:0;border:0!important;outline:0;border-radius:0;display:flex;align-items:center;justify-content:center;background:none!important;box-shadow:none!important;color:#fff!important;cursor:pointer;filter:drop-shadow(0 1px 3px rgba(0,0,0,.65));-webkit-tap-highlight-color:transparent}
+.pf-hero .pf-hero-dots svg{width:22px;height:22px;fill:#fff!important}
+.pf-hero .pf-hero-menu{position:absolute;z-index:7;right:10px;top:calc(56px + env(safe-area-inset-top,0px));min-width:176px;padding:6px;border-radius:16px;background:rgba(24,30,42,.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);box-shadow:0 12px 32px rgba(0,0,0,.4);direction:rtl;visibility:hidden;opacity:0;transform:scale(.92) translateY(-6px);transform-origin:top right;transition:opacity .16s,transform .16s,visibility .16s}
+.pf-hero .pf-hero-menu.open{visibility:visible!important;opacity:1!important;transform:none!important}
+.pf-hero .pf-hero-menu button{display:block!important;width:100%;text-align:right;padding:12px 14px;border:0!important;border-radius:11px;background:transparent!important;color:#f1f5f9!important;-webkit-text-fill-color:#f1f5f9;font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer;box-shadow:none!important}
+.pf-hero .pf-hero-menu button:active{background:rgba(255,255,255,.1)!important}
+.pf-hero .pf-hero-menu button.danger{color:#ff7b7b!important;-webkit-text-fill-color:#ff7b7b}
+.app-container[data-app-theme="light"] .pf-hero .pf-hero-menu{background:rgba(255,255,255,.96);border-color:rgba(15,23,42,.1);box-shadow:0 12px 32px rgba(15,23,42,.22)}
+.app-container[data-app-theme="light"] .pf-hero .pf-hero-menu button{color:#17212b!important;-webkit-text-fill-color:#17212b}
+.app-container[data-app-theme="light"] .pf-hero .pf-hero-menu button:active{background:rgba(15,23,42,.07)!important}
+.app-container[data-app-theme="light"] .pf-hero .pf-hero-menu button.danger{color:#d93a3a!important;-webkit-text-fill-color:#d93a3a}
 </style>
+
