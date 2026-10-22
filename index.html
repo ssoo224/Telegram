@@ -7858,8 +7858,8 @@ html,body{overscroll-behavior-y:none}
     }
 
     var tv=0, vel=0, lastT=0, lastY=0, followRaf=0, followLast=0;
-    function hideRing(){ view.classList.add('pf-ring-off'); }
-    function showRing(){ view.classList.remove('pf-ring-off'); }
+    function hideRing(){ if(!view.classList.contains('pf-ring-off')) view.classList.add('pf-ring-off'); }
+    function showRing(){ if(view.classList.contains('pf-ring-off')) view.classList.remove('pf-ring-off'); }
     var g=null, p=0, expanded=false, pulling=false, sy=0, sx=0, p0=0, raf=0, track=false;
 
     function sync(){
