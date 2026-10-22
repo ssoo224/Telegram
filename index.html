@@ -10231,3 +10231,14 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
   filter:none !important;
 }
 </style>
+
+<style id="babylon-white-message-checkmarks">
+/* جعل علامات ✓ بيضاء في الطورين النهاري والليلي فقط */
+#chatView #messagesArea .msg-meta .check-mark,
+#chatView #messagesArea .msg-meta .check-mark.read,
+#chatView #messagesArea .msg-meta .check-mark .tick-svg{
+  color:#fff !important;
+  stroke:#fff !important;
+  -webkit-text-fill-color:#fff !important;
+}
+</style>
