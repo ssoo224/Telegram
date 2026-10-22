@@ -5671,6 +5671,7 @@ function openStories(uid) {
 }
 function startViewer(uid, list, i, mine) {
   if (!Array.isArray(list) || !list.length) return;
+  try { if (window.BabylonAndroid && typeof window.BabylonAndroid.setStorySystemBars === 'function') window.BabylonAndroid.setStorySystemBars(true); } catch (_) {}
   // Clear the previous timer BEFORE replacing SV, otherwise its interval reference is lost.
   if (SV && SV.iv) clearInterval(SV.iv);
   const safeIndex = Math.max(0, Math.min(Number.isFinite(i) ? i : 0, list.length - 1));
@@ -5885,6 +5886,7 @@ let svSwipe = { active: false, startY: 0, startX: 0, lastY: 0, lastAt: 0, draggi
 })();
 
 function closeStoryViewer() {
+  try { if (window.BabylonAndroid && typeof window.BabylonAndroid.setStorySystemBars === 'function') window.BabylonAndroid.setStorySystemBars(false); } catch (_) {}
   clearInterval(SV.iv);
   $('storyViewer').classList.remove('story-opening');
   $('storyViewer').classList.add('hidden');
