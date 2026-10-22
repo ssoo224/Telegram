@@ -3911,6 +3911,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         b.className = "msg-bubble" + (isMine ? " mine" : "");
         b.id = "message_" + doc.id;
         if (m.videoUrl) b.classList.add("video-msg");
+        if (m.imageUrl && !m.audioUrl && !m.videoUrl) b.classList.add("video-msg", "image-msg");
         b.dataset.created = String(m.createdAt || 0);
         b.dataset.messageText = String(m.text || '');
         b.dataset.senderId = String(m.senderId || '');
@@ -4940,21 +4941,25 @@ function sendChatVideo(file) {
   if (!chatId) return;
   if (file.size > MAX_STORY_VIDEO_MB * 1024 * 1024) return showToast('حجم المقطع كبير (الأقصى ' + MAX_STORY_VIDEO_MB + ' ميجا)');
   if (!CLD_CLOUD || !CLD_PRESET) return showToast('رفع الفيديو غير متاح');
-  let pill = document.getElementById('chatUploadPill');
-  if (!pill) { pill = document.createElement('div'); pill.id = 'chatUploadPill'; document.body.appendChild(pill); }
-  pill.textContent = 'جاري رفع الفيديو 0%';
-  const fin = () => { const p = document.getElementById('chatUploadPill'); if (p) p.remove(); };
+  const area = document.getElementById('messagesArea');
+  const ph = document.createElement('div');
+  ph.id = 'chatVideoPending'; ph.className = 'msg-bubble mine video-msg video-pending';
+  const poster = (() => { try { return URL.createObjectURL(file); } catch (e) { return ''; } })();
+  ph.innerHTML = '<div class="msg-video"><video src="' + poster + '#t=0.1" preload="metadata" muted playsinline></video><div class="vp-cover"><div class="vp-logo"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 54h48M12 48h40M16 48V28h32v20M12 24h40L32 10 12 24Zm8 4v20m8-20v20m8-20v20m8-20v20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="vp-pct">0%</div></div></div><div class="msg-meta"><span>' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) + '</span> <span class="check-mark">🕓</span></div>';
+  const place = () => { if (area && !ph.isConnected) { area.appendChild(ph); area.scrollTop = area.scrollHeight; } };
+  place();
+  const fin = () => { ph.remove(); if (poster) setTimeout(() => URL.revokeObjectURL(poster), 3000); };
   const xhr = new XMLHttpRequest(), fd = new FormData();
   fd.append('file', file); fd.append('upload_preset', CLD_PRESET); fd.append('folder', 'chat');
   xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/video/upload`);
-  xhr.upload.onprogress = e => { if (e.lengthComputable) pill.textContent = 'جاري رفع الفيديو ' + Math.round(e.loaded / e.total * 100) + '%'; };
+  xhr.upload.onprogress = e => { if (e.lengthComputable) { place(); const t = ph.querySelector('.vp-pct'); if (t) t.textContent = Math.round(e.loaded / e.total * 100) + '%'; } };
   xhr.onerror = () => { fin(); showToast('تعذر رفع الفيديو: فشل الاتصال'); };
   xhr.onload = () => {
     let r = {}; try { r = JSON.parse(xhr.responseText); } catch (e) {}
     if (!(xhr.status >= 200 && xhr.status < 300 && r.secure_url)) { fin(); return showToast('تعذر رفع الفيديو'); }
-    const poster = r.secure_url.replace('/video/upload/', '/video/upload/so_0,w_480,c_limit/').replace(/\.[^/.]+$/, '.jpg');
+    const posterUrl = r.secure_url.replace('/video/upload/', '/video/upload/so_0,w_480,c_limit/').replace(/\.[^/.]+$/, '.jpg');
     db.collection('chats').doc(chatId).collection('messages').add({
-      senderId: currentUser.uid, videoUrl: r.secure_url, posterUrl: poster, duration: Math.round(r.duration || 0), read: false, createdAt: Date.now()
+      senderId: currentUser.uid, videoUrl: r.secure_url, posterUrl: posterUrl, duration: Math.round(r.duration || 0), read: false, createdAt: Date.now()
     }).then(() => {
       fin();
       db.collection('chats').doc(chatId).set({
@@ -7909,7 +7914,14 @@ async function avatarDownload(){
 #chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta .check-mark{color:rgba(255,255,255,.9) !important;-webkit-text-fill-color:currentColor !important}
 #chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta .check-mark.read{color:var(--tick-read,#4ade80) !important}
 #chatView #messagesArea .msg-bubble.video-msg .reactions-row{align-self:flex-start;margin-top:4px}
-#chatUploadPill{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:998;padding:8px 16px;border-radius:999px;background:rgba(0,0,0,.78);color:#fff;font-size:13px;font-weight:700}
+
+#chatView #messagesArea .msg-bubble.image-msg .msg-image{border-radius:16px;overflow:hidden;line-height:0;background:#000}
+#chatView #messagesArea .msg-bubble.image-msg .msg-image img{display:block;width:100%;max-width:none;border-radius:0}
+#chatView #messagesArea .msg-bubble.video-pending{align-self:flex-end}
+#chatView #messagesArea .msg-bubble.video-pending .vp-cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(0,0,0,.45)}
+#chatView #messagesArea .msg-bubble.video-pending .vp-logo{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#fff1b0 0%,#f4d56a 28%,#e2b53c 62%,#cf9d27 100%);border:2px solid #fff6cf;box-shadow:0 6px 18px rgba(232,190,70,.45);animation:splashBreath 1.6s ease-in-out infinite}
+#chatView #messagesArea .msg-bubble.video-pending .vp-logo svg{width:28px;height:28px;filter:drop-shadow(0 1px 2px rgba(120,80,0,.45))}
+#chatView #messagesArea .msg-bubble.video-pending .vp-pct{color:#fff;font-size:12px;font-weight:800;line-height:1}
 </style>
 </body>
 </html>
