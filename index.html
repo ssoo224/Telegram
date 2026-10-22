@@ -3585,11 +3585,20 @@ function setProfileExpandedStatusBlur(enabled, imageUrl) {
   // لا نضيف طبقة تمويه فوق شريط الإشعارات؛ الصورة الأصلية هي التي تمتد خلفه.
   var blur = document.getElementById('profileStatusBarBlur');
   if (blur) blur.remove();
-  try {
-    if (window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') {
-      window.BabylonAndroid.setProfileExpandedSystemBars(!!enabled);
-    }
-  } catch (err) { console.warn('profile system bars update failed', err); }
+  enabled = !!enabled;
+  // تأخير وإلغاء التكرار: لا نغيّر شريط النظام إلا مرة واحدة وبعد استقرار الرسم، حتى لا يحدث كراش عند تبدّل الشريط.
+  clearTimeout(window.__pfBarsTimer);
+  window.__pfBarsTimer = setTimeout(function () {
+    if (!!window.__pfBarsState === enabled) return;
+    window.__pfBarsState = enabled;
+    requestAnimationFrame(function () {
+      try {
+        if (window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') {
+          window.BabylonAndroid.setProfileExpandedSystemBars(enabled);
+        }
+      } catch (err) { console.warn('profile system bars update failed', err); }
+    });
+  }, enabled ? 350 : 0);
 }
 
 function openAvatarGallery(ev) {
@@ -10226,7 +10235,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 .pf-hero .pf-hero-ext{position:absolute;left:0;right:0;top:0;overflow:hidden;background-size:cover;background-position:center;pointer-events:none;z-index:0}
 .pf-hero .pf-hero-ext::before{content:"";position:absolute;inset:-30px;background:inherit;filter:blur(24px) saturate(1.2) brightness(.9);transform:scale(1.1)}
 .pf-hero .pf-hero-ext::before{filter:none!important}
-.pf-settled .pf-hero .pf-hero-ext::before{filter:blur(24px) saturate(1.2) brightness(.9)!important}
+.pf-settled .pf-hero .pf-hero-ext::before{filter:none!important;opacity:.85}
 .pf-hero img,.pf-hero .pf-hero-letter{z-index:1}
 .pf-hero .pf-hero-shade{z-index:2;background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.55))!important}
 .pf-hero .pf-hero-info{z-index:3}
