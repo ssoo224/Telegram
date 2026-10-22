@@ -2504,7 +2504,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 <div id="storyComposer" class="story-page hidden" data-app-theme="light" role="dialog" aria-modal="true" aria-label="قصة جديدة">
   <header class="sp-header">
     <button type="button" class="sp-back" onclick="closeComposer()" aria-label="رجوع"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-    <div class="sp-title"><h2>قصة جديدة</h2><p>شارك لحظتك مع أصدقائك</p></div>
+    <div class="sp-title"><h2 id="spTitleH">قصة جديدة</h2><p id="spTitleP">شارك لحظتك مع أصدقائك</p></div>
   </header>
 
   <div class="sp-scroll">
@@ -2518,14 +2518,14 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
     <section class="sp-card">
       <label for="scCaption" class="sp-label">
         <span class="sp-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
-        <span class="sp-label-text">وصف القصة</span>
+        <span class="sp-label-text" id="spCapLabel">وصف القصة</span>
         <span class="sp-optional">اختياري</span>
       </label>
       <textarea id="scCaption" class="sp-textarea" maxlength="200" rows="3" placeholder="اكتب وصفاً لقصتك..." oninput="updateStoryCaptionCount()"></textarea>
-      <div class="sp-foot"><span>أضف تفاصيل تساعد أصدقاءك على فهم القصة</span><span id="scCaptionCount">0/200</span></div>
+      <div class="sp-foot"><span id="spCapHint">أضف تفاصيل تساعد أصدقاءك على فهم القصة</span><span id="scCaptionCount">0/200</span></div>
     </section>
 
-    <section class="sp-card">
+    <section class="sp-card sp-story-only">
       <div class="sp-label">
         <span class="sp-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
         <span class="sp-label-text">مدة ظهور القصة</span>
@@ -2533,7 +2533,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
       <div id="scDur" class="sc-chips"></div>
     </section>
 
-    <section class="sp-card sp-pin-card">
+    <section class="sp-card sp-pin-card sp-story-only">
       <label class="sp-switch-row" for="scPin">
         <span class="sp-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg></span>
         <span class="sp-switch-copy"><b>تثبيت بالملف الشخصي</b><small>تبقى القصة ظاهرة دائماً بعد انتهاء مدتها</small></span>
@@ -2543,7 +2543,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
   </div>
 
   <footer class="sp-footer">
-    <button id="scPublish" type="button" class="sp-publish" onclick="publishStory()">نشر القصة</button>
+    <button id="scPublish" type="button" class="sp-publish" onclick="(scMode==='post'?publishPost():publishStory())">نشر القصة</button>
     <button type="button" class="sp-cancel" onclick="closeComposer()">إلغاء</button>
   </footer>
 </div>
@@ -5167,9 +5167,7 @@ function onStoryMediaSelected(e) {
   compressImage(file, data => {
     if (!data) return showToast('تعذر تجهيز الصورة، جرب صورة ثانية');
     if (selectedPublishType === 'story') return openComposer(data);
-    db.collection('posts').add({ userId: currentUser.uid, imageUrl: data, createdAt: Date.now(), likes: [] })
-      .then(() => { showToast('تم إضافة المنشور للبروفايل ▧'); loadUserPosts(); })
-      .catch(() => showToast('تعذر النشر'));
+    openComposer(data, null, 'post');
   });
 }
 const MAX_STORY_VIDEO = 30;            // الحد الأقصى بالثواني
@@ -5207,12 +5205,37 @@ function handleStoryVideo(file) {
   };
   v.src = url;
 }
-function openComposer(data, vid) {
+let scMode = 'story';
+function setComposerMode(mode){
+  scMode = mode; const post = mode === 'post';
+  $('storyComposer').classList.toggle('sp-post-mode', post);
+  $('spTitleH').textContent = post ? 'منشور جديد' : 'قصة جديدة';
+  $('spTitleP').textContent = post ? 'يبقى دائماً في ملفك الشخصي' : 'شارك لحظتك مع أصدقائك';
+  $('spCapLabel').textContent = post ? 'وصف المنشور' : 'وصف القصة';
+  $('scCaption').placeholder = post ? 'اكتب وصفاً لمنشورك...' : 'اكتب وصفاً لقصتك...';
+  $('spCapHint').textContent = post ? 'أضف تفاصيل تظهر مع المنشور' : 'أضف تفاصيل تساعد أصدقاءك على فهم القصة';
+  $('scPublish').textContent = post ? 'نشر المنشور' : 'نشر القصة';
+}
+async function publishPost() {
+  if (!scData || !currentUser) return;
+  const btn = $('scPublish'); if (btn.disabled) return;
+  btn.disabled = true; btn.textContent = 'جارٍ النشر...';
+  const caption = $('scCaption').value.trim(), img = scData;
+  try {
+    await db.collection('posts').add({ userId: currentUser.uid, imageUrl: img, caption, createdAt: Date.now(), likes: [] });
+    closeComposer(); btn.disabled = false; btn.textContent = 'نشر المنشور';
+    showToast('تم نشر المنشور في ملفك الشخصي'); loadUserPosts();
+  } catch (err) {
+    console.error(err); btn.disabled = false; btn.textContent = 'نشر المنشور'; showToast('تعذر نشر المنشور');
+  }
+}
+function openComposer(data, vid, mode) {
+  setComposerMode(mode || 'story');
   scData = data; scHours = 24; scVid = vid || null;
   const pv = $('scPreviewVid');
   if (scVid) { pv.src = scVid.url; pv.classList.remove('hidden'); $('scPreview').classList.add('hidden'); }
   else { pv.pause(); pv.removeAttribute('src'); pv.classList.add('hidden'); $('scPreview').classList.remove('hidden'); }
-  $('scPublish').textContent = 'نشر القصة';
+  setComposerMode(scMode);
   $('scPreview').src = data;
   $('scCaption').value = ''; updateStoryCaptionCount(); $('scPin').checked = false;
   $('scDur').innerHTML = DURS.map(h => `<button type="button" data-h="${h}" class="${h === 24 ? 'on' : ''}" onclick="setDur(${h})">${h} ساعة</button>`).join('');
@@ -5863,22 +5886,19 @@ function loadUserPosts() {
   if (!currentUser) return;
   const grid = document.getElementById("postsGrid");
   if (!grid) return;
-  grid.innerHTML = "";
-
-  db.collection("posts")
-    .where("userId", "==", currentUser.uid)
-    .get().then(snap => {
-      snap.forEach(doc => {
-        const post = doc.data();
-        const item = document.createElement("div");
-        item.className = "post-grid-item";
-        item.innerHTML = `
-          <img src="${post.imageUrl}">
-          <div class="post-grid-stats">♡ ${post.likes ? post.likes.length : 0}</div>
-        `;
-        grid.appendChild(item);
-      });
+  db.collection("posts").where("userId", "==", currentUser.uid).get().then(snap => {
+    const arr = []; snap.forEach(doc => arr.push(Object.assign({ id: doc.id }, doc.data())));
+    arr.sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0));
+    grid.innerHTML = "";
+    arr.forEach(post => {
+      const item = document.createElement("div");
+      item.className = "post-grid-item";
+      const im = document.createElement("img"); im.src = post.imageUrl; im.loading = "lazy";
+      const st = document.createElement("div"); st.className = "post-grid-stats"; st.textContent = "♡ " + (post.likes ? post.likes.length : 0);
+      item.appendChild(im); item.appendChild(st);
+      grid.appendChild(item);
     });
+  }).catch(err => console.warn("posts load failed", err));
 }
 </script>
 
@@ -7777,6 +7797,9 @@ async function avatarDownload(){
 @keyframes btBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @keyframes btSpin{to{transform:rotate(360deg)}}
 #toast .bt-spin{animation:btSpin .8s linear infinite}
+</style>
+<style id="babylon-post-composer">
+#storyComposer.sp-post-mode .sp-story-only{display:none!important}
 </style>
 </body>
 </html>
