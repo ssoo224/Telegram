@@ -8442,6 +8442,17 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 #otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > span{
   display:block!important;margin:0!important;font-size:12px!important;font-weight:650!important;line-height:1.2!important;text-align:center!important;white-space:nowrap}
 </style>
+<style id="babylon-other-icons-colors">
+/* رمز الحظر أحمر، رمز المراسلة أزرق (يخفّان نحو الأبيض عند سحب الصورة)، والكلمات تتبع الطور النهاري/الليلي */
+#otherUserProfileView{--pf-red:#f87171;--pf-blue:#60a5fa}
+.app-container[data-app-theme="light"] #otherUserProfileView{--pf-red:#dc2626;--pf-blue:#2563eb}
+#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > i,#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > svg,#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > i svg{
+  color:color-mix(in srgb,#ffb4b4 calc(var(--pv,0)*100%),var(--pf-red))!important;stroke:currentColor!important}
+#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q.primary > i,#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q.primary > svg,#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q.primary > i svg{
+  color:color-mix(in srgb,#b9d8ff calc(var(--pv,0)*100%),var(--pf-blue))!important;stroke:currentColor!important}
+#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q.primary > span,#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > span{
+  color:color-mix(in srgb,#fff calc(var(--pv,0)*100%),var(--pf-txt))!important;-webkit-text-fill-color:currentColor!important}
+</style>
 </body>
 </html>
 
