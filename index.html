@@ -7501,6 +7501,7 @@ async function avatarDownload(){
       hero.style.pointerEvents = v>=0.99 ? 'auto' : 'none';
       hInfo.style.opacity = clamp((v-0.55)/0.4);
       if(hTop) hTop.style.opacity = clamp((v-0.55)/0.4);
+      view.classList.toggle('pf-expanded', v>=0.5);
       cover.style.height=(g.coverH+g.delta*v)+'px';
       cover.style.opacity=clamp(1-v*1.5);
       ring.style.opacity=0;
@@ -7526,6 +7527,7 @@ async function avatarDownload(){
       nameBox.style.height=nameBox.style.overflow=nameBox.style.marginBottom=nameBox.style.opacity='';
       status.style.height=status.style.overflow=status.style.opacity='';
       if(hTop){ hTop.style.opacity=0; hMenu.classList.remove('open'); }
+      view.classList.remove('pf-expanded');
       hImg.style.webkitMaskImage=hImg.style.maskImage=hLet.style.webkitMaskImage=hLet.style.maskImage=''; hImg.style.height=hLet.style.height=hExt.style.height=hShade.style.top=hShade.style.height=''; hShade.style.bottom=''; if(quick){ quick.style.transform=''; quick.style.removeProperty('margin-bottom'); view.style.removeProperty('--pv'); hInfo.style.bottom=''; }
     }
     function animateTo(t){
@@ -7610,7 +7612,7 @@ async function avatarDownload(){
         else if(typeof avatarDelete==='function'){ Promise.resolve(avatarDelete()).then(refreshAfterEdit,refreshAfterEdit); }
       });
     }
-    hero.addEventListener('click',function(ev){
+    function heroTap(ev){
       if(own){
         if(hMenu.classList.contains('open')){ hMenu.classList.remove('open'); return; }
         var r=hero.getBoundingClientRect(), x=ev.clientX-r.left, y=ev.clientY-r.top;
@@ -7619,7 +7621,17 @@ async function avatarDownload(){
         if(x<r.width*0.35){ go(-1); return; }
       }
       if(typeof window[cfg.gallery]==='function') window[cfg.gallery]();
-    });
+    }
+    if(own){
+      var tdn=null;
+      hero.addEventListener('pointerdown',function(e){ tdn={x:e.clientX,y:e.clientY,t:Date.now(),el:e.target}; });
+      hero.addEventListener('pointerup',function(e){
+        if(!tdn) return; var d=tdn; tdn=null;
+        if(e.target.closest&&e.target.closest('.pf-hero-top,.pf-hero-menu')) return;
+        if(Math.abs(e.clientX-d.x)<12&&Math.abs(e.clientY-d.y)<12&&Date.now()-d.t<600){ heroTap(e); }
+      });
+      hero.addEventListener('pointercancel',function(){ tdn=null; });
+    } else { hero.addEventListener('click',heroTap); }
 
     // عند إخفاء الشاشة أو إعادة فتحها نرجع للوضع الطبيعي
     new MutationObserver(function(){
@@ -9788,7 +9800,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 </style>
 <style id="babylon-hero-top">
 .pf-hero .pf-hero-top{position:absolute;left:0;right:0;top:0;z-index:6;display:flex;justify-content:space-between;align-items:center;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 0;opacity:0;direction:ltr}
-.pf-hero .pf-hero-count{min-width:0;padding:4px 10px;border-radius:14px;background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:rgba(255,255,255,.92);font:600 12px/1.2 -apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.pf-hero .pf-hero-count{min-width:0;padding:4px 10px;border-radius:14px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.82);font:600 12px/1.2 -apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.45)}
 .pf-hero .pf-hero-dots{width:40px;height:40px;padding:0;border:0!important;outline:0;border-radius:0;display:flex;align-items:center;justify-content:center;background:none!important;box-shadow:none!important;color:#fff!important;cursor:pointer;filter:drop-shadow(0 1px 3px rgba(0,0,0,.65));-webkit-tap-highlight-color:transparent}
 .pf-hero .pf-hero-dots svg{width:22px;height:22px;fill:#fff!important}
 .pf-hero .pf-hero-menu{position:absolute;z-index:7;right:10px;top:calc(56px + env(safe-area-inset-top,0px));min-width:176px;padding:6px;border-radius:16px;background:rgba(24,30,42,.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);box-shadow:0 12px 32px rgba(0,0,0,.4);direction:rtl;visibility:hidden;opacity:0;transform:scale(.92) translateY(-6px);transform-origin:top right;transition:opacity .16s,transform .16s,visibility .16s}
@@ -9802,3 +9814,8 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 .app-container[data-app-theme="light"] .pf-hero .pf-hero-menu button.danger{color:#d93a3a!important;-webkit-text-fill-color:#d93a3a}
 </style>
 
+<style id="babylon-hero-tap">
+.pf-expanded .pf-head,.pf-expanded .pf-head .avatar-story-ring,.pf-expanded .pf-head>*{pointer-events:none}
+.pf-expanded .pf-head .pf-quick,.pf-expanded .pf-head .pf-quick *{pointer-events:auto}
+.pf-hero .pf-hero-count{border:1px solid rgba(255,255,255,.12)}
+</style>
