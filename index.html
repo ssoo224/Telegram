@@ -2398,8 +2398,8 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 
         <form id="textInputBar" class="chat-input-bar" onsubmit="sendMessage(event)" autocomplete="off" novalidate data-form-type="other">
           <div id="messageInput" class="msg-editable" contenteditable="plaintext-only" role="textbox" aria-multiline="false" aria-label="اكتب رسالتك" data-placeholder="اكتب رسالتك..." dir="auto" spellcheck="false" autocorrect="off" autocapitalize="sentences" inputmode="text" enterkeyhint="send" tabindex="0"></div>
-          <label class="icon-btn" for="chatImageInput" style="color:var(--text-muted); cursor:pointer;" title="إرسال صورة"><i data-ic="image" data-size="22"></i></label>
-          <input type="file" id="chatImageInput" accept="image/*" class="hidden" onchange="sendImage(event)">
+          <label class="icon-btn" for="chatImageInput" style="color:var(--text-muted); cursor:pointer;" title="إرسال صورة أو فيديو"><i data-ic="image" data-size="22"></i></label>
+          <input type="file" id="chatImageInput" accept="image/*,video/*" class="hidden" onchange="sendImage(event)">
           <button type="button" class="icon-btn mic-button" style="color:var(--text-muted)" onclick="startRecording()" title="تسجيل صوت" aria-label="تسجيل صوت"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1M12 18v3M8.5 21h7"></path></svg></button>
           <button class="icon-btn" style="color:var(--babylon-gold)" type="submit" aria-label="إرسال"><i data-ic="send" data-size="22"></i></button>
         </form>
@@ -3910,6 +3910,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         const b = document.createElement("div");
         b.className = "msg-bubble" + (isMine ? " mine" : "");
         b.id = "message_" + doc.id;
+        if (m.videoUrl) b.classList.add("video-msg");
         b.dataset.created = String(m.createdAt || 0);
         b.dataset.messageText = String(m.text || '');
         b.dataset.senderId = String(m.senderId || '');
@@ -3927,6 +3928,8 @@ function renderMsgDoc(doc, box, existingTyping) {
 
         if (m.audioUrl) {
           htmlContent += `<div class="audio-player-card custom-voice-card" aria-label="رسالة صوتية" data-dur="${Number(m.duration)||0}"><audio class="voice-audio" preload="metadata" src="${esc(m.audioUrl)}"></audio><button type="button" class="voice-play-btn" onclick="toggleVoicePlayback(this)" aria-label="تشغيل الرسالة الصوتية"><svg class="voice-play-icon" viewBox="0 0 24 24" width="23" height="23" fill="currentColor" aria-hidden="true"><path d="M8 5.8c0-.8.9-1.3 1.6-.8l9.2 6.2a1 1 0 0 1 0 1.6l-9.2 6.2c-.7.5-1.6 0-1.6-.8z"/></svg></button><div class="audio-player-content"><div class="audio-player-title">رسالة صوتية</div><div class="voice-progress-row"><input class="voice-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="تقدم الصوت" oninput="seekVoicePlayback(this)"><span class="voice-time">${m.duration?formatVoiceTime(m.duration):'0:00'}</span></div><div class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>`;
+        } else if (m.videoUrl) {
+          htmlContent += `<div class="msg-video"><video src="${esc(m.videoUrl)}#t=0.1" ${m.posterUrl ? `poster="${esc(m.posterUrl)}"` : ''} preload="metadata" muted playsinline></video><button type="button" class="msg-video-play" aria-label="تشغيل الفيديو"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button></div>`;
         } else {
           htmlContent += m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`;
         }
@@ -3942,12 +3945,14 @@ function renderMsgDoc(doc, box, existingTyping) {
         htmlContent += `<div class="msg-meta"><span>${rawTimeStr}</span> ${checkHtml}</div>`;
         b.innerHTML = htmlContent;
         try {
-          if (!m.imageUrl && !m.audioUrl && !m.forwarded) {
+          if (!m.imageUrl && !m.audioUrl && !m.videoUrl && !m.forwarded) {
             const _em = babylonSingleEmoji(m.text);
             if (_em) babylonApplyBigEmoji(b, _em, (Date.now() - (Number(m.createdAt) || 0)) < 6000);
           }
         } catch (e) {}
         try { primeVoiceDuration(b); } catch (e) {}
+        const msgVidBtn = b.querySelector(".msg-video-play");
+        if (msgVidBtn) msgVidBtn.onclick = (ev) => { ev.stopPropagation(); if (messageSelectionMode) toggleMessageSelection(doc.id); else openVideoViewer(m.videoUrl); };
         const msgImg = b.querySelector(".msg-image img");
         if (msgImg) msgImg.onclick = (ev) => { ev.stopPropagation(); openImageViewer(msgImg.src); };
 
@@ -3977,7 +3982,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         b.ontouchend = (e) => {
           clearTimeout(pressTimer);
           if (ignoreTouch) { ignoreTouch = false; return; }
-          if (touchStartX - e.changedTouches[0].clientX > 50) triggerSwipeReply(m.text || (m.imageUrl ? "▧ صورة" : "بصمة صوتية"), doc.id);
+          if (touchStartX - e.changedTouches[0].clientX > 50) triggerSwipeReply(m.text || (m.imageUrl ? "▧ صورة" : (m.videoUrl ? "▶ فيديو" : "بصمة صوتية")), doc.id);
         };
 
         b.onmousedown = (e) => {
@@ -4002,7 +4007,7 @@ function renderMsgDoc(doc, box, existingTyping) {
             return;
           }
           e.preventDefault(); e.stopPropagation();
-          openMsgModal(doc.id, m.text || (m.imageUrl ? 'صورة' : ''), m.senderId, m.reactions || {}, !!m.audioUrl, b);
+          openMsgModal(doc.id, m.text || (m.imageUrl ? 'صورة' : (m.videoUrl ? 'فيديو' : '')), m.senderId, m.reactions || {}, !!m.audioUrl, b);
         };
 
         let target = b;
@@ -4467,7 +4472,7 @@ function loadChats() {
                 const m = msgSnap.docs[0].data();
                 const isMine = (m.senderId === currentUser.uid);
                 const prefix = isMine ? "أنت: " : ""; if (isMine) lastTick = m.read ? 'read' : 'sent';
-                lastMsgText = prefix + (m.audioUrl ? "♬ بصمة صوتية" : (m.imageUrl ? "▧ صورة" : (m.text || "")));
+                lastMsgText = prefix + (m.audioUrl ? "♬ بصمة صوتية" : (m.imageUrl ? "▧ صورة" : (m.videoUrl ? "▶ فيديو" : (m.text || ""))));
                 
                 let tStr = new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
                 if (tStr.startsWith('0')) tStr = tStr.substring(1);
@@ -4483,7 +4488,7 @@ function loadChats() {
                     getNotificationOption('push', false) &&
                     !getLocalChatSet('babylon_muted_users').has(otherId)) {
                   nativeNotifiedMessageIds.add(messageDoc.id);
-                  const nativeBody = m.audioUrl ? '♬ رسالة صوتية' : (m.imageUrl ? '▧ صورة' : (m.text || 'رسالة جديدة'));
+                  const nativeBody = m.audioUrl ? '♬ رسالة صوتية' : (m.imageUrl ? '▧ صورة' : (m.videoUrl ? '▶ فيديو' : (m.text || 'رسالة جديدة')));
                   try {
                     if (window.BabylonAndroid && typeof window.BabylonAndroid.showMessageNotification === 'function') {
                       const nativeTitle = u.displayName || 'رسالة جديدة';
@@ -4899,7 +4904,8 @@ function sendImage(e) {
   const file = e.target.files && e.target.files[0];
   e.target.value = '';
   if (!file || !activeChatId) return;
-  if (!file.type.startsWith('image/')) return showToast('اختر ملف صورة فقط');
+  if (file.type.startsWith('video/')) return sendChatVideo(file);
+  if (!file.type.startsWith('image/')) return showToast('اختر صورة أو فيديو فقط');
   if (file.size > 15 * 1024 * 1024) return showToast('الصورة كبيرة جداً');
   showToast('جاري تجهيز الصورة...');
   compressImage(file, dataUrl => {
@@ -4926,6 +4932,55 @@ function openImageViewer(src) {
   im.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;';
   v.appendChild(im);
   v.onclick = () => v.remove();
+  document.body.appendChild(v);
+}
+
+function sendChatVideo(file) {
+  const chatId = activeChatId;
+  if (!chatId) return;
+  if (file.size > MAX_STORY_VIDEO_MB * 1024 * 1024) return showToast('حجم المقطع كبير (الأقصى ' + MAX_STORY_VIDEO_MB + ' ميجا)');
+  if (!CLD_CLOUD || !CLD_PRESET) return showToast('رفع الفيديو غير متاح');
+  let pill = document.getElementById('chatUploadPill');
+  if (!pill) { pill = document.createElement('div'); pill.id = 'chatUploadPill'; document.body.appendChild(pill); }
+  pill.textContent = 'جاري رفع الفيديو 0%';
+  const fin = () => { const p = document.getElementById('chatUploadPill'); if (p) p.remove(); };
+  const xhr = new XMLHttpRequest(), fd = new FormData();
+  fd.append('file', file); fd.append('upload_preset', CLD_PRESET); fd.append('folder', 'chat');
+  xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/video/upload`);
+  xhr.upload.onprogress = e => { if (e.lengthComputable) pill.textContent = 'جاري رفع الفيديو ' + Math.round(e.loaded / e.total * 100) + '%'; };
+  xhr.onerror = () => { fin(); showToast('تعذر رفع الفيديو: فشل الاتصال'); };
+  xhr.onload = () => {
+    let r = {}; try { r = JSON.parse(xhr.responseText); } catch (e) {}
+    if (!(xhr.status >= 200 && xhr.status < 300 && r.secure_url)) { fin(); return showToast('تعذر رفع الفيديو'); }
+    const poster = r.secure_url.replace('/video/upload/', '/video/upload/so_0,w_480,c_limit/').replace(/\.[^/.]+$/, '.jpg');
+    db.collection('chats').doc(chatId).collection('messages').add({
+      senderId: currentUser.uid, videoUrl: r.secure_url, posterUrl: poster, duration: Math.round(r.duration || 0), read: false, createdAt: Date.now()
+    }).then(() => {
+      fin();
+      db.collection('chats').doc(chatId).set({
+        updatedAt: Date.now(),
+        ...groupLastMsgFor(chatId, '▶ فيديو'),
+        [`typing_${currentUser.uid}`]: false
+      }, { merge: true });
+      notifyPeer(chatId, '▶ فيديو');
+    }).catch(() => { fin(); showToast('تعذر إرسال الفيديو'); });
+  };
+  xhr.send(fd);
+}
+
+function openVideoViewer(src) {
+  const v = document.createElement('div');
+  v.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.96);display:flex;align-items:center;justify-content:center;';
+  const vid = document.createElement('video');
+  vid.src = src; vid.controls = true; vid.autoplay = true; vid.playsInline = true;
+  vid.style.cssText = 'max-width:100%;max-height:100%;background:#000;';
+  const x = document.createElement('button');
+  x.textContent = '✕'; x.setAttribute('aria-label', 'إغلاق');
+  x.style.cssText = 'position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:20px;cursor:pointer;z-index:2;';
+  const close = () => { try { vid.pause(); } catch (e) {} v.remove(); };
+  x.onclick = close;
+  v.onclick = ev => { if (ev.target === v) close(); };
+  v.appendChild(vid); v.appendChild(x);
   document.body.appendChild(v);
 }
 
@@ -7831,6 +7886,31 @@ async function avatarDownload(){
 <style id="babylon-post-composer">
 #storyComposer.sp-post-mode .sp-story-only{display:none!important}
 </style>
+
+<style id="babylon-chat-video-borderless">
+/* فيديو المحادثة: بدون فقاعة، والوقت وعلامة ✓ فوق الفيديو */
+#chatView #messagesArea .msg-bubble.video-msg.video-msg.video-msg{
+  background:transparent !important;border:0 !important;box-shadow:none !important;
+  padding:0 !important;min-width:0 !important;width:min(72%,280px);max-width:min(72%,280px) !important;
+  position:relative !important;border-radius:16px !important;
+}
+#chatView #messagesArea .msg-bubble.video-msg .msg-video{position:relative;border-radius:16px;overflow:hidden;background:#000;line-height:0;min-height:120px}
+#chatView #messagesArea .msg-bubble.video-msg .msg-video video{display:block;width:100%;max-height:360px;object-fit:cover;pointer-events:none;background:#000}
+#chatView #messagesArea .msg-bubble.video-msg .msg-video-play{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;
+  border:0;padding:0;display:grid;place-items:center;background:rgba(0,0,0,.5);color:#fff;cursor:pointer;
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+}
+#chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta{
+  position:absolute !important;bottom:7px;left:8px;right:auto;margin:0;padding:2px 7px;border-radius:10px;
+  background:rgba(0,0,0,.5);color:#fff !important;-webkit-text-fill-color:#fff !important;opacity:1 !important;
+  font-size:10.5px;line-height:1.4;
+}
+#chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta .check-mark{color:rgba(255,255,255,.9) !important;-webkit-text-fill-color:currentColor !important}
+#chatView #messagesArea .msg-bubble.video-msg.video-msg .msg-meta .check-mark.read{color:var(--tick-read,#4ade80) !important}
+#chatView #messagesArea .msg-bubble.video-msg .reactions-row{align-self:flex-start;margin-top:4px}
+#chatUploadPill{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:998;padding:8px 16px;border-radius:999px;background:rgba(0,0,0,.78);color:#fff;font-size:13px;font-weight:700}
+</style>
 </body>
 </html>
 
@@ -9210,7 +9290,7 @@ function openMention(username){
     for(var i=idx-1;i>=0;i--){
       var b=list[i],tx=b.dataset.messageText||'';
       if(text&&tx&&text.indexOf(tx)===0||tx===text)return b;
-      if(!tx&&(text==='▧ صورة'&&b.querySelector('.msg-image')||text==='بصمة صوتية'&&b.querySelector('.custom-voice-card')))return b;
+      if(!tx&&(text==='▧ صورة'&&b.querySelector('.msg-image')||text==='▶ فيديو'&&b.querySelector('.msg-video')||text==='بصمة صوتية'&&b.querySelector('.custom-voice-card')))return b;
     }
     return null;
   }
@@ -9432,13 +9512,13 @@ function openMention(username){
     try{
       var col=db.collection('chats').doc(src).collection('messages');
       var docs=await Promise.all(ids.map(function(id){return col.doc(id).get();}));
-      var msgs=docs.filter(function(x){return x.exists;}).map(function(x){return x.data();}).filter(function(m){return !m.system&&(m.text||m.imageUrl||m.audioUrl);}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
+      var msgs=docs.filter(function(x){return x.exists;}).map(function(x){return x.data();}).filter(function(m){return !m.system&&(m.text||m.imageUrl||m.audioUrl||m.videoUrl);}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
       if(!msgs.length)return showToast('لا توجد رسائل قابلة لإعادة التوجيه');
       var tcol=db.collection('chats').doc(targetId).collection('messages'),now=Date.now(),last='';
       for(var i=0;i<msgs.length;i++){
         var m=msgs[i],n={senderId:currentUser.uid,forwarded:true,read:false,createdAt:now+i};
-        if(m.text)n.text=m.text;if(m.imageUrl)n.imageUrl=m.imageUrl;if(m.audioUrl){n.audioUrl=m.audioUrl;if(m.duration)n.duration=m.duration;}
-        await tcol.add(n);last=m.text||(m.imageUrl?'▧ صورة':'بصمة صوتية');
+        if(m.text)n.text=m.text;if(m.imageUrl)n.imageUrl=m.imageUrl;if(m.videoUrl){n.videoUrl=m.videoUrl;if(m.posterUrl)n.posterUrl=m.posterUrl;if(m.duration)n.duration=m.duration;}if(m.audioUrl){n.audioUrl=m.audioUrl;if(m.duration)n.duration=m.duration;}
+        await tcol.add(n);last=m.text||(m.imageUrl?'▧ صورة':(m.videoUrl?'▶ فيديو':'بصمة صوتية'));
       }
       var upd={updatedAt:Date.now()};
       var meta=chatMetaCache[targetId];
