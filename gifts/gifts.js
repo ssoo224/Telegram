@@ -42,6 +42,8 @@ const GIFTS_CDN_DIR={pepe:'Plush Pepe',cat:'Scared Cat'};
 /* ===== هدايا إضافية من gifts/manifest.json (تولّده make_manifest.py) ===== */
 const gid=(K,n)=>K.gen?K.key+'_'+n:String(n);
 const salesQ=K=>K.gen?db.collection('giftSales').where('k','==',K.key):db.collection(K.sales);
+const FEE_PCT=5,netOf=p=>Math.floor(p*(100-FEE_PCT)/100);
+const evRef=(K,n)=>db.collection('giftEvents').doc(K.key+'_'+n).collection('log').doc();
 const listId=(K,n)=>K.key+'_'+n;
 const kindDir=K=>GIFTS_CDN_DIR[K.key]||K.name;
 const modelName=(K,i)=>i<0?(K.gen&&!K.orig?K.models[0].n:'Original'):K.models[i].n;
@@ -229,6 +231,7 @@ function renderGiftPage(ov,uid,g,issued,reveal,lst){
     if(mine){closeGiftPage();openProfile();return;}
     db.collection('users').doc(uid).get().then(d=>{if(d.exists){closeGiftPage();openUserProfileDirect(Object.assign({id:uid},d.data()));}});
   };
+  loadGiftHistory(ov,K,g);
   const upb=ov.querySelector('#gpUp');if(upb)upb.onclick=()=>doUpgrade(ov,uid,g);
   const sb=ov.querySelector('#gpSell');if(sb)sb.onclick=()=>sellGift(ov,g,null);
   const eb=ov.querySelector('#gpEdit');if(eb)eb.onclick=()=>sellGift(ov,g,lst);
@@ -281,17 +284,18 @@ async function openStoreGrid(){
   };
   ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="stBack" aria-label="رجوع">'+IC_BACK+'</button><div class="gx-title"><b>متجر الهدايا</b></div></div>'
     +'<div class="st-seg"><button type="button" class="on" id="stTabN">هدايا جديدة</button><button type="button" id="stTabR">هدايا مطورة</button></div>'
-    +'<div id="stNew"><div class="sg-grid">'+kinds.map(K=>{const a=art(K);return '<div class="sg-card" data-k="'+K.key+'" data-n="'+K.name.toLowerCase()+'"><div class="sg-ribbon"></div><div class="sg-art"><img alt="" loading="lazy" decoding="async" src="'+a.src+'" data-fb="'+a.fb+'"></div><div class="sg-name">'+K.name+'</div><div class="sg-price">⭐ '+K.price+'</div></div>';}).join('')+'</div></div><div id="stResale" class="hidden"></div>';
+    +'<div id="stNew"><div class="sg-grid">'+kinds.map(K=>{const a=art(K);return '<div class="sg-card" data-k="'+K.key+'" data-n="'+K.name.toLowerCase()+'"><div class="sg-ribbon"></div><div class="sg-art"><img alt="" loading="lazy" decoding="async" src="'+a.src+'" data-fb="'+a.fb+'"></div><div class="sg-name">'+K.name+'</div><div class="sg-price">⭐ '+K.price+'</div><div class="sg-floor"></div></div>';}).join('')+'</div></div><div id="stResale" class="hidden"></div>';
   ov.querySelector('#stBack').onclick=closeStore;
   const tabN=ov.querySelector('#stTabN'),tabR=ov.querySelector('#stTabR'),boxN=ov.querySelector('#stNew'),boxR=ov.querySelector('#stResale');
   tabN.onclick=()=>{tabN.classList.add('on');tabR.classList.remove('on');boxN.classList.remove('hidden');boxR.classList.add('hidden');};
-  tabR.onclick=()=>{tabR.classList.add('on');tabN.classList.remove('on');boxR.classList.remove('hidden');boxN.classList.add('hidden');loadResale(boxR,'new');};
+  tabR.onclick=()=>{tabR.classList.add('on');tabN.classList.remove('on');boxR.classList.remove('hidden');boxN.classList.add('hidden');loadResale(boxR);};
   ov.querySelectorAll('.sg-art img').forEach(im=>{im.onerror=()=>{im.onerror=null;im.src=im.dataset.fb;};});
   ov.querySelectorAll('.sg-card').forEach(c=>c.onclick=()=>openGiftStore(c.dataset.k));
   /* "نفدت" للهديتين القديمتين فقط (الباقي نعرفه من صفحة الهدية حتى ما نقرأ مبيعات الكل) */
   kinds.filter(K=>!K.gen).forEach(K=>db.collection(K.sales).get().then(s=>{
     if(K.max-s.size<=0){const c=ov.querySelector('.sg-card[data-k="'+K.key+'"]');if(c){c.classList.add('out');c.querySelector('.sg-ribbon').textContent='نفدت';}}
   }).catch(()=>{}));
+  paintFloors(ov);
   syncCatalog();
 }
 /* المطوّر فقط: يكتب سعر وكمية كل هدية بـ giftCatalog حتى القواعد تتحقق منها عند الشراء */
@@ -364,6 +368,7 @@ async function buyGift(kind){
     b.set(db.collection('users').doc(me).collection(K.coll).doc(gid(K,n)),K.gen?{number:n,upgraded:false,at:now,k:K.key}:{number:n,upgraded:false,at:now});
     const tx={type:'buy',gift:n,stars:K.price,at:now};if(K.key!=='pepe')tx.kind=K.key;
     b.set(db.collection('users').doc(me).collection('txs').doc(),tx);
+    b.set(evRef(K,n),{k:K.key,number:n,coll:K.coll,type:'mint',to:me,price:K.price,at:now});
     await b.commit();
     if(dev)wref.set({stars:DEV_BIG},{merge:true}).catch(()=>{});
     showToast('🎉 اشتريت '+K.name+' #'+n);
@@ -385,7 +390,7 @@ function openStarsHistory(){
   closeHistory();
   const dev=isDevUser();
   const ov=document.createElement('div');ov.id='starsHist';ov.className='gp-ov st-ov';uiRoot().appendChild(ov);
-  const tabs=[['all','الكل'],['buy','المشتريات'],['in','المستلمة']].concat(dev?[['out','المُهداة']]:[]);
+  const tabs=[['all','الكل'],['buy','المشتريات'],['sell','المبيعات'],['in','المستلمة']].concat(dev?[['out','المُهداة']]:[]);
   ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="shBack" aria-label="رجوع">'+IC_BACK+'</button><div class="gx-title"><b>نجوم بابل</b></div></div>'
     +'<div class="sh-bal"><div class="sh-lb">رصيدك</div><div class="sh-n"><span data-stars>'+starsLabel()+'</span><i>⭐</i></div>'+(dev?'<div class="sh-dev">حساب المطور · رصيد لا نهائي</div>':'')+'</div>'
     +'<div class="sh-tabs" id="shTabs">'+tabs.map((t,i)=>'<button type="button" class="'+(i?'':'on')+'" data-t="'+t[0]+'">'+t[1]+'</button>').join('')+'</div>'
@@ -399,6 +404,7 @@ function openStarsHistory(){
     list.innerHTML=f.map(r=>{
       let ic='⭐',title='',amt='',cls='';
       if(r.type==='buy'){ic='🎁';title='اشتريت '+gk(r.kind).name+' #'+r.gift;amt='−'+fmtN(r.stars);cls='neg';}
+      else if(r.type==='sell'){ic='💰';title='بعت '+gk(r.kind).name+' #'+r.gift+(r.buyerName?' إلى '+esc(r.buyerName):'');amt='+'+fmtN(r.stars);cls='pos';}
       else if(r.type==='in'){ic='⭐';title='هدية نجوم من '+esc(r.fromName||'المطور');amt='+'+fmtN(r.stars);cls='pos';}
       else if(r.type==='out'){ic='📤';title='أهديت '+esc(r.toName||'مستخدم');amt=fmtN(r.stars);cls='out';}
       return '<div class="sh-row" data-g="'+(r.type==='buy'?r.gift:'')+'" data-k="'+(r.kind||'pepe')+'"><div class="sh-ic">'+ic+'</div><div class="sh-t"><b>'+title+'</b><span>'+fmtWhen(r.at)+'</span></div><div class="sh-a '+cls+'">'+amt+' <i>⭐</i></div></div>';
@@ -426,6 +432,7 @@ async function transferGift(g,to){
   b.delete(db.collection('users').doc(me).collection(K.coll).doc(id));
   b.set(db.collection('users').doc(to).collection(K.coll).doc(id),doc);
   b.update(db.collection(K.gen?'giftSales':K.sales).doc(id),{ownerId:to});
+  b.set(evRef(K,g.number),{k:K.key,number:g.number,coll:K.coll,type:'send',from:me,to:to,at:now});
   b.set(cref.collection('messages').doc(),msg);
   await b.commit();
 }
@@ -515,7 +522,8 @@ async function refreshGP(ov){
 }
 async function sellGift(ov,g,old){
   const K=gk(g.k),me=meId();
-  const r=await clAsk({title:old?'تعديل السعر 🏷️':'بيع الهدية 🏷️',body:'اكتب السعر بالنجوم لـ <b>'+esc(K.name)+' #'+g.number+'</b>',input:{value:old?String(old.price):'',placeholder:'السعر بالنجوم',max:7},buttons:[{text:old?'حفظ':'عرض للبيع'},{text:'إلغاء',cls:'cl-cancel'}]});
+  const fl=await floorFor(K);
+  const r=await clAsk({title:old?'تعديل السعر 🏷️':'بيع الهدية 🏷️',body:'اكتب السعر بالنجوم لـ <b>'+esc(K.name)+' #'+g.number+'</b><br><small>عمولة السوق '+FEE_PCT+'% · تستلم '+(100-FEE_PCT)+'% من السعر'+(fl!=null?'<br>أرخص عرض حالياً لهذا النوع: ⭐ '+fmtN(fl):'')+'</small>',input:{value:old?String(old.price):'',placeholder:'السعر بالنجوم',max:7},buttons:[{text:old?'حفظ':'عرض للبيع'},{text:'إلغاء',cls:'cl-cancel'}]});
   if(!r||r.i!==0)return;
   const price=parseInt(String(r.value).replace(/[^\d]/g,''),10);
   if(!price||price<1||price>1000000)return showToast('اكتب سعراً بين 1 و 1,000,000');
@@ -523,7 +531,8 @@ async function sellGift(ov,g,old){
     const ref=db.collection('giftListings').doc(listId(K,g.number));
     if(old)await ref.update({price});
     else await ref.set({k:K.key,number:g.number,coll:K.coll,sellerId:me,price,at:Date.now(),giftAt:g.at||0,model:g.model,bg:g.bg,sym:g.sym,name:K.name});
-    showToast(old?'تم تحديث السعر':'🏷️ انعرضت للبيع بـ '+fmtN(price)+' ⭐');
+    _lc.t=0;
+    showToast(old?'تم تحديث السعر':'🏷️ انعرضت للبيع بـ '+fmtN(price)+' ⭐ · تستلم '+fmtN(netOf(price)));
     refreshGP(ov);
   }catch(e){console.error(e);showToast('تعذر عرض الهدية للبيع');}
 }
@@ -531,7 +540,7 @@ async function unlistGift(ov,g){
   const K=gk(g.k);
   const r=await clAsk({title:'إلغاء العرض',body:'تريد تلغي بيع <b>'+esc(K.name)+' #'+g.number+'</b>؟',buttons:[{text:'إلغاء العرض'},{text:'رجوع',cls:'cl-cancel'}]});
   if(!r||r.i!==0)return;
-  try{await db.collection('giftListings').doc(listId(K,g.number)).delete();showToast('تم إلغاء العرض');refreshGP(ov);}
+  try{await db.collection('giftListings').doc(listId(K,g.number)).delete();_lc.t=0;showToast('تم إلغاء العرض');refreshGP(ov);}
   catch(e){console.error(e);showToast('تعذر إلغاء العرض');}
 }
 async function buyListing(ov,l){
@@ -553,14 +562,25 @@ async function buyListing(ov,l){
     if(dev)await wref.set({stars:DEV_BIG},{merge:true});
     const b=db.batch();
     b.update(wref,{stars:inc(-l.price),lastBuyListing:lid});
-    b.set(db.collection('wallets').doc(l.sellerId),{stars:inc(l.price)},{merge:true});
+    b.set(db.collection('wallets').doc(l.sellerId),{stars:inc(netOf(l.price))},{merge:true});
     b.update(db.collection(K.gen?'giftSales':K.sales).doc(id),{ownerId:me});
     b.delete(db.collection('users').doc(l.sellerId).collection(K.coll).doc(id));
     const doc={number:l.number,upgraded:true,at:l.giftAt,model:l.model,bg:l.bg,sym:l.sym};if(K.gen)doc.k=K.key;
     b.set(db.collection('users').doc(me).collection(K.coll).doc(id),doc);
     b.delete(db.collection('giftListings').doc(lid));
     b.set(db.collection('users').doc(me).collection('txs').doc(),{type:'buy',gift:l.number,stars:l.price,at:now,kind:K.key});
+    const myName=(typeof currentUserData!=='undefined'&&currentUserData&&currentUserData.displayName)||'مستخدم';
+    b.set(db.collection('users').doc(l.sellerId).collection('txs').doc(),{type:'sell',gift:l.number,stars:netOf(l.price),at:now,kind:K.key,buyer:me,buyerName:myName});
+    b.set(evRef(K,l.number),{k:K.key,number:l.number,coll:K.coll,type:'sale',from:l.sellerId,to:me,price:l.price,at:now});
     await b.commit();
+    _lc.t=0;
+    /* إشعار للبائع برسالة بالمحادثة (إذا فشلت ما تأثر على الشراء) */
+    try{
+      const cref=db.collection('chats').doc([me,l.sellerId].sort().join('__'));
+      const cs=await cref.get();
+      if(cs.exists)await cref.update({updatedAt:now});else await cref.set({participants:[me,l.sellerId],updatedAt:now});
+      await cref.collection('messages').add({senderId:me,type:'sold',k:K.key,number:l.number,price:l.price,net:netOf(l.price),text:'🛒 انباعت '+K.name+' #'+l.number+' بـ '+fmtN(l.price)+' ⭐',createdAt:now,read:false});
+    }catch(e){console.warn('sold notice',e);}
     if(dev)wref.set({stars:DEV_BIG},{merge:true}).catch(()=>{});
     showToast('🎉 مبروك! صارت '+K.name+' #'+l.number+' إلك');
     buying=false;
@@ -572,18 +592,66 @@ async function buyListing(ov,l){
   }
   buying=false;
 }
-/* تبويب "هدايا مطورة" بالمتجر */
-async function loadResale(box,sort){
-  box.innerHTML='<div class="sg-sub">جاري التحميل…</div>';
-  let list=[];
+/* ===== سجل الهدية + أرخص سعر + فلتر النوع ===== */
+async function loadGiftHistory(ov,K,g){
+  const body=ov.querySelector('.gp-body');if(!body)return;
+  const box=document.createElement('div');box.className='gp-hist';
+  box.innerHTML='<div class="gp-hh">سجل الهدية</div><div class="gp-hl"><div class="gp-hn">جاري التحميل…</div></div>';
+  body.appendChild(box);
+  let evs=[];
+  try{evs=(await db.collection('giftEvents').doc(listId(K,g.number)).collection('log').orderBy('at','desc').limit(20).get()).docs.map(d=>d.data());}catch(e){}
+  const ids=[...new Set(evs.flatMap(e=>[e.from,e.to].filter(Boolean)))];
+  try{if(ids.length)await loadUsers(ids);}catch(e){}
+  if(!ov.contains(box))return;
+  const nm=id=>'<b>'+esc((GU[id]&&GU[id].displayName)||'مستخدم')+'</b>';
+  const list=box.querySelector('.gp-hl');
+  if(!evs.length){list.innerHTML='<div class="gp-hn">ما كو سجل لهذه الهدية (قبل تفعيل السجل).</div>';return;}
+  list.innerHTML=evs.map(e=>{
+    let ic='🎁',t='';
+    if(e.type==='mint'){t='اشتراها '+nm(e.to)+' من المتجر'+(e.price?' بـ ⭐ '+fmtN(e.price):'');}
+    else if(e.type==='send'){ic='📤';t='أهداها '+nm(e.from)+' إلى '+nm(e.to);}
+    else{ic='🛒';t='باعها '+nm(e.from)+' إلى '+nm(e.to)+' بـ ⭐ '+fmtN(e.price||0);}
+    return '<div class="gp-he"><span class="gp-hi">'+ic+'</span><div><div>'+t+'</div><small>'+fmtWhen(e.at)+'</small></div></div>';
+  }).join('');
+}
+async function floorFor(K){
+  try{const s=await db.collection('giftListings').where('k','==',K.key).get();let m=null;s.forEach(d=>{const p=d.data().price;if(m===null||p<m)m=p;});return m;}catch(e){return null;}
+}
+let _lc={t:0,list:null,p:null};
+async function getListings(){
+  if(_lc.list&&Date.now()-_lc.t<45000)return _lc.list;
+  if(_lc.p)return _lc.p;
+  _lc.p=db.collection('giftListings').orderBy('at','desc').limit(200).get().then(sn=>{_lc.list=sn.docs.map(d=>d.data());_lc.t=Date.now();_lc.p=null;return _lc.list;}).catch(e=>{_lc.p=null;throw e;});
+  return _lc.p;
+}
+/* أرخص سعر مطورة تحت كل كرت بتبويب "هدايا جديدة" */
+async function paintFloors(ov){
   try{
-    const q=db.collection('giftListings').orderBy(sort==='new'?'at':'price',sort==='low'?'asc':'desc').limit(60);
-    list=(await q.get()).docs.map(d=>d.data());
-  }catch(e){console.error(e);box.innerHTML='<div class="sg-sub">تعذر تحميل العروض</div>';return;}
-  const me=meId();
-  const chips=[['new','الأحدث'],['low','الأرخص'],['high','الأغلى']].map(x=>'<button type="button" class="rs-chip'+(x[0]===sort?' on':'')+'" data-s="'+x[0]+'">'+x[1]+'</button>').join('');
-  box.innerHTML='<div class="rs-chips">'+chips+'</div>'+(list.length?'<div class="rs-grid"></div>':'<div class="sg-sub">ما كو هدايا مطورة معروضة هسه</div>');
-  box.querySelectorAll('.rs-chip').forEach(c=>c.onclick=()=>loadResale(box,c.dataset.s));
+    const list=await getListings(),fl={};
+    list.forEach(l=>{if(fl[l.k]==null||l.price<fl[l.k])fl[l.k]=l.price;});
+    ov.querySelectorAll('.sg-card').forEach(c=>{const f=fl[c.dataset.k],e=c.querySelector('.sg-floor');if(e&&f!=null)e.textContent='🏷️ مطورة من '+fmtN(f);});
+  }catch(e){}
+}
+/* تبويب "هدايا مطورة" بالمتجر */
+const resaleState={sort:'new',kind:''};
+async function loadResale(box){
+  box.innerHTML='<div class="sg-sub">جاري التحميل…</div>';
+  let all=[];
+  try{all=await getListings();}catch(e){console.error(e);box.innerHTML='<div class="sg-sub">تعذر تحميل العروض</div>';return;}
+  const me=meId(),st=resaleState;
+  const stat={};all.forEach(l=>{const o=stat[l.k]||(stat[l.k]={n:0,min:Infinity});o.n++;if(l.price<o.min)o.min=l.price;});
+  if(st.kind&&!stat[st.kind])st.kind='';
+  let list=all.filter(l=>!st.kind||l.k===st.kind);
+  list=list.slice().sort((a,b)=>st.sort==='low'?a.price-b.price:st.sort==='high'?b.price-a.price:(b.at||0)-(a.at||0));
+  const sorts=[['new','الأحدث'],['low','الأرخص'],['high','الأغلى']].map(x=>'<button type="button" class="rs-chip'+(x[0]===st.sort?' on':'')+'" data-s="'+x[0]+'">'+x[1]+'</button>').join('');
+  const kinds=Object.keys(stat).sort((a,b)=>stat[b].n-stat[a].n).map(k=>'<button type="button" class="rs-chip'+(k===st.kind?' on':'')+'" data-k="'+k+'">'+esc(GIFT_KINDS[k]?GIFT_KINDS[k].name:k)+' · '+stat[k].n+'</button>').join('');
+  const floor=st.kind?'<div class="rs-floor">أرخص سعر: ⭐ '+fmtN(stat[st.kind].min)+' · '+stat[st.kind].n+' معروضة</div>':'';
+  box.innerHTML='<div class="rs-chips">'+sorts+'</div>'
+    +(kinds?'<div class="rs-chips"><button type="button" class="rs-chip'+(st.kind?'':' on')+'" data-k="">الكل · '+all.length+'</button>'+kinds+'</div>':'')
+    +floor
+    +(list.length?'<div class="rs-grid"></div>':'<div class="sg-sub">ما كو هدايا مطورة معروضة هسه</div>');
+  box.querySelectorAll('[data-s]').forEach(c=>c.onclick=()=>{st.sort=c.dataset.s;loadResale(box);});
+  box.querySelectorAll('[data-k]').forEach(c=>c.onclick=()=>{st.kind=c.dataset.k;loadResale(box);});
   const grid=box.querySelector('.rs-grid');if(!grid)return;
   list.forEach(l=>{
     const K=GIFT_KINDS[l.k];if(!K)return;
@@ -596,4 +664,12 @@ async function loadResale(box,sort){
     card.onclick=()=>openGiftPage(l.sellerId,l.number,K.key);
     grid.appendChild(card);
   });
+}
+/* رسالة "انباعت هديتك" بالمحادثة */
+function soldMsgNode(m,id,isMine){
+  const K=GIFT_KINDS[m.k]||GIFT_KINDS.pepe;
+  const w=document.createElement('div');w.className='sys-msg';w.id='message_'+id;w.dataset.created=String(m.createdAt||0);
+  w.innerHTML=isMine?('🛒 اشتريت <b>'+esc(K.name)+' #'+m.number+'</b> بـ ⭐ '+fmtN(m.price||0))
+                   :('🛒 اشترى هديتك <b>'+esc(K.name)+' #'+m.number+'</b> بـ ⭐ '+fmtN(m.price||0)+' · استلمت ⭐ '+fmtN(m.net||0));
+  return w;
 }
