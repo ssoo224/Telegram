@@ -141,3 +141,14 @@
 .gp-btns .gp-cta{flex:1;margin:0}
 .gp-cta.alt{background:var(--cl-card,#17212b);color:inherit}
 .gp-cta.danger{background:#d6455d;color:#fff}
+
+/* ===== سجل الهدية + أرخص سعر ===== */
+.sg-floor{font-size:11px;color:var(--cl-sub,#8798aa);min-height:14px;margin-top:-2px}
+.rs-floor{margin:6px 14px 0;padding:9px 12px;border-radius:12px;background:rgba(228,196,91,.12);color:var(--cl-gold,#e4c45b);font-weight:700;font-size:13.5px}
+.gp-hist{margin:16px 16px 24px;background:var(--cl-card,#17212b);border-radius:16px;padding:12px 14px}
+.gp-hh{font-weight:800;margin-bottom:8px}
+.gp-he{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid rgba(255,255,255,.06)}
+.gp-he:first-child{border-top:0}
+.gp-hi{font-size:18px}
+.gp-he small{color:var(--cl-sub,#8798aa)}
+.gp-hn{color:var(--cl-sub,#8798aa);font-size:13.5px}
