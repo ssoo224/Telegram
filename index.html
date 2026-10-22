@@ -3501,7 +3501,7 @@ function toggleBlockCurrent() {
 }
 function updateBlockBtn() {
   const b = document.getElementById('otherBlockBtn'); if (!b) return;
-  b.querySelector('span').innerHTML = myBlocks[currentChatOtherUserId] ? '<i data-ic="ban" aria-hidden="true"></i> إلغاء الحظر' : '<i data-ic="ban" aria-hidden="true"></i> حظر';
+  b.querySelector('span').textContent = myBlocks[currentChatOtherUserId] ? 'إلغاء الحظر' : 'حظر';
 }
 function sxOpenBlocked(refresh) {
   let ov = document.getElementById('blkOverlay');
@@ -8422,6 +8422,25 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 #otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q:active{transform:scale(.97)!important}
 #otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q:focus,
 #otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > .pf-btn.pf-q:focus-visible{outline:none!important;border:0!important;box-shadow:none!important}
+</style>
+<style id="babylon-pf-smooth-and-block">
+/* سلاسة: لا انتقالات على الخلفية/الزجاج أثناء السحب */
+#profileView .pf-quick .pf-q,#otherUserProfileView .pf-quick .pf-q{transition:transform .15s!important;will-change:transform}
+#profileView .pf-cover,#otherUserProfileView .pf-cover,
+#profileView .pf-name,#otherUserProfileView .pf-name,
+#profileView .pf-status,#otherUserProfileView .pf-status{transition:none!important}
+.pf-hero{transform:translateZ(0);backface-visibility:hidden;contain:layout paint}
+/* زر الحظر: الرمز والكلمة بنفس اللون ويتبعان الطور النهاري/الليلي */
+#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q,
+#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > span,
+#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > i,
+#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > svg{
+  color:color-mix(in srgb,#fff calc(var(--pv,0)*100%),var(--pf-txt))!important}
+#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > i,
+#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > i svg{
+  width:19px!important;height:19px!important;display:block!important;color:inherit!important;stroke:currentColor!important}
+#otherUserProfileView#otherUserProfileView .pf-head .pf-actions.pf-quick > #otherBlockBtn.pf-q > span{
+  display:block!important;margin:0!important;font-size:12px!important;font-weight:650!important;line-height:1.2!important;text-align:center!important;white-space:nowrap}
 </style>
 </body>
 </html>
