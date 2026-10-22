@@ -7410,10 +7410,10 @@ async function avatarDownload(){
 .pf-hero .pf-hero-letter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--babylon-gold);font-weight:800;font-size:clamp(48px,26vw,140px)}
 .pf-hero .pf-hero-letter svg{width:38%;height:38%}
 .pf-hero .pf-hero-shade{position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.72));pointer-events:none}
-.pf-hero .pf-hero-info{position:absolute;inset-inline-start:18px;inset-inline-end:18px;bottom:16px;color:#fff;opacity:0;text-align:start}
+.pf-hero .pf-hero-info{position:absolute;left:18px;right:18px;bottom:16px;color:#fff;opacity:0;direction:ltr;text-align:left}
 .pf-hero .pf-hero-name{font-size:24px;font-weight:800;line-height:1.25;text-shadow:0 1px 6px rgba(0,0,0,.55);overflow-wrap:anywhere}
 .pf-hero .pf-hero-status{font-size:13.5px;margin-top:3px;color:rgba(255,255,255,.82);text-shadow:0 1px 4px rgba(0,0,0,.5)}
-.pf-hero .pf-hero-status.online{color:#4ade80}
+.pf-hero .pf-hero-status,.pf-hero .pf-hero-status.online{color:#fff!important;font-weight:800!important}
 #profileView>.pf-topbar,#otherUserProfileView>.pf-topbar{position:absolute;top:0;left:0;right:0;z-index:3}
 </style>
 
@@ -7448,13 +7448,14 @@ async function avatarDownload(){
       hero.insertAdjacentHTML('beforeend',
         '<div class="pf-hero-top"><div class="pf-hero-count">1/1</div>'+
         '<button type="button" class="pf-hero-dots" aria-label="المزيد"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button></div>'+
-        '<div class="pf-hero-menu"><button type="button" data-a="dl">تنزيل الصورة</button><button type="button" data-a="del" class="danger">حذف الصورة</button></div>');
+        '<div class="pf-hero-menu"><button type="button" data-a="set">اعتماد الصورة</button><button type="button" data-a="dl">تنزيل الصورة</button><button type="button" data-a="del" class="danger">حذف الصورة</button></div>');
     }
     var hTop=hero.querySelector('.pf-hero-top'), hCount=hero.querySelector('.pf-hero-count'), hMenu=hero.querySelector('.pf-hero-menu');
     var hImg=hero.querySelector('img'), hLet=hero.querySelector('.pf-hero-letter'),
         hInfo=hero.querySelector('.pf-hero-info'), hName=hero.querySelector('.pf-hero-name'),
         hStat=hero.querySelector('.pf-hero-status'), hExt=hero.querySelector('.pf-hero-ext'), hShade=hero.querySelector('.pf-hero-shade');
 
+    var tv=0, vel=0, lastT=0, lastY=0, followRaf=0, followLast=0;
     var g=null, p=0, expanded=false, pulling=false, sy=0, sx=0, p0=0, raf=0, track=false;
 
     function sync(){
@@ -7488,7 +7489,7 @@ async function avatarDownload(){
       p=v;
       if(v<=0.001){ reset(); return; }
       var size=g.size+(g.S-g.size)*v;
-      hero.style.display='block';
+      hero.style.display='block'; hero.style.willChange='width,height,top,left';
       var e=g.ext*clamp((v-0.5)*2);
       hero.style.width=size+'px'; hero.style.height=(size+e)+'px';
       hImg.style.height=size+'px'; hLet.style.height=size+'px';
@@ -7532,9 +7533,9 @@ async function avatarDownload(){
     }
     function animateTo(t){
       cancelAnimationFrame(raf);
-      var from=p, t0=performance.now(), dur=220;
+      var from=p, t0=performance.now(), dur=Math.max(320,Math.min(520,Math.abs(t-from)*560+180));
       (function step(now){
-        var k=clamp((now-t0)/dur), e=1-Math.pow(1-k,3);
+        var k=clamp((now-t0)/dur), e=1-Math.pow(1-k,5);
         apply(from+(t-from)*e);
         if(k<1) raf=requestAnimationFrame(step);
         else { expanded = t>=1; if(t<=0) reset(); }
@@ -7556,17 +7557,33 @@ async function avatarDownload(){
         if(!wantPull && !wantBack) return;
         cancelAnimationFrame(raf);
         if(!expanded){ reset(); sync(); measure(); }
-        pulling=true; p0=expanded?1:0; sy=t.clientY;   // نبدأ من نقطة بدء السحب الفعلي
+        pulling=true; p0=expanded?1:0; sy=t.clientY; tv=p; vel=0; lastT=0;   // نبدأ من نقطة بدء السحب الفعلي
         dy=0;
       }
       if(ev.cancelable) ev.preventDefault();
-      apply(clamp(p0+dy/RANGE));
+      var nowT=performance.now();
+      if(lastT){ var dt=nowT-lastT; if(dt>0) vel=0.8*vel+0.2*((t.clientY-lastY)/dt); }
+      lastT=nowT; lastY=t.clientY;
+      tv=clamp(p0+dy/RANGE);
+      if(!followRaf) followRaf=requestAnimationFrame(follow);
     },{passive:false});
+    function follow(now){
+      followRaf=0;
+      var dt=Math.min(40,now-(followLast||now-16)); followLast=now;
+      var a=1-Math.exp(-dt/55);
+      var nv=p+(tv-p)*a;
+      if(Math.abs(tv-nv)<0.0015) nv=tv;
+      apply(nv);
+      if(pulling && nv!==tv){ followRaf=requestAnimationFrame(follow); } else followLast=0;
+    }
 
     function finish(){
       if(!pulling){ track=false; return; }
       pulling=false; track=false;
-      animateTo(p>=THRESH && (p0===0 || p>=0.7) ? 1 : 0);
+      cancelAnimationFrame(followRaf); followRaf=0; followLast=0;
+      var open = vel>0.7 ? true : vel<-0.7 ? false : (p>=THRESH && (p0===0 || p>=0.7));
+      vel=0; lastT=0;
+      animateTo(open ? 1 : 0);
     }
     view.addEventListener('touchend',finish,{passive:true});
     view.addEventListener('touchcancel',finish,{passive:true});
@@ -7574,7 +7591,8 @@ async function avatarDownload(){
     // الضغط على المربع المكبّر يفتح معرض الصور
     var items=[], idx=0, busy=false;
     function avatarList(){ var cu=(typeof currentUserData!=='undefined'&&currentUserData)||{}; var cur=cu.avatarUrl||''; var o=Array.isArray(cu.avatarHistory)?cu.avatarHistory:[]; return cur?[cur].concat(o.filter(function(u,i){return u&&u!==cur&&o.indexOf(u)===i;})):[]; }
-    function updateCount(){ if(hCount){ hCount.textContent=(items.length?idx+1:0)+'/'+items.length; hCount.style.visibility=items.length>1?'visible':'hidden'; } }
+    function updateSetBtn(){ var sb=hMenu&&hMenu.querySelector('[data-a="set"]'); if(sb) sb.classList.toggle('show',items.length>1&&idx>0); }
+    function updateCount(){ updateSetBtn(); if(hCount){ hCount.textContent=(items.length?idx+1:0)+'/'+items.length; hCount.style.visibility=items.length>1?'visible':'hidden'; } }
     function loadItems(){ items=avatarList(); idx=0; updateCount(); }
     function showPhoto(i,dir){
       var url=items[i]; if(!url) return;
@@ -7608,7 +7626,8 @@ async function avatarDownload(){
       hMenu.addEventListener('click',function(e){
         e.stopPropagation(); var b=e.target.closest('button'); if(!b) return;
         hMenu.classList.remove('open'); sharePrep();
-        if(b.dataset.a==='dl'){ if(typeof avatarDownload==='function') avatarDownload(); }
+        if(b.dataset.a==='set'){ if(typeof avatarSetAsCurrent==='function'){ Promise.resolve(avatarSetAsCurrent()).then(function(){ setTimeout(function(){ idx=0; refreshAfterEdit(); },50); },refreshAfterEdit); } }
+        else if(b.dataset.a==='dl'){ if(typeof avatarDownload==='function') avatarDownload(); }
         else if(typeof avatarDelete==='function'){ Promise.resolve(avatarDelete()).then(refreshAfterEdit,refreshAfterEdit); }
       });
     }
@@ -9810,6 +9829,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 .pf-hero .pf-hero-menu{position:absolute;z-index:7;right:10px;top:calc(56px + env(safe-area-inset-top,0px));min-width:176px;padding:6px;border-radius:16px;background:rgba(24,30,42,.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);box-shadow:0 12px 32px rgba(0,0,0,.4);direction:rtl;visibility:hidden;opacity:0;transform:scale(.92) translateY(-6px);transform-origin:top right;transition:opacity .16s,transform .16s,visibility .16s}
 .pf-hero .pf-hero-menu.open{visibility:visible!important;opacity:1!important;transform:none!important}
 .pf-hero .pf-hero-menu button{display:block!important;width:100%;text-align:right;padding:12px 14px;border:0!important;border-radius:11px;background:transparent!important;color:#f1f5f9!important;-webkit-text-fill-color:#f1f5f9;font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer;box-shadow:none!important}
+.pf-hero .pf-hero-menu button[data-a="set"]:not(.show){display:none!important}
 .pf-hero .pf-hero-menu button:active{background:rgba(255,255,255,.1)!important}
 .pf-hero .pf-hero-menu button.danger{color:#ff7b7b!important;-webkit-text-fill-color:#ff7b7b}
 .app-container[data-app-theme="light"] .pf-hero .pf-hero-menu{background:rgba(255,255,255,.96);border-color:rgba(15,23,42,.1);box-shadow:0 12px 32px rgba(15,23,42,.22)}
@@ -9825,5 +9845,5 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 </style>
 <style id="babylon-hero-name-fix">
 .pf-hero .pf-hero-name{color:#fff!important}
-.pf-hero .pf-hero-status:not(.online){color:rgba(255,255,255,.85)!important}
+.pf-hero .pf-hero-status,.pf-hero .pf-hero-status.online{color:#fff!important;font-weight:800!important}
 </style>
