@@ -7765,7 +7765,15 @@ async function avatarDownload(){
     function clamp(v){ return v<0?0:v>1?1:v; }
     function apply(v){
       p=v;
-      if(v<=0.001){ reset(); return; }
+      if(v<=0.001){
+        // لا تستدعِ reset أثناء كل إطار قرب الصفر؛ ذلك كان يغيّر أشرطة النظام مرارًا ويسبب التقطّع.
+        hero.style.display='none'; hero.style.pointerEvents='none';
+        cover.style.height=''; cover.style.opacity=''; ring.style.opacity='';
+        nameBox.style.height=nameBox.style.overflow=nameBox.style.marginBottom=nameBox.style.opacity='';
+        status.style.height=status.style.overflow=status.style.opacity='';
+        if(quick){ quick.style.transform=''; quick.style.removeProperty('margin-bottom'); view.style.removeProperty('--pv'); }
+        return;
+      }
       var size=g.size+(g.S-g.size)*v;
       hero.style.display='block'; hero.style.willChange='width,height,top,left';
       var e=g.ext*clamp((v-0.5)*2);
@@ -7773,7 +7781,8 @@ async function avatarDownload(){
       hImg.style.height=size+'px'; hLet.style.height=size+'px';
       hExt.style.height=(size+e)+'px';
       var mk=e>0?'linear-gradient(to bottom,#000 calc(100% - '+Math.round(e*1.15)+'px),transparent)':'none';
-      hImg.style.webkitMaskImage=hImg.style.maskImage=mk; hLet.style.webkitMaskImage=hLet.style.maskImage=mk;
+      // تجنّب أقنعة الصورة المتحركة لأنها ثقيلة على WebView وقد تسبب انهيارًا أثناء السحب.
+      hImg.style.webkitMaskImage=hImg.style.maskImage='none'; hLet.style.webkitMaskImage=hLet.style.maskImage='none';
       hShade.style.top=(size*0.35)+'px'; hShade.style.height=(size*0.65+e)+'px'; hShade.style.bottom='auto';
       hero.style.top=(g.top*(1-v))+'px'; hero.style.left=((g.W-size)/2)+'px';
       hero.style.borderRadius=(50*(1-v))+'%';
@@ -7945,7 +7954,7 @@ async function avatarDownload(){
 
     // عند إخفاء الشاشة أو إعادة فتحها نرجع للوضع الطبيعي
     new MutationObserver(function(){
-      if(view.classList.contains('hidden')){ cancelAnimationFrame(raf); reset(); view.scrollTop=0; }
+      if(view.classList.contains('hidden')){ cancelAnimationFrame(raf); cancelAnimationFrame(followRaf); raf=followRaf=0; pulling=false; track=false; reset(); view.scrollTop=0; }
     }).observe(view,{attributes:true,attributeFilter:['class']});
     window.addEventListener('resize',function(){ if(expanded||p>0){ cancelAnimationFrame(raf); reset(); } });
   }
