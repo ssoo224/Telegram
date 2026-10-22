@@ -7951,7 +7951,6 @@ html,body{overscroll-behavior-y:none}
     function reset(){
       restoreOriginalAvatar();
       p=0; expanded=false;
-      if(!pulling) view.classList.remove('pf-pulling');
       hero.style.display='none'; hero.style.pointerEvents='none'; hInfo.style.opacity=0;
       cover.style.height=''; cover.style.opacity='';
       ring.style.opacity='';
@@ -8002,7 +8001,6 @@ html,body{overscroll-behavior-y:none}
         cancelAnimationFrame(raf);
         if(!expanded){ reset(); sync(); measure(); }
         pulling=true; p0=expanded?1:0; sy=t.clientY; tv=p; vel=0; lastT=0;   // نبدأ من نقطة بدء السحب الفعلي
-        view.classList.add('pf-pulling');
         // إخفاء الحلقة فور بدء السحب المقبول، ومنع ظهورها في إطارات التحديث الأولى.
         ring.style.opacity='0';
         ring.style.visibility='hidden';
@@ -10706,10 +10704,4 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
   stroke:#fff !important;
   -webkit-text-fill-color:#fff !important;
 }
-</style>
-
-<style id="babylon-pull-ring-hide-and-other-actions-final">
-#profileView.pf-pulling .avatar-story-ring,#otherUserProfileView.pf-pulling .avatar-story-ring,
-#profileView.pf-expanded .avatar-story-ring,#otherUserProfileView.pf-expanded .avatar-story-ring{opacity:0!important;visibility:hidden!important;box-shadow:none!important;background:transparent!important;animation:none!important;transition:none!important}
-#profileView.pf-pulling .avatar-story-ring::before,#otherUserProfileView.pf-pulling .avatar-story-ring::before{display:none!important}
 </style>
