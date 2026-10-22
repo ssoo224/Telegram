@@ -3958,9 +3958,9 @@ function renderMsgDoc(doc, box, existingTyping) {
         } catch (e) {}
         try { primeVoiceDuration(b); } catch (e) {}
         const msgVidBtn = b.querySelector(".msg-video-play");
-        if (msgVidBtn) msgVidBtn.onclick = (ev) => { ev.stopPropagation(); if (messageSelectionMode) toggleMessageSelection(doc.id); else openVideoViewer(m.videoUrl); };
+        if (msgVidBtn) msgVidBtn.onclick = (ev) => { ev.stopPropagation(); if (messageSelectionMode) toggleMessageSelection(doc.id); else openVideoViewer(m.videoUrl, doc.id, isMine); };
         const msgImg = b.querySelector(".msg-image img");
-        if (msgImg) msgImg.onclick = (ev) => { ev.stopPropagation(); openImageViewer(msgImg.src); };
+        if (msgImg) msgImg.onclick = (ev) => { ev.stopPropagation(); openImageViewer(msgImg.src, doc.id, isMine); };
 
         let pressTimer = null;
         let touchStartX = 0;
@@ -4936,91 +4936,83 @@ function sendImage(e) {
   });
 }
 
-function openImageViewer(src) {
+function openImageViewer(src, messageId = '', isMine = false) {
   const v = document.createElement('div');
+  v.className = 'babylon-media-viewer image-viewer';
   v.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;padding:12px;overflow:hidden;touch-action:none;';
   const im = document.createElement('img');
-  im.src = src;
-  im.alt = 'صورة';
+  im.src = src; im.alt = 'صورة';
   im.style.cssText = 'max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:8px;transform:translate(0px,0px) scale(1);transform-origin:center center;will-change:transform;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;touch-action:none;cursor:zoom-in;';
-  v.appendChild(im);
+  const toolbar = createMediaViewerToolbar(src, 'image', messageId, isMine, () => closeImageViewer());
+  v.appendChild(im); v.appendChild(toolbar);
   document.body.appendChild(v);
   window.__babylonMediaViewerOpen = true;
-
-  // اجعل زر الرجوع في الهاتف يغلق عارض الصورة أولاً
   let viewerClosed = false, viewerHistoryEntry = false;
   const closeImageViewer = (fromBack = false) => {
     if (viewerClosed) return;
-    viewerClosed = true;
-    window.__babylonMediaViewerOpen = false;
-    window.removeEventListener('popstate', onImageViewerBack);
-    v.remove();
+    viewerClosed = true; window.__babylonMediaViewerOpen = false;
+    window.removeEventListener('popstate', onImageViewerBack); v.remove();
     if (viewerHistoryEntry && !fromBack) { viewerHistoryEntry = false; window.__babylonIgnoreNextBack = true; history.back(); }
   };
   const onImageViewerBack = () => { viewerHistoryEntry = false; closeImageViewer(true); };
   try { history.pushState({ babylonImageViewer: true }, ''); viewerHistoryEntry = true; window.addEventListener('popstate', onImageViewerBack); } catch (_) {}
-
   let scale = 1, tx = 0, ty = 0;
-  const pointers = new Map();
-  const starts = new Map();
+  const pointers = new Map(), starts = new Map();
   let startDist = 0, startScale = 1, startX = 0, startY = 0, startTx = 0, startTy = 0;
-  let gestureMoved = false, multiTouch = false;
+  let gestureMoved = false, multiTouch = false, toolbarTap = false;
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-  const render = () => {
-    im.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
-    im.style.cursor = scale > 1 ? 'grab' : 'zoom-in';
-  };
+  const render = () => { im.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; im.style.cursor = scale > 1 ? 'grab' : 'zoom-in'; };
   const reset = () => { scale = 1; tx = 0; ty = 0; render(); };
   v.addEventListener('click', e => { if (e.target === v) closeImageViewer(); });
+  im.addEventListener('click', e => {
+    if (gestureMoved || multiTouch) { gestureMoved = false; return; }
+    toolbar.classList.toggle('is-hidden');
+  });
   im.addEventListener('pointerdown', e => {
-    e.preventDefault();
-    try { im.setPointerCapture(e.pointerId); } catch (_) {}
-    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
-    starts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    e.preventDefault(); try { im.setPointerCapture(e.pointerId); } catch (_) {}
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY}); starts.set(e.pointerId, {x:e.clientX, y:e.clientY});
     gestureMoved = false;
-    if (pointers.size > 1) { multiTouch = true; }
-    if (pointers.size === 1) {
-      startX = e.clientX; startY = e.clientY; startTx = tx; startTy = ty;
-    } else if (pointers.size === 2) {
-      const a = [...pointers.values()];
-      startDist = Math.hypot(a[0].x-a[1].x, a[0].y-a[1].y);
-      startScale = scale;
-    }
+    if (pointers.size > 1) multiTouch = true;
+    if (pointers.size === 1) { startX=e.clientX; startY=e.clientY; startTx=tx; startTy=ty; }
+    else if (pointers.size === 2) { const a=[...pointers.values()]; startDist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y); startScale=scale; }
   });
   im.addEventListener('pointermove', e => {
     if (!pointers.has(e.pointerId)) return;
-    const st = starts.get(e.pointerId);
-    if (st && Math.hypot(e.clientX-st.x, e.clientY-st.y) > 10) gestureMoved = true;
-    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
-    if (pointers.size === 2) {
-      const a = [...pointers.values()];
-      const d = Math.hypot(a[0].x-a[1].x, a[0].y-a[1].y);
-      if (startDist) scale = clamp(startScale*d/startDist, 1, 5);
-      if (scale === 1) { tx = 0; ty = 0; }
-      render();
-    } else if (pointers.size === 1 && scale > 1) {
-      tx = startTx + (e.clientX-startX);
-      ty = startTy + (e.clientY-startY);
-      render();
-    }
+    const st=starts.get(e.pointerId); if (st && Math.hypot(e.clientX-st.x,e.clientY-st.y)>10) gestureMoved=true;
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if (pointers.size===2) { const a=[...pointers.values()]; const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y); if(startDist) scale=clamp(startScale*d/startDist,1,5); if(scale===1){tx=0;ty=0;} render(); }
+    else if(pointers.size===1 && scale>1){tx=startTx+(e.clientX-startX);ty=startTy+(e.clientY-startY);render();}
   });
-  const endPointer = e => {
-    if (!pointers.has(e.pointerId)) return;
-    const st = starts.get(e.pointerId) || {x:e.clientX,y:e.clientY};
-    const moved = Math.hypot(e.clientX-st.x, e.clientY-st.y);
-    const wasSingle = pointers.size === 1;
-    pointers.delete(e.pointerId); starts.delete(e.pointerId);
-    if (pointers.size < 2) startDist = 0;
-    if (pointers.size === 0) multiTouch = false;
-  };
+  const endPointer = e => { if(!pointers.has(e.pointerId)) return; pointers.delete(e.pointerId); starts.delete(e.pointerId); if(pointers.size<2) startDist=0; if(!pointers.size) multiTouch=false; };
   im.addEventListener('pointerup', endPointer);
-  im.addEventListener('pointercancel', e => { pointers.delete(e.pointerId); starts.delete(e.pointerId); if (!pointers.size) { multiTouch = false; startDist = 0; } });
-  im.addEventListener('wheel', e => {
-    e.preventDefault(); scale = clamp(scale+(e.deltaY<0?.2:-.2),1,5);
-    if (scale===1) { tx=0; ty=0; }
-    render();
-  }, {passive:false});
+  im.addEventListener('pointercancel', e => { pointers.delete(e.pointerId); starts.delete(e.pointerId); if(!pointers.size){multiTouch=false;startDist=0;} });
+  im.addEventListener('wheel', e => { e.preventDefault(); scale=clamp(scale+(e.deltaY<0?.2:-.2),1,5); if(scale===1){tx=0;ty=0;} render(); }, {passive:false});
 }
+
+function createMediaViewerToolbar(src, type, messageId, isMine, closeViewer) {
+  const bar = document.createElement('div');
+  bar.className = 'babylon-media-toolbar';
+  bar.style.cssText = 'position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:max(10px,env(safe-area-inset-top)) 14px 10px;background:linear-gradient(to bottom,rgba(0,0,0,.78),rgba(0,0,0,0));transition:transform .24s ease,opacity .2s ease;';
+  const close = document.createElement('button'); close.type='button'; close.className='media-viewer-close'; close.setAttribute('aria-label','إغلاق');
+  close.style.cssText='width:42px;height:42px;display:grid;place-items:center;border:0;border-radius:50%;background:rgba(255,255,255,.13);color:#fff;';
+  close.innerHTML='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  const menuWrap=document.createElement('div'); menuWrap.style.cssText='position:relative;';
+  const dots=document.createElement('button'); dots.type='button'; dots.setAttribute('aria-label','خيارات الوسائط');
+  dots.style.cssText='width:42px;height:42px;display:grid;place-items:center;border:0;border-radius:50%;background:rgba(255,255,255,.13);color:#fff;';
+  dots.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
+  const menu=document.createElement('div');
+  menu.style.cssText='display:none;position:absolute;top:48px;left:0;min-width:170px;padding:6px;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:#17191f;color:#fff;box-shadow:0 10px 35px rgba(0,0,0,.4);direction:rtl;';
+  const makeOption=(label,icon,handler,danger=false)=>{const b=document.createElement('button');b.type='button';b.style.cssText='display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border:0;border-radius:8px;background:transparent;color:'+(danger?'#ff7373':'#fff')+';font-size:14px;text-align:right;';b.innerHTML=icon+'<span>'+label+'</span>';b.onclick=async e=>{e.stopPropagation();menu.style.display='none';await handler();};menu.appendChild(b);};
+  makeOption('تنزيل '+(type==='video'?'الفيديو':'الصورة'),'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M4 17v3h16v-3"/></svg>',async()=>{try{const response=await fetch(src);if(!response.ok)throw new Error();const blob=await response.blob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=(type==='video'?'babylon-video':'babylon-image')+(type==='video'?'.mp4':'.jpg');document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}catch(e){const a=document.createElement('a');a.href=src;a.download=type==='video'?'babylon-video':'babylon-image';a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}});
+  if(isMine && messageId) makeOption('حذف','<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M9 6V4h6v2m4 0-1 14H6L5 6m4 4v6m6-6v6"/></svg>',async()=>{closeViewer();selectedMsgId=messageId;const msg=document.getElementById('message_'+messageId);selectedMsgText=msg?.dataset.messageText||'';openMessageDeleteOptions();},true);
+  menuWrap.appendChild(dots);menuWrap.appendChild(menu);bar.appendChild(close);bar.appendChild(menuWrap);
+  close.onclick=e=>{e.stopPropagation();closeViewer();};
+  dots.onclick=e=>{e.stopPropagation();menu.style.display=menu.style.display==='block'?'none':'block';};
+  document.addEventListener('click', function closeMenu(e){if(!bar.contains(e.target)){menu.style.display='none';document.removeEventListener('click',closeMenu);}});
+  bar.classList.remove('is-hidden');
+  return bar;
+}
+
 const TICK_SVG = {
   sent: '<svg class="tick-svg tick-s" viewBox="0 0 16 12" aria-label="تم الإرسال" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5 5.8 10.2 14 1.8"/></svg>',
   read: '<svg class="tick-svg tick-d" viewBox="0 0 20 12" aria-label="تمت القراءة" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6.5 5.3 10.2 13 1.8"/><path d="M9 9.2 10.2 10.2 18.4 1.8"/></svg>',
@@ -5064,34 +5056,24 @@ function sendChatVideo(file) {
   xhr.send(fd);
 }
 
-function openVideoViewer(src) {
+function openVideoViewer(src, messageId = '', isMine = false) {
   const v = document.createElement('div');
-  v.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;';
-  const vid = document.createElement('video');
-  vid.src = src; vid.controls = true; vid.autoplay = true; vid.playsInline = true;
-  vid.style.cssText = 'max-width:100%;max-height:100%;background:#000;';
-  const x = document.createElement('button');
-  x.textContent = '✕'; x.setAttribute('aria-label', 'إغلاق');
-  x.style.cssText = 'position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:20px;cursor:pointer;z-index:2;';
-  let viewerClosed = false, viewerHistoryEntry = false;
-  window.__babylonMediaViewerOpen = true;
-  const close = (fromBack = false) => {
-    if (viewerClosed) return;
-    viewerClosed = true;
-    window.__babylonMediaViewerOpen = false;
-    window.removeEventListener('popstate', onVideoViewerBack);
-    try { vid.pause(); vid.removeAttribute('src'); vid.load(); } catch (e) {}
-    v.remove();
-    if (viewerHistoryEntry && !fromBack) { viewerHistoryEntry = false; window.__babylonIgnoreNextBack = true; history.back(); }
-  };
-  const onVideoViewerBack = () => { viewerHistoryEntry = false; close(true); };
-  try { history.pushState({ babylonVideoViewer: true }, ''); viewerHistoryEntry = true; window.addEventListener('popstate', onVideoViewerBack); } catch (_) {}
-  x.onclick = close;
-  v.onclick = ev => { if (ev.target === v) close(); };
-  v.appendChild(vid); v.appendChild(x);
-  document.body.appendChild(v);
+  v.className='babylon-media-viewer video-viewer';
+  v.style.cssText='position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;';
+  const vid=document.createElement('video');vid.src=src;vid.controls=true;vid.autoplay=true;vid.playsInline=true;vid.style.cssText='max-width:100%;max-height:100%;background:#000;';
+  const toolbar=createMediaViewerToolbar(src,'video',messageId,isMine,()=>close());
+  let viewerClosed=false,viewerHistoryEntry=false;window.__babylonMediaViewerOpen=true;
+  const close=(fromBack=false)=>{if(viewerClosed)return;viewerClosed=true;window.__babylonMediaViewerOpen=false;window.removeEventListener('popstate',onVideoViewerBack);try{vid.pause();vid.removeAttribute('src');vid.load();}catch(e){}v.remove();if(viewerHistoryEntry&&!fromBack){viewerHistoryEntry=false;window.__babylonIgnoreNextBack=true;history.back();}};
+  const onVideoViewerBack=()=>{viewerHistoryEntry=false;close(true);};
+  try{history.pushState({babylonVideoViewer:true},'');viewerHistoryEntry=true;window.addEventListener('popstate',onVideoViewerBack);}catch(_){}
+  v.addEventListener('click',ev=>{if(ev.target===v)close();});
+  vid.addEventListener('click',()=>toolbar.classList.toggle('is-hidden'));
+  v.appendChild(vid);v.appendChild(toolbar);document.body.appendChild(v);
 }
 
+const babylonMediaToolbarStyle = document.createElement('style');
+babylonMediaToolbarStyle.textContent = '.babylon-media-toolbar.is-hidden{transform:translateY(-110%);opacity:0;pointer-events:none}.babylon-media-toolbar button{cursor:pointer;touch-action:manipulation}.babylon-media-toolbar button:active{transform:scale(.96)}';
+document.head.appendChild(babylonMediaToolbarStyle);
 hydrateIcons();
 buildThemeStrip();
 applyPrefs(true);
