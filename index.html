@@ -5003,7 +5003,33 @@ function createMediaViewerToolbar(src, type, messageId, isMine, closeViewer) {
   const menu=document.createElement('div');
   menu.style.cssText='display:none;position:absolute;top:48px;left:0;min-width:170px;padding:6px;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:#17191f;color:#fff;box-shadow:0 10px 35px rgba(0,0,0,.4);direction:rtl;';
   const makeOption=(label,icon,handler,danger=false)=>{const b=document.createElement('button');b.type='button';b.style.cssText='display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border:0;border-radius:8px;background:transparent;color:'+(danger?'#ff7373':'#fff')+';font-size:14px;text-align:right;';b.innerHTML=icon+'<span>'+label+'</span>';b.onclick=async e=>{e.stopPropagation();menu.style.display='none';await handler();};menu.appendChild(b);};
-  makeOption('تنزيل '+(type==='video'?'الفيديو':'الصورة'),'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M4 17v3h16v-3"/></svg>',async()=>{try{const response=await fetch(src);if(!response.ok)throw new Error();const blob=await response.blob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=(type==='video'?'babylon-video':'babylon-image')+(type==='video'?'.mp4':'.jpg');document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}catch(e){const a=document.createElement('a');a.href=src;a.download=type==='video'?'babylon-video':'babylon-image';a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}});
+  makeOption('تنزيل '+(type==='video'?'الفيديو':'الصورة'),'<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5M4 17v3h16v-3"/></svg>',async()=>{
+    const isVideo=type==='video';
+    const baseName=(isVideo?'babylon-video-':'babylon-image-')+Date.now();
+    try {
+      let downloadUrl=src, objectUrl='';
+      const response=await fetch(src,{mode:'cors'});
+      if(!response.ok) throw new Error('download response '+response.status);
+      const blob=await response.blob();
+      if(!blob.size) throw new Error('empty media');
+      let ext=isVideo?'mp4':'jpg';
+      const mime=(blob.type||'').toLowerCase();
+      if(mime.includes('webm')) ext='webm'; else if(mime.includes('png')) ext='png'; else if(mime.includes('gif')) ext='gif'; else if(mime.includes('jpeg')) ext='jpg'; else if(mime.includes('quicktime')) ext='mov';
+      objectUrl=URL.createObjectURL(blob); downloadUrl=objectUrl;
+      const a=document.createElement('a'); a.href=downloadUrl; a.download=baseName+'.'+ext; a.style.display='none';
+      document.body.appendChild(a); a.click(); a.remove();
+      if(objectUrl) setTimeout(()=>URL.revokeObjectURL(objectUrl),10000);
+      showToast('تم تحميل '+(isVideo?'الفيديو':'الصورة')+' في المعرض');
+    } catch(err) {
+      console.warn('Media download failed:',err);
+      // فتح الرابط المباشر كحل احتياطي عند منع الخادم تنزيل الملف عبر fetch.
+      try {
+        const a=document.createElement('a'); a.href=src; a.target='_blank'; a.rel='noopener'; a.download=baseName+(isVideo?'.mp4':'.jpg');
+        document.body.appendChild(a); a.click(); a.remove();
+        showToast('بدأ تنزيل '+(isVideo?'الفيديو':'الصورة')+'؛ إذا لم يبدأ، تحقق من صلاحية التنزيل');
+      } catch(fallbackError) { showToast('تعذر تنزيل '+(isVideo?'الفيديو':'الصورة')); }
+    }
+  });
   if(isMine && messageId) makeOption('حذف','<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M9 6V4h6v2m4 0-1 14H6L5 6m4 4v6m6-6v6"/></svg>',async()=>{closeViewer();selectedMsgId=messageId;const msg=document.getElementById('message_'+messageId);selectedMsgText=msg?.dataset.messageText||'';openMessageDeleteOptions();},true);
   menuWrap.appendChild(dots);menuWrap.appendChild(menu);bar.appendChild(close);bar.appendChild(menuWrap);
   close.onclick=e=>{e.stopPropagation();closeViewer();};
