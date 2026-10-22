@@ -1976,6 +1976,38 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 .chat-item-sub .chat-media-preview-prefix{margin-inline-end:3px}
 </style>
 <link rel="stylesheet" href="gifts/gifts.css?v=12">
+<style id="babylon-profile-buttons-and-avatar-expansion">
+/* أزرار تعديل/الصورة/الغلاف أصغر بدرجة واحدة وبدون إطار أبيض */
+#profileView .pf-quick .pf-q,
+#otherUserProfileView .pf-quick .pf-q,
+#otherUserProfileView .pf-quick .pf-btn.pf-q{
+  min-height:40px!important;
+  height:42px!important;
+  padding:7px 8px!important;
+  gap:6px!important;
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
+#profileView .pf-quick .pf-q:focus,
+#profileView .pf-quick .pf-q:focus-visible,
+#otherUserProfileView .pf-quick .pf-q:focus,
+#otherUserProfileView .pf-quick .pf-q:focus-visible,
+#otherUserProfileView .pf-quick .pf-btn.pf-q:focus,
+#otherUserProfileView .pf-quick .pf-btn.pf-q:focus-visible{
+  outline:none!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+#profileView .pf-quick .pf-q i,
+#profileView .pf-quick .pf-q svg,
+#otherUserProfileView .pf-quick .pf-q i,
+#otherUserProfileView .pf-quick .pf-q svg,
+#otherUserProfileView .pf-quick .pf-btn.pf-q i,
+#otherUserProfileView .pf-quick .pf-btn.pf-q svg{
+  width:17px!important;height:17px!important;flex:0 0 17px!important;
+}
+</style>
 </head>
 
 <body>
@@ -7788,9 +7820,37 @@ html,body{overscroll-behavior-y:none}
         '<div class="pf-hero-menu"><button type="button" data-a="set">اعتماد الصورة</button><button type="button" data-a="dl">تنزيل الصورة</button><button type="button" data-a="del" class="danger">حذف الصورة</button></div>');
     }
     var hTop=hero.querySelector('.pf-hero-top'), hCount=hero.querySelector('.pf-hero-count'), hMenu=hero.querySelector('.pf-hero-menu');
-    var hImg=hero.querySelector('img'), hLet=hero.querySelector('.pf-hero-letter'),
+    var heroImg=hero.querySelector('img'), hImg=heroImg, hLet=hero.querySelector('.pf-hero-letter'),
         hInfo=hero.querySelector('.pf-hero-info'), hName=hero.querySelector('.pf-hero-name'),
         hStat=hero.querySelector('.pf-hero-status'), hExt=hero.querySelector('.pf-hero-ext'), hShade=hero.querySelector('.pf-hero-shade');
+    // أثناء السحب نستخدم عنصر صورة البروفايل الأصلي نفسه، ثم نعيده إلى مكانه عند الإغلاق.
+    var originalAvatarPlaceholder=null, originalAvatarMoved=false;
+    function moveOriginalAvatarIntoHero(){
+      if(originalAvatarMoved || !img || !img.parentNode || img.classList.contains('hidden') || !img.getAttribute('src')) return;
+      originalAvatarPlaceholder=document.createComment('profile-avatar-original-position');
+      img.parentNode.insertBefore(originalAvatarPlaceholder,img);
+      if(heroImg.parentNode) heroImg.replaceWith(img);
+      hImg=img;
+      originalAvatarMoved=true;
+    }
+    function restoreOriginalAvatar(){
+      if(!originalAvatarMoved) return;
+      try{
+        if(img){
+          img.style.webkitMaskImage='';
+          img.style.maskImage='';
+          ['width','height','border-radius','border','left','top','right','bottom'].forEach(function(k){img.style.removeProperty(k);});
+        }
+        if(img && img.parentNode===hero && heroImg) img.replaceWith(heroImg);
+        if(img && originalAvatarPlaceholder && originalAvatarPlaceholder.parentNode){
+          originalAvatarPlaceholder.parentNode.insertBefore(img,originalAvatarPlaceholder);
+          originalAvatarPlaceholder.remove();
+        }
+      }catch(e){ console.warn('Could not restore original profile avatar',e); }
+      originalAvatarPlaceholder=null;
+      originalAvatarMoved=false;
+      hImg=heroImg;
+    }
 
     var tv=0, vel=0, lastT=0, lastY=0, followRaf=0, followLast=0;
     var g=null, p=0, expanded=false, pulling=false, sy=0, sx=0, p0=0, raf=0, track=false;
@@ -7827,11 +7887,20 @@ html,body{overscroll-behavior-y:none}
     function apply(v){
       p=v;
       if(v<=0.001){ reset(); return; }
+      moveOriginalAvatarIntoHero();
       var size=g.size+(g.S-g.size)*v;
       hero.style.display='block'; hero.style.willChange='width,height,top,left';
       var e=g.ext*clamp((v-0.5)*2);
       hero.style.width=size+'px'; hero.style.height=(size+e)+'px';
-      hImg.style.height=size+'px'; hLet.style.height=size+'px';
+      hImg.style.setProperty('width',size+'px','important');
+      hImg.style.setProperty('height',size+'px','important');
+      hImg.style.setProperty('border-radius',(50*(1-v))+'%','important');
+      hImg.style.setProperty('border','0','important');
+      hImg.style.setProperty('left','0','important');
+      hImg.style.setProperty('top','0','important');
+      hImg.style.setProperty('right','auto','important');
+      hImg.style.setProperty('bottom','auto','important');
+      hLet.style.height=size+'px';
       hExt.style.height=(size+e)+'px';
       var mk=e>0?'linear-gradient(to bottom,#000 calc(100% - '+Math.round(e*1.15)+'px),transparent)':'none';
       hImg.style.webkitMaskImage=hImg.style.maskImage=mk; hLet.style.webkitMaskImage=hLet.style.maskImage=mk;
@@ -7872,6 +7941,7 @@ html,body{overscroll-behavior-y:none}
       }
     }
     function reset(){
+      restoreOriginalAvatar();
       p=0; expanded=false;
       hero.style.display='none'; hero.style.pointerEvents='none'; hInfo.style.opacity=0;
       cover.style.height=''; cover.style.opacity='';
@@ -7881,7 +7951,9 @@ html,body{overscroll-behavior-y:none}
       if(hTop){ hTop.style.opacity=0; hMenu.classList.remove('open'); }
       if(view.classList.contains('pf-expanded')) view.classList.remove('pf-expanded');
       if (typeof setProfileExpandedStatusBlur === 'function') setProfileExpandedStatusBlur(false);
-      hImg.style.webkitMaskImage=hImg.style.maskImage=hLet.style.webkitMaskImage=hLet.style.maskImage=''; hImg.style.height=hLet.style.height=hExt.style.height=hShade.style.top=hShade.style.height=''; hShade.style.bottom=''; if(quick){ quick.style.transform=''; quick.style.removeProperty('margin-bottom'); view.style.removeProperty('--pv'); hInfo.style.bottom=''; }
+      hImg.style.webkitMaskImage=hImg.style.maskImage=hLet.style.webkitMaskImage=hLet.style.maskImage='';
+      ['width','height','border-radius','border','left','top','right','bottom'].forEach(function(k){hImg.style.removeProperty(k);});
+      hLet.style.height=hExt.style.height=hShade.style.top=hShade.style.height=''; hShade.style.bottom=''; if(quick){ quick.style.transform=''; quick.style.removeProperty('margin-bottom'); view.style.removeProperty('--pv'); hInfo.style.bottom=''; }
     }
     function animateTo(t){
       cancelAnimationFrame(raf);
