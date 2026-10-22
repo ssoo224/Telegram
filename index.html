@@ -7436,6 +7436,7 @@ async function avatarDownload(){
     var tb = cover.querySelector('.pf-topbar');
     if(tb) view.insertBefore(tb, cover.nextSibling);
 
+    var quick = view.querySelector('.pf-quick');
     var hero = document.createElement('div');
     hero.className = 'pf-hero';
     hero.innerHTML = '<img alt="" draggable="false"><div class="pf-hero-letter"></div><div class="pf-hero-shade"></div>'+
@@ -7467,7 +7468,7 @@ async function avatarDownload(){
       var W=view.clientWidth;
       g={ W:W, S:W, size:ar.width||108, top:ar.top-vr.top+view.scrollTop,
           ringBottom: rr.bottom-vr.top+view.scrollTop,
-          coverH: cover.offsetHeight, nh: nameBox.offsetHeight, sh: status.offsetHeight };
+          coverH: cover.offsetHeight, nh: nameBox.offsetHeight, sh: status.offsetHeight, qh: quick?quick.offsetHeight:0 };
       g.delta = Math.max(0, g.S - g.ringBottom);
     }
     function clamp(v){ return v<0?0:v>1?1:v; }
@@ -7487,6 +7488,15 @@ async function avatarDownload(){
       nameBox.style.overflow='hidden'; nameBox.style.height=(g.nh*(1-v))+'px';
       nameBox.style.marginBottom=(6*(1-v))+'px'; nameBox.style.opacity=clamp(1-v*2);
       status.style.overflow='hidden'; status.style.height=(g.sh*(1-v))+'px'; status.style.opacity=clamp(1-v*2);
+      if(quick){
+        var vr2=view.getBoundingClientRect();
+        quick.style.transform='none'; quick.style.marginBottom=(-g.qh*v)+'px';
+        var nat=quick.getBoundingClientRect().bottom-vr2.top+view.scrollTop;
+        var goal=g.top*(1-v)+size-14;
+        quick.style.transform='translateY('+((goal-nat)*v)+'px)';
+        view.style.setProperty('--pv',v);
+        hInfo.style.bottom=(16+(g.qh+14)*v)+'px';
+      }
     }
     function reset(){
       p=0; expanded=false;
@@ -7495,6 +7505,7 @@ async function avatarDownload(){
       ring.style.opacity='';
       nameBox.style.height=nameBox.style.overflow=nameBox.style.marginBottom=nameBox.style.opacity='';
       status.style.height=status.style.overflow=status.style.opacity='';
+      if(quick){ quick.style.transform=''; quick.style.marginBottom=''; view.style.removeProperty('--pv'); hInfo.style.bottom=''; }
     }
     function animateTo(t){
       cancelAnimationFrame(raf);
@@ -9688,3 +9699,16 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
  document.addEventListener('contextmenu',e=>{if(e.target.closest&&e.target.closest('#chatView .msg-bubble')){e.preventDefault();}},true);
 })();
 </script>
+<style id="babylon-profile-glass">
+/* أزرار زجاجية تمتد فوق الصورة عند السحب */
+#profileView .pf-quick .pf-q,#otherUserProfileView .pf-quick .pf-btn.pf-q{
+ background:color-mix(in srgb,rgba(255,255,255,.16) calc(var(--pv,0)*100%),var(--pf-card))!important;
+ border-color:color-mix(in srgb,rgba(255,255,255,.22) calc(var(--pv,0)*100%),var(--pf-line))!important;
+ color:color-mix(in srgb,#fff calc(var(--pv,0)*100%),var(--pf-gold))!important;
+ -webkit-backdrop-filter:blur(calc(var(--pv,0)*18px)) saturate(1.3);backdrop-filter:blur(calc(var(--pv,0)*18px)) saturate(1.3);
+ box-shadow:none!important;position:relative;z-index:3}
+#profileView .pf-quick .pf-q span,#otherUserProfileView .pf-quick .pf-q span{color:color-mix(in srgb,#fff calc(var(--pv,0)*100%),var(--pf-txt))!important}
+#otherUserProfileView .pf-quick .pf-btn.pf-q.primary{background:color-mix(in srgb,rgba(212,169,55,.55) calc(var(--pv,0)*100%),var(--pf-gold))!important}
+#otherUserProfileView #otherBlockBtn.pf-q,#otherUserProfileView #otherBlockBtn.pf-q span{color:color-mix(in srgb,#ffb4b4 calc(var(--pv,0)*100%),#f87171)!important}
+.pf-hero .pf-hero-shade{height:70%!important}
+</style>
