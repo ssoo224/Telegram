@@ -3594,6 +3594,7 @@ function setProfileExpandedStatusBlur(enabled, imageUrl) {
       window.BabylonAndroid.setProfileExpandedSystemBars(enabled);
     }
   } catch (err) { console.warn('profile system bars update failed', err); }
+  try { if (window.__pfRefit) window.__pfRefit(); } catch (_) {}
 }
 
 function openAvatarGallery(ev) {
@@ -8098,6 +8099,32 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
   outline: none !important;
 }
 </style>
+<style id="pf-viewport-fit">
+html,body{height:var(--app-h,100dvh);min-height:var(--app-h,100dvh)}
+.app-container{height:var(--app-h,100dvh)!important}
+</style>
+<script id="pf-viewport-fit-js">
+/* يمنع الشريط الأسود أسفل الشاشة: عند تبدّل شريط النظام لا يحدّث الويب‑فيو 100dvh فورا، فنحسب الارتفاع الفعلي يدويا ونلوّن الخلفية بلون التطبيق */
+(function(){
+  function fit(){
+    try{
+      var h=window.innerHeight; if(window.visualViewport&&window.visualViewport.height>h) h=window.visualViewport.height;
+      var r=document.documentElement;
+      if(r.style.getPropertyValue('--app-h')!==h+'px') r.style.setProperty('--app-h',h+'px');
+      var app=document.querySelector('.app-container');
+      if(app){ var bg=getComputedStyle(app).backgroundColor; if(bg&&bg!=='rgba(0, 0, 0, 0)'){ r.style.backgroundColor=bg; document.body.style.backgroundColor=bg; } }
+    }catch(e){}
+  }
+  window.__pfRefit=function(){ fit(); [60,150,300,600].forEach(function(d){ setTimeout(fit,d); }); };
+  window.addEventListener('resize',fit);
+  window.addEventListener('orientationchange',function(){ setTimeout(fit,100); });
+  window.addEventListener('pageshow',fit);
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',fit);
+  var app=document.querySelector('.app-container');
+  if(app&&window.MutationObserver) new MutationObserver(fit).observe(app,{attributes:true,attributeFilter:['data-app-theme']});
+  fit();
+})();
+</script>
 </body>
 </html>
 
