@@ -2121,11 +2121,6 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
           <span id="pBadgeBox"><span class="verified-badge"><svg viewBox="0 0 24 24" aria-label="موثق"><path d="m5 12 4 4L19 6"/></svg></span></span>
         </div>
         <div id="pHeaderStatus" class="pf-status online"><span class="pf-dot"></span><span>متصل الآن</span></div>
-
-        <div class="pf-stats">
-          <div class="pf-stat"><b id="pStatPosts">0</b><span>منشورات</span></div>
-          <div class="pf-stat"><b id="pStatStories">0</b><span>قصص</span></div>
-        </div>
         <div class="pf-quick">
           <button type="button" class="pf-q" onclick="openEditProfileModal()"><i data-ic="pencil"></i><span>تعديل</span></button>
           <label for="avatarInput" class="pf-q"><i data-ic="camera"></i><span>الصورة</span></label>
@@ -7574,14 +7569,9 @@ async function avatarDownload(){
 :is(#profileView,#otherUserProfileView) .pf-name{font-size:23px!important;font-weight:800!important;color:var(--pf-txt)!important;margin:12px 0 4px!important;letter-spacing:-.2px}
 :is(#profileView,#otherUserProfileView) .pf-status{font-size:13px!important;margin-bottom:14px!important;color:var(--pf-mut)}
 :is(#profileView,#otherUserProfileView) .pf-status.online{color:#4ade80}
-.pf-stats{display:flex;width:100%;max-width:360px;margin:0 auto 14px;background:var(--pf-card);border:1px solid var(--pf-line);border-radius:16px}
-.pf-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:11px 6px}
-.pf-stat+.pf-stat{border-inline-start:1px solid var(--pf-line)}
-.pf-stat b{font-size:18px;font-weight:800;color:var(--pf-txt)}
-.pf-stat span{font-size:11.5px;color:var(--pf-mut)}
 .pf-quick,#otherUserProfileView .pf-actions.pf-quick{display:grid!important;grid-template-columns:repeat(3,1fr);gap:9px;width:100%;max-width:360px;margin:0 auto 12px!important}
 #otherUserProfileView .pf-actions.pf-quick{grid-template-columns:repeat(2,1fr)}
-.pf-q,#otherUserProfileView .pf-actions .pf-btn.pf-q{display:flex!important;flex-direction:column!important;align-items:center;justify-content:center;gap:5px!important;width:auto!important;height:auto!important;min-height:64px!important;padding:10px 4px!important;border-radius:16px!important;border:1px solid var(--pf-line)!important;background:var(--pf-card)!important;color:var(--pf-gold)!important;font:700 12px/1.2 inherit!important;cursor:pointer;transition:transform .15s,background .15s;-webkit-tap-highlight-color:transparent}
+.pf-q,#otherUserProfileView .pf-actions .pf-btn.pf-q{display:flex!important;flex-direction:column!important;align-items:center;justify-content:center;gap:5px!important;width:auto!important;height:auto!important;min-height:64px!important;padding:10px 4px!important;border-radius:16px!important;border:1px solid var(--pf-line)!important;background:var(--pf-card)!important;color:var(--pf-gold)!important;font-weight:700!important;font-size:12px!important;line-height:1.2!important;cursor:pointer;transition:transform .15s,background .15s;-webkit-tap-highlight-color:transparent}
 .pf-q:active{transform:scale(.95)}
 .pf-q svg{width:22px!important;height:22px!important}
 .pf-q span{color:var(--pf-txt)!important;font-weight:650;font-size:12px}
@@ -7594,12 +7584,16 @@ async function avatarDownload(){
 :is(#profileView,#otherUserProfileView) .pf-val{font-size:15px!important;font-weight:600;color:var(--pf-txt)!important}
 :is(#profileView,#otherUserProfileView) .pf-lbl{font-size:11.5px!important;color:var(--pf-mut)!important;margin-top:2px}
 .pf-tabs{display:flex;position:sticky;top:0;z-index:4;margin:4px 0 0;background:var(--pf-bg);border-bottom:1px solid var(--pf-line)}
-.pf-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:46px;border:0;background:none;color:var(--pf-mut);font:700 13.5px inherit;cursor:pointer;position:relative}
+.pf-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:46px;border:0;background:none;color:var(--pf-mut);font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;position:relative}
 .pf-tab svg{width:18px;height:18px}
 .pf-tab.active{color:var(--pf-gold)}
 .pf-tab.active::after{content:"";position:absolute;bottom:-1px;left:22%;right:22%;height:3px;border-radius:3px 3px 0 0;background:var(--pf-gold)}
 #profileView .posts-grid-header{display:none}
 #otherUserProfileView #otherBlockBtn.pf-q,#otherUserProfileView #otherBlockBtn.pf-q span{color:#f87171!important}
+#profileView .pf-head,#otherUserProfileView .pf-head{height:auto!important;overflow:visible!important}
+#profileView .pf-head>*,#otherUserProfileView .pf-head>*{flex-shrink:0!important}
+#profileView .avatar-story-ring,#otherUserProfileView .avatar-story-ring{flex:0 0 118px!important;width:118px!important;height:118px!important;margin-bottom:14px!important}
+#profileView .pf-quick,#otherUserProfileView .pf-quick{position:relative;z-index:1;margin-top:6px!important}
 #profileView .pf-pane{min-height:120px;padding-bottom:96px}
 #profileView .posts-grid{padding:2px!important;gap:2px!important}
 </style>
@@ -7614,12 +7608,6 @@ async function avatarDownload(){
    var st=b.dataset.tab==='stories';
    $('pTabStories').style.display=st?'':'none';$('pTabPosts').style.display=st?'none':'';
   });
-  function count(gridId,outId){
-   var g=$(gridId),o=$(outId);if(!g||!o)return;
-   var f=function(){o.textContent=g.children.length};f();
-   new MutationObserver(f).observe(g,{childList:true});
-  }
-  count('postsGrid','pStatPosts');count('myStoriesGrid','pStatStories');
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
