@@ -4938,12 +4938,44 @@ function sendImage(e) {
 
 function openImageViewer(src) {
   const v = document.createElement('div');
-  v.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;padding:12px;';
+  v.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;padding:12px;overflow:hidden;touch-action:none;';
   const im = document.createElement('img');
   im.src = src;
-  im.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;';
+  im.alt = 'صورة';
+  im.style.cssText = 'max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:8px;transform:translate(0px,0px) scale(1);transform-origin:center center;will-change:transform;user-select:none;-webkit-user-drag:none;touch-action:none;cursor:zoom-in;';
   v.appendChild(im);
-  v.onclick = () => v.remove();
+  let scale = 1, tx = 0, ty = 0, pointers = new Map(), startDist = 0, startScale = 1;
+  let startX = 0, startY = 0, startTx = 0, startTy = 0, lastTap = 0;
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+  const render = () => { im.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; im.style.cursor = scale > 1 ? 'grab' : 'zoom-in'; };
+  const reset = () => { scale = 1; tx = 0; ty = 0; render(); };
+  const toggleZoom = (x, y) => {
+    if (scale > 1) reset();
+    else { scale = 2.5; tx = (window.innerWidth / 2 - x) * 0.7; ty = (window.innerHeight / 2 - y) * 0.7; render(); }
+  };
+  v.addEventListener('click', e => { if (e.target === v) v.remove(); });
+  im.addEventListener('dblclick', e => { e.preventDefault(); e.stopPropagation(); toggleZoom(e.clientX, e.clientY); });
+  im.addEventListener('pointerdown', e => {
+    e.preventDefault(); im.setPointerCapture(e.pointerId); pointers.set(e.pointerId, {x:e.clientX,y:e.clientY});
+    if (pointers.size === 1) { startX=e.clientX; startY=e.clientY; startTx=tx; startTy=ty; }
+    if (pointers.size === 2) { const a=[...pointers.values()]; startDist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y); startScale=scale; }
+  });
+  im.addEventListener('pointermove', e => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if (pointers.size === 2) { const a=[...pointers.values()]; const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y); if(startDist) scale=clamp(startScale*d/startDist,1,5); if(scale===1){tx=0;ty=0;} render(); }
+    else if (pointers.size === 1 && scale > 1) { tx=startTx+(e.clientX-startX); ty=startTy+(e.clientY-startY); render(); }
+  });
+  const endPointer = e => {
+    if (!pointers.has(e.pointerId)) return;
+    const now=Date.now(), moved=Math.hypot(e.clientX-startX,e.clientY-startY);
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) startDist=0;
+    if (moved < 12 && now-lastTap < 320) { toggleZoom(e.clientX,e.clientY); lastTap=0; }
+    else if (moved < 12) lastTap=now;
+  };
+  im.addEventListener('pointerup',endPointer); im.addEventListener('pointercancel',e=>pointers.delete(e.pointerId));
+  im.addEventListener('wheel',e=>{ e.preventDefault(); scale=clamp(scale+(e.deltaY<0?.2:-.2),1,5); if(scale===1){tx=0;ty=0;} render(); },{passive:false});
   document.body.appendChild(v);
 }
 
