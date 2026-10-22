@@ -7640,10 +7640,14 @@ async function avatarDownload(){
     window.addEventListener('resize',function(){ if(expanded||p>0){ cancelAnimationFrame(raf); reset(); } });
   }
   function init(){
+    try{
     setup({view:'profileView',cover:'pCover',ring:'pStoryRing',img:'pAvatarImg',txt:'pAvatarText',
            nameBox:'pHeaderName',nameTxt:'pHeaderNameText',status:'pHeaderStatus',gallery:'openAvatarGallery'});
+    }catch(err){ console.warn('profile pull setup failed',err); }
+    try{
     setup({view:'otherUserProfileView',cover:'otherCover',ring:'otherStoryRing',img:'otherAvatarImg',txt:'otherAvatarText',
            nameBox:'otherHeaderName',nameTxt:'otherHeaderNameText',status:'otherHeaderStatus',gallery:'openOtherAvatarGallery'});
+    }catch(err){ console.warn('other profile pull setup failed',err); }
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
@@ -9818,4 +9822,8 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 .pf-expanded .pf-head,.pf-expanded .pf-head .avatar-story-ring,.pf-expanded .pf-head>*{pointer-events:none}
 .pf-expanded .pf-head .pf-quick,.pf-expanded .pf-head .pf-quick *{pointer-events:auto}
 .pf-hero .pf-hero-count{border:1px solid rgba(255,255,255,.12)}
+</style>
+<style id="babylon-hero-name-fix">
+.pf-hero .pf-hero-name{color:#fff!important}
+.pf-hero .pf-hero-status:not(.online){color:rgba(255,255,255,.85)!important}
 </style>
