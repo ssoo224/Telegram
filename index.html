@@ -7439,12 +7439,12 @@ async function avatarDownload(){
     var quick = view.querySelector('.pf-quick');
     var hero = document.createElement('div');
     hero.className = 'pf-hero';
-    hero.innerHTML = '<img alt="" draggable="false"><div class="pf-hero-letter"></div><div class="pf-hero-shade"></div>'+
+    hero.innerHTML = '<img alt="" draggable="false"><div class="pf-hero-letter"></div><div class="pf-hero-ext"></div><div class="pf-hero-shade"></div>'+
       '<div class="pf-hero-info"><div class="pf-hero-name"></div><div class="pf-hero-status"></div></div>';
     view.appendChild(hero);
     var hImg=hero.querySelector('img'), hLet=hero.querySelector('.pf-hero-letter'),
         hInfo=hero.querySelector('.pf-hero-info'), hName=hero.querySelector('.pf-hero-name'),
-        hStat=hero.querySelector('.pf-hero-status');
+        hStat=hero.querySelector('.pf-hero-status'), hExt=hero.querySelector('.pf-hero-ext'), hShade=hero.querySelector('.pf-hero-shade');
 
     var g=null, p=0, expanded=false, pulling=false, sy=0, sx=0, p0=0, raf=0, track=false;
 
@@ -7455,6 +7455,8 @@ async function avatarDownload(){
         hImg.style.display='none'; hLet.style.display='flex'; hLet.innerHTML = txt ? txt.innerHTML : '';
         if(txt){ var cs=getComputedStyle(txt); hero.style.background = cs.backgroundImage!=='none'? cs.backgroundImage : cs.backgroundColor; }
       }
+      if(hasImg){ hExt.style.background=''; hExt.style.backgroundImage='url("'+img.getAttribute('src')+'")'; hExt.style.backgroundSize='cover'; }
+      else { hExt.style.backgroundImage='none'; hExt.style.background=hero.style.background||'#16213a'; }
       hName.textContent = nameTxt ? nameTxt.textContent : '';
       var st = status.querySelector('span:last-child');
       hStat.textContent = st ? st.textContent : '';
@@ -7468,7 +7470,7 @@ async function avatarDownload(){
       var W=view.clientWidth;
       g={ W:W, S:W, size:ar.width||108, top:ar.top-vr.top+view.scrollTop,
           ringBottom: rr.bottom-vr.top+view.scrollTop,
-          coverH: cover.offsetHeight, nh: nameBox.offsetHeight, sh: status.offsetHeight, qh: quick?quick.offsetHeight:0 };
+          coverH: cover.offsetHeight, ext: (quick?quick.offsetHeight:0)+28, nh: nameBox.offsetHeight, sh: status.offsetHeight, qh: quick?quick.offsetHeight:0 };
       g.delta = Math.max(0, g.S - g.ringBottom);
     }
     function clamp(v){ return v<0?0:v>1?1:v; }
@@ -7477,7 +7479,11 @@ async function avatarDownload(){
       if(v<=0.001){ reset(); return; }
       var size=g.size+(g.S-g.size)*v;
       hero.style.display='block';
-      hero.style.width=size+'px'; hero.style.height=size+'px';
+      var e=g.ext*clamp((v-0.5)*2);
+      hero.style.width=size+'px'; hero.style.height=(size+e)+'px';
+      hImg.style.height=size+'px'; hLet.style.height=size+'px';
+      hExt.style.top=size+'px'; hExt.style.height=e+'px';
+      hShade.style.top=(size*0.3)+'px'; hShade.style.height=(size*0.7)+'px'; hShade.style.bottom='auto';
       hero.style.top=(g.top*(1-v))+'px'; hero.style.left=((g.W-size)/2)+'px';
       hero.style.borderRadius=(50*(1-v))+'%';
       hero.style.pointerEvents = v>=0.99 ? 'auto' : 'none';
@@ -7490,12 +7496,13 @@ async function avatarDownload(){
       status.style.overflow='hidden'; status.style.height=(g.sh*(1-v))+'px'; status.style.opacity=clamp(1-v*2);
       if(quick){
         var vr2=view.getBoundingClientRect();
-        quick.style.transform='none'; quick.style.marginBottom=(-g.qh*v)+'px';
+        quick.style.transform='none'; quick.style.setProperty('margin-bottom','12px','important');
         var nat=quick.getBoundingClientRect().bottom-vr2.top+view.scrollTop;
-        var goal=g.top*(1-v)+size-14;
-        quick.style.transform='translateY('+((goal-nat)*v)+'px)';
-        view.style.setProperty('--pv',v);
-        hInfo.style.bottom=(16+(g.qh+14)*v)+'px';
+        var heroBottom=g.top*(1-v)+size+e;
+        quick.style.transform='translateY('+((heroBottom-14-nat)*v)+'px)';
+        quick.style.setProperty('margin-bottom',(12+((heroBottom+10-nat)-12)*v)+'px','important');
+        view.style.setProperty('--pv',e>0?clamp((v-0.5)*2):0);
+        hInfo.style.bottom=(16+e)+'px';
       }
     }
     function reset(){
@@ -7505,7 +7512,7 @@ async function avatarDownload(){
       ring.style.opacity='';
       nameBox.style.height=nameBox.style.overflow=nameBox.style.marginBottom=nameBox.style.opacity='';
       status.style.height=status.style.overflow=status.style.opacity='';
-      if(quick){ quick.style.transform=''; quick.style.marginBottom=''; view.style.removeProperty('--pv'); hInfo.style.bottom=''; }
+      hImg.style.height=hLet.style.height=hExt.style.height=hShade.style.top=hShade.style.height=''; hShade.style.bottom=''; if(quick){ quick.style.transform=''; quick.style.removeProperty('margin-bottom'); view.style.removeProperty('--pv'); hInfo.style.bottom=''; }
     }
     function animateTo(t){
       cancelAnimationFrame(raf);
@@ -9710,5 +9717,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 #profileView .pf-quick .pf-q span,#otherUserProfileView .pf-quick .pf-q span{color:color-mix(in srgb,#fff calc(var(--pv,0)*100%),var(--pf-txt))!important}
 #otherUserProfileView .pf-quick .pf-btn.pf-q.primary{background:color-mix(in srgb,rgba(212,169,55,.55) calc(var(--pv,0)*100%),var(--pf-gold))!important}
 #otherUserProfileView #otherBlockBtn.pf-q,#otherUserProfileView #otherBlockBtn.pf-q span{color:color-mix(in srgb,#ffb4b4 calc(var(--pv,0)*100%),#f87171)!important}
-.pf-hero .pf-hero-shade{height:70%!important}
+.pf-hero .pf-hero-ext{position:absolute;left:0;right:0;overflow:hidden;background-size:cover;background-position:center bottom;pointer-events:none}
+.pf-hero .pf-hero-ext::before{content:"";position:absolute;inset:-30px;background:inherit;filter:blur(26px) brightness(.62) saturate(1.25);transform:scale(1.15)}
+.pf-hero .pf-hero-ext::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.45),rgba(0,0,0,.12))}
 </style>
