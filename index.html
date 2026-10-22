@@ -8013,6 +8013,18 @@ async function avatarDownload(){
 .check-mark .tick-svg{display:block;height:11px;width:auto}
 .check-mark .tick-s{width:14px}.check-mark .tick-d{width:19px}.check-mark .tick-w{width:11px;height:11px}
 </style>
+
+<style id="babylon-remove-button-tap-square">
+/* إزالة المربع الشفاف الافتراضي الذي يظهر عند لمس الأزرار */
+html, body, *, *::before, *::after { -webkit-tap-highlight-color: transparent !important; }
+button, a, [role="button"], input[type="button"], input[type="submit"], input[type="reset"] {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none;
+}
+button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:focus, [role="button"]:focus-visible {
+  outline: none !important;
+}
+</style>
 </body>
 </html>
 
