@@ -1969,6 +1969,11 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 #publishTypeModal .viewers-title{justify-content:center;text-align:center;margin:0 0 6px!important;font-size:17px}
 #publishTypeModal .story-type-btn{width:100%;min-height:50px;margin:0;padding:12px 16px;border-radius:14px;font-size:15px;font-weight:700}
 </style>
+<style id="babylon-chat-media-preview-svg">
+.chat-item-sub .chat-media-preview{display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
+.chat-item-sub .chat-media-preview-icon{width:15px;height:15px;flex:0 0 15px;display:inline-block;color:currentColor}
+.chat-item-sub .chat-media-preview-prefix{margin-inline-end:3px}
+</style>
 </head>
 
 <body>
@@ -4467,6 +4472,7 @@ function loadChats() {
             .limit(1)
             .get().then(msgSnap => {
               let lastMsgText = "لا توجد رسائل بعد";
+              let lastMsgHtml = "لا توجد رسائل بعد";
               let lastMsgTime = ""; let lastTick = "";
 
               if (!msgSnap.empty) {
@@ -4474,6 +4480,12 @@ function loadChats() {
                 const isMine = (m.senderId === currentUser.uid);
                 const prefix = isMine ? "أنت: " : ""; if (isMine) lastTick = m.read ? 'read' : 'sent';
                 lastMsgText = prefix + (m.audioUrl ? "♬ بصمة صوتية" : (m.imageUrl ? "▧ صورة" : (m.videoUrl ? "▶ فيديو" : (m.text || ""))));
+                const mediaIcon = m.imageUrl
+                  ? '<svg class="chat-media-preview-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor"/><path d="m21 15-5-5L5 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                  : (m.videoUrl ? '<svg class="chat-media-preview-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="13" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 10 5-3v10l-5-3z" fill="currentColor"/></svg>' : '');
+                lastMsgHtml = (m.imageUrl || m.videoUrl)
+                  ? `${prefix ? '<span class="chat-media-preview-prefix">أنت:</span>' : ''}<span class="chat-media-preview">${mediaIcon}<span>${m.imageUrl ? 'صورة' : 'فيديو'}</span></span>`
+                  : esc(lastMsgText);
                 
                 let tStr = new Date(m.createdAt).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
                 if (tStr.startsWith('0')) tStr = tStr.substring(1);
@@ -4526,7 +4538,7 @@ function loadChats() {
                         <div class="chat-item-time">${lastTick ? clTick(lastTick) : ''}<span>${lastMsgTime}</span></div>
                       </div>
                       <div class="chat-item-sub-row">
-                        <div class="chat-item-sub">${esc(lastMsgText)}</div>
+                        <div class="chat-item-sub">${lastMsgHtml}</div>
                         ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
                       </div>
                     </div>`;
