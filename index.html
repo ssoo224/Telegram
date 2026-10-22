@@ -5226,7 +5226,11 @@ async function publishPost() {
     closeComposer(); btn.disabled = false; btn.textContent = 'نشر المنشور';
     showToast('تم نشر المنشور في ملفك الشخصي'); loadUserPosts();
   } catch (err) {
-    console.error(err); btn.disabled = false; btn.textContent = 'نشر المنشور'; showToast('تعذر نشر المنشور');
+    console.error('publishPost', err); btn.disabled = false; btn.textContent = 'نشر المنشور';
+    const code = (err && err.code) || '';
+    showToast(code === 'permission-denied' ? 'تعذر النشر: قواعد Firebase تمنع الكتابة في مجموعة posts (permission-denied)'
+      : code === 'unavailable' || code === 'deadline-exceeded' ? 'تعذر النشر: تحقق من اتصال الإنترنت'
+      : 'تعذر نشر المنشور' + (code ? ' (' + code + ')' : (err && err.message ? ': ' + String(err.message).slice(0, 80) : '')));
   }
 }
 function openComposer(data, vid, mode) {
@@ -7466,7 +7470,7 @@ async function avatarDownload(){
 <script id="pf-pull-expand-js">
 /* سحب الشاشة للأسفل في البروفايل: تكبر الصورة مع الإصبع حتى تصبح مربعًا فيه الاسم، ويختفي الغلاف (مثل تليجرام) */
 (function(){
-  var RANGE = 230;      // كم بكسل سحب لتكتمل الصورة
+  var RANGE = 110;      // كم بكسل سحب لتكتمل الصورة
   var THRESH = 0.45;    // بعد هذه النسبة تثبت مفتوحة عند ترك الإصبع
   function setup(cfg){
     var view = document.getElementById(cfg.view); if(!view) return;
@@ -7579,9 +7583,9 @@ async function avatarDownload(){
     }
     function animateTo(t){
       cancelAnimationFrame(raf);
-      var from=p, t0=performance.now(), dur=Math.max(320,Math.min(520,Math.abs(t-from)*560+180));
+      var from=p, t0=performance.now(), dur=Math.max(260,Math.min(420,Math.abs(t-from)*420+140));
       (function step(now){
-        var k=clamp((now-t0)/dur), e=1-Math.pow(1-k,5);
+        var k=clamp((now-t0)/dur), e=1-Math.pow(1-k,4);
         apply(from+(t-from)*e);
         if(k<1) raf=requestAnimationFrame(step);
         else { expanded = t>=1; if(t<=0) reset(); }
@@ -7616,7 +7620,7 @@ async function avatarDownload(){
     function follow(now){
       followRaf=0;
       var dt=Math.min(40,now-(followLast||now-16)); followLast=now;
-      var a=1-Math.exp(-dt/55);
+      var a=1-Math.exp(-dt/22);
       var nv=p+(tv-p)*a;
       if(Math.abs(tv-nv)<0.0015) nv=tv;
       apply(nv);
