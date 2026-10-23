@@ -10930,66 +10930,52 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 </style>
 
 <script id="babylon-tab-slide">
-/* انتقال ضبابي (لمحة) بين أقسام الشريط السفلي: المحادثات ← الملف الشخصي ← الإعدادات */
+/* انتقال ضبابي (لمحة) بين أقسام الشريط السفلي: التمويه يشمل كل شيء (الرأس والمحتوى والشريط السفلي)
+   ويظهر مباشرة مع أول إطار، ثم يصفو تدريجيًا. طبقة واحدة فقط (بدون نسخ أو تراكب) لأداء أسرع. */
 (function(){
-  var TABS={homeView:'navChats',profileView:'navProfile',settingsView:'navSettings'};
-  var cleanup=null, orig=window.showView;
+  var TABS={homeView:1,profileView:1,settingsView:1};
+  var orig=window.showView, cur=null;
   if(typeof orig!=='function') return;
   function visibleTab(){
     for(var id in TABS){ var e=document.getElementById(id); if(e&&!e.classList.contains('hidden')) return id; }
     return null;
   }
-  function cx(id){ var b=document.getElementById(TABS[id]); if(!b) return 0; var r=b.getBoundingClientRect(); return r.left+r.width/2; }
+  function end(){
+    if(!cur) return; var c=cur; cur=null;
+    try{ c.anim.cancel(); }catch(_){}
+    clearTimeout(c.t);
+    c.el.style.removeProperty('filter'); c.el.style.removeProperty('opacity'); c.el.style.removeProperty('will-change');
+  }
   window.showView=function(viewId){
-    var from=null;
+    var el=null;
     try{
-      if(cleanup){ cleanup(); }
-      from=visibleTab();
-      if(!(from&&TABS[viewId]&&from!==viewId)) from=null;
-      if(from && window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) from=null;
-      if(from){
-        var bn=document.getElementById('bottomNav');
-        if(!bn||bn.classList.contains('hidden')) from=null;
+      end();
+      var from=visibleTab();
+      var go=from&&TABS[viewId]&&from!==viewId;
+      if(go && window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) go=false;
+      if(go){ var bn=document.getElementById('bottomNav'); if(!bn||bn.classList.contains('hidden')) go=false; }
+      if(go){
+        el=document.querySelector('.app-container');
+        if(el){
+          /* تمويه فوري قبل أول إطار، قبل تبديل القسم */
+          el.style.setProperty('filter','blur(9px)');
+          el.style.setProperty('opacity','.9');
+          el.style.setProperty('will-change','filter,opacity');
+        }
       }
-    }catch(e){ from=null; }
-    var tgtProfile=(viewId==='profileView'||viewId==='otherUserProfileView');
-    if(from){ window.__pfBaseTarget=tgtProfile; }
-    var r=orig.apply(this,arguments);
-    if(from){ try{ if(window.pfBaseSync) window.pfBaseSync(); }catch(_){} }   /* تغيير شريط الإشعارات مرة واحدة من أول إطار */
-    if(!from) return r;
+    }catch(e){ el=null; }
+    var r;
+    try{ r=orig.apply(this,arguments); }
+    catch(err){ if(el){ el.style.removeProperty('filter'); el.style.removeProperty('opacity'); el.style.removeProperty('will-change'); } throw err; }
+    if(!el) return r;
     try{
-      var oldEl=document.getElementById(from), newEl=document.getElementById(viewId), app=document.querySelector('.app-container');
-      if(!oldEl||!newEl||!app||!oldEl.animate){ window.__pfBaseTarget=null; return r; }
-      var a=app.getBoundingClientRect(), n=newEl.getBoundingClientRect();
-      if(!n.width||!n.height){ window.__pfBaseTarget=null; return r; }
-      /* الهدف على يسار الزر الحالي => المحتوى الجديد يدخل من اليسار والقديم يخرج لليمين */
-      var dir = cx(viewId) < cx(from) ? -1 : 1;
-      var bg=getComputedStyle(app).backgroundColor;
-      var saved={oldStyle:oldEl.getAttribute('style'), newStyle:newEl.getAttribute('style')};
-      /* نُظهر القديم فوق الجديد بنفس القياس طوال الحركة (تزامنيًا كي لا يلاحظ المراقبون وميض الإخفاء) */
-      oldEl.classList.remove('hidden');
-      oldEl.style.cssText=(saved.oldStyle||'')+';position:absolute!important;left:'+(n.left-a.left)+'px;top:'+(n.top-a.top)+'px;width:'+n.width+'px;height:'+n.height+'px;z-index:4;pointer-events:none;overflow:hidden;background-color:'+bg+';';
-      newEl.style.cssText=(saved.newStyle||'')+';pointer-events:none;';
-      /* لمحة ضبابية: تلاشٍ متقاطع مع تمويه خفيف وانزياح جانبي صغير يدل على الاتجاه */
-      var opt={duration:240,easing:'cubic-bezier(.3,.7,.3,1)',fill:'both'};
-      var aOld=oldEl.animate([
-        {opacity:1,filter:'blur(0px)',transform:'translateX(0)'},
-        {opacity:0,filter:'blur(8px)',transform:'translateX('+(dir*-22)+'px)'}],opt);
-      var aNew=newEl.animate([
-        {opacity:0,filter:'blur(10px)',transform:'translateX('+(dir*22)+'px)'},
-        {opacity:1,filter:'blur(0px)',transform:'translateX(0)'}],opt);
-      var done=false;
-      cleanup=function(){
-        if(done) return; done=true; cleanup=null;
-        window.__pfBaseTarget=null;
-        try{ aOld.cancel(); aNew.cancel(); }catch(_){}
-        oldEl.classList.add('hidden');
-        if(saved.oldStyle==null) oldEl.removeAttribute('style'); else oldEl.setAttribute('style',saved.oldStyle);
-        if(saved.newStyle==null) newEl.removeAttribute('style'); else newEl.setAttribute('style',saved.newStyle);
-      };
-      aNew.onfinish=cleanup; aNew.oncancel=function(){ if(cleanup) cleanup(); };
-      setTimeout(function(){ if(cleanup) cleanup(); },500);
-    }catch(e){ try{ if(cleanup) cleanup(); }catch(_){} window.__pfBaseTarget=null; }
+      var anim=el.animate([{filter:'blur(9px)',opacity:.9},{filter:'blur(0px)',opacity:1}],
+                          {duration:230,easing:'cubic-bezier(.2,.7,.3,1)',fill:'both'});
+      cur={el:el,anim:anim,t:setTimeout(end,450)};
+      anim.onfinish=end; anim.oncancel=end;
+    }catch(e){
+      el.style.removeProperty('filter'); el.style.removeProperty('opacity'); el.style.removeProperty('will-change');
+    }
     return r;
   };
 })();
