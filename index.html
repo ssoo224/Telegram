@@ -3299,7 +3299,7 @@ function applyAppTheme(theme) {
   if (label) label.textContent = isLight ? 'ليلي' : 'نهاري';
   if (description) description.textContent = isLight ? 'الوضع النهاري مفعّل' : 'الوضع الليلي مفعّل';
   const metaTheme = document.querySelector('meta[name="theme-color"]');
-  if (metaTheme) metaTheme.setAttribute('content', isLight ? '#f5f7fb' : '#17212b');
+  if (metaTheme) metaTheme.setAttribute('content', isLight ? '#ffffff' : '#000000');
 }
 function toggleAppTheme() {
   const app = document.querySelector('.app-container');
@@ -8256,6 +8256,15 @@ html,body{overscroll-behavior-y:none}
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
 </script>
+
+<style id="pf-bottom-bar-theme-fix">
+/* الشريط الأسفل الذي يظهر لحظة سحب الصورة: هو خلفية الصفحة (body) تظهر عند إعادة قياس الشاشة.
+   نجعل خلفية الصفحة تتبع الطور: أبيض نهاري / أسود ليلي. */
+html:has(.app-container[data-app-theme="light"]),
+body:has(.app-container[data-app-theme="light"]){background:#ffffff!important;background-color:#ffffff!important}
+html:has(.app-container[data-app-theme="dark"]),
+body:has(.app-container[data-app-theme="dark"]){background:#000000!important;background-color:#000000!important}
+</style>
 
 <style id="pf-drag-perf-fix">
 /* إصلاح الشاشة السوداء أثناء سحب الصورة: تعطيل التمويه الثقيل والطبقات الإضافية أثناء السحب فقط */
