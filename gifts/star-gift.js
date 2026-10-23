@@ -9,22 +9,15 @@ async function devGiftStars(){
   if(!r||r.i!==0)return;
   const n=parseInt(String(r.value).replace(/[^\d]/g,''),10);
   if(!n||n<1||n>1000000)return showToast('اكتب عدداً بين 1 و 1,000,000');
-  const now=Date.now(),inc=firebase.firestore.FieldValue.increment,myName=(currentUserData&&currentUserData.displayName)||'المطور';
   try{
-    const b=db.batch();
-    b.set(db.collection('wallets').doc(to),{stars:inc(n)},{merge:true});
-    b.set(db.collection('users').doc(to).collection('txs').doc(),{type:'in',from:me,fromName:myName,stars:n,at:now});
-    b.set(db.collection('users').doc(me).collection('txs').doc(),{type:'out',to:to,toName:toName,stars:n,at:now});
-    await b.commit();
+    const token=await auth.currentUser.getIdToken(true);
+    const resp=await fetch('/api/stars',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'gift-stars',to,amount:n})});
+    const data=await resp.json();if(!resp.ok)throw new Error(data.error||'failed');
     showToast('تم إهداء '+fmtN(n)+' ⭐ إلى '+toName);
   }catch(e){console.error(e);return showToast('تعذر إهداء النجوم');}
   try{
-    const cid=[me,to].sort().join('__');
-    const cref=db.collection('chats').doc(cid);
-    const cs=await cref.get();
-    /* مهم: ما نلمس participants إذا المحادثة موجودة (القواعد تمنع تغيير ترتيبها، وكان هذا سبب اختفاء الرسالة) */
-    if(cs.exists)await cref.update({updatedAt:now});
-    else await cref.set({participants:[me,to],updatedAt:now});
+    const now=Date.now(),cid=[me,to].sort().join('__'),cref=db.collection('chats').doc(cid),cs=await cref.get();
+    if(cs.exists)await cref.update({updatedAt:now});else await cref.set({participants:[me,to],updatedAt:now});
     await cref.collection('messages').add({senderId:me,type:'stars',stars:n,text:'🎁 هدية '+fmtN(n)+' نجمة',createdAt:now,read:false});
   }catch(e){console.error('star-gift message',e);showToast('وصلت النجوم لكن تعذر إظهار الهدية بالمحادثة');}
 }
