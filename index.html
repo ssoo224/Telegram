@@ -10930,7 +10930,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 </style>
 
 <script id="babylon-tab-slide">
-/* انتقال جانبي (انيميشن) بين أقسام الشريط السفلي: المحادثات ← الملف الشخصي ← الإعدادات */
+/* انتقال ضبابي (لمحة) بين أقسام الشريط السفلي: المحادثات ← الملف الشخصي ← الإعدادات */
 (function(){
   var TABS={homeView:'navChats',profileView:'navProfile',settingsView:'navSettings'};
   var cleanup=null, orig=window.showView;
@@ -10970,9 +10970,14 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
       oldEl.classList.remove('hidden');
       oldEl.style.cssText=(saved.oldStyle||'')+';position:absolute!important;left:'+(n.left-a.left)+'px;top:'+(n.top-a.top)+'px;width:'+n.width+'px;height:'+n.height+'px;z-index:4;pointer-events:none;overflow:hidden;background-color:'+bg+';';
       newEl.style.cssText=(saved.newStyle||'')+';pointer-events:none;';
-      var opt={duration:280,easing:'cubic-bezier(.22,.8,.3,1)',fill:'both'};
-      var aOld=oldEl.animate([{transform:'translateX(0)'},{transform:'translateX('+(-dir*100)+'%)'}],opt);
-      var aNew=newEl.animate([{transform:'translateX('+(dir*100)+'%)'},{transform:'translateX(0)'}],opt);
+      /* لمحة ضبابية: تلاشٍ متقاطع مع تمويه خفيف وانزياح جانبي صغير يدل على الاتجاه */
+      var opt={duration:240,easing:'cubic-bezier(.3,.7,.3,1)',fill:'both'};
+      var aOld=oldEl.animate([
+        {opacity:1,filter:'blur(0px)',transform:'translateX(0)'},
+        {opacity:0,filter:'blur(8px)',transform:'translateX('+(dir*-22)+'px)'}],opt);
+      var aNew=newEl.animate([
+        {opacity:0,filter:'blur(10px)',transform:'translateX('+(dir*22)+'px)'},
+        {opacity:1,filter:'blur(0px)',transform:'translateX(0)'}],opt);
       var done=false;
       cleanup=function(){
         if(done) return; done=true; cleanup=null;
@@ -10983,7 +10988,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
         if(saved.newStyle==null) newEl.removeAttribute('style'); else newEl.setAttribute('style',saved.newStyle);
       };
       aNew.onfinish=cleanup; aNew.oncancel=function(){ if(cleanup) cleanup(); };
-      setTimeout(function(){ if(cleanup) cleanup(); },600);
+      setTimeout(function(){ if(cleanup) cleanup(); },500);
     }catch(e){ try{ if(cleanup) cleanup(); }catch(_){} window.__pfBaseTarget=null; }
     return r;
   };
