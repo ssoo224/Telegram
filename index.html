@@ -8271,11 +8271,6 @@ html,body{overscroll-behavior-y:none}
 })();
 </script>
 
-<style id="pf-cover-under-statusbar">
-/* الغلاف يمتد خلف شريط الإشعارات مهما كان لونه: نزيد ارتفاعه بمقدار الإزاحة العلوية فيبقى حجمه المرئي كما هو */
-:is(#profileView,#otherUserProfileView) .pf-cover{height:calc(176px + env(safe-area-inset-top,0px))!important}
-</style>
-
 <style id="pf-bottom-bar-theme-fix">
 /* الشريط الأسفل الذي يظهر لحظة سحب الصورة: هو خلفية الصفحة (body) تظهر عند إعادة قياس الشاشة.
    نجعل خلفية الصفحة تتبع الطور: أبيض نهاري / أسود ليلي. */
@@ -10987,3 +10982,16 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
   };
 })();
 </script>
+
+<style id="pf-cover-statusbar-extension">
+/* شريط الإشعارات = امتداد لخلفية الغلاف (نفس لونه/تدرجه)، أما الغلاف نفسه فيبقى بحجمه (176px) وتحت الشريط تمامًا.
+   الخلفية تمتد للأعلى بمقدار الإزاحة العلوية، بينما النقوش والتلاشي السفلي يبقيان ضمن مساحة الغلاف الأصلية. */
+:is(#profileView,#otherUserProfileView) .pf-cover{
+  height:calc(176px + env(safe-area-inset-top,0px))!important;
+  min-height:calc(176px + env(safe-area-inset-top,0px))!important}
+:is(#profileView,#otherUserProfileView) .pf-cover .pattern-layer{
+  top:env(safe-area-inset-top,0px)!important;bottom:0!important;left:0!important;right:0!important;inset-block-start:env(safe-area-inset-top,0px)!important}
+:is(#profileView,#otherUserProfileView) .pf-cover::after{
+  height:calc(176px * .55)!important}
+</style>
+
