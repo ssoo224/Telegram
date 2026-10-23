@@ -10933,7 +10933,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 /* انتقال جانبي سلس بين أقسام الشريط السفلي (المحادثات / الإعدادات / الملف الشخصي).
    - الاتجاه يُحسب من موضع الأزرار.
    - حالة شريط الإشعارات تُرسل لأندرويد مرة واحدة من أول إطار.
-   - عند الدخول للملف الشخصي نُبقي منطقة شريط الإشعارات مطلية بلون الغلاف طوال الحركة كي لا "يختفي" الشريط. */
+   - عند الدخول للملف الشخصي تنزلق منطقة شريط الإشعارات (بلون الغلاف) مع الصفحة الجديدة نفسها، فلا يتلوّن الشريط قبل وصولها. */
 (function(){
   var TABS={homeView:'navChats',profileView:'navProfile',settingsView:'navSettings'};
   var cleanup=null, orig=window.showView;
@@ -10994,11 +10994,13 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
       var opt={duration:280,easing:'cubic-bezier(.22,.8,.3,1)',fill:'both'};
       var aOld=oldEl.animate([{transform:'translateX(0)'},{transform:'translateX('+(-dir*100)+'%)'}],opt);
       var aNew=newEl.animate([{transform:'translateX('+(dir*100)+'%)'},{transform:'translateX(0)'}],opt);
+      /* لون الغلاف في منطقة شريط الإشعارات يدخل مع الصفحة الجديدة بالضبط (لا يظهر مبكرًا قبل وصول الصفحة) */
+      var aStrip=strip ? strip.animate([{transform:'translateX('+(dir*100)+'%)'},{transform:'translateX(0)'}],opt) : null;
       var done=false;
       cleanup=function(){
         if(done) return; done=true; cleanup=null;
         window.__pfBaseTarget=null;
-        try{ aOld.cancel(); aNew.cancel(); }catch(_){}
+        try{ aOld.cancel(); aNew.cancel(); if(aStrip) aStrip.cancel(); }catch(_){}
         oldEl.classList.add('hidden');
         if(saved.oldStyle==null) oldEl.removeAttribute('style'); else oldEl.setAttribute('style',saved.oldStyle);
         if(saved.newStyle==null) newEl.removeAttribute('style'); else newEl.setAttribute('style',saved.newStyle);
