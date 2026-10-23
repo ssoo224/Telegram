@@ -3434,7 +3434,7 @@ function sxChangePassword() {
   const em = currentUser && currentUser.email;
   if (!em) return;
   if (!confirm('نرسل رابط تغيير كلمة المرور إلى ' + em + ' ؟')) return;
-  auth.sendPasswordResetEmail(em).then(() => showToast('تم إرسال الرابط إلى ' + em + ' (شيّك السبام)'))
+  babylonSendReset(em).then(() => showToast('تم إرسال الرابط إلى ' + em + ' (شيّك السبام)'))
     .catch(e => showToast('تعذر الإرسال (' + ((e && e.code) || 'unknown') + ')'));
 }
 function sxClearCache() {
@@ -5278,7 +5278,7 @@ function sendReset() {
     : db.collection('usernames').doc(input.toLowerCase()).get().then(d => d.exists ? d.data().email : null).catch(() => null);
   getEmail.then(email => {
     if (!email) { done(); return showFieldError('forgotEmailError', 'ما لقينا حساب بهذا اليوزر، جرّب كتابة البريد الإلكتروني'); }
-    return auth.sendPasswordResetEmail(email).then(() => {
+    return babylonSendReset(email).then(() => {
       done();
       showToast('تم إرسال رابط الاستعادة إلى ' + email + ' (شيّك السبام)');
       closeForgotPassword();
@@ -5292,9 +5292,28 @@ function sendReset() {
   });
 }
 
+/* رسائل البريد تنرسل من /api/send-mail بتصميم بابل، ولو فشل الخادم نرجع لإرسال Firebase العادي */
+function babylonApiMail(type, email, token) {
+  const h = { 'Content-Type': 'application/json' };
+  if (token) h.Authorization = 'Bearer ' + token;
+  return fetch('/api/send-mail', { method: 'POST', headers: h, body: JSON.stringify({ type: type, email: email || undefined }) })
+    .then(r => {
+      if (r.status === 429) { const e = new Error('rate'); e.code = 'auth/too-many-requests'; throw e; }
+      if (!r.ok) throw new Error('api ' + r.status);
+      return r.json();
+    });
+}
+function babylonSendReset(email) {
+  return babylonApiMail('reset', email).catch(e => {
+    if (e && e.code === 'auth/too-many-requests') throw e;
+    return auth.sendPasswordResetEmail(email);
+  });
+}
 function sendVerification(u) {
-  // بدون رابط رجوع (continue URL) حتى ما يفشل بسبب إعدادات الدومين
-  return u.sendEmailVerification();
+  return u.getIdToken().then(t => babylonApiMail('verify', null, t)).catch(e => {
+    if (e && e.code === 'auth/too-many-requests') throw e;
+    return u.sendEmailVerification();
+  });
 }
 function verifyErrMsg(e) {
   const c = (e && e.code) || 'unknown';
