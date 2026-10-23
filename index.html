@@ -10991,7 +10991,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
       oldEl.classList.remove('hidden');
       oldEl.style.cssText=(saved.oldStyle||'')+';position:absolute!important;left:'+(n.left-a.left)+'px;top:'+(n.top-a.top)+'px;width:'+n.width+'px;height:'+n.height+'px;z-index:4;pointer-events:none;overflow:hidden;background-color:'+bg+';';
       newEl.style.cssText=(saved.newStyle||'')+';pointer-events:none;';
-      var opt={duration:280,easing:'cubic-bezier(.22,.8,.3,1)',fill:'both'};
+      var opt={duration:140,easing:'cubic-bezier(.25,.9,.3,1)',fill:'both'};   /* سريع جدًا */
       var aOld=oldEl.animate([{transform:'translateX(0)'},{transform:'translateX('+(-dir*100)+'%)'}],opt);
       var aNew=newEl.animate([{transform:'translateX('+(dir*100)+'%)'},{transform:'translateX(0)'}],opt);
       /* لون الغلاف في منطقة شريط الإشعارات يدخل مع الصفحة الجديدة بالضبط (لا يظهر مبكرًا قبل وصول الصفحة) */
@@ -11007,7 +11007,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
         if(strip) strip.remove();
       };
       aNew.onfinish=cleanup; aNew.oncancel=function(){ if(cleanup) cleanup(); };
-      setTimeout(function(){ if(cleanup) cleanup(); },600);
+      setTimeout(function(){ if(cleanup) cleanup(); },350);
     }catch(e){ try{ if(cleanup) cleanup(); }catch(_){} window.__pfBaseTarget=null; if(strip) try{strip.remove();}catch(_){} }
     return r;
   };
