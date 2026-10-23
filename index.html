@@ -3709,9 +3709,10 @@ function setProfileExpandedStatusBlur(enabled, imageUrl) {
   var blur = document.getElementById('profileStatusBarBlur');
   if (blur) blur.remove();
   try {
-    if (window.__pfSBState !== !!enabled && window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') {
-      window.__pfSBState = !!enabled;
-      window.BabylonAndroid.setProfileExpandedSystemBars(!!enabled);
+    var eff = !!enabled || !!window.__pfBase;   /* الغلاف يبقى ممتدًا خلف شريط الإشعارات ما دام البروفايل ظاهرًا */
+    if (window.__pfSBState !== eff && window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') {
+      window.__pfSBState = eff;
+      window.BabylonAndroid.setProfileExpandedSystemBars(eff);
     }
   } catch (err) { console.warn('profile system bars update failed', err); }
 }
@@ -8252,9 +8253,28 @@ html,body{overscroll-behavior-y:none}
            nameBox:'otherHeaderName',nameTxt:'otherHeaderNameText',status:'otherHeaderStatus',gallery:'openOtherAvatarGallery'});
     }catch(err){ console.warn('other profile pull setup failed',err); }
   }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+  /* الغلاف يمتد على شريط الإشعارات دائمًا ما دام أحد البروفايلين ظاهرًا */
+  function baseSync(){
+    var on=['profileView','otherUserProfileView'].some(function(id){var e=document.getElementById(id);return e&&!e.classList.contains('hidden');});
+    if(!!window.__pfBase===on) return;
+    window.__pfBase=on;
+    try{ if(typeof setProfileExpandedStatusBlur==='function') setProfileExpandedStatusBlur(false); }catch(_){}
+  }
+  function initBase(){
+    ['profileView','otherUserProfileView'].forEach(function(id){
+      var e=document.getElementById(id); if(!e) return;
+      new MutationObserver(baseSync).observe(e,{attributes:true,attributeFilter:['class']});
+    });
+    baseSync();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){init();initBase();}); else { init(); initBase(); }
 })();
 </script>
+
+<style id="pf-cover-under-statusbar">
+/* الغلاف يمتد خلف شريط الإشعارات مهما كان لونه: نزيد ارتفاعه بمقدار الإزاحة العلوية فيبقى حجمه المرئي كما هو */
+:is(#profileView,#otherUserProfileView) .pf-cover{height:calc(176px + env(safe-area-inset-top,0px))!important}
+</style>
 
 <style id="pf-bottom-bar-theme-fix">
 /* الشريط الأسفل الذي يظهر لحظة سحب الصورة: هو خلفية الصفحة (body) تظهر عند إعادة قياس الشاشة.
