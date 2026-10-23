@@ -2317,6 +2317,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
         </div>
 
         <div class="sx-group sx-group-danger">
+          <div class="sx-item sx-danger" onclick="requestAccountDeletion()"><span class="sx-ic" style="background:#991b1b">🗑️</span><span class="sx-t">حذف الحساب نهائياً</span></div>
           <div class="sx-item sx-danger" onclick="logout()"><span class="sx-ic" style="background:#dc2626"><i data-ic="logout" data-size="19"></i></span><span class="sx-t">تسجيل الخروج</span></div>
         </div>
         <div class="sx-foot">Babylon Chat</div>
@@ -3027,7 +3028,6 @@ function loadUserDataAndEnter(uid) {
       displayName: (currentUser && (currentUser.displayName || currentUser.email)) || "مستخدم جديد",
       username: ((currentUser && currentUser.email) ? currentUser.email.split("@")[0] : "user")
         .toLowerCase().replace(/[^a-z0-9_.]/g, "").replace(/^[^a-z]+/, "user").slice(0, 24) || "user",
-      email: (currentUser && currentUser.email) || "",
       bio: "",
       avatarUrl: "",
       createdAt: Date.now()
@@ -3055,7 +3055,7 @@ function loadUserDataAndEnter(uid) {
       const baseName = (currentUser && currentUser.displayName) || (email ? email.split("@")[0] : "مستخدم جديد");
       const username = (email ? email.split("@")[0] : "user").toLowerCase()
         .replace(/[^a-z0-9_.]/g, "").replace(/^[^a-z]+/, "user").slice(0, 24) || "user";
-      const fallback = { id: uid, displayName: baseName, username, email, bio: "", avatarUrl: "", createdAt: Date.now() };
+      const fallback = { id: uid, displayName: baseName, username, bio: "", avatarUrl: "", createdAt: Date.now() };
       userRef.set(fallback, { merge: true }).then(() => enterWithProfile(fallback)).catch(err => {
         console.error("Could not create missing user profile:", err);
         enterWithProfile(fallback);
@@ -3074,11 +3074,11 @@ function updateProfileUI(u) {
   if (!u) return;
   const displayName = u.displayName || currentUser.email.split('@')[0];
   const username = u.username || "user" + currentUser.uid.substring(0, 5);
-  const email = u.email || currentUser.email;
+  const email = (currentUser && currentUser.uid === u.id && currentUser.email) || "";
 
   document.getElementById("pHeaderNameText").textContent = displayName;
   
-  const isUserVerified = u.isVerified || (username.toLowerCase() === 'ali') || (u.email && u.email.includes('ali'));
+  const isUserVerified = u.isVerified || (username.toLowerCase() === 'ali') || (currentUser && currentUser.uid === u.id && currentUser.email && currentUser.email.toLowerCase() === DEV_EMAIL);
   document.getElementById("pBadgeBox").classList.toggle("hidden", !isUserVerified);
   
   document.getElementById("pHeaderUser").textContent = "@" + username;
@@ -3149,10 +3149,10 @@ function saveProfileChanges() {
   const oldUsername = currentUserData && currentUserData.username;
   const finish = () => {
     const patch = { displayName: newName, username: newUsername, bio: newBio, governorate: newGov };
-    return db.collection("users").doc(currentUser.uid).set(patch, { merge: true }).then(() => {
+    const rename = newUsername !== oldUsername ? syncUsernameDoc(oldUsername, newUsername) : Promise.resolve();
+    return rename.then(() => db.collection("users").doc(currentUser.uid).set(patch, { merge: true })).then(() => {
       currentUserData = Object.assign({}, currentUserData || {}, patch);
       try { if (typeof userCache !== 'undefined') delete userCache[currentUser.uid]; } catch (e) {}
-      try { syncUsernameDoc(oldUsername, newUsername); } catch (e) {}
       try { updateProfileUI(currentUserData); } catch (e) { console.warn(e); }
       closeEditModalDirect();
       try { updateProfileUI(currentUserData); } catch (e) {}
@@ -3174,33 +3174,17 @@ function saveProfileChanges() {
   }).then(() => { window.__savingProfile = false; });
 }
 
-function loginUser() {
-  clearErrors();
-  let inputVal = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value.trim();
-
-  if (!inputVal) return showFieldError("loginEmailError", "الرجاء أدخل البريد أو اسم المستخدم");
-  if (!password) return showFieldError("loginPassError", "الرجاء أدخل كلمة المرور");
-
-  if (inputVal.startsWith('@')) {
-    inputVal = inputVal.substring(1);
-  }
-
-  if (inputVal.includes('@')) {
-    auth.signInWithEmailAndPassword(inputVal, password)
-      .catch(() => showFieldError("loginPassError", "البريد أو كلمة المرور غير صحيحة"));
-  } else {
-    db.collection("usernames").doc(inputVal.toLowerCase()).get().then(d => {
-      if (!d.exists) {
-        showFieldError("loginEmailError", "اسم المستخدم غير موجود (جرّب بالبريد الإلكتروني)");
-      } else {
-        auth.signInWithEmailAndPassword(d.data().email, password)
-          .catch(() => showFieldError("loginPassError", "كلمة المرور غير صحيحة"));
-      }
-    }).catch(() => {
-      showFieldError("loginEmailError", "حدث خطأ في الاتصال");
-    });
-  }
+async function loginUser() {
+  clearErrors();let inputVal=document.getElementById("loginEmail").value.trim();const password=document.getElementById("loginPassword").value.trim();
+  if(!inputVal)return showFieldError("loginEmailError","الرجاء أدخل البريد أو اسم المستخدم");
+  if(!password)return showFieldError("loginPassError","الرجاء أدخل كلمة المرور");
+  if(inputVal.startsWith('@'))inputVal=inputVal.substring(1);
+  if(inputVal.includes('@')){auth.signInWithEmailAndPassword(inputVal.toLowerCase(),password).catch(()=>showFieldError("loginPassError","البريد أو كلمة المرور غير صحيحة"));return;}
+  try{
+    const resp=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'username-login',username:inputVal,password})});
+    const data=await resp.json();if(!resp.ok||!data.customToken)throw new Error(data.error||'credentials');
+    await auth.signInWithCustomToken(data.customToken);
+  }catch(e){showFieldError(e.message==='rate'?'loginPassError':'loginEmailError',e.message==='rate'?'محاولات كثيرة، جرّب بعد دقيقة':'اسم المستخدم أو كلمة المرور غير صحيحة');}
 }
 
 function registerUser() {
@@ -3230,21 +3214,21 @@ function registerUser() {
           id: cred.user.uid,
           displayName: name,
           username: username,
-          email: email,
           bio: "",
           avatarUrl: "",
           isVerified: false,
           createdAt: Date.now()
         };
-        const batch = db.batch();
-        batch.set(db.collection("users").doc(cred.user.uid), userData);
-        batch.set(db.collection("usernames").doc(username), { uid: cred.user.uid, email: email });
-        batch.commit().then(() => {
+        db.collection("users").doc(cred.user.uid).set(userData).then(async () => {
+          const token = await cred.user.getIdToken(true);
+          const response = await fetch('/api/auth', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify({action:'claim',username}) });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'claim_failed');
           currentUserData = userData;
           showVerifyPage(cred.user);
-        }).catch(() => {
+        }).catch(err => {
           cred.user.delete().catch(() => {});
-          showFieldError("regUserError", "اسم المستخدم مستخدم بالفعل!");
+          showFieldError("regUserError", err.message === 'taken' ? "اسم المستخدم مستخدم بالفعل!" : "تعذر إنشاء اسم المستخدم، حاول مرة ثانية");
         });
       }).catch(err => {
         const msg = err.code === "auth/email-already-in-use" ? "هذا البريد مسجل مسبقاً"
@@ -3271,6 +3255,26 @@ function logout() {
   } else {
     auth.signOut().then(() => location.reload());
   }
+}
+
+async function requestAccountDeletion(){
+  if(!auth.currentUser)return showToast('سجّل الدخول أولاً');
+  const confirm=await clAsk({title:'حذف الحساب نهائياً',body:'راح ينحذف حسابك ويتحرر اليوزر والإيميل، وتبقى الرسائل القديمة باسم «حساب محذوف». الهدايا غير المطوّرة ترجع للمتجر وتتعدل أرقام الهاشتاك. نرسل رمز تأكيد إلى بريدك؟',buttons:[{text:'إرسال رمز التأكيد',cls:'cl-danger'},{text:'إلغاء',cls:'cl-cancel'}]});
+  if(!confirm||confirm.i!==0)return;
+  try{
+    const token=await auth.currentUser.getIdToken(true);
+    const r=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'request-delete'})});
+    const d=await r.json();if(!r.ok)throw new Error(d.error||'failed');
+  }catch(e){console.error(e);return showToast(e.message==='email_unverified'?'أكد بريدك الإلكتروني أولاً':'تعذر إرسال رمز التأكيد');}
+  const codeResult=await clAsk({title:'رمز حذف الحساب',body:'أدخل الرمز المكوّن من 6 أرقام الذي وصل إلى بريدك الإلكتروني. الرمز صالح لمدة 10 دقائق.',input:{value:'',placeholder:'000000',max:6},buttons:[{text:'تأكيد الحذف',cls:'cl-danger'},{text:'إلغاء',cls:'cl-cancel'}]});
+  if(!codeResult||codeResult.i!==0)return;
+  const code=String(codeResult.value||'').trim();if(!/^\d{6}$/.test(code))return showToast('اكتب الرمز المكوّن من 6 أرقام');
+  try{
+    const token=await auth.currentUser.getIdToken(true);
+    const r=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'confirm-delete',code})});
+    const d=await r.json();if(!r.ok)throw new Error(d.error||'failed');
+    await auth.signOut();showToast('تم حذف الحساب بنجاح');setTimeout(()=>location.reload(),700);
+  }catch(e){console.error(e);showToast(e.message==='wrong_code'?'رمز التأكيد غير صحيح':e.message==='expired'?'انتهت صلاحية الرمز، حاول من جديد':'تعذر حذف الحساب، حاول مرة ثانية');}
 }
 
 const APP_THEME_KEY = 'babylon_chat_app_theme';
@@ -5346,14 +5350,17 @@ function sendReset() {
   if (btn) btn.disabled = true;
   const done = () => { if (btn) btn.disabled = false; };
   // إذا كتب يوزر بدل الإيميل نجيب إيميله من جدول usernames
-  const getEmail = input.includes('@')
-    ? Promise.resolve(input.toLowerCase())
-    : db.collection('usernames').doc(input.toLowerCase()).get().then(d => d.exists ? d.data().email : null).catch(() => null);
+  if (!input.includes('@')) {
+    fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reset-username',username:input.toLowerCase()})})
+      .then(() => { done(); showToast('إذا كان اليوزر مسجلاً، راح يصلك رابط الاستعادة على بريد الحساب'); closeForgotPassword(); })
+      .catch(() => { done(); showFieldError('forgotEmailError','تعذر إرسال رابط الاستعادة، حاول لاحقاً'); });
+    return;
+  }
+  const getEmail = Promise.resolve(input.toLowerCase());
   getEmail.then(email => {
-    if (!email) { done(); return showFieldError('forgotEmailError', 'ما لقينا حساب بهذا اليوزر، جرّب كتابة البريد الإلكتروني'); }
     return babylonSendReset(email).then(() => {
       done();
-      showToast('تم إرسال رابط الاستعادة إلى ' + email + ' (شيّك السبام)');
+      showToast('إذا كان البريد مسجلاً، راح يصلك رابط الاستعادة');
       closeForgotPassword();
     }).catch(err => {
       done(); console.error('reset error', err);
@@ -5445,20 +5452,17 @@ let usernameDocChecked = false;
 function ensureUsernameDoc(u) {
   if (usernameDocChecked || !u || !u.username || !currentUser) return;
   usernameDocChecked = true;
+  // Public username documents are provisioned by the trusted API; never write email here.
   const ref = db.collection('usernames').doc(u.username);
-  ref.get().then(d => { if (!d.exists) ref.set({ uid: currentUser.uid, email: u.email || currentUser.email }); }).catch(() => {});
+  ref.get().then(d => { if (!d.exists) syncUsernameDoc('', u.username).catch(() => {}); }).catch(() => {});
 }
-function syncUsernameDoc(oldName, newName) {
+async function syncUsernameDoc(oldName, newName) {
   if (!currentUser || !newName || oldName === newName) return;
-  db.collection('usernames').doc(newName).set({ uid: currentUser.uid, email: currentUser.email })
-    .then(() => { if (oldName) return db.collection('usernames').doc(oldName).delete(); })
-    .catch(() => {});
+  const token = await currentUser.getIdToken(true);
+  const r = await fetch('/api/auth', {method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:oldName?'rename':'claim',oldUsername:oldName||'',newUsername:newName,username:newName})});
+  const d = await r.json(); if (!r.ok) throw new Error(d.error || 'username_update'); return d;
 }
 
-/* ================= نظام القصص الكامل ================= */
-const $ = id => document.getElementById(id);
-const SEEN_KEY = 'babylon_seen_users';
-let seenUsers = {}, seenFor = null;
 function ensureSeen() {   // المشاهدات تنحفظ لكل حساب لحاله (حتى لو أكثر من حساب بنفس المتصفح)
   const k = SEEN_KEY + '_' + (currentUser ? currentUser.uid : '');
   if (seenFor !== k) { seenFor = k; try { seenUsers = JSON.parse(localStorage.getItem(k) || '{}'); } catch (e) { seenUsers = {}; } }
@@ -7599,8 +7603,8 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 <!-- الهدايا: كل شي بمجلد gifts/ -->
 <script src="gifts/models.js?v=1"></script>
 <script src="gifts/cat-models.js?v=1"></script>
-<script src="gifts/gifts.js?v=13"></script>
-<script src="gifts/star-gift.js?v=1"></script>
+<script src="gifts/gifts.js?v=14"></script>
+<script src="gifts/star-gift.js?v=2"></script>
 <script id="babylon-remove-visited-badge-fix-v2">
 (function(){
   const cleanVisitedBadge = () => {
