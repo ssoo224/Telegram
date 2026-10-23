@@ -52,6 +52,10 @@ module.exports = async (req, res) => {
   const origin = req.headers.origin || '';
   if (origin && new URL(origin).host !== req.headers.host) return res.status(403).json({ error: 'origin' });
 
+  if (process.env.APPCHECK_ENFORCE === '1') {
+    const t = req.headers['x-firebase-appcheck'];
+    try { if (!t) throw new Error('no'); await admin.appCheck().verifyToken(t); } catch (e) { return res.status(401).json({ error: 'appcheck' }); }
+  }
   const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
   const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'x';
   const bearer = /^Bearer (.+)$/.exec(req.headers.authorization || '');
@@ -73,7 +77,15 @@ module.exports = async (req, res) => {
 
     /* ---------- نسيان كلمة السر ---------- */
     if (body.type === 'reset') {
-      const email = String(body.email || '').trim().toLowerCase();
+      let email = String(body.email || '').trim().toLowerCase();
+      if (!email && body.username) {           /* يوزر بدل إيميل: نجيب الإيميل بالخادم ولا نرجّعه */
+        const un = String(body.username).trim().replace(/^@/, '').toLowerCase();
+        if (!/^[a-z0-9_.]{3,32}$/.test(un)) return res.status(200).json({ ok: true });
+        if (limited('ru:' + ip, 3600000, 10)) return res.status(429).json({ error: 'rate' });
+        const ud = await db.collection('usernames').doc(un).get();
+        if (!ud.exists || !ud.data().email) return res.status(200).json({ ok: true });
+        email = String(ud.data().email).toLowerCase();
+      }
       if (!/^[^\s@]{1,64}@[^\s@]{1,255}$/.test(email)) return res.status(400).json({ error: 'email' });
       if (limited('r:' + email, 60000, 1) || limited('rip:' + ip, 3600000, 10)) return res.status(429).json({ error: 'rate' });
       try {
