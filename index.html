@@ -10930,3 +10930,60 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
   -webkit-text-fill-color:#fff !important;
 }
 </style>
+
+<script id="babylon-tab-slide">
+/* انتقال جانبي (انيميشن) بين أقسام الشريط السفلي: المحادثات ← الملف الشخصي ← الإعدادات */
+(function(){
+  var TABS={homeView:'navChats',profileView:'navProfile',settingsView:'navSettings'};
+  var cleanup=null, orig=window.showView;
+  if(typeof orig!=='function') return;
+  function visibleTab(){
+    for(var id in TABS){ var e=document.getElementById(id); if(e&&!e.classList.contains('hidden')) return id; }
+    return null;
+  }
+  function cx(id){ var b=document.getElementById(TABS[id]); if(!b) return 0; var r=b.getBoundingClientRect(); return r.left+r.width/2; }
+  window.showView=function(viewId){
+    var from=null;
+    try{
+      if(cleanup){ cleanup(); }
+      from=visibleTab();
+      if(!(from&&TABS[viewId]&&from!==viewId)) from=null;
+      if(from && window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) from=null;
+      if(from){
+        var bn=document.getElementById('bottomNav');
+        if(!bn||bn.classList.contains('hidden')) from=null;
+      }
+    }catch(e){ from=null; }
+    var r=orig.apply(this,arguments);
+    if(!from) return r;
+    try{
+      var oldEl=document.getElementById(from), newEl=document.getElementById(viewId), app=document.querySelector('.app-container');
+      if(!oldEl||!newEl||!app||!oldEl.animate) return r;
+      var a=app.getBoundingClientRect(), n=newEl.getBoundingClientRect();
+      if(!n.width||!n.height) return r;
+      /* الهدف على يسار الزر الحالي => المحتوى الجديد يدخل من اليسار والقديم يخرج لليمين */
+      var dir = cx(viewId) < cx(from) ? -1 : 1;
+      var bg=getComputedStyle(app).backgroundColor;
+      var saved={oldStyle:oldEl.getAttribute('style'), newStyle:newEl.getAttribute('style')};
+      /* نُظهر القديم فوق الجديد بنفس القياس طوال الحركة (تزامنيًا كي لا يلاحظ المراقبون وميض الإخفاء) */
+      oldEl.classList.remove('hidden');
+      oldEl.style.cssText=(saved.oldStyle||'')+';position:absolute!important;left:'+(n.left-a.left)+'px;top:'+(n.top-a.top)+'px;width:'+n.width+'px;height:'+n.height+'px;z-index:4;pointer-events:none;overflow:hidden;background-color:'+bg+';';
+      newEl.style.cssText=(saved.newStyle||'')+';pointer-events:none;';
+      var opt={duration:280,easing:'cubic-bezier(.22,.8,.3,1)',fill:'both'};
+      var aOld=oldEl.animate([{transform:'translateX(0)'},{transform:'translateX('+(-dir*100)+'%)'}],opt);
+      var aNew=newEl.animate([{transform:'translateX('+(dir*100)+'%)'},{transform:'translateX(0)'}],opt);
+      var done=false;
+      cleanup=function(){
+        if(done) return; done=true; cleanup=null;
+        try{ aOld.cancel(); aNew.cancel(); }catch(_){}
+        oldEl.classList.add('hidden');
+        if(saved.oldStyle==null) oldEl.removeAttribute('style'); else oldEl.setAttribute('style',saved.oldStyle);
+        if(saved.newStyle==null) newEl.removeAttribute('style'); else newEl.setAttribute('style',saved.newStyle);
+      };
+      aNew.onfinish=cleanup; aNew.oncancel=function(){ if(cleanup) cleanup(); };
+      setTimeout(function(){ if(cleanup) cleanup(); },600);
+    }catch(e){ try{ if(cleanup) cleanup(); }catch(_){} }
+    return r;
+  };
+})();
+</script>
