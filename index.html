@@ -38,6 +38,17 @@
 #notificationSettingsView .notification-footnote{font-size:11px;line-height:1.7;padding:12px 14px;border-radius:12px;color:var(--text-muted,#7a8797);background:rgba(130,145,165,.08);margin-top:18px;}
 .app-container[data-app-theme="dark"] #notificationSettingsView .notification-intro h3,.app-container[data-app-theme="dark"] #notificationSettingsView .notification-setting-copy strong{color:#f1f5f9;}
 .app-container[data-app-theme="dark"] #notificationSettingsView .notification-intro,.app-container[data-app-theme="dark"] #notificationSettingsView .notification-setting-card{background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.1);}
+
+.otp-page{position:fixed;inset:0;z-index:100000;background:var(--babylon-bg,#0b1220);display:flex;align-items:center;justify-content:center;padding:20px;direction:rtl;font-family:inherit;color:#e8edf5}
+.otp-box{width:100%;max-width:380px;text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px 22px}
+.otp-ic{font-size:44px;margin-bottom:6px}.otp-box h1{margin:0 0 10px;font-size:22px;color:var(--babylon-gold,#d4a937)}
+.otp-box p{margin:0 0 18px;line-height:1.8;font-size:14px;opacity:.9}.otp-mail{color:var(--babylon-gold,#d4a937);unicode-bidi:isolate}
+.otp-input{width:100%;box-sizing:border-box;text-align:center;font-size:30px;letter-spacing:12px;padding:12px 8px;border-radius:14px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:#fff;outline:none}
+.otp-input:focus{border-color:var(--babylon-gold,#d4a937)}
+.otp-msg{min-height:22px;margin:10px 0;font-size:13px;color:#9fb0c8}.otp-msg.bad{color:#ff6b6b}
+.otp-btn{width:100%;padding:13px;border:0;border-radius:12px;background:var(--babylon-gold,#d4a937);color:#17212b;font-weight:bold;font-size:16px;cursor:pointer}
+.otp-btn:disabled{opacity:.6}.otp-link{display:block;width:100%;margin-top:10px;background:none;border:0;color:#9fb0c8;font-size:13px;cursor:pointer;padding:8px}
+.otp-link:disabled{opacity:.5}
 </style>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -2904,9 +2915,74 @@ function switchTab(type) {
   }
 }
 
-auth.onAuthStateChanged(user => {
-  if (user && !user.emailVerified) { showVerifyPage(user); return; }
-  if (user) {
+/* ===== رمز التحقق عند كل تسجيل دخول (OTP بالإيميل) =====
+   الخادم يضع claim اسمه otpAuthTime = auth_time بعد نجاح الرمز، وقواعد Firestore تطلب تطابقهما.
+   كل تسجيل دخول جديد يغيّر auth_time، فيحتاج رمز جديد. */
+function babylonOtpCall(user, type, extra) {
+  return user.getIdToken().then(t => fetch('/api/send-mail', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+    body: JSON.stringify(Object.assign({ type: type }, extra || {}))
+  })).then(r => r.json().catch(() => ({})).then(j => ({ status: r.status, data: j })));
+}
+function babylonOtpGate(user) {
+  return user.getIdTokenResult().then(r => {
+    const c = r.claims || {};
+    if (c.otpAuthTime != null && Number(c.otpAuthTime) === Number(c.auth_time)) return true;
+    return babylonShowOtp(user);
+  }).catch(() => babylonShowOtp(user));
+}
+function babylonShowOtp(user) {
+  return new Promise(resolve => {
+    ['authPage', 'mainPage', 'verifyPage'].forEach(id => { const e = document.getElementById(id); if (e) e.classList.add('hidden'); });
+    const old = document.getElementById('otpPage'); if (old) old.remove();
+    const ov = document.createElement('div');
+    ov.id = 'otpPage'; ov.className = 'otp-page';
+    ov.innerHTML = '<div class="otp-box"><div class="otp-ic">🔐</div><h1>رمز التحقق</h1>'
+      + '<p>أرسلنا رمز من 6 أرقام إلى<br><b dir="ltr" class="otp-mail"></b></p>'
+      + '<input id="otpInput" class="otp-input" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" dir="ltr" placeholder="••••••">'
+      + '<div id="otpMsg" class="otp-msg"></div>'
+      + '<button type="button" id="otpOk" class="otp-btn">تأكيد</button>'
+      + '<button type="button" id="otpResend" class="otp-link" disabled>إعادة إرسال الرمز</button>'
+      + '<button type="button" id="otpOut" class="otp-link">تسجيل خروج</button></div>';
+    document.body.appendChild(ov);
+    ov.querySelector('.otp-mail').textContent = user.email || '';
+    const inp = ov.querySelector('#otpInput'), msg = ov.querySelector('#otpMsg'), ok = ov.querySelector('#otpOk'), rs = ov.querySelector('#otpResend');
+    const say = (t, bad) => { msg.textContent = t || ''; msg.className = 'otp-msg' + (bad ? ' bad' : ''); };
+    let cd = 0, timer = null;
+    const tick = () => { if (cd > 0) { rs.disabled = true; rs.textContent = 'إعادة الإرسال بعد ' + cd + ' ثانية'; cd--; timer = setTimeout(tick, 1000); } else { rs.disabled = false; rs.textContent = 'إعادة إرسال الرمز'; } };
+    const cooldown = n => { clearTimeout(timer); cd = n; tick(); };
+    const send = () => {
+      rs.disabled = true; say('جاري إرسال الرمز...');
+      babylonOtpCall(user, 'login-send').then(r => {
+        if (r.status === 200) { say('تم إرسال الرمز، شيّك بريدك (وصندوق السبام)'); cooldown(60); }
+        else if (r.status === 429) { say('الرمز انرسل قبل شوي، شيّك بريدك أو انتظر قليلاً', false); cooldown(60); }
+        else { say('تعذر إرسال الرمز، جرّب مرة ثانية', true); rs.disabled = false; rs.textContent = 'إعادة إرسال الرمز'; }
+      }).catch(() => { say('تعذر الاتصال، تأكد من الإنترنت', true); rs.disabled = false; rs.textContent = 'إعادة إرسال الرمز'; });
+    };
+    let busy = false;
+    const verify = () => {
+      const code = inp.value.replace(/\D/g, '');
+      if (code.length !== 6 || busy) return say(code.length === 6 ? '' : 'اكتب الرمز المكوّن من 6 أرقام', true);
+      busy = true; ok.disabled = true; ok.textContent = 'جاري التحقق...';
+      babylonOtpCall(user, 'login-verify', { code: code }).then(r => {
+        if (r.status === 200) return user.getIdToken(true).then(() => { clearTimeout(timer); ov.remove(); resolve(true); });
+        busy = false; ok.disabled = false; ok.textContent = 'تأكيد';
+        const e = r.data && r.data.error;
+        if (e === 'invalid') say('الرمز غلط' + (r.data.left != null ? ' (باقي ' + r.data.left + ' محاولات)' : ''), true);
+        else if (e === 'locked') say('تجاوزت عدد المحاولات، اطلب رمز جديد', true);
+        else if (e === 'expired') say('انتهت صلاحية الرمز، اطلب رمز جديد', true);
+        else say('تعذر التحقق، جرّب مرة ثانية', true);
+      }).catch(() => { busy = false; ok.disabled = false; ok.textContent = 'تأكيد'; say('تعذر الاتصال، جرّب مرة ثانية', true); });
+    };
+    ok.onclick = verify; rs.onclick = send;
+    inp.addEventListener('input', () => { inp.value = inp.value.replace(/\D/g, '').slice(0, 6); if (inp.value.length === 6) verify(); });
+    ov.querySelector('#otpOut').onclick = () => { auth.signOut().then(() => location.reload()); };
+    send(); setTimeout(() => inp.focus(), 100);
+  });
+}
+
+function babylonStartSession(user) {
     currentUser = user;
     db.collection("users").doc(user.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
     
@@ -2925,7 +3001,12 @@ auth.onAuthStateChanged(user => {
 
     if (!isAppInitialized) {
       loadUserDataAndEnter(user.uid);
-    }
+    }}
+
+auth.onAuthStateChanged(user => {
+  if (user && !user.emailVerified) { showVerifyPage(user); return; }
+  if (user) {
+    babylonOtpGate(user).then(ok => { if (ok) babylonStartSession(user); });
   } else {
     isAppInitialized = false;
     currentUser = null;
@@ -3395,8 +3476,6 @@ function sxChangeEmail(){
     + '<p class="em-sub">إيميلك الحالي: <span dir="ltr">' + esc(currentUser.email || '') + '</span></p>'
     + '<label class="em-lbl" for="emNew">الإيميل الجديد</label>'
     + '<input id="emNew" class="em-input" type="email" dir="ltr" inputmode="email" autocomplete="email" placeholder="name@example.com">'
-    + '<label class="em-lbl" for="emPass">كلمة المرور الحالية</label>'
-    + '<input id="emPass" class="em-input" type="password" dir="ltr" autocomplete="current-password" placeholder="••••••••">'
     + '<div id="emErr" class="em-err"></div>'
     + '<div class="em-actions"><button type="button" class="em-btn em-cancel" id="emCancel">إلغاء</button><button type="button" class="em-btn em-ok" id="emOk">تغيير</button></div>'
     + '</div>';
@@ -3408,23 +3487,16 @@ function sxChangeEmail(){
   const okBtn = ov.querySelector('#emOk');
   const submit = () => {
     const ne = ov.querySelector('#emNew').value.trim();
-    const pw = ov.querySelector('#emPass').value;
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ne)) return err('صيغة الإيميل غير صحيحة');
-    if (ne.toLowerCase() === (currentUser.email || '').toLowerCase()) return err('هذا هو إيميلك الحالي');
-    if (!pw) return err('اكتب كلمة المرور الحالية للتأكيد');
     err(''); okBtn.disabled = true; okBtn.textContent = 'جاري الإرسال...';
-    const cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, pw);
-    currentUser.reauthenticateWithCredential(cred)
-      .then(() => currentUser.verifyBeforeUpdateEmail(ne))
-      .then(() => { close(); showToast('أرسلنا رابط تأكيد إلى ' + ne + ' — افتحه لإتمام التغيير'); })
-      .catch(e => {
-        const c = (e && e.code) || '';
-        okBtn.disabled = false; okBtn.textContent = 'تغيير';
-        err(c === 'auth/wrong-password' || c === 'auth/invalid-credential' ? 'كلمة المرور غير صحيحة'
-          : c === 'auth/email-already-in-use' ? 'هذا الإيميل مستخدم مسبقاً'
-          : c === 'auth/too-many-requests' ? 'محاولات كثيرة، حاول لاحقاً'
-          : 'تعذر التغيير (' + (c || 'unknown') + ')');
-      });
+    babylonOtpCall(currentUser, 'email-change', { newEmail: ne }).then(r => {
+      if (r.status === 200) { close(); showToast('أرسلنا رابط تأكيد إلى ' + ne + ' — افتحه لإتمام التغيير'); return; }
+      okBtn.disabled = false; okBtn.textContent = 'تغيير';
+      err(r.status === 409 ? 'هذا الإيميل مستخدم مسبقاً'
+        : r.status === 429 ? 'محاولات كثيرة، حاول لاحقاً'
+        : r.status === 403 ? 'سجّل خروج وادخل من جديد ثم جرّب'
+        : r.status === 400 ? 'صيغة الإيميل غير صحيحة'
+        : 'تعذر التغيير، جرّب لاحقاً');
+    }).catch(() => { okBtn.disabled = false; okBtn.textContent = 'تغيير'; err('تعذر الاتصال، جرّب مرة ثانية'); });
   };
   okBtn.onclick = submit;
   ov.querySelectorAll('.em-input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); }));
