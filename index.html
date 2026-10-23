@@ -8255,11 +8255,14 @@ html,body{overscroll-behavior-y:none}
   }
   /* الغلاف يمتد على شريط الإشعارات دائمًا ما دام أحد البروفايلين ظاهرًا */
   function baseSync(){
-    var on=['profileView','otherUserProfileView'].some(function(id){var e=document.getElementById(id);return e&&!e.classList.contains('hidden');});
+    var on;
+    if(window.__pfBaseTarget!=null) on=!!window.__pfBaseTarget;   /* أثناء انتقال الأقسام: الحالة النهائية تُطبَّق فورًا ومرة واحدة */
+    else on=['profileView','otherUserProfileView'].some(function(id){var e=document.getElementById(id);return e&&!e.classList.contains('hidden');});
     if(!!window.__pfBase===on) return;
     window.__pfBase=on;
     try{ if(typeof setProfileExpandedStatusBlur==='function') setProfileExpandedStatusBlur(false); }catch(_){}
   }
+  window.pfBaseSync=baseSync;
   function initBase(){
     ['profileView','otherUserProfileView'].forEach(function(id){
       var e=document.getElementById(id); if(!e) return;
@@ -10949,13 +10952,16 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
         if(!bn||bn.classList.contains('hidden')) from=null;
       }
     }catch(e){ from=null; }
+    var tgtProfile=(viewId==='profileView'||viewId==='otherUserProfileView');
+    if(from){ window.__pfBaseTarget=tgtProfile; }
     var r=orig.apply(this,arguments);
+    if(from){ try{ if(window.pfBaseSync) window.pfBaseSync(); }catch(_){} }   /* تغيير شريط الإشعارات مرة واحدة من أول إطار */
     if(!from) return r;
     try{
       var oldEl=document.getElementById(from), newEl=document.getElementById(viewId), app=document.querySelector('.app-container');
-      if(!oldEl||!newEl||!app||!oldEl.animate) return r;
+      if(!oldEl||!newEl||!app||!oldEl.animate){ window.__pfBaseTarget=null; return r; }
       var a=app.getBoundingClientRect(), n=newEl.getBoundingClientRect();
-      if(!n.width||!n.height) return r;
+      if(!n.width||!n.height){ window.__pfBaseTarget=null; return r; }
       /* الهدف على يسار الزر الحالي => المحتوى الجديد يدخل من اليسار والقديم يخرج لليمين */
       var dir = cx(viewId) < cx(from) ? -1 : 1;
       var bg=getComputedStyle(app).backgroundColor;
@@ -10970,6 +10976,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
       var done=false;
       cleanup=function(){
         if(done) return; done=true; cleanup=null;
+        window.__pfBaseTarget=null;
         try{ aOld.cancel(); aNew.cancel(); }catch(_){}
         oldEl.classList.add('hidden');
         if(saved.oldStyle==null) oldEl.removeAttribute('style'); else oldEl.setAttribute('style',saved.oldStyle);
@@ -10977,7 +10984,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
       };
       aNew.onfinish=cleanup; aNew.oncancel=function(){ if(cleanup) cleanup(); };
       setTimeout(function(){ if(cleanup) cleanup(); },600);
-    }catch(e){ try{ if(cleanup) cleanup(); }catch(_){} }
+    }catch(e){ try{ if(cleanup) cleanup(); }catch(_){} window.__pfBaseTarget=null; }
     return r;
   };
 })();
