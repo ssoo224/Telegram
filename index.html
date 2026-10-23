@@ -7874,9 +7874,29 @@ html,body{overscroll-behavior-y:none}
   var RANGE = 110;      // كم بكسل سحب لتكتمل الصورة
   var THRESH = 0.45;    // بعد هذه النسبة تثبت مفتوحة عند ترك الإصبع
   // صور البروفايل مخزنة base64 (ميغابايتات). نحولها مرة وحدة إلى blob حتى ما نكرر نص ضخم بالـCSS كل سحبة
-  var _lc={};
+  var _lc={}, _sm={}, _smBusy={};
+  function shrink(key,url){
+    if(_smBusy[key]) return; _smBusy[key]=1;
+    setTimeout(function(){
+      try{
+        var im=new Image();
+        im.onload=function(){
+          try{
+            var w=im.naturalWidth,h=im.naturalHeight,M=1080;
+            if(!w||!h||Math.max(w,h)<=M) return;
+            var k=M/Math.max(w,h), c=document.createElement('canvas');
+            c.width=Math.round(w*k); c.height=Math.round(h*k);
+            c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+            c.toBlob(function(b){ if(b) _sm[key]=URL.createObjectURL(b); c.width=c.height=0; },'image/jpeg',0.9);
+          }catch(_){}
+        };
+        im.src=url;
+      }catch(_){}
+    },700);
+  }
   function lite(u){
     if(!u||String(u).slice(0,5)!=='data:') return u;
+    if(_sm[u]) return _sm[u];
     if(_lc[u]) return _lc[u];
     try{
       var i=u.indexOf(','), mime=(u.slice(5,i).split(';')[0])||'image/jpeg';
@@ -7884,7 +7904,7 @@ html,body{overscroll-behavior-y:none}
       for(var k=0;k<n;k++) a[k]=bin.charCodeAt(k);
       var url=URL.createObjectURL(new Blob([a],{type:mime}));
       var ks=Object.keys(_lc); if(ks.length>8){ try{URL.revokeObjectURL(_lc[ks[0]]);}catch(_){} delete _lc[ks[0]]; }
-      _lc[u]=url; return url;
+      _lc[u]=url; shrink(u,url); return url;
     }catch(e){ return u; }
   }
   function setup(cfg){
@@ -7952,6 +7972,13 @@ html,body{overscroll-behavior-y:none}
     function hideRing(){ if(!view.classList.contains('pf-ring-off')) view.classList.add('pf-ring-off'); }
     function showRing(){ if(view.classList.contains('pf-ring-off')) view.classList.remove('pf-ring-off'); }
     var g=null, p=0, expanded=false, pulling=false, sy=0, sx=0, p0=0, raf=0, track=false;
+    var sbTimer=0;
+    function sysBars(on){
+      clearTimeout(sbTimer);
+      sbTimer=setTimeout(function(){
+        try{ if(typeof setProfileExpandedStatusBlur==='function') setProfileExpandedStatusBlur(!!on); }catch(_){}
+      }, on?80:0);
+    }
 
     function sync(){
       var hasImg = img && !img.classList.contains('hidden') && img.getAttribute('src');
@@ -8019,10 +8046,8 @@ html,body{overscroll-behavior-y:none}
       var wasExpanded = view.classList.contains('pf-expanded');
       if(wasExpanded !== (v>=0.5)) {
         view.classList.toggle('pf-expanded', v>=0.5);
-        if (typeof setProfileExpandedStatusBlur === 'function') {
-          if (v>=0.5) setProfileExpandedStatusBlur(true, hImg && hImg.style.display!=='none' ? hImg.src : '');
-          else setProfileExpandedStatusBlur(false);
-        }
+        /* إصلاح الشاشة السوداء: لا نغيّر أشرطة النظام (جسر أندرويد) أثناء السحب لأنها تعيد قياس الـWebView
+           وتسبب وميضًا/شاشة سوداء. يتم ذلك فقط بعد استقرار الحركة (animateTo). */
       }
       cover.style.height=(g.coverH+g.delta*v)+'px';
       cover.style.opacity=clamp(1-v*1.5);
@@ -8047,6 +8072,8 @@ html,body{overscroll-behavior-y:none}
       }
     }
     function reset(keepRingOff){
+      clearTimeout(sbTimer);
+      view.classList.remove('pf-dragging');
       restoreOriginalAvatar();
       p=0; expanded=false;
       hero.style.display='none'; hero.style.pointerEvents='none'; hInfo.style.opacity=0;
@@ -8070,7 +8097,12 @@ html,body{overscroll-behavior-y:none}
         var k=clamp((now-t0)/dur), e=1-Math.pow(1-k,4);
         try { apply(from+(t-from)*e); } catch (err) { console.warn('profile pull animation stopped', err); pulling=false; track=false; try { reset(); } catch (_) {} return; }
         if(k<1) raf=requestAnimationFrame(step);
-        else { expanded = t>=1; if(t<=0) reset(); }
+        else {
+          expanded = t>=1;
+          view.classList.remove('pf-dragging');
+          if(t<=0) reset();
+          else if(expanded) sysBars(true);
+        }
       })(t0);
     }
 
@@ -8098,6 +8130,7 @@ html,body{overscroll-behavior-y:none}
         if(!wantPull && !wantBack) return;
         cancelAnimationFrame(raf);
         if(!expanded){ hideRing(); reset(true); sync(); measure(); }
+        view.classList.add('pf-dragging');
         pulling=true; p0=expanded?1:0; sy=t.clientY; tv=p; vel=0; lastT=0;   // نبدأ من نقطة بدء السحب الفعلي
         // إخفاء الحلقة فور بدء السحب المقبول، ومنع ظهورها في إطارات التحديث الأولى.
         hideRing();
@@ -8222,6 +8255,12 @@ html,body{overscroll-behavior-y:none}
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
 </script>
+
+<style id="pf-drag-perf-fix">
+/* إصلاح الشاشة السوداء أثناء سحب الصورة: تعطيل التمويه الثقيل والطبقات الإضافية أثناء السحب فقط */
+.pf-dragging .pf-hero .pf-hero-ext::before{filter:none!important;transform:none!important;inset:0!important}
+.pf-dragging .pf-hero{will-change:auto}
+</style>
 
 <style id="babylon-profile-v2">
 /* ===== Profile v2 — Telegram-style ===== */
