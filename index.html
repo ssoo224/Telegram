@@ -8073,7 +8073,8 @@ html,body{overscroll-behavior-y:none}
     }
     function reset(keepRingOff){
       clearTimeout(sbTimer);
-      view.classList.remove('pf-dragging');
+      /* مهم: لا نلمس classList إلا إذا كان الصنف موجودًا، وإلا يُطلق MutationObserver حلقة لا نهائية */
+      if(view.classList.contains('pf-dragging')) view.classList.remove('pf-dragging');
       restoreOriginalAvatar();
       p=0; expanded=false;
       hero.style.display='none'; hero.style.pointerEvents='none'; hInfo.style.opacity=0;
@@ -8099,7 +8100,7 @@ html,body{overscroll-behavior-y:none}
         if(k<1) raf=requestAnimationFrame(step);
         else {
           expanded = t>=1;
-          view.classList.remove('pf-dragging');
+          if(view.classList.contains('pf-dragging')) view.classList.remove('pf-dragging');
           if(t<=0) reset();
           else if(expanded) sysBars(true);
         }
