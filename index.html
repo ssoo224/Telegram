@@ -7975,9 +7975,7 @@ html,body{overscroll-behavior-y:none}
     var sbTimer=0;
     function sysBars(on){
       clearTimeout(sbTimer);
-      sbTimer=setTimeout(function(){
-        try{ if(typeof setProfileExpandedStatusBlur==='function') setProfileExpandedStatusBlur(!!on); }catch(_){}
-      }, on?80:0);
+      try{ if(typeof setProfileExpandedStatusBlur==='function') setProfileExpandedStatusBlur(!!on); }catch(_){}
     }
 
     function sync(){
@@ -8132,6 +8130,7 @@ html,body{overscroll-behavior-y:none}
         cancelAnimationFrame(raf);
         if(!expanded){ hideRing(); reset(true); sync(); measure(); }
         view.classList.add('pf-dragging');
+        sysBars(true);   /* تركيب الصورة على شريط الإشعارات من أول إطار (مرة واحدة فقط، بلا تبديل أثناء السحب) */
         pulling=true; p0=expanded?1:0; sy=t.clientY; tv=p; vel=0; lastT=0;   // نبدأ من نقطة بدء السحب الفعلي
         // إخفاء الحلقة فور بدء السحب المقبول، ومنع ظهورها في إطارات التحديث الأولى.
         hideRing();
