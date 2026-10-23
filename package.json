@@ -1,14 +1,9 @@
 {
-  "name": "babylon-chat-server",
+  "name": "babylon-chat",
+  "private": true,
   "version": "1.0.0",
-  "description": "Notification server for Babylon Chat",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "firebase-admin": "^12.1.0"
+    "firebase-admin": "^12.7.0",
+    "nodemailer": "^6.9.16"
   }
 }
