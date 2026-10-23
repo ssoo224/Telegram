@@ -351,34 +351,17 @@ async function refreshStore(){
 let buying=false;
 async function buyGift(kind){
   if(buying)return;
-  const K=gk(kind),me=meId(),dev=isDevUser();
-  if(!dev&&myStars<K.price)return showToast('رصيدك غير كافٍ ⭐');
-  buying=true;
+  const K=gk(kind); buying=true;
   const btn=document.getElementById('stBuy');if(btn){btn.disabled=true;btn.textContent='جاري الشراء…';}
   try{
-    const snap=await salesQ(K).get(),taken=new Set(snap.docs.map(d=>K.gen?String(d.data().n):d.id));
-    let n=0;for(let k=1;k<=K.max;k++)if(!taken.has(String(k))){n=k;break;}
-    if(!n){showToast('نفدت الكمية');refreshStore();buying=false;return;}
-    const wref=db.collection('wallets').doc(me),now=Date.now(),inc=firebase.firestore.FieldValue.increment;
-    if(dev)await wref.set({stars:DEV_BIG},{merge:true});
-    const b=db.batch();
-    const wu={stars:inc(-K.price)};wu[K.field]=gid(K,n);
-    b.update(wref,wu);
-    b.set(db.collection(K.gen?'giftSales':K.sales).doc(gid(K,n)),K.gen?{ownerId:me,at:now,k:K.key,n}:{ownerId:me,at:now});
-    b.set(db.collection('users').doc(me).collection(K.coll).doc(gid(K,n)),K.gen?{number:n,upgraded:false,at:now,k:K.key}:{number:n,upgraded:false,at:now});
-    const tx={type:'buy',gift:n,stars:K.price,at:now};if(K.key!=='pepe')tx.kind=K.key;
-    b.set(db.collection('users').doc(me).collection('txs').doc(),tx);
-    b.set(evRef(K,n),{k:K.key,number:n,coll:K.coll,type:'mint',to:me,price:K.price,at:now});
-    await b.commit();
-    if(dev)wref.set({stars:DEV_BIG},{merge:true}).catch(()=>{});
-    showToast('🎉 اشتريت '+K.name+' #'+n);
-    /* نبقى بصفحة المتجر (ما نروح للترقية)؛ نحدّث المتبقي ونرجع زر الشراء */
-    const sb=document.getElementById('stBuy');if(sb){sb.disabled=false;sb.textContent='شراء بـ '+K.price+' نجمة';}
+    const u=auth.currentUser;if(!u)throw new Error('auth');
+    const token=await u.getIdToken(true);
+    const r=await fetch('/api/stars',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'purchase',kind:K.key})});
+    const d=await r.json();if(!r.ok)throw new Error(d.error||'failed');
+    showToast('🎉 اشتريت '+K.name+' #'+d.number);
+    if(btn){btn.disabled=false;btn.textContent='شراء بـ '+K.price+' نجمة';}
     refreshStore();
-  }catch(e){
-    console.error(e);showToast('ممكن أحد سبقك، حاول مرة ثانية');refreshStore();
-    const b2=document.getElementById('stBuy');if(b2){b2.disabled=false;b2.textContent='شراء بـ '+K.price+' نجمة';}
-  }
+  }catch(e){console.error(e);showToast(e.message==='insufficient_stars'?'رصيدك غير كافٍ ⭐':e.message==='sold_out'?'نفدت الكمية':'تعذر إتمام الشراء، حاول مرة ثانية');refreshStore();if(btn){btn.disabled=false;btn.textContent='شراء بـ '+K.price+' نجمة';}}
   buying=false;
 }
 
@@ -420,22 +403,12 @@ function openStarsHistory(){
 /* ===== إهداء هدية لمستخدم: تنتقل الملكية له وتوصله رسالة كارت بالمحادثة ===== */
 function closeSend(){document.getElementById('giftSend')?.remove();}
 async function transferGift(g,to){
-  const K=gk(g.k),me=meId(),now=Date.now(),id=gid(K,g.number);
-  const cref=db.collection('chats').doc([me,to].sort().join('__'));
-  const cs=await cref.get();
-  if(cs.exists)await cref.update({updatedAt:now});else await cref.set({participants:[me,to],updatedAt:now});
-  const doc={number:g.number,upgraded:!!g.upgraded,at:g.at||now};
-  if(K.gen)doc.k=K.key;
-  const msg={senderId:me,type:'gift',k:K.key,number:g.number,upgraded:!!g.upgraded,to:to,text:'🎁 هدية '+K.name+' #'+g.number,createdAt:now,read:false};
-  if(g.upgraded){doc.model=g.model;doc.bg=g.bg;doc.sym=g.sym;msg.model=g.model;msg.bg=g.bg;msg.sym=g.sym;}
-  const b=db.batch();
-  b.delete(db.collection('users').doc(me).collection(K.coll).doc(id));
-  b.set(db.collection('users').doc(to).collection(K.coll).doc(id),doc);
-  b.update(db.collection(K.gen?'giftSales':K.sales).doc(id),{ownerId:to});
-  b.set(evRef(K,g.number),{k:K.key,number:g.number,coll:K.coll,type:'send',from:me,to:to,at:now});
-  b.set(cref.collection('messages').doc(),msg);
-  await b.commit();
+  const K=gk(g.k),me=meId(),id=gid(K,g.number);
+  const token=await auth.currentUser.getIdToken(true);
+  const resp=await fetch('/api/stars',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'transfer-gift',to,kind:K.key,number:Number(g.number)})});
+  const data=await resp.json();if(!resp.ok)throw new Error(data.error||'failed');
 }
+
 async function openSendGift(){
   const to=currentChatOtherUserId,me=meId();
   if(!to||to===me)return showToast('افتح بروفايل المستخدم أولاً');
@@ -553,26 +526,10 @@ async function buyListing(ov,l){
   buying=true;
   const btn=document.getElementById('gpBuy');if(btn){btn.disabled=true;btn.textContent='جاري الشراء…';}
   try{
-    const id=gid(K,l.number),lid=listId(K,l.number),now=Date.now(),inc=firebase.firestore.FieldValue.increment;
-    const ld=await db.collection('giftListings').doc(lid).get();
-    if(!ld.exists||ld.data().sellerId!==l.sellerId||ld.data().price!==l.price){
-      showToast('العرض تغيّر أو انباع');buying=false;closeGiftPage();return;
-    }
-    const wref=db.collection('wallets').doc(me);
-    if(dev)await wref.set({stars:DEV_BIG},{merge:true});
-    const b=db.batch();
-    b.update(wref,{stars:inc(-l.price),lastBuyListing:lid});
-    b.set(db.collection('wallets').doc(l.sellerId),{stars:inc(netOf(l.price))},{merge:true});
-    b.update(db.collection(K.gen?'giftSales':K.sales).doc(id),{ownerId:me});
-    b.delete(db.collection('users').doc(l.sellerId).collection(K.coll).doc(id));
-    const doc={number:l.number,upgraded:true,at:l.giftAt,model:l.model,bg:l.bg,sym:l.sym};if(K.gen)doc.k=K.key;
-    b.set(db.collection('users').doc(me).collection(K.coll).doc(id),doc);
-    b.delete(db.collection('giftListings').doc(lid));
-    b.set(db.collection('users').doc(me).collection('txs').doc(),{type:'buy',gift:l.number,stars:l.price,at:now,kind:K.key});
-    const myName=(typeof currentUserData!=='undefined'&&currentUserData&&currentUserData.displayName)||'مستخدم';
-    b.set(db.collection('users').doc(l.sellerId).collection('txs').doc(),{type:'sell',gift:l.number,stars:netOf(l.price),at:now,kind:K.key,buyer:me,buyerName:myName});
-    b.set(evRef(K,l.number),{k:K.key,number:l.number,coll:K.coll,type:'sale',from:l.sellerId,to:me,price:l.price,at:now});
-    await b.commit();
+    const lid=listId(K,l.number),now=Date.now();
+    const token=await auth.currentUser.getIdToken(true);
+    const resp=await fetch('/api/stars',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'buy-listing',listingId:lid})});
+    const result=await resp.json();if(!resp.ok)throw new Error(result.error||'failed');
     _lc.t=0;
     /* إشعار للبائع برسالة بالمحادثة (إذا فشلت ما تأثر على الشراء) */
     try{
@@ -581,7 +538,6 @@ async function buyListing(ov,l){
       if(cs.exists)await cref.update({updatedAt:now});else await cref.set({participants:[me,l.sellerId],updatedAt:now});
       await cref.collection('messages').add({senderId:me,type:'sold',k:K.key,number:l.number,price:l.price,net:netOf(l.price),text:'🛒 انباعت '+K.name+' #'+l.number+' بـ '+fmtN(l.price)+' ⭐',createdAt:now,read:false});
     }catch(e){console.warn('sold notice',e);}
-    if(dev)wref.set({stars:DEV_BIG},{merge:true}).catch(()=>{});
     showToast('🎉 مبروك! صارت '+K.name+' #'+l.number+' إلك');
     buying=false;
     closeGiftPage();closeStore();openGiftPage(me,l.number,K.key);
