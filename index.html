@@ -4632,9 +4632,6 @@ window.addEventListener('resize', positionSelEmojiBar);
 #reactorsSheet .rs-head{display:flex;align-items:center;gap:8px;padding:10px 20px 6px}
 #reactorsSheet .rs-title{font-weight:700;font-size:17px}
 #reactorsSheet .rs-count{font-size:15px;color:var(--rs-sub);font-weight:500}
-#reactorsSheet .rs-x{margin-inline-start:auto;margin-inline-end:-8px;width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--rs-sub);display:grid;place-items:center;cursor:pointer}
-#reactorsSheet .rs-x:active{background:var(--rs-hover)}
-#reactorsSheet .rs-x svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 #reactorsSheet .rs-tabs{flex:0 0 auto;display:flex;gap:4px;overflow-x:auto;padding:0 12px;border-bottom:1px solid var(--rs-line);scrollbar-width:none}
 #reactorsSheet .rs-tabs::-webkit-scrollbar{display:none}
 #reactorsSheet .rs-tab{flex:0 0 auto;position:relative;height:42px;border:0;background:transparent;padding:0 12px;color:var(--rs-sub);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
@@ -4697,7 +4694,7 @@ function renderReactorsSheet(msgId, rows) {
     '<div class="rs-card">' +
       '<div class="rs-top"><div class="rs-grab"></div>' +
         '<div class="rs-head"><span class="rs-title">التفاعلات</span><span class="rs-count">' + rows.length + '</span>' +
-        '<button type="button" class="rs-x" aria-label="إغلاق"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div>' +
+        '</div></div>' +
       '<div class="rs-tabs"></div><div class="rs-list"></div>' +
     '</div>';
   const card = sheet.querySelector('.rs-card'), top = sheet.querySelector('.rs-top'),
@@ -4742,7 +4739,6 @@ function renderReactorsSheet(msgId, rows) {
   });
   card.onclick = ev => ev.stopPropagation();
   sheet.onclick = closeReactorsSheet;
-  sheet.querySelector('.rs-x').onclick = closeReactorsSheet;
   document.addEventListener('keydown', rsKey);
   document.body.appendChild(sheet);
   card.style.minHeight = Math.min(card.offsetHeight, Math.round(window.innerHeight * 0.7)) + 'px';   // لا يقفز ارتفاع النافذة عند تغيير التبويب
