@@ -4631,7 +4631,6 @@ window.addEventListener('resize', positionSelEmojiBar);
 #reactorsSheet .rs-grab{width:36px;height:4px;border-radius:4px;background:var(--rs-sub);opacity:.35;margin:8px auto 0}
 #reactorsSheet .rs-head{display:flex;align-items:center;gap:8px;padding:10px 20px 6px}
 #reactorsSheet .rs-title{font-weight:700;font-size:17px}
-#reactorsSheet .rs-count{font-size:15px;color:var(--rs-sub);font-weight:500}
 #reactorsSheet .rs-tabs{flex:0 0 auto;display:flex;gap:4px;overflow-x:auto;padding:0 12px;border-bottom:1px solid var(--rs-line);scrollbar-width:none}
 #reactorsSheet .rs-tabs::-webkit-scrollbar{display:none}
 #reactorsSheet .rs-tab{flex:0 0 auto;position:relative;height:42px;border:0;background:transparent;padding:0 12px;color:var(--rs-sub);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
@@ -4693,7 +4692,7 @@ function renderReactorsSheet(msgId, rows) {
   sheet.innerHTML =
     '<div class="rs-card">' +
       '<div class="rs-top"><div class="rs-grab"></div>' +
-        '<div class="rs-head"><span class="rs-title">التفاعلات</span><span class="rs-count">' + rows.length + '</span>' +
+        '<div class="rs-head"><span class="rs-title">التفاعلات</span>' +
         '</div></div>' +
       '<div class="rs-tabs"></div><div class="rs-list"></div>' +
     '</div>';
