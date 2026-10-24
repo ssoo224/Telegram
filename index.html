@@ -2708,7 +2708,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
     document.execCommand('insertText', false, t);
   });
   el.addEventListener('drop', function(e){ e.preventDefault(); });
-  /* يستدعيها تطبيق الأندرويد (BabylonWebView) عند اختيار GIF/ملصق من لوحة المفاتيح */
+  /* يستدعيها تطبيق الأندرويد عند اختيار GIF/ملصق من لوحة المفاتيح */
   window.babylonReceiveKeyboardImage = function(mime, b64){
     try {
       var bin = atob(b64), len = bin.length, arr = new Uint8Array(len);
@@ -4303,6 +4303,39 @@ function openChatRoom(otherUserId, keepLimit) {
     });
 }
 
+/* ===== التفاعلات: لكل مستخدم تفاعله الخاص (reactions.<uid> = إيموجي) ولا يتأثر بتفاعل غيره ===== */
+function reactionList(m) {
+  const r = (m && m.reactions) || {}, me = currentUser && currentUser.uid, map = new Map();
+  for (const k in r) {
+    const v = r[k]; let e = '', mine = false;
+    if (typeof v === 'string') { e = v; mine = (k === me); }   // الصيغة الجديدة: uid -> إيموجي
+    else if (v) { e = k; }                                       // صيغة قديمة: إيموجي -> true
+    else continue;
+    const o = map.get(e) || { emoji: e, count: 0, mine: false };
+    o.count++; if (mine) o.mine = true; map.set(e, o);
+  }
+  return Array.from(map.values());
+}
+function myReactionObj(m) {
+  const r = (m && m.reactions) || {}, me = currentUser && currentUser.uid;
+  return (me && typeof r[me] === 'string' && r[me]) ? { [r[me]]: true } : {};
+}
+function reactionBadgesHtml(list, cls) {
+  return list.map(o => '<span class="' + cls + (o.mine ? ' mine' : '') + '" data-emoji="' + esc(o.emoji) + '"' + (o.mine ? ' data-mine="1"' : '') + '>' + esc(o.emoji) + (o.count > 1 ? '<small>' + o.count + '</small>' : '') + '</span>').join('');
+}
+(function(){
+  var st = document.createElement('style');
+  st.textContent =
+    '.reaction-badge small{font-size:11px;margin-inline-start:3px;opacity:.85;font-weight:700}' +
+    '.reaction-badge.mine{box-shadow:inset 0 0 0 1.5px rgba(212,175,55,.85)}' +
+    '#chatView #messagesArea .msg-bubble .msg-image,#chatView #messagesArea .msg-bubble .msg-video{position:relative}' +
+    '.media-react{position:absolute;right:8px;bottom:7px;z-index:3;display:flex;align-items:center;gap:3px;padding:2px 7px;border-radius:13px;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);color:#fff;line-height:1.35;direction:ltr;pointer-events:none}' +
+    '.media-react .rb{font-size:15px;line-height:1.35;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}' +
+    '.media-react .rb small{font-size:10.5px;margin-inline-start:2px;font-family:system-ui,sans-serif;font-weight:700}' +
+    '.media-react .rb.mine{filter:drop-shadow(0 0 3px rgba(212,175,55,.95))}';
+  document.head.appendChild(st);
+})();
+
 function renderMsgDoc(doc, box, existingTyping) {
         const hiddenLocalMessages = getLocalChatSet('babylon_hidden_messages_' + activeChatId);
         if (hiddenLocalMessages.has(doc.id)) return;
@@ -4350,6 +4383,9 @@ function renderMsgDoc(doc, box, existingTyping) {
         b.dataset.messageText = String(m.text || '');
         b.dataset.senderId = String(m.senderId || '');
         
+        const _rl = reactionList(m);
+        const _isMediaMsg = !m.audioUrl && !!(m.videoUrl || (m.imageUrl && m.type !== 'stars'));
+        const _mediaReact = (_rl.length && _isMediaMsg) ? '<div class="media-react">' + reactionBadgesHtml(_rl, 'rb') + '</div>' : '';
         let htmlContent = "";
         if (grp && !isMine) htmlContent += groupSenderHtml(m.senderId);
         if (m.forwarded) htmlContent += `<div class="fwd-label"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 6 6-6 6"/><path d="M21 11H9a6 6 0 0 0-6 6v1"/></svg>معاد توجيهها</div>`;
@@ -4364,17 +4400,13 @@ function renderMsgDoc(doc, box, existingTyping) {
         if (m.audioUrl) {
           htmlContent += `<div class="audio-player-card custom-voice-card" aria-label="رسالة صوتية" data-dur="${Number(m.duration)||0}"><audio class="voice-audio" preload="metadata" src="${esc(m.audioUrl)}"></audio><button type="button" class="voice-play-btn" onclick="toggleVoicePlayback(this)" aria-label="تشغيل الرسالة الصوتية"><svg class="voice-play-icon" viewBox="0 0 24 24" width="23" height="23" fill="currentColor" aria-hidden="true"><path d="M8 5.8c0-.8.9-1.3 1.6-.8l9.2 6.2a1 1 0 0 1 0 1.6l-9.2 6.2c-.7.5-1.6 0-1.6-.8z"/></svg></button><div class="audio-player-content"><div class="audio-player-title">رسالة صوتية</div><div class="voice-progress-row"><input class="voice-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="تقدم الصوت" oninput="seekVoicePlayback(this)"><span class="voice-time">${m.duration?formatVoiceTime(m.duration):'0:00'}</span></div><div class="voice-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>`;
         } else if (m.videoUrl) {
-          htmlContent += `<div class="msg-video"><video src="${esc(m.videoUrl)}#t=0.1" ${m.posterUrl ? `poster="${esc(m.posterUrl)}"` : ''} preload="metadata" muted playsinline></video><button type="button" class="msg-video-play" aria-label="تشغيل الفيديو"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button></div>`;
+          htmlContent += `<div class="msg-video"><video src="${esc(m.videoUrl)}#t=0.1" ${m.posterUrl ? `poster="${esc(m.posterUrl)}"` : ''} preload="metadata" muted playsinline></video><button type="button" class="msg-video-play" aria-label="تشغيل الفيديو"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>${_mediaReact}</div>`;
         } else {
-          htmlContent += m.type === 'stars' && typeof starGiftHtml === 'function' ? starGiftHtml(m) : m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`;
+          htmlContent += m.type === 'stars' && typeof starGiftHtml === 'function' ? starGiftHtml(m) : m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة">${_mediaReact}</div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`;
         }
 
-        if (m.reactions && Object.keys(m.reactions).length > 0) {
-          htmlContent += `<div class="reactions-row">`;
-          for (let r in m.reactions) {
-            htmlContent += `<span class="reaction-badge">${esc(r)}</span>`;
-          }
-          htmlContent += `</div>`;
+        if (_rl.length && !_isMediaMsg) {
+          htmlContent += `<div class="reactions-row">${reactionBadgesHtml(_rl, 'reaction-badge')}</div>`;
         }
 
         htmlContent += `<div class="msg-meta"><span>${rawTimeStr}</span> ${checkHtml}</div>`;
@@ -4442,7 +4474,7 @@ function renderMsgDoc(doc, box, existingTyping) {
             return;
           }
           e.preventDefault(); e.stopPropagation();
-          openMsgModal(doc.id, m.text || (m.imageUrl ? 'صورة' : (m.videoUrl ? 'فيديو' : '')), m.senderId, m.reactions || {}, !!m.audioUrl, b);
+          openMsgModal(doc.id, m.text || (m.imageUrl ? 'صورة' : (m.videoUrl ? 'فيديو' : '')), m.senderId, myReactionObj(m), !!m.audioUrl, b);
         };
 
         let target = b;
@@ -4511,7 +4543,7 @@ function clearMessageSelection() {
 })();
 let selEmojiBarEl = null, selEmojiMsgId = null;
 const SEL_EMOJIS = ['😂', '❤️', '👍🏻', '😭', '✨'];
-function selBubbleReaction(b) { const r = b && b.querySelector('.reaction-badge'); return r ? r.textContent.trim() : ''; }
+function selBubbleReaction(b) { const r = b && b.querySelector('[data-mine="1"]'); return r ? (r.getAttribute('data-emoji') || '') : ''; }
 function hideSelEmojiBar() {
   if (selEmojiBarEl) { selEmojiBarEl.remove(); selEmojiBarEl = null; }
   selEmojiMsgId = null;
@@ -4567,7 +4599,7 @@ function selEmojiMore(id) {
     if (!d.exists) return;
     const m = d.data() || {};
     clearMessageSelection();
-    openMsgModal(id, m.text || (m.imageUrl ? 'صورة' : (m.videoUrl ? 'فيديو' : '')), m.senderId, m.reactions || {}, !!m.audioUrl, bubble);
+    openMsgModal(id, m.text || (m.imageUrl ? 'صورة' : (m.videoUrl ? 'فيديو' : '')), m.senderId, myReactionObj(m), !!m.audioUrl, bubble);
   }).catch(() => {});
 }
 document.getElementById('messagesArea')?.addEventListener('scroll', positionSelEmojiBar, { passive: true });
@@ -4686,20 +4718,20 @@ function actionReply() {
 }
 
 function addReaction(emoji) {
-  if (!activeChatId || !selectedMsgId) return;
+  if (!activeChatId || !selectedMsgId || !currentUser) return;
 
-  // A message stores only one selected reaction at a time. Choosing another
-  // emoji replaces the previous one instead of accumulating multiple emojis.
+  // لكل مستخدم تفاعل واحد خاص به (reactions.<uid>)، ولا يؤثر على تفاعل الطرف الآخر أو أعضاء المجموعة.
+  // اختيار نفس الإيموجي مرة ثانية يزيل تفاعلك أنت فقط.
   const currentEmoji = Object.keys(selectedMsgReactions || {})[0];
-  const newReactions = currentEmoji === emoji ? {} : { [emoji]: true };
+  const value = currentEmoji === emoji ? firebase.firestore.FieldValue.delete() : emoji;
 
   db.collection("chats").doc(activeChatId).collection("messages").doc(selectedMsgId).update({
-    reactions: newReactions
+    ['reactions.' + currentUser.uid]: value
   }).then(() => {
     document.getElementById("msgModal").classList.add("hidden");
     const emojiGrid = document.getElementById("fullEmojiGrid");
     if (emojiGrid) emojiGrid.classList.add("hidden");
-  });
+  }).catch(() => { try { showToast('تعذر إرسال التفاعل'); } catch (_) {} });
 }
 
 function actionCopy() {
