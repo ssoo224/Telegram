@@ -34,10 +34,24 @@ if "windowSoftInputMode" not in m:
     m, n = re.subn(r"<activity\b", '<activity android:windowSoftInputMode="adjustResize"', m, count=1)
     if n != 1: die("ما لقيت activity", mf)
 meta = '        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="messages" />\n'
+meta += '        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_notify" />\n'
+meta += '        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/notif_gold" />\n'
 if "default_notification_channel_id" not in m:
     if "</application>" not in m: die("ما لقيت application", mf)
     m = m.replace("</application>", meta + "    </application>")
 wr(mf, m)
+
+# 2.5) أيقونة الإشعار الصغيرة (أبيض على شفاف) + لون الإشعار
+res = app / "src" / "main" / "res"
+badge = root.parent / "badge-96.png"
+if badge.exists():
+    (res / "drawable").mkdir(parents=True, exist_ok=True)
+    shutil.copy(badge, res / "drawable" / "ic_stat_notify.png")
+    print("notification icon copied")
+else:
+    print("::warning::badge-96.png مفقود — أيقونة الإشعار راح تطلع مربع أبيض")
+(res / "values").mkdir(parents=True, exist_ok=True)
+wr(res / "values" / "notif_colors.xml", '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="notif_gold">#C9961F</color>\n</resources>\n')
 
 # 3) build.gradle: رقم النسخة + التوقيع
 bg = app / "build.gradle"
