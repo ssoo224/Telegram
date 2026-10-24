@@ -4623,43 +4623,36 @@ window.addEventListener('resize', positionSelEmojiBar);
 (function(){
   var st = document.createElement('style');
   st.textContent = `
-#reactorsSheet{--rs-bg:#17212b;--rs-fg:#f1f5f9;--rs-sub:#8798aa;--rs-chip:rgba(127,140,160,.14);--rs-chip-h:rgba(127,140,160,.24);--rs-gold:#e4c45b;--rs-gold-bg:rgba(228,196,91,.13);--rs-gold-line:rgba(228,196,91,.38);--rs-shadow:0 -12px 44px rgba(0,0,0,.45);
-  position:fixed;inset:0;z-index:4000;display:flex;align-items:flex-end;justify-content:center;background:rgba(5,10,16,.55);-webkit-tap-highlight-color:transparent;animation:rsFade .18s ease-out}
-#reactorsSheet.light{--rs-bg:#ffffff;--rs-fg:#17212b;--rs-sub:#6b7a8c;--rs-chip:#eef2f7;--rs-chip-h:#e2e9f1;--rs-gold:#a67c10;--rs-gold-bg:#fff7dc;--rs-gold-line:#ecd48a;--rs-shadow:0 -12px 44px rgba(15,23,42,.2);background:rgba(15,23,42,.38)}
-#reactorsSheet .rs-card{width:min(520px,100%);max-height:78vh;max-height:78dvh;display:flex;flex-direction:column;border-radius:24px 24px 0 0;padding:0 0 calc(12px + env(safe-area-inset-bottom,0px));background:var(--rs-bg);color:var(--rs-fg);box-shadow:var(--rs-shadow);direction:rtl;overflow:hidden;animation:rsUp .24s cubic-bezier(.2,.8,.2,1);transition:transform .18s ease}
-#reactorsSheet .rs-top{flex:0 0 auto;touch-action:none;cursor:grab}
-#reactorsSheet .rs-grab{width:40px;height:4px;border-radius:4px;background:var(--rs-sub);opacity:.4;margin:9px auto 4px}
-#reactorsSheet .rs-head{display:flex;align-items:center;gap:10px;padding:6px 18px 10px}
-#reactorsSheet .rs-title{font-weight:800;font-size:17px;letter-spacing:-.2px}
-#reactorsSheet .rs-count{min-width:26px;height:24px;padding:0 9px;border-radius:12px;background:var(--rs-gold-bg);color:var(--rs-gold);box-shadow:inset 0 0 0 1px var(--rs-gold-line);display:inline-grid;place-items:center;font:700 13px/1 system-ui,sans-serif}
-#reactorsSheet .rs-x{margin-inline-start:auto;width:36px;height:36px;border:0;border-radius:50%;background:var(--rs-chip);color:var(--rs-sub);display:grid;place-items:center;cursor:pointer;transition:background .15s,color .15s}
-#reactorsSheet .rs-x:hover,#reactorsSheet .rs-x:active{background:var(--rs-chip-h);color:var(--rs-fg)}
-#reactorsSheet .rs-x svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round}
-#reactorsSheet .rs-tabs{flex:0 0 auto;display:flex;gap:8px;overflow-x:auto;padding:2px 16px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#reactorsSheet{--rs-bg:#17212b;--rs-fg:#f1f5f9;--rs-sub:#8b9bad;--rs-line:rgba(255,255,255,.08);--rs-hover:rgba(255,255,255,.05);--rs-accent:#e4c45b;
+  position:fixed;inset:0;z-index:4000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.45);-webkit-tap-highlight-color:transparent;animation:rsFade .16s ease-out}
+#reactorsSheet.light{--rs-bg:#fff;--rs-fg:#17212b;--rs-sub:#718096;--rs-line:rgba(15,23,42,.08);--rs-hover:rgba(15,23,42,.04);--rs-accent:#b8860b;background:rgba(15,23,42,.32)}
+#reactorsSheet .rs-card{width:min(520px,100%);max-height:70vh;max-height:70dvh;display:flex;flex-direction:column;border-radius:20px 20px 0 0;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));background:var(--rs-bg);color:var(--rs-fg);direction:rtl;overflow:hidden;animation:rsUp .22s cubic-bezier(.2,.8,.2,1);transition:transform .18s ease}
+#reactorsSheet .rs-top{flex:0 0 auto;touch-action:none}
+#reactorsSheet .rs-grab{width:36px;height:4px;border-radius:4px;background:var(--rs-sub);opacity:.35;margin:8px auto 0}
+#reactorsSheet .rs-head{display:flex;align-items:center;gap:8px;padding:10px 20px 6px}
+#reactorsSheet .rs-title{font-weight:700;font-size:17px}
+#reactorsSheet .rs-count{font-size:15px;color:var(--rs-sub);font-weight:500}
+#reactorsSheet .rs-x{margin-inline-start:auto;margin-inline-end:-8px;width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--rs-sub);display:grid;place-items:center;cursor:pointer}
+#reactorsSheet .rs-x:active{background:var(--rs-hover)}
+#reactorsSheet .rs-x svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+#reactorsSheet .rs-tabs{flex:0 0 auto;display:flex;gap:4px;overflow-x:auto;padding:0 12px;border-bottom:1px solid var(--rs-line);scrollbar-width:none}
 #reactorsSheet .rs-tabs::-webkit-scrollbar{display:none}
-#reactorsSheet .rs-tab{flex:0 0 auto;height:36px;border:0;border-radius:18px;padding:0 14px;background:var(--rs-chip);color:var(--rs-fg);font:600 14px/1 inherit;font-family:inherit;cursor:pointer;display:inline-flex;gap:7px;align-items:center;transition:background .15s,box-shadow .15s}
-#reactorsSheet .rs-tab b{font:700 13px/1 system-ui,sans-serif;color:var(--rs-sub)}
-#reactorsSheet .rs-tab .rs-emo{font-size:19px}
-#reactorsSheet .rs-tab.on{background:var(--rs-gold-bg);box-shadow:inset 0 0 0 1.5px var(--rs-gold-line);color:var(--rs-fg)}
-#reactorsSheet .rs-tab.on b{color:var(--rs-gold)}
-#reactorsSheet .rs-list{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 12px 4px;-webkit-overflow-scrolling:touch}
-#reactorsSheet .rs-label{display:flex;align-items:center;gap:8px;padding:8px 8px 6px;font:700 12px/1 inherit;font-family:inherit;color:var(--rs-sub);letter-spacing:.2px}
-#reactorsSheet .rs-label::after{content:"";flex:1;height:1px;background:var(--rs-chip-h)}
-#reactorsSheet .rs-row{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:16px;margin-bottom:2px;border:1px solid transparent}
-#reactorsSheet .rs-row.mine{background:var(--rs-gold-bg);border-color:var(--rs-gold-line);cursor:pointer;margin-bottom:6px}
-#reactorsSheet .rs-row.mine:active{filter:brightness(.96)}
-#reactorsSheet .rs-row .g-av{flex:0 0 auto;width:44px;height:44px;font-size:18px;border-radius:50%;overflow:hidden}
+#reactorsSheet .rs-tab{flex:0 0 auto;position:relative;height:42px;border:0;background:transparent;padding:0 12px;color:var(--rs-sub);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+#reactorsSheet .rs-tab .rs-emo{font-size:18px}
+#reactorsSheet .rs-tab.on{color:var(--rs-fg)}
+#reactorsSheet .rs-tab.on::after{content:"";position:absolute;inset-inline:10px;bottom:-1px;height:2px;border-radius:2px;background:var(--rs-accent)}
+#reactorsSheet .rs-list{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:6px 8px 0;-webkit-overflow-scrolling:touch}
+#reactorsSheet .rs-row{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:12px}
+#reactorsSheet .rs-row.mine{cursor:pointer}
+#reactorsSheet .rs-row.mine:active{background:var(--rs-hover)}
+#reactorsSheet .rs-row .g-av{flex:0 0 auto;width:40px;height:40px;font-size:16px;border-radius:50%;overflow:hidden}
 #reactorsSheet .rs-row .g-av img{width:100%;height:100%;object-fit:cover;display:block}
-#reactorsSheet .rs-name{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px}
-#reactorsSheet .rs-name strong{font-weight:700;font-size:15px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#reactorsSheet .rs-name small{font-weight:500;font-size:12px;line-height:1.2;color:var(--rs-sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:right}
-#reactorsSheet .rs-row.mine .rs-name small{color:var(--rs-gold);direction:rtl}
-#reactorsSheet .rs-emo{font-size:24px;line-height:1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
-#reactorsSheet .rs-row .rs-emo{flex:0 0 auto;width:42px;height:42px;border-radius:50%;background:var(--rs-chip);display:grid;place-items:center}
-#reactorsSheet .rs-row.mine .rs-emo{background:var(--rs-bg);box-shadow:inset 0 0 0 1.5px var(--rs-gold-line)}
-#reactorsSheet .rs-empty{padding:30px 16px;text-align:center;color:var(--rs-sub);font-size:14px}
+#reactorsSheet .rs-name{flex:1 1 auto;min-width:0;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#reactorsSheet .rs-name small{display:block;margin-top:2px;font-size:12px;font-weight:400;color:var(--rs-sub)}
+#reactorsSheet .rs-emo{font-size:22px;line-height:1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+#reactorsSheet .rs-empty{padding:28px 16px;text-align:center;color:var(--rs-sub);font-size:14px}
 @keyframes rsFade{from{opacity:0}to{opacity:1}}
-@keyframes rsUp{from{transform:translateY(46px);opacity:.5}to{transform:none;opacity:1}}
+@keyframes rsUp{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){#reactorsSheet,#reactorsSheet .rs-card{animation:none;transition:none}}
 `;
   document.head.appendChild(st);
@@ -4713,33 +4706,23 @@ function renderReactorsSheet(msgId, rows) {
   function rowHtml(r) {
     const mine = isMine(r);
     const nm = r.uid ? gUserName(r.uid) : 'مستخدم';
-    let sub = '';
-    if (mine) sub = 'اضغط لإزالة تفاعلك';
-    else if (r.uid && typeof GU !== 'undefined' && GU[r.uid] && GU[r.uid].username) sub = '@' + GU[r.uid].username;
     return '<div class="rs-row' + (mine ? ' mine' : '') + '"' + (mine ? ' data-remove="1" role="button" tabindex="0"' : '') + '>' +
       (r.uid ? userAvHtml(r.uid, '') : '<div class="g-av" style="background:#556">؟</div>') +
-      '<div class="rs-name"><strong>' + esc(nm) + '</strong>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div>' +
+      '<div class="rs-name">' + esc(nm) + (mine ? '<small>اضغط لإزالة تفاعلك</small>' : '') + '</div>' +
       '<span class="rs-emo">' + esc(r.emoji) + '</span></div>';
   }
   function paint() {
-    tabs.innerHTML = '<button type="button" class="rs-tab' + (filter === 'all' ? ' on' : '') + '" data-f="all">الكل <b>' + rows.length + '</b></button>' +
-      sortedCounts.map(([e, n]) => '<button type="button" class="rs-tab' + (filter === e ? ' on' : '') + '" data-f="' + esc(e) + '"><span class="rs-emo">' + esc(e) + '</span><b>' + n + '</b></button>').join('');
+    tabs.innerHTML = '<button type="button" class="rs-tab' + (filter === 'all' ? ' on' : '') + '" data-f="all">الكل ' + rows.length + '</button>' +
+      sortedCounts.map(([e, n]) => '<button type="button" class="rs-tab' + (filter === e ? ' on' : '') + '" data-f="' + esc(e) + '"><span class="rs-emo">' + esc(e) + '</span>' + n + '</button>').join('');
     const shown = rows.filter(r => filter === 'all' || r.emoji === filter);
-    const mineRows = shown.filter(isMine), others = shown.filter(r => !isMine(r));
-    let h = '';
-    if (!shown.length) h = '<div class="rs-empty">لا توجد تفاعلات</div>';
-    else if (mineRows.length && others.length) {
-      h = '<div class="rs-label">تفاعلك</div>' + mineRows.map(rowHtml).join('') +
-          '<div class="rs-label">الآخرون · ' + others.length + '</div>' + others.map(rowHtml).join('');
-    } else h = shown.map(rowHtml).join('');
-    list.innerHTML = h;
+    list.innerHTML = shown.length ? shown.map(rowHtml).join('') : '<div class="rs-empty">لا توجد تفاعلات</div>';
     list.scrollTop = 0;
   }
   paint();
   tabs.onclick = ev => {
     const t = ev.target.closest && ev.target.closest('.rs-tab'); if (!t) return;
     filter = t.dataset.f; paint();
-    t.scrollIntoView && t.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const on = tabs.querySelector('.rs-tab.on'); on && on.scrollIntoView && on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   };
   function removeMine() {
     if (!me) return;
@@ -4762,7 +4745,7 @@ function renderReactorsSheet(msgId, rows) {
   sheet.querySelector('.rs-x').onclick = closeReactorsSheet;
   document.addEventListener('keydown', rsKey);
   document.body.appendChild(sheet);
-  card.style.minHeight = Math.min(card.offsetHeight, Math.round(window.innerHeight * 0.78)) + 'px';   // لا يقفز ارتفاع النافذة عند تغيير التبويب
+  card.style.minHeight = Math.min(card.offsetHeight, Math.round(window.innerHeight * 0.7)) + 'px';   // لا يقفز ارتفاع النافذة عند تغيير التبويب
 }
 
 function deleteMultipleMessagesForMe() {
