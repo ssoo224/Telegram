@@ -5544,10 +5544,10 @@ function openVideoViewer(src, messageId = '', isMine = false) {
     st.textContent =
       '.bvp{position:absolute;inset:0;pointer-events:none;direction:ltr;-webkit-tap-highlight-color:transparent;transition:opacity .22s}' +
       '.bvp.is-hidden{opacity:0}.bvp.is-hidden *{pointer-events:none!important}' +
-      '.bvp-center{position:absolute;top:50%;left:50%;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;border:0;outline:none;background:rgba(18,22,28,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;padding:0;transition:transform .12s,background .15s}' +
+      '.bvp-center{position:absolute;top:50%;left:50%;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;border:0;outline:none;background:rgba(18,22,28,.22);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;padding:0;transition:transform .12s,background .15s}' +
       '.bvp-center:active{transform:scale(.92)}.bvp-center svg{width:34px;height:34px;fill:currentColor}' +
       '.bvp-center .i-pause,.bvp.is-playing .bvp-center .i-play{display:none}.bvp.is-playing .bvp-center .i-pause{display:block}' +
-      '.bvp.is-loading .bvp-center svg{display:none!important}.bvp-center .bvp-spin{display:none;width:30px;height:30px;border:3px solid rgba(255,255,255,.3);border-top-color:var(--babylon-gold,#d4af37);border-radius:50%;animation:bvpspin .8s linear infinite}' +
+      '.bvp.is-loading .bvp-center svg{display:none!important}.bvp-center .bvp-spin{display:none;width:30px;height:30px;border:3px solid rgba(255,255,255,.14);border-top-color:var(--babylon-gold,#d4af37);border-radius:50%;animation:bvpspin .8s linear infinite}' +
       '.bvp.is-loading .bvp-spin{display:block}@keyframes bvpspin{to{transform:rotate(360deg)}}' +
       '.bvp-bar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;padding:30px 16px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,0));pointer-events:auto}' +
       '.bvp-t{flex:0 0 auto;min-width:42px;color:#fff;font:600 13px/1 system-ui,-apple-system,sans-serif;font-variant-numeric:tabular-nums;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.6)}' +
