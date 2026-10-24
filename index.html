@@ -3841,15 +3841,18 @@ function blockedByThem(uid) {
   return db.collection('users').doc(uid).collection('blocks').doc(currentUser.uid).get()
     .then(d => d.exists).catch(() => false).then(v => { blockedByCache[uid] = { v, t: Date.now() }; return v; });
 }
+function bbBlkLayout(on) { const cv = document.getElementById('chatView'); if (cv) cv.classList.toggle('bb-blk-on', !!on); }
 function applyChatBlockState() {
   const uid = currentChatOtherUserId, bn = document.getElementById('blockBanner');
   if (!bn) return;
+  bbBlkLayout(false);
   const chatOpen = uid && activeChatId && !document.getElementById('chatView').classList.contains('hidden');
   const setBars = blocked => { ['textInputBar', 'recordingBar'].forEach(id => { const el = document.getElementById(id); if (el && blocked) el.classList.add('hidden'); else if (el && id === 'textInputBar') el.classList.remove('hidden'); }); };
   if (!chatOpen) { chatBlockedNow = false; bn.classList.add('hidden'); return; }
   const stx = document.getElementById('chatSub');
   if (stx && myBlocks[uid] && stx.dataset.real) { stx.textContent = stx.dataset.real; stx.style.color = stx.dataset.realColor || ''; }
   if (myBlocks[uid]) {
+    bbBlkLayout(true);
     chatBlockedNow = true; chatBlockedMsg = 'أنت حاظر هذا المستخدم، ألغِ الحظر حتى تراسله';
     bn.className = 'block-banner bb-blocked'; bn.innerHTML = '<span class="bb-blk-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg></span><span class="bb-blk-txt">هذا المستخدم محظور</span><button type="button" class="bb-blk-btn" onclick="unblockUser(currentChatOtherUserId)">إلغاء الحظر</button>';
     bn.classList.remove('hidden'); setBars(true); return;
@@ -7527,7 +7530,7 @@ function openGroupRoom(chatId,keepLimit){
   showView('chatView');
   applyChatBlockState();
   document.getElementById('textInputBar')?.classList.remove('hidden');
-  document.getElementById('blockBanner')?.classList.add('hidden');
+  document.getElementById('blockBanner')?.classList.add('hidden'); document.getElementById('chatView')?.classList.remove('bb-blk-on');
   document.getElementById('chatGroupInfoAction')?.classList.remove('hidden');
   hideMentionPop();pinIdx=-1;
   updateGroupHeader(meta);
@@ -9586,11 +9589,16 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 /* عند ظهور شريط الحظر: لا يبقى أي عنصر آخر من حقل الكتابة خلفه */
 #chatView .chat-input-container:has(#blockBanner.bb-blocked:not(.hidden)) > :not(#blockBanner){display:none!important}
 #chatView .chat-input-container:has(#blockBanner.bb-blocked:not(.hidden)){min-height:0!important;gap:0!important;padding-bottom:max(6px,env(safe-area-inset-bottom,0px))!important}
+/* شريط الحظر يطفو فوق المحادثة: لا خلفية خلفه ولا يغطي أي رسالة */
+#chatView.bb-blk-on .chat-input-container{position:absolute!important;left:0!important;right:0!important;bottom:0!important;z-index:6;background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0 0 max(6px,env(safe-area-inset-bottom,0px))!important;min-height:0!important;pointer-events:none}
+#chatView.bb-blk-on .chat-input-container > :not(#blockBanner){display:none!important}
+#chatView.bb-blk-on #blockBanner{pointer-events:auto}
+#chatView.bb-blk-on .messages-area{padding-bottom:84px!important}
 #blockBanner .bb-blk-ic{width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff!important;-webkit-text-fill-color:#fff!important;background:linear-gradient(135deg,#f87171,#dc2626)!important}
 .app-container #mainPage #blockBanner .bb-blk-ic,.app-container[data-app-theme] #mainPage #blockBanner .bb-blk-ic{color:#fff!important}
 #blockBanner .bb-blk-ic svg,#blockBanner .bb-blk-ic svg *{width:18px;height:18px;fill:none!important;stroke:#fff!important;color:#fff!important;stroke-width:2;stroke-linecap:round}
 #blockBanner .bb-blk-ic svg *{width:auto;height:auto}
-#blockBanner .bb-blk-txt{flex:none;color:inherit;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+#blockBanner .bb-blk-txt{flex:1;color:inherit;text-shadow:0 1px 2px rgba(0,0,0,.25)}
 #blockBanner .bb-blk-btn{margin:0;flex:none;padding:7px 16px;border-radius:18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;text-shadow:none;box-shadow:none;background:rgba(220,38,38,.14)!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important;border:2px solid #f87171!important}
 .app-container[data-app-theme="light"] #blockBanner.bb-blocked{color:#b91c1c;background:#fff!important;border-color:#dce4ee!important}
 .app-container[data-app-theme="light"] #mainPage #blockBanner .bb-blk-txt{color:#b91c1c!important}
