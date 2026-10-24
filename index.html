@@ -2700,6 +2700,8 @@ window.__acOn = !!(APP_CHECK_SITE_KEY && firebase.appCheck);
 const auth = firebase.auth();
 try { auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => console.warn("Auth persistence preference:", err)); } catch (e) {}
 const db = firebase.firestore();
+/* العمل بدون إنترنت: تخزين محلي لبيانات Firestore كي تظهر المحادثات والملف عند انقطاع الاتصال */
+try { db.enablePersistence({ synchronizeTabs: true }).catch(function (e) { console.warn('Firestore persistence:', e && e.code); }); } catch (e) {}
 
 let messaging = null;
 if (firebase.messaging.isSupported()) {
@@ -2742,9 +2744,12 @@ let currentStoryIndex = 0;
 let storyTimer = null;
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('firebase-messaging-sw.js')
+  navigator.serviceWorker.register('offline-sw.js')
     .then(reg => console.log('SW Registered', reg))
-    .catch(err => console.log('SW Fail', err));
+    .catch(err => {
+      console.log('SW Fail', err);
+      navigator.serviceWorker.register('firebase-messaging-sw.js').catch(() => {});
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -2924,11 +2929,13 @@ function babylonOtpCall(user, type, extra) {
   return babylonApi('/api/send-mail', Object.assign({ type: type }, extra || {}), user);
 }
 function babylonOtpGate(user) {
+  /* بدون إنترنت: ندخل بالحساب المخزَّن (لا يمكن إرسال رمز تحقق أصلًا) */
+  if (navigator.onLine === false || window.__netOk === false) return Promise.resolve(true);
   return user.getIdTokenResult().then(r => {
     const c = r.claims || {};
     if (c.otpAuthTime != null && Number(c.otpAuthTime) === Number(c.auth_time)) return true;
     return babylonShowOtp(user);
-  }).catch(() => babylonShowOtp(user));
+  }).catch(err => (err && err.code === 'auth/network-request-failed') ? true : babylonShowOtp(user));
 }
 function babylonShowOtp(user) {
   return new Promise(resolve => {
@@ -3075,8 +3082,8 @@ function loadUserDataAndEnter(uid) {
 
     try { updateProfileUI(currentUserData); } catch (e) { console.warn("Profile UI fallback:", e); }
     try { syncPrefsFromUser(currentUserData); } catch (e) { console.warn("Preference sync fallback:", e); }
-    try { refreshPushTokenOnce(); } catch (e) { console.warn("Push token refresh skipped:", e); }
-    try { ensureUsernameDoc(currentUserData); } catch (e) { console.warn("Username sync skipped:", e); }
+    try { if (navigator.onLine !== false && window.__netOk !== false) refreshPushTokenOnce(); } catch (e) { console.warn("Push token refresh skipped:", e); }
+    try { if (navigator.onLine !== false && window.__netOk !== false && profile) ensureUsernameDoc(currentUserData); } catch (e) { console.warn("Username sync skipped:", e); }
     try { checkUserStories(); } catch (e) { console.warn("Stories loading skipped:", e); }
     try { loadUserPosts(); } catch (e) { console.warn("Posts loading skipped:", e); }
 
@@ -3089,6 +3096,9 @@ function loadUserDataAndEnter(uid) {
   userDocUnsubscribe = userRef.onSnapshot(doc => {
     if (doc.exists) {
       enterWithProfile(doc.data());
+    } else if (doc.metadata && doc.metadata.fromCache) {
+      /* بدون اتصال ولا نسخة محفوظة: ندخل بواجهة مؤقتة دون إنشاء/كتابة ملف المستخدم (كي لا نكتب فوق بياناتك الحقيقية) */
+      enterWithProfile(null);
     } else {
       // إذا كان حساب المصادقة موجوداً لكن ملف المستخدم مفقوداً، أنشئ ملفاً أساسياً كي لا تبقى الواجهة عالقة.
       const email = (currentUser && currentUser.email) || "";
@@ -11178,4 +11188,102 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 :is(#profileView,#otherUserProfileView) .pf-cover::after{
   height:calc(176px * .55)!important}
 </style>
+
+<script id="babylon-offline">
+/* العمل بدون إنترنت: الواجهة تفتح، لكن لا إرسال ولا استلام.
+   - عند الدخول بدون اتصال: "عذرا الهاتف غير متصل بالانترنت".
+   - عند عودة الاتصال: "تم الاتصال بالانترنت". */
+(function(){
+  var MSG_OFF='عذرا الهاتف غير متصل بالانترنت', MSG_ON='تم الاتصال بالانترنت';
+  window.__netOk = navigator.onLine !== false;
+  var wasOff=false, started=false, pollT=0;
+
+  function toast(m,k){ try{ if(typeof showToast==='function') showToast(m,k); }catch(_){} }
+
+  function apply(ok){
+    var prev=window.__netOk;
+    window.__netOk=ok;
+    try{ document.documentElement.classList.toggle('net-off',!ok); }catch(_){}
+    if(!ok){
+      if(prev!==false || !wasOff){ wasOff=true; toast(MSG_OFF,'error'); }
+    }else if(wasOff){
+      wasOff=false; toast(MSG_ON,'success');
+    }
+    schedule();
+  }
+
+  /* فحص فعلي للاتصال (navigator.onLine وحده لا يكفي مع واي فاي بلا إنترنت) */
+  function probe(){
+    if(navigator.onLine===false) return Promise.resolve(false);
+    var ctl=('AbortController' in window)?new AbortController():null;
+    var t=setTimeout(function(){ try{ctl&&ctl.abort();}catch(_){} },5000);
+    return fetch('/manifest.json?__ping='+Date.now(),{cache:'no-store',signal:ctl?ctl.signal:undefined})
+      .then(function(){ clearTimeout(t); return true; })
+      .catch(function(){ clearTimeout(t); return false; });
+  }
+  function check(){ return probe().then(apply); }
+
+  function schedule(){
+    clearTimeout(pollT);
+    pollT=setTimeout(check, window.__netOk===false ? 6000 : 30000);
+  }
+
+  window.addEventListener('offline',function(){ apply(false); });
+  window.addEventListener('online',function(){ check(); });
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) check(); });
+
+  /* عند فتح التطبيق: ننتظر اختفاء شاشة البداية ثم نُظهر الإشعار إن لم يكن هناك اتصال */
+  function whenSplashGone(cb){
+    var tries=0;
+    (function wait(){
+      var s=document.getElementById('splashPage');
+      var gone=!s || /\b(leaving|gone)\b/.test(s.className) || getComputedStyle(s).display==='none';
+      if(gone || ++tries>75) return cb();
+      setTimeout(wait,200);
+    })();
+  }
+  probe().then(function(ok){
+    window.__netOk=ok;
+    try{ document.documentElement.classList.toggle('net-off',!ok); }catch(_){}
+    if(!ok){ wasOff=true; whenSplashGone(function(){ if(window.__netOk===false) toast(MSG_OFF,'error'); }); }
+    schedule();
+  });
+
+  /* منع الإرسال/الدخول بدون اتصال */
+  var GUARDED=['sendMessage','sendImage','sendChatVideo','stopAndSendRecording','publishPost','publishStory',
+               'sendStoryEmoji','sendStoryReply','createGroup','sendReset','loginUser','registerUser'];
+  function guard(name){
+    var f=window[name];
+    if(typeof f!=='function' || f.__offGuard) return;
+    var g=function(){
+      if(window.__netOk===false || navigator.onLine===false){
+        var a=arguments[0];
+        try{ if(a && typeof a.preventDefault==='function') a.preventDefault(); }catch(_){}
+        toast(MSG_OFF,'error');
+        return;
+      }
+      return f.apply(this,arguments);
+    };
+    g.__offGuard=1;
+    try{ window[name]=g; }catch(_){}
+  }
+  GUARDED.forEach(guard);
+
+  /* شبكة أمان: أي إضافة مستند جديد (رسالة/منشور...) تُرفض بدون اتصال بدل أن تُخزَّن وتُرسل لاحقًا */
+  try{
+    var CR=firebase.firestore.CollectionReference;
+    if(CR && CR.prototype && typeof CR.prototype.add==='function' && !CR.prototype.add.__offGuard){
+      var oAdd=CR.prototype.add;
+      CR.prototype.add=function(){
+        if(window.__netOk===false || navigator.onLine===false){
+          var e=new Error('offline'); e.code='unavailable';
+          return Promise.reject(e);
+        }
+        return oAdd.apply(this,arguments);
+      };
+      CR.prototype.add.__offGuard=1;
+    }
+  }catch(_){}
+})();
+</script>
 
