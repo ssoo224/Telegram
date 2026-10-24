@@ -2277,8 +2277,8 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
     <p class="auth-subtitle">أرسلنا رابط التحقق إلى<br><b id="verifyEmail" style="direction:ltr;unicode-bidi:isolate;color:var(--babylon-gold);"></b><br>افتح الرابط ثم ارجع واضغط "تم التحقق". إذا ما وصل شيّك مجلد السبام.</p>
     <div style="width:100%;">
       <button type="button" class="babylon-btn" onclick="checkVerified()">تم التحقق، دخول</button>
-      <button type="button" id="resendBtn" class="babylon-btn" style="margin-top:10px;background:transparent;border:1px solid var(--babylon-border);color:var(--babylon-gold);" onclick="resendVerification()">إعادة إرسال الرابط</button>
-      <button type="button" class="babylon-btn" style="margin-top:10px;background:transparent;border:1px solid var(--error-color);color:var(--error-color);" onclick="auth.signOut().then(() => location.reload())">تسجيل الخروج</button>
+      <button type="button" id="resendBtn" class="babylon-btn verify-secondary-btn" style="margin-top:10px;background:transparent;border:1px solid var(--babylon-border);color:var(--babylon-gold);" onclick="resendVerification()">إعادة إرسال الرابط</button>
+      <button type="button" class="babylon-btn verify-danger-btn" style="margin-top:10px;background:transparent;border:1px solid var(--error-color);color:var(--error-color);" onclick="auth.signOut().then(() => location.reload())">تسجيل الخروج</button>
     </div>
   </section>
 
@@ -9451,6 +9451,18 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 </script>
+<style id="verify-page-theme-fix">
+/* صفحة التحقق من البريد: ألوان صحيحة للطورين الفاتح والداكن */
+#verifyPage .verify-secondary-btn,#verifyPage .verify-danger-btn{background-image:none!important;box-shadow:none!important;text-shadow:none!important;font-weight:700!important;filter:none!important}
+/* الطور النهاري */
+.app-container[data-app-theme="light"] #verifyPage .verify-secondary-btn{background:#fff!important;border:1px solid #d5dbe5!important;color:#8a6410!important;-webkit-text-fill-color:#8a6410!important}
+.app-container[data-app-theme="light"] #verifyPage .verify-danger-btn{background:#fff5f5!important;border:1px solid #dc2626!important;color:#b91c1c!important;-webkit-text-fill-color:#b91c1c!important}
+.app-container[data-app-theme="light"] #verifyPage #verifyEmail{color:#8a6410!important}
+.app-container[data-app-theme="light"] #verifyPage .auth-title{color:#8b680e}
+/* الطور الليلي */
+.app-container[data-app-theme="dark"] #verifyPage .verify-secondary-btn{background:transparent!important;border:1px solid var(--babylon-border)!important;color:#f0d77a!important;-webkit-text-fill-color:#f0d77a!important}
+.app-container[data-app-theme="dark"] #verifyPage .verify-danger-btn{background:transparent!important;border:1px solid #f87171!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important}
+</style>
 </body>
 </html>
 
