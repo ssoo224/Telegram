@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1022301130899",
+    "project_id": "aj-chat-df534",
+    "storage_bucket": "aj-chat-df534.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1022301130899:android:f384a37f10cb49efb6bd66",
+        "android_client_info": {
+          "package_name": "com.babylon.chat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNl4rxtMyStQ2_OihJGONJZzlIBwzQCos"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
