@@ -33,7 +33,7 @@ function page(title, text, btn, link, foot, hello) {
   return WRAP('<h2 style="color:#b8860b;margin:0 0 14px">' + esc(title) + '</h2>'
     + '<p style="line-height:1.9;margin:0 0 6px;font-weight:bold">' + hello + '</p>'
     + '<p style="line-height:1.9;margin:0 0 18px">' + text + '</p>'
-    + '<p style="text-align:center;margin:26px 0"><a href="' + esc(link) + '" style="background:#d4a937;color:#17212b;padding:13px 30px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block">' + esc(btn) + '</a></p>'
+    + '<p style="text-align:center;margin:26px 0"><a href="' + esc(link) + '" style="background-color:#d3a93b;background-image:linear-gradient(135deg,#e6c566 0%,#d3a93b 45%,#bc8e24 100%);color:#ffffff;padding:13px 30px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block;text-shadow:0 1px 2px rgba(110,72,0,.45);box-shadow:0 6px 16px rgba(190,150,40,.35)">' + esc(btn) + '</a></p>'
     + '<p style="color:#6b7280;font-size:13px;line-height:1.7;margin:0 0 14px">' + esc(foot) + '</p>' + SIGN);
 }
 function codePage(code) {
