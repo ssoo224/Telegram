@@ -2627,20 +2627,27 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
         </div>
 
         <form id="textInputBar" class="chat-input-bar" onsubmit="sendMessage(event)" autocomplete="off" novalidate data-form-type="other">
-          <div id="messageInput" class="msg-editable" contenteditable="plaintext-only" role="textbox" aria-multiline="true" aria-label="اكتب رسالتك" data-placeholder="اكتب رسالتك..." dir="auto" spellcheck="false" autocorrect="off" autocapitalize="sentences" inputmode="text" enterkeyhint="enter" tabindex="0"></div>
+          <div id="messageInput" class="msg-editable" contenteditable="true" role="textbox" aria-multiline="true" aria-label="اكتب رسالتك" data-placeholder="اكتب رسالتك..." dir="auto" spellcheck="false" autocorrect="off" autocapitalize="sentences" inputmode="text" enterkeyhint="enter" tabindex="0"></div>
           <label class="icon-btn" for="chatImageInput" style="color:var(--text-muted); cursor:pointer;" title="إرسال صورة أو فيديو"><i data-ic="image" data-size="22"></i></label>
           <input type="file" id="chatImageInput" accept="image/*,video/*" class="hidden" onchange="sendImage(event)">
           <button type="button" class="icon-btn mic-button" style="color:var(--text-muted)" onclick="startRecording()" title="تسجيل صوت" aria-label="تسجيل صوت"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1M12 18v3M8.5 21h7"></path></svg></button>
           <button class="icon-btn" style="color:var(--babylon-gold)" type="submit" aria-label="إرسال"><i data-ic="send" data-size="22"></i></button>
         </form>
 <script id="babylon-editable-composer">
-/* حقل الرسالة عنصر قابل للتحرير (وليس input) كي لا يعرض المتصفح شريط الإكمال التلقائي (مفاتيح/بطاقات/مواقع) */
+/* حقل الرسالة عنصر قابل للتحرير (وليس input) كي لا يعرض المتصفح شريط الإكمال التلقائي.
+   ملاحظة: يجب أن يكون contenteditable="true" (وليس plaintext-only) كي تفعّل لوحة المفاتيح أزرار GIF والملصقات.
+   النص يبقى نصاً صرفاً عبر الاعتراض أدناه، وأي صورة/GIF/ملصق قادم من لوحة المفاتيح يُرسل كصورة. */
 (function(){
   var el = document.getElementById('messageInput'); if (!el) return;
-  var form = document.getElementById('textInputBar');
-  try { el.contentEditable = 'plaintext-only'; if (el.contentEditable !== 'plaintext-only') el.contentEditable = 'true'; } catch(e) { el.contentEditable = 'true'; }
+  el.contentEditable = 'true';
+  el.setAttribute('inputmode','text');
+  function getText(){
+    var t = (el.innerText != null ? el.innerText : el.textContent) || '';
+    t = t.replace(/\u00a0/g, ' ').replace(/\r\n?/g, '\n');
+    return t.replace(/\n$/, '');
+  }
   Object.defineProperty(el, 'value', {
-    get: function(){ return (el.textContent || '').replace(/\u00a0/g, ' '); },
+    get: function(){ return getText(); },
     set: function(v){ el.textContent = v == null ? '' : String(v); }
   });
   function caretToEnd(){
@@ -2648,15 +2655,56 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
   }
   var nativeFocus = el.focus.bind(el);
   el.focus = function(opts){ try { nativeFocus(opts); } catch(e) { nativeFocus(); } caretToEnd(); };
-  el.addEventListener('input', function(){ if (!el.textContent) el.innerHTML = ''; });
-  /* زر Enter ينزل سطراً جديداً؛ الإرسال بزر الإرسال فقط */
+
+  function sendFile(f){
+    if (f && /^image\//.test(f.type) && typeof sendImage === 'function') sendImage({ target: { files: [f], value: '' } });
+  }
+  /* تنظيف المحتوى: حذف أي وسوم غير <br> وتحويل الصور إلى ملفات تُرسل */
+  var cleaning = false;
+  function sanitize(){
+    if (cleaning) return;
+    var imgs = el.querySelectorAll('img');
+    var rich = el.querySelector('*:not(br):not(div):not(p)');
+    if (!imgs.length && !rich) return;
+    cleaning = true;
+    try {
+      Array.prototype.forEach.call(imgs, function(im){
+        var src = im.getAttribute('src') || '';
+        im.parentNode && im.parentNode.removeChild(im);
+        if (!src) return;
+        fetch(src).then(function(r){ return r.blob(); }).then(function(b){
+          var type = b.type && /^image\//.test(b.type) ? b.type : 'image/gif';
+          sendFile(new File([b], 'keyboard.' + (type.split('/')[1] || 'gif'), { type: type }));
+        }).catch(function(){ try{ showToast('تعذر إرسال الملصق'); }catch(e){} });
+      });
+      Array.prototype.forEach.call(el.querySelectorAll('*:not(br):not(div):not(p)'), function(n){
+        if (n.parentNode) n.parentNode.replaceChild(document.createTextNode(n.textContent || ''), n);
+      });
+    } finally { cleaning = false; }
+  }
+  new MutationObserver(sanitize).observe(el, { childList: true, subtree: true });
+
+  el.addEventListener('input', function(){
+    if (!el.textContent && !el.querySelector('img')) el.innerHTML = '';
+  });
+  /* Enter ينزل سطراً جديداً بدون كتل HTML؛ الإرسال بزر الإرسال فقط */
+  el.addEventListener('beforeinput', function(e){
+    if (e.inputType === 'insertParagraph' || e.inputType === 'insertLineBreak') {
+      e.preventDefault();
+      document.execCommand('insertLineBreak');
+    }
+  });
   el.addEventListener('paste', function(e){
     e.preventDefault();
     var cd = e.clipboardData || window.clipboardData;
-    /* صورة/ملصق/GIF قادم من لوحة المفاتيح: يُرسل كصورة */
     var f = cd && cd.files && cd.files[0];
-    if (f && /^image\//.test(f.type) && typeof sendImage === 'function') { sendImage({ target: { files: [f], value: '' } }); return; }
-    var t = ((cd && cd.getData('text')) || '').replace(/\r\n?/g, '\n');
+    if (!f && cd && cd.items) {
+      for (var i = 0; i < cd.items.length; i++) {
+        if (cd.items[i].kind === 'file' && /^image\//.test(cd.items[i].type)) { f = cd.items[i].getAsFile(); break; }
+      }
+    }
+    if (f && /^image\//.test(f.type)) { sendFile(f); return; }
+    var t = ((cd && cd.getData('text/plain')) || '').replace(/\r\n?/g, '\n');
     document.execCommand('insertText', false, t);
   });
   el.addEventListener('drop', function(e){ e.preventDefault(); });
@@ -5264,6 +5312,13 @@ function glyphHtml(sym, size) {
 }
 
 function compressImage(file, cb) {
+  if ((file.type === 'image/gif' || file.type === 'image/webp') && file.size <= 650000) {
+    const fr = new FileReader();
+    fr.onload = () => cb(fr.result);
+    fr.onerror = () => cb(null);
+    fr.readAsDataURL(file);
+    return;
+  }
   const img = new Image();
   const url = URL.createObjectURL(file);
   img.onload = () => {
