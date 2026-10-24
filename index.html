@@ -3658,7 +3658,8 @@ function renderSettingsHero() {
 
 /* ===== الخصوصية والأمان ===== */
 function isMeUser(u){ return !!u && (u === currentUserData || (currentUser && (u.id === currentUser.uid || u.uid === currentUser.uid))); }
-function pvUrl(u){ if (!u || !u.avatarUrl) return ''; return (u.hideAvatar && !isMeUser(u)) ? '' : u.avatarUrl; }
+function bbBlockedEither(id){ try { if (!id) return false; if (myBlocks && myBlocks[id]) return true; const c = blockedByCache[id]; return !!(c && c.v); } catch (e) { return false; } }
+function pvUrl(u){ if (!u || !u.avatarUrl) return ''; if (u.hideAvatar && !isMeUser(u)) return ''; if (!isMeUser(u) && bbBlockedEither(u.id)) return ''; return u.avatarUrl; }
 // صورة مصغّرة (192px) لصورة المرسل تُرسل لإشعار أندرويد بدل الصورة الأصلية الكبيرة.
 const notifAvatarCache = {};
 function notifAvatarThumb(url, key, cb){
@@ -3798,21 +3799,41 @@ function startBlocksListener() {
     document.querySelectorAll('.chat-item[data-other]').forEach(el => { el.style.display = ''; el.classList.toggle('is-blocked', !!myBlocks[el.dataset.other]); });
     updateBlockBtn(); applyChatBlockState(); renderStoriesBar();
     try { if (window.__bbOtherU && window.__bbOtherU.id === currentChatOtherUserId) bbApplyBlockPrivacy(window.__bbOtherU); } catch (e) {}
+    try { bbRefreshChatAvatar(); } catch (e) {}
+    try { const sig = Object.keys(myBlocks).sort().join(','); if (window.__bbBlkSig !== undefined && window.__bbBlkSig !== sig && typeof loadChats === 'function') { clearTimeout(window.__bbBlkT); window.__bbBlkT = setTimeout(() => { try { loadChats(); } catch (e) {} }, 250); } window.__bbBlkSig = sig; } catch (e) {}
     if (document.getElementById('blkOverlay')) sxOpenBlocked(true);
   }, () => {});
+}
+function bbProfileAvatar(u) {
+  const img = document.getElementById('otherAvatarImg'), tx = document.getElementById('otherAvatarText'); if (!img || !tx) return;
+  const url = pvUrl(u);
+  if (url) { img.src = url; img.classList.remove('hidden'); tx.classList.add('hidden'); }
+  else { img.classList.add('hidden'); img.removeAttribute('src'); tx.classList.remove('hidden'); }
+}
+function bbRefreshChatAvatar() {
+  const u = window.__bbChatU, box = document.getElementById('chatAvatar');
+  if (!u || !box || u.id !== currentChatOtherUserId) return;
+  const url = pvUrl(u);
+  box.innerHTML = url ? '<img src="' + esc(url) + '">' : '';
+  if (!url) box.textContent = (u.displayName || '?').charAt(0).toUpperCase();
 }
 function bbApplyBlockPrivacy(u) {
   if (!u) return;
   const uid = u.id, st = document.getElementById('otherHeaderStatus'); if (!st) return;
-  if (myBlocks[uid]) { st.style.display = 'none'; applyCover('other', 'babylon'); return; }
+  const sp = st.querySelector('span:last-child');
+  if (myBlocks[uid]) {
+    st.style.display = 'none'; st.classList.remove('online'); if (sp) sp.textContent = '';
+    applyCover('other', 'babylon'); bbProfileAvatar(u); return;
+  }
   st.style.display = '';
   setPfStatus(st, u.online, u.lastSeen, u);
   applyCover('other', u.cover || 'babylon');
+  bbProfileAvatar(u);
   blockedByThem(uid).then(b => {
     if (!b || currentChatOtherUserId !== uid || myBlocks[uid]) return;
     st.classList.remove('online');
-    const sp = st.querySelector('span:last-child'); if (sp) sp.textContent = 'آخر ظهور كان منذ زمن طويل';
-    applyCover('other', 'babylon');
+    if (sp) sp.textContent = 'آخر ظهور كان منذ زمن طويل';
+    applyCover('other', 'babylon'); bbProfileAvatar(u);
   });
 }
 function blockedByThem(uid) {
@@ -4227,7 +4248,7 @@ function openChatRoom(otherUserId, keepLimit) {
 
   userUnsubscribe = db.collection("users").doc(otherUserId).onSnapshot(doc => {
     if (doc.exists) {
-      const u = doc.data();
+      const u = doc.data(); u.id = u.id || otherUserId; window.__bbChatU = u;
       document.getElementById("chatTitleText").textContent = u.displayName || "مستخدم";
       
       const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
@@ -5178,9 +5199,9 @@ function loadChats() {
         existingItem.dataset.updatedat = String(chatData.updatedAt || 0);
         existingItem.style.display = ''; existingItem.classList.toggle('is-blocked', !!myBlocks[otherId]);
 
-        db.collection("users").doc(otherId).get().then(userDoc => {
+        Promise.all([db.collection("users").doc(otherId).get(), blockedByThem(otherId)]).then(([userDoc]) => {
           if (!userDoc.exists) return;
-          const u = userDoc.data();
+          const u = userDoc.data(); u.id = u.id || otherId;
 
           db.collection("chats").doc(chatId).collection("messages")
             .orderBy("createdAt", "desc")
@@ -5246,7 +5267,7 @@ function loadChats() {
                   const verifiedBadge = isUVerified ? `<span class="verified-badge" style="width:13px;height:13px;font-size:8px;">✓</span>` : '';
 
                   existingItem.innerHTML = `
-                    <div class="cl-av"><div class="avatar${ringCls(u)} ${toneCls(u)}" onclick="chatAvatarStory(event,'${String(otherId).replace(/[^\w-]/g,'')}')">${pvUrl(u) ? `<img src="${esc(pvUrl(u))}">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>${(!lsHidden(u) && u.online && Date.now() - (u.lastSeen || 0) < 45000) ? '<span class="cl-online"></span>' : ''}</div>
+                    <div class="cl-av"><div class="avatar${ringCls(u)} ${toneCls(u)}" onclick="chatAvatarStory(event,'${String(otherId).replace(/[^\w-]/g,'')}')">${pvUrl(u) ? `<img src="${esc(pvUrl(u))}">` : esc((u.displayName||"?").charAt(0).toUpperCase())}</div>${(!lsHidden(u) && !bbBlockedEither(otherId) && u.online && Date.now() - (u.lastSeen || 0) < 45000) ? '<span class="cl-online"></span>' : ''}</div>
                     <div class="chat-item-info">
                       <div class="chat-item-header-row">
                         <div class="chat-item-name">${esc(u.displayName || "مستخدم")} ${verifiedBadge}</div>
