@@ -5563,7 +5563,7 @@ function openVideoViewer(src, messageId = '', isMine = false) {
   v.className = 'babylon-media-viewer video-viewer';
   v.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;';
   const vid = document.createElement('video');
-  vid.preload = 'auto'; vid.src = src; vid.controls = false; vid.autoplay = true; vid.playsInline = true;
+  vid.preload = 'auto'; vid.poster = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; vid.src = src; vid.controls = false; vid.autoplay = true; vid.playsInline = true;
   vid.setAttribute('playsinline', ''); vid.setAttribute('webkit-playsinline', '');
   vid.style.cssText = 'max-width:100%;max-height:100%;background:#000;';
 
