@@ -2139,7 +2139,10 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
 /* ثلاث نقاط في أعلى بروفايل الشخص الآخر (يسار الشاشة، فوق الغلاف) + قائمة */
 #otherUserProfileView .pf-more-wrap{display:block}
 #otherUserProfileView .pf-more{padding:0}
-#otherUserProfileView.pf-expanded .pf-more-wrap{opacity:0;pointer-events:none}
+/* شريط الأعلى لا يحجب نقاط الصورة المكبّرة تحته؛ أزراره فقط تستقبل اللمس */
+#otherUserProfileView>.pf-topbar{pointer-events:none}
+#otherUserProfileView>.pf-topbar .pf-round{pointer-events:auto}
+#otherUserProfileView.pf-expanded .pf-more-wrap,#otherUserProfileView.pf-expanded .pf-more-wrap .pf-more{opacity:0;pointer-events:none!important}
 #otherTopMenu{position:absolute;z-index:30;left:12px;top:calc(60px + env(safe-area-inset-top,0px));min-width:176px;padding:6px;border-radius:16px;background:rgba(24,30,42,.96);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);box-shadow:0 12px 32px rgba(0,0,0,.4);direction:rtl;visibility:hidden;opacity:0;transform:scale(.92) translateY(-6px);transform-origin:top left;transition:opacity .16s,transform .16s,visibility .16s}
 #otherTopMenu.open{visibility:visible;opacity:1;transform:none}
 #otherTopMenu button{display:block;width:100%;text-align:right;padding:12px 14px;border:0;border-radius:11px;background:transparent;color:#f1f5f9;font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer}
@@ -2159,9 +2162,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
     var menu=document.createElement('div'); menu.id='otherTopMenu'; view.appendChild(menu);
     function toast(t){ if(typeof showToast==='function') showToast(t); }
     function build(){
-      var img=document.getElementById('otherAvatarImg');
-      var hasImg=!!(img && img.getAttribute('src') && !img.classList.contains('hidden'));
-      menu.innerHTML='<button type="button" data-a="stars">إرسال نجوم</button>'+(hasImg?'<button type="button" data-a="dl">تنزيل الصورة</button>':'');
+      menu.innerHTML='<button type="button" data-a="stars">إرسال نجوم</button>';
     }
     btn.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); build(); menu.classList.toggle('open'); });
     menu.addEventListener('click',function(e){
@@ -2171,11 +2172,6 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
         var sb=document.getElementById('otherStarsBtn');
         if(sb && sb.classList.contains('hidden')) toast('إرسال النجوم غير متاح لحسابك');
         else if(typeof devGiftStars==='function') devGiftStars();
-      }else if(b.dataset.a==='dl'){
-        var img=document.getElementById('otherAvatarImg'), src=img&&img.getAttribute('src');
-        if(!src){ toast('لا توجد صورة شخصية لتنزيلها'); return; }
-        avatarGalleryItems=[src]; avatarGalleryIndex=0; avatarGalleryReadOnly=true;
-        if(typeof avatarDownload==='function') avatarDownload();
       }
     });
     document.addEventListener('click',function(){ menu.classList.remove('open'); });
