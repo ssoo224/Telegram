@@ -4051,7 +4051,7 @@ function openChatRoom(otherUserId, keepLimit) {
 
   messagesUnsubscribe = db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "desc").limit(msgLimit)
-    .onSnapshot(snap => {
+    .onSnapshot({ includeMetadataChanges: true }, snap => {
       const box = document.getElementById("messagesArea");
       const prevH = box.scrollHeight;
       
@@ -4118,7 +4118,10 @@ function renderMsgDoc(doc, box, existingTyping) {
         }
         
         let checkHtml = "";
-        if (isMine) {
+        const isPendingSend = !!(isMine && doc.metadata && doc.metadata.hasPendingWrites);
+        if (isMine && isPendingSend) {
+          checkHtml = `<span class="check-mark pending">${TICK_SVG.wait}</span>`;
+        } else if (isMine) {
           checkHtml = (grp ? groupReadAll(m) : m.read) ? `<span class="check-mark read">${TICK_SVG.read}</span>` : `<span class="check-mark">${TICK_SVG.sent}</span>`;
         }
 
@@ -4131,6 +4134,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         if (m.videoUrl) b.classList.add("video-msg");
         if (m.imageUrl && !m.audioUrl && !m.videoUrl) b.classList.add("video-msg", "image-msg");
         b.dataset.created = String(m.createdAt || 0);
+        if (isPendingSend) b.dataset.pending = '1';
         b.dataset.messageText = String(m.text || '');
         b.dataset.senderId = String(m.senderId || '');
         
@@ -4691,7 +4695,7 @@ function loadChats() {
               if (!msgSnap.empty) {
                 const m = msgSnap.docs[0].data();
                 const isMine = (m.senderId === currentUser.uid);
-                const prefix = isMine ? "أنت: " : ""; if (isMine) lastTick = m.read ? 'read' : 'sent';
+                const prefix = isMine ? "أنت: " : ""; if (isMine) lastTick = (msgSnap.docs[0].metadata && msgSnap.docs[0].metadata.hasPendingWrites) ? 'wait' : (m.read ? 'read' : 'sent');
                 lastMsgText = prefix + (m.audioUrl ? "♬ بصمة صوتية" : (m.imageUrl ? "▧ صورة" : (m.videoUrl ? "▶ فيديو" : (m.text || ""))));
                 const mediaIcon = m.imageUrl
                   ? '<svg class="chat-media-preview-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor"/><path d="m21 15-5-5L5 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -6908,7 +6912,7 @@ function refreshGroupTicks(){
   if(!isGroupChat())return;
   const meta=chatMetaCache[activeChatId];
   document.querySelectorAll('#messagesArea .msg-bubble.mine[data-created]').forEach(b=>{
-    const c=b.querySelector('.check-mark');if(!c)return;
+    if(b.dataset.pending==='1')return;const c=b.querySelector('.check-mark');if(!c)return;
     const all=groupReadAll({createdAt:Number(b.dataset.created)},meta);
     c.className='check-mark'+(all?' read':'');c.innerHTML=all?TICK_SVG.read:TICK_SVG.sent;
   });
@@ -6964,7 +6968,7 @@ function openGroupRoom(chatId,keepLimit){
       if(miss.length)loadUsers(miss).then(()=>updateGroupHeader(d));
       updateGroupHeader(d);refreshGroupTicks();
     });
-    messagesUnsubscribe=db.collection('chats').doc(chatId).collection('messages').orderBy('createdAt','desc').limit(msgLimit).onSnapshot(snap=>{
+    messagesUnsubscribe=db.collection('chats').doc(chatId).collection('messages').orderBy('createdAt','desc').limit(msgLimit).onSnapshot({includeMetadataChanges:true},snap=>{
       if(activeChatId!==chatId)return;
       const prevH=box.scrollHeight;
       Array.from(box.children).forEach(c=>c.remove());
@@ -8527,6 +8531,9 @@ body:has(.app-container[data-app-theme="dark"]){background:#000000!important;bac
 .check-mark{display:inline-flex;align-items:center;line-height:0}
 .check-mark .tick-svg{display:block;height:11px;width:auto}
 .check-mark .tick-s{width:14px}.check-mark .tick-d{width:19px}.check-mark .tick-w{width:11px;height:11px}
+.check-mark.pending .tick-w{opacity:.85;animation:tickWaitPulse 1.6s ease-in-out infinite}
+@keyframes tickWaitPulse{0%,100%{opacity:.45}50%{opacity:1}}
+.cl-tick.wait{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
 </style>
 
 <style id="babylon-remove-button-tap-square">
@@ -9529,7 +9536,7 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
 
 
 <script id="babylon-chatlist-js">
-function clTick(s){return '<svg class="cl-tick '+s+'" viewBox="0 0 24 24" aria-hidden="true">'+(s==='read'?'<path d="m2 13 4 4L14 8M10 15l2 2 9-10"/>':'<path d="m5 13 4 4L19 7"/>')+'</svg>';}
+function clTick(s){return '<svg class="cl-tick '+s+'" viewBox="0 0 24 24" aria-hidden="true">'+(s==='read'?'<path d="m2 13 4 4L14 8M10 15l2 2 9-10"/>':(s==='wait'?'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>':'<path d="m5 13 4 4L19 7"/>'))+'</svg>';}
 function setChatFilter(f){var l=document.getElementById('chatList');if(!l)return;l.classList.toggle('only-unread',f==='unread');document.querySelectorAll('#chatFilters .cl-chip').forEach(function(b){b.classList.toggle('active',b.dataset.f===f);});}
 function updateUnreadChip(){var n=document.querySelectorAll('#chatList .chat-item.has-unread').length,b=document.getElementById('clUnreadCount'),f=document.getElementById('chatFilters');if(b){b.textContent=n;b.classList.toggle('hidden',!n);}if(f)f.classList.toggle('hidden',!n);if(!n)setChatFilter('all');}
 (function(){var t=null,l=document.getElementById('chatList');if(!l)return;new MutationObserver(function(){clearTimeout(t);t=setTimeout(updateUnreadChip,120);}).observe(l,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});})();
