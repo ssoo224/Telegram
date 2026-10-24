@@ -4255,7 +4255,7 @@ function renderMsgDoc(doc, box, existingTyping) {
           return;
         }
         /* إخفاء شعار "بيع الهدية" من المحادثة (لا يُعرض) */
-        if (m.type === 'sold') return;
+        if (/sold|sale|buy|bought|purchas/i.test(String(m.type||'')) || (m.sys && /sold|sale|buy|bought|purchas/i.test(String(m.sys.k||'')))) return; /* لا تُعرض إشعارات بيع/شراء الهدايا */
         if (m.type === 'gift' && typeof giftMsgNode === 'function') {
           const gn = giftMsgNode(m, doc.id, isMine);
           if (existingTyping) box.insertBefore(gn, existingTyping); else box.appendChild(gn);
