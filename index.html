@@ -2708,6 +2708,15 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
     document.execCommand('insertText', false, t);
   });
   el.addEventListener('drop', function(e){ e.preventDefault(); });
+  /* يستدعيها تطبيق الأندرويد (BabylonWebView) عند اختيار GIF/ملصق من لوحة المفاتيح */
+  window.babylonReceiveKeyboardImage = function(mime, b64){
+    try {
+      var bin = atob(b64), len = bin.length, arr = new Uint8Array(len);
+      for (var i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
+      mime = /^image\//.test(mime || '') ? mime : 'image/gif';
+      sendFile(new File([arr], 'keyboard.' + (mime.split('/')[1] || 'gif'), { type: mime }));
+    } catch(e) { try { showToast('تعذر إرسال الملصق'); } catch(_){} }
+  };
 })();
 </script>
 
