@@ -3797,8 +3797,23 @@ function startBlocksListener() {
     myBlocks = {}; q.forEach(d => { myBlocks[d.id] = true; });
     document.querySelectorAll('.chat-item[data-other]').forEach(el => { el.style.display = ''; el.classList.toggle('is-blocked', !!myBlocks[el.dataset.other]); });
     updateBlockBtn(); applyChatBlockState(); renderStoriesBar();
+    try { if (window.__bbOtherU && window.__bbOtherU.id === currentChatOtherUserId) bbApplyBlockPrivacy(window.__bbOtherU); } catch (e) {}
     if (document.getElementById('blkOverlay')) sxOpenBlocked(true);
   }, () => {});
+}
+function bbApplyBlockPrivacy(u) {
+  if (!u) return;
+  const uid = u.id, st = document.getElementById('otherHeaderStatus'); if (!st) return;
+  if (myBlocks[uid]) { st.style.display = 'none'; applyCover('other', 'babylon'); return; }
+  st.style.display = '';
+  setPfStatus(st, u.online, u.lastSeen, u);
+  applyCover('other', u.cover || 'babylon');
+  blockedByThem(uid).then(b => {
+    if (!b || currentChatOtherUserId !== uid || myBlocks[uid]) return;
+    st.classList.remove('online');
+    const sp = st.querySelector('span:last-child'); if (sp) sp.textContent = 'آخر ظهور كان منذ زمن طويل';
+    applyCover('other', 'babylon');
+  });
 }
 function blockedByThem(uid) {
   const c = blockedByCache[uid];
@@ -3813,9 +3828,14 @@ function applyChatBlockState() {
   const chatOpen = uid && activeChatId && !document.getElementById('chatView').classList.contains('hidden');
   const setBars = blocked => { ['textInputBar', 'recordingBar'].forEach(id => { const el = document.getElementById(id); if (el && blocked) el.classList.add('hidden'); else if (el && id === 'textInputBar') el.classList.remove('hidden'); }); };
   if (!chatOpen) { chatBlockedNow = false; bn.classList.add('hidden'); return; }
+  const stx = document.getElementById('chatSub');
+  if (stx) {
+    if (myBlocks[uid]) { if (stx.dataset.real === undefined) stx.dataset.real = stx.textContent; stx.textContent = ''; }
+    else if (stx.textContent === '' && stx.dataset.real) { stx.textContent = stx.dataset.real; stx.style.color = stx.dataset.realColor || ''; }
+  }
   if (myBlocks[uid]) {
     chatBlockedNow = true; chatBlockedMsg = 'أنت حاظر هذا المستخدم، ألغِ الحظر حتى تراسله';
-    bn.className = 'block-banner bb-blocked'; bn.innerHTML = '<div class="bb-blk-pill"><span class="bb-blk-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg></span><span class="bb-blk-txt">هذا المستخدم محظور</span><button type="button" class="bb-blk-btn" onclick="unblockUser(currentChatOtherUserId)">إلغاء الحظر</button></div>';
+    bn.className = 'block-banner bb-blocked'; bn.innerHTML = '<span class="bb-blk-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg></span><span class="bb-blk-txt">هذا المستخدم محظور</span><button type="button" class="bb-blk-btn" onclick="unblockUser(currentChatOtherUserId)">إلغاء الحظر</button>';
     bn.classList.remove('hidden'); setBars(true); return;
   }
   blockedByThem(uid).then(b => {
@@ -4123,8 +4143,8 @@ function openUserProfileDirect(u) {
 
   setProfileRow("otherGovRow", "otherGovDisplay", u.governorate);
   setProfileRow("otherJoinRow", "otherJoinDisplay", u.createdAt ? formatJoinDate(u.createdAt) : "");
-  setPfStatus(document.getElementById("otherHeaderStatus"), u.online, u.lastSeen, u);
-  applyCover("other", u.cover || "babylon");
+  window.__bbOtherU = u;
+  bbApplyBlockPrivacy(u);
 
   const avatarBox = document.getElementById("otherAvatarImg");
   const avatarText = document.getElementById("otherAvatarText"); setTone(avatarText, u);
@@ -4232,8 +4252,10 @@ function openChatRoom(otherUserId, keepLimit) {
         sub.textContent = "آخر ظهور كان قريباً";
         sub.style.color = "var(--text-muted)";
       }
+      sub.dataset.real = sub.textContent; sub.dataset.realColor = sub.style.color;
+      if (myBlocks[otherUserId]) sub.textContent = "";
       blockedByThem(otherUserId).then(b => {
-        if (b && (!currentChatOtherUserId || currentChatOtherUserId === otherUserId)) {
+        if (b && !myBlocks[otherUserId] && (!currentChatOtherUserId || currentChatOtherUserId === otherUserId)) {
           sub.textContent = "آخر ظهور كان منذ زمن طويل";
           sub.style.color = "var(--text-muted)";
         }
@@ -9543,14 +9565,15 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 </script>
 <style id="bb-block-ui-fix">
 /* ===== شريط الحظر داخل المحادثة (يغطي حقل الكتابة) ===== */
-#blockBanner.bb-blocked{display:block;margin:0;padding:7px 10px;min-height:54px;box-sizing:border-box;background:transparent!important;border:0!important;border-radius:0;direction:rtl}
+#blockBanner.bb-blocked{display:flex!important;flex-direction:row;align-items:center;gap:10px;direction:rtl;box-sizing:border-box;margin:8px 10px;padding:6px 8px 6px 6px;min-height:46px;border-radius:24px;text-align:right;font-size:14px;font-weight:700;color:#fca5a5;background:var(--babylon-surface-card,#202b38)!important;border:1px solid var(--babylon-border,#334155)!important;box-shadow:none}
 #blockBanner.hidden{display:none!important}
-#blockBanner .bb-blk-pill{display:flex;flex-direction:row;align-items:center;gap:10px;min-height:44px;box-sizing:border-box;padding:5px 8px 5px 6px;border-radius:24px;border:1px solid var(--babylon-border,#334155);background:var(--babylon-surface-card,#202b38);color:#fca5a5;font-size:14px;font-weight:700;text-align:right}
 #blockBanner .bb-blk-ic{width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#f87171,#dc2626)}
 #blockBanner .bb-blk-ic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 #blockBanner .bb-blk-txt{flex:1;color:inherit}
-#blockBanner .bb-blk-btn{margin:0;flex:none;padding:7px 16px;border-radius:18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:#fff!important;color:#dc2626!important;-webkit-text-fill-color:#dc2626!important;border:2px solid #dc2626!important;text-shadow:none;box-shadow:none}
-.app-container[data-app-theme="light"] #blockBanner .bb-blk-pill{background:#fff;border-color:#dce4ee;color:#b91c1c}
+#blockBanner .bb-blk-btn{margin:0;flex:none;padding:7px 16px;border-radius:18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;text-shadow:none;box-shadow:none;background:rgba(220,38,38,.14)!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important;border:2px solid #f87171!important}
+.app-container[data-app-theme="light"] #blockBanner.bb-blocked{background:#fff!important;border-color:#dce4ee!important;color:#b91c1c}
+.app-container[data-app-theme="light"] #blockBanner .bb-blk-btn{background:#fff!important;color:#dc2626!important;-webkit-text-fill-color:#dc2626!important;border:2px solid #dc2626!important}
+.app-container[data-app-theme="dark"] #blockBanner .bb-blk-btn{background:rgba(220,38,38,.14)!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important;border:2px solid #f87171!important}
 /* المحادثة المحظورة تبقى في القائمة */
 .chat-item.is-blocked .chat-item-sub,.chat-item.is-blocked .chat-item-last{opacity:.75}
 /* ===== قائمة المحظورين: زر إلغاء الحظر ===== */
