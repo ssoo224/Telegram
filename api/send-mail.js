@@ -41,7 +41,7 @@ function codePage(code) {
     + '<p style="line-height:1.9;margin:0 0 6px;font-weight:bold">هلا بيك! 👋</p>'
     + '<p style="line-height:1.9;margin:0 0 18px">هذا رمز التحقق حتى تكمل تسجيل الدخول. صالح لمدة 10 دقائق:</p>'
     + '<p dir="ltr" style="text-align:center;font-size:34px;letter-spacing:10px;font-weight:bold;background:#faf5e4;border-radius:12px;padding:14px 0;margin:0 0 18px;color:#17212b">' + code + '</p>'
-    + '<p style="color:#b91c1c;font-size:13px;line-height:1.7;margin:0 0 14px">لا تعطي هذا الرمز لأي أحد، حتى لو ادّعى إنه من فريق Babylon Chat. إذا ما أنت اللي تحاول تدخل، غيّر كلمة المرور فوراً.</p>' + SIGN);
+    + '<p style="color:#b91c1c;font-size:13px;line-height:1.7;margin:0 0 14px">لا تعطي هذا الرمز لأي أحد، حتى لو ادّعى إنه من فريق Babylon Chat. إذا لم تكن انت من اردت تسجيل الدخول فقم بتغيير الباسوورد فورًا.</p>' + SIGN);
 }
 const sha = (salt, uid, code) => crypto.createHash('sha256').update(salt + ':' + uid + ':' + code).digest('hex');
 const otpOk = d => d.otpAuthTime != null && Number(d.otpAuthTime) === Number(d.auth_time);
