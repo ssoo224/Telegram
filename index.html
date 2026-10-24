@@ -2102,6 +2102,38 @@ body:has(.app-container[data-app-theme]) .gs-sel{outline-color:#e0a810}
   width:19px!important;height:19px!important;flex:0 0 19px!important;
 }
 </style>
+<style id="babylon-stars-gold-gradient">
+/* ===== نجوم بابل: ذهبي متدرّج مثل أزرار البرنامج + رقم الرصيد أبيض ===== */
+/* صف "نجوم بابل" في الإعدادات: أيقونة وشارة الرصيد */
+body:has(.app-container[data-app-theme]) .bs-row .bs-ic{
+  background:linear-gradient(135deg,#f3cb45 0%,#eab624 45%,#c78a00 100%)!important;
+  box-shadow:0 4px 12px rgba(199,138,0,.35),inset 0 1px 0 rgba(255,255,255,.35)!important}
+body:has(.app-container[data-app-theme]) .bs-bal{
+  background:linear-gradient(135deg,#f0c233 0%,#eab624 45%,#c78a00 100%)!important;
+  box-shadow:0 3px 10px rgba(199,138,0,.32),inset 0 1px 0 rgba(255,255,255,.35)!important}
+body:has(.app-container[data-app-theme]) .bs-bal .bs-num,
+body:has(.app-container[data-app-theme]) .bs-num{
+  color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 1px rgba(120,76,0,.35)}
+/* بطاقة الرصيد داخل صفحة نجوم بابل */
+body:has(.app-container[data-app-theme]) .sh-bal{
+  color:#fff!important;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' fill-opacity='.20' stroke='%23fff' stroke-opacity='.20' stroke-width='2' stroke-linejoin='round' d='M12 2.6 14.9 8.9 21.8 9.7 16.7 14.4 18 21.2 12 17.8 6 21.2 7.3 14.4 2.2 9.7 9.1 8.9Z'/%3E%3C/svg%3E") no-repeat left -14px bottom -22px/120px 120px,
+    radial-gradient(120% 100% at 88% 0%,rgba(255,255,255,.36),rgba(255,255,255,0) 58%),
+    linear-gradient(135deg,#f3cb45 0%,#eab624 45%,#c78a00 100%)!important;
+  box-shadow:0 10px 26px rgba(199,138,0,.34)!important}
+body:has(.app-container[data-app-theme]) .sh-bal .sh-n,
+body:has(.app-container[data-app-theme]) .sh-bal .sh-n *:not(svg):not(path):not(use){
+  color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 2px 4px rgba(120,76,0,.30)}
+body:has(.app-container[data-app-theme]) .sh-bal .sh-lb{color:#fff!important;opacity:.92;text-shadow:0 1px 2px rgba(120,76,0,.28)}
+body:has(.app-container[data-app-theme]) .sh-bal .sh-dev{background:rgba(255,255,255,.26)!important;color:#fff!important}
+/* باقي عناصر القسم بنفس التدرّج الذهبي */
+body:has(.app-container[data-app-theme]) :is(.sh-tabs button,.st-seg button,.rs-chip).on{
+  background:linear-gradient(135deg,#f0c233,#eab624 45%,#c78a00)!important;
+  box-shadow:0 4px 12px rgba(199,138,0,.34)!important}
+body:has(.app-container[data-app-theme]) :is(.sg-price,.gp-pill){
+  background:linear-gradient(135deg,#f0c233,#eab624 45%,#c78a00)!important;
+  color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 1px rgba(120,76,0,.3)}
+</style>
 </head>
 
 <body>
