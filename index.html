@@ -2165,7 +2165,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
     var menu=document.createElement('div'); menu.id='otherTopMenu'; view.appendChild(menu);
     function toast(t){ if(typeof showToast==='function') showToast(t); }
     function build(){
-      menu.innerHTML='<button type="button" data-a="stars"><svg class="pf-mi" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#bbStar"/></svg><span>إرسال نجوم</span></button>';
+      menu.innerHTML='<button type="button" data-a="stars"><svg class="pf-mi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.25 4.15 1 5.85L12 16.9l-5.25 2.8 1-5.85L3.5 9.7l5.9-.9z"/></svg><span>إرسال نجوم</span></button>';
     }
     btn.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); build(); menu.classList.toggle('open'); });
     menu.addEventListener('click',function(e){
@@ -8115,7 +8115,7 @@ html,body{overscroll-behavior-y:none}
       hero.insertAdjacentHTML('beforeend',
         '<div class="pf-hero-top"><div class="pf-hero-count" style="visibility:hidden">1/1</div>'+
         '<button type="button" class="pf-hero-dots" aria-label="المزيد"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button></div>'+
-        '<div class="pf-hero-menu"><button type="button" data-a="stars"><svg class=\"pf-mi\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#bbStar\"/></svg><span>إرسال نجوم</span></button><button type="button" data-a="dl"><svg class=\"pf-mi\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3v12m-5-5 5 5 5-5M4 17v3h16v-3\"/></svg><span>تنزيل الصورة</span></button></div>');
+        '<div class="pf-hero-menu"><button type="button" data-a="stars"><svg class=\"pf-mi\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3.5l2.6 5.3 5.9.9-4.25 4.15 1 5.85L12 16.9l-5.25 2.8 1-5.85L3.5 9.7l5.9-.9z\"/></svg><span>إرسال نجوم</span></button><button type="button" data-a="dl"><svg class=\"pf-mi\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 4v11M7.5 11 12 15.5 16.5 11M5 20h14\"/></svg><span>تنزيل الصورة</span></button></div>');
     }
     var hTop=hero.querySelector('.pf-hero-top'), hCount=hero.querySelector('.pf-hero-count'), hMenu=hero.querySelector('.pf-hero-menu');
     var heroImg=hero.querySelector('img'), hImg=heroImg, hLet=hero.querySelector('.pf-hero-letter'),
