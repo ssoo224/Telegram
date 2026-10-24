@@ -1599,6 +1599,39 @@ i[data-ic]{display:inline-flex;font-style:normal}
 </style>
 
 
+<style id="babylon-stars-redesign">
+/* ===== نجوم بابل: بطاقة جديدة + أيقونة نجمة SVG صفراء عريضة ===== */
+#settingsView .bs-card{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;padding:16px 16px;min-height:84px;box-sizing:border-box;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s ease,filter .15s ease;
+  background:linear-gradient(135deg,#2c2410 0%,#1d2733 62%,#17212b 100%);color:#fff}
+#settingsView .bs-card:active{transform:scale(.99);filter:brightness(1.06)}
+#settingsView .bs-card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(255,200,40,.28)}
+#settingsView .bs-card+.sx-item{border-top:1px solid rgba(255,255,255,.07)}
+#settingsView .bs-card+.sx-item::before{display:none}
+.bs-badge{position:relative;z-index:1;flex:0 0 52px;width:52px;height:52px;border-radius:17px;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 30% 25%,rgba(255,224,102,.30),rgba(255,176,0,.10) 70%);box-shadow:0 0 0 1px rgba(255,200,40,.35),0 8px 22px rgba(255,170,0,.28)}
+.bs-star-svg{width:36px;height:36px;display:block;filter:drop-shadow(0 2px 4px rgba(217,130,0,.45));stroke:none!important;fill:none!important}
+.bs-body{position:relative;z-index:1;flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;text-align:right}
+.bs-title{font-size:17px;font-weight:800;color:#fff!important;line-height:1.25}
+.bs-sub{font-size:12px;font-weight:600;color:#c9b27a!important;line-height:1.3}
+.bs-bal{position:relative;z-index:1;display:flex;align-items:center;gap:6px;direction:ltr;padding:7px 12px;border-radius:14px;background:rgba(255,193,7,.14);box-shadow:inset 0 0 0 1px rgba(255,200,40,.30)}
+.bs-mini{width:18px;height:18px;display:block;stroke:none!important;fill:none!important}
+.bs-num{font-size:19px;font-weight:900;color:#ffd43b!important;letter-spacing:.2px;line-height:1;font-variant-numeric:tabular-nums}
+.bs-card .sx-ch{position:relative;z-index:1}
+.bs-spark{position:absolute;pointer-events:none;color:#ffc107;stroke:none!important;fill:none!important}
+.bs-spark-a{width:16px;height:16px;left:78px;top:10px;opacity:.55}
+.bs-spark-b{width:10px;height:10px;left:112px;bottom:12px;opacity:.38}
+.bs-btn-star{width:20px;height:20px;stroke:none!important;fill:none!important}
+/* الطور النهاري */
+.app-container[data-app-theme="light"] #settingsView .bs-card{background:linear-gradient(135deg,#fff8e1 0%,#ffffff 70%);color:#17212b}
+.app-container[data-app-theme="light"] #settingsView .bs-card::after{box-shadow:inset 0 0 0 1px rgba(245,158,11,.38)}
+.app-container[data-app-theme="light"] #settingsView .bs-card+.sx-item{border-top-color:#e9eef4}
+.app-container[data-app-theme="light"] .bs-badge{background:radial-gradient(circle at 30% 25%,#fff3bf,#ffe08a 85%);box-shadow:0 0 0 1px rgba(245,158,11,.45),0 8px 20px rgba(245,158,11,.25)}
+.app-container[data-app-theme="light"] .bs-title{color:#17212b!important}
+.app-container[data-app-theme="light"] .bs-sub{color:#8a6a1c!important}
+.app-container[data-app-theme="light"] .bs-bal{background:#fff1c2;box-shadow:inset 0 0 0 1px rgba(245,158,11,.5)}
+.app-container[data-app-theme="light"] .bs-num{color:#92580a!important}
+.app-container[data-app-theme="light"] .bs-spark{color:#f59e0b}
+</style>
 <style id="babylon-gift-svg-icons">
 /* أيقونات الهدايا SVG: تتبع لون النص تلقائياً في النمطين النهاري والليلي */
 .gift-svg-ico{display:inline-block;width:18px;height:18px;flex:0 0 18px;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -1982,6 +2015,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 <body>
 
 <div class="app-container">
+<svg width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false"><defs><linearGradient id="bbStarGrad" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFE766"/><stop offset=".55" stop-color="#FFC107"/><stop offset="1" stop-color="#F59E0B"/></linearGradient><symbol id="bbStar" viewBox="0 0 24 24"><path d="M12.00 2.60 L14.88 8.94 L21.80 9.72 L16.66 14.41 L18.05 21.23 L12.00 17.80 L5.95 21.23 L7.34 14.41 L2.20 9.72 L9.12 8.94Z" fill="#D98200" stroke="#D98200" stroke-width="3.2" stroke-linejoin="round"/><path d="M12.00 2.60 L14.88 8.94 L21.80 9.72 L16.66 14.41 L18.05 21.23 L12.00 17.80 L5.95 21.23 L7.34 14.41 L2.20 9.72 L9.12 8.94Z" fill="url(#bbStarGrad)" stroke="url(#bbStarGrad)" stroke-width="2" stroke-linejoin="round"/><path d="M12.00 2.60 L9.12 8.94 L2.20 9.72 L7.34 14.41 L12.00 12.90Z" fill="#fff" fill-opacity=".38" stroke="#fff" stroke-opacity=".38" stroke-width="1" stroke-linejoin="round"/></symbol><symbol id="bbSpark" viewBox="0 0 24 24"><path d="M12 2c.6 5.2 4.8 9.4 10 10-5.2.6-9.4 4.8-10 10-.6-5.2-4.8-9.4-10-10 5.2-.6 9.4-4.8 10-10Z" fill="currentColor"/></symbol></defs></svg>
 
   <!-- شاشة الدخول والتسجيل -->
   <!-- شاشة انتظار بشعار التطبيق: تمنع ظهور واجهة الدخول لمن سجّل دخوله مسبقاً -->
@@ -2199,7 +2233,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 
         <div class="pf-actions pf-quick pf-quick-other">
           <button type="button" class="pf-btn pf-q primary" onclick="startChatFromProfile()"><i data-ic="chat"></i><span>رسالة</span></button>
-          <button type="button" class="pf-btn pf-q hidden" id="otherStarsBtn" onclick="devGiftStars()"><svg class="pf-action-icon pf-star-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 2.8 2.85 5.78 6.38.93-4.62 4.5 1.09 6.35L12 17.36l-5.7 3 1.09-6.35-4.62-4.5 6.38-.93L12 2.8Z"/></svg><span>إهداء نجوم</span></button>
+          <button type="button" class="pf-btn pf-q hidden" id="otherStarsBtn" onclick="devGiftStars()"><svg class="pf-action-icon pf-star-icon bs-btn-star" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#bbStar"/></svg><span>إهداء نجوم</span></button>
           <button type="button" class="pf-btn pf-q hidden" id="otherGiftBtn" onclick="openSendGift()"><svg class="pf-action-icon pf-gift-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10h18v11H3zM2 6.5h20V10H2zM12 6.5V21M12 6.5H7.4a2.4 2.4 0 1 1 2.4-2.4c0 1.3 2.2 2.4 2.2 2.4Zm0 0h4.6a2.4 2.4 0 1 0-2.4-2.4C14.2 5.4 12 6.5 12 6.5Z"/></svg><span>إهداء هدية</span></button>
           <button type="button" class="pf-btn pf-q" id="otherBlockBtn" onclick="toggleBlockCurrent()"><i data-ic="ban"></i><span>حظر</span></button>
         </div>
@@ -2239,7 +2273,14 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 
         <div class="sx-label">الهدايا والنجوم</div>
         <div class="sx-group">
-          <div class="sx-item" onclick="openStarsHistory()"><span class="sx-ic" style="background:#f5b301;font-size:19px">⭐</span><span class="sx-t">نجوم بابل</span><span class="sx-val" data-stars>0</span><span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span></div>
+          <div class="bs-card" role="button" tabindex="0" onclick="openStarsHistory()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openStarsHistory();}">
+            <svg class="bs-spark bs-spark-a" viewBox="0 0 24 24" aria-hidden="true"><use href="#bbSpark"/></svg>
+            <svg class="bs-spark bs-spark-b" viewBox="0 0 24 24" aria-hidden="true"><use href="#bbSpark"/></svg>
+            <span class="bs-badge"><svg class="bs-star-svg" viewBox="0 0 24 24" aria-hidden="true"><use href="#bbStar"/></svg></span>
+            <span class="bs-body"><span class="bs-title">نجوم بابل</span><span class="bs-sub">رصيدك الحالي من النجوم</span></span>
+            <span class="bs-bal"><svg class="bs-mini" viewBox="0 0 24 24" aria-hidden="true"><use href="#bbStar"/></svg><span class="bs-num" data-stars>0</span></span>
+            <span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span>
+          </div>
           <div class="sx-item" onclick="openGiftStore()"><span class="sx-ic" style="background:#ec4899;font-size:19px"><svg class="gift-svg-ico gift-svg-set" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18v11H3zM2 6.5h20V10H2zM12 6.5V21M12 6.5H7.4a2.4 2.4 0 1 1 2.4-2.4c0 1.3 2.2 2.4 2.2 2.4Zm0 0h4.6a2.4 2.4 0 1 0-2.4-2.4C14.2 5.4 12 6.5 12 6.5Z"/></svg></span><span class="sx-t">متجر الهدايا</span><span class="sx-ch"><i data-ic="chevron" data-size="18"></i></span></div>
         </div>
 
