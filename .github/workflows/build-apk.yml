@@ -34,8 +34,9 @@ jobs:
         run: |
           npx cap add android
           mkdir -p assets
-          convert ../icon-512.png -resize 1024x1024 assets/icon-only.png || echo "no icon"
-          npx @capacitor/assets generate --android --iconBackgroundColor '#0b1220' --iconBackgroundColorDark '#0b1220' || echo "icons skipped"
+          pip install pillow
+          python3 -c "from PIL import Image; Image.open('../icon-512.png').convert('RGBA').resize((1024,1024), Image.LANCZOS).save('assets/icon-only.png')"
+          npx @capacitor/assets generate --android --iconBackgroundColor '#0b1220' --iconBackgroundColorDark '#0b1220'
           npx cap sync android
 
       - name: Patch Android project
