@@ -50,6 +50,29 @@
 .otp-btn:disabled{opacity:.6}.otp-link{display:block;width:100%;margin-top:10px;background:none;border:0;color:#9fb0c8;font-size:13px;cursor:pointer;padding:8px}
 .otp-link:disabled{opacity:.5}
 </style>
+<style id="babylon-otp-light-theme">
+/* نافذة رمز التحقق وواجهة حذف الحساب: أيقونات SVG + دعم الطور النهاري */
+.otp-ic-svg{display:flex;align-items:center;justify-content:center;width:68px;height:68px;margin:0 auto 14px;border-radius:50%;font-size:0;color:var(--babylon-gold,#d4a937);background:rgba(212,169,55,.14)}
+.otp-ic-svg svg{width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.otp-ic-svg.danger{color:#ef4444;background:rgba(239,68,68,.14)}
+.otp-box h1.otp-danger-title{color:#ff6b6b}
+.otp-page[data-app-theme="light"]{background:#f4f6fa;color:#17212b}
+.otp-page[data-app-theme="light"] .otp-box{background:#fff;border:1px solid #e3e8ef;box-shadow:0 12px 34px rgba(20,30,50,.09)}
+.otp-page[data-app-theme="light"] .otp-box h1{color:#9a6b00}
+.otp-page[data-app-theme="light"] .otp-box h1.otp-danger-title{color:#dc2626}
+.otp-page[data-app-theme="light"] .otp-box p{color:#3b4a5e;opacity:1}
+.otp-page[data-app-theme="light"] .otp-box p b{color:#17212b}
+.otp-page[data-app-theme="light"] .otp-mail{color:#8a6410}
+.otp-page[data-app-theme="light"] .otp-ic-svg{color:#9a6b00;background:#fdf3d6}
+.otp-page[data-app-theme="light"] .otp-ic-svg.danger{color:#dc2626;background:#fee2e2}
+.otp-page[data-app-theme="light"] .otp-input{background:#f5f7fb;border:1px solid #d5dbe5;color:#17212b}
+.otp-page[data-app-theme="light"] .otp-input::placeholder{color:#9aa6b8}
+.otp-page[data-app-theme="light"] .otp-input:focus{border-color:#c29d30;background:#fff}
+.otp-page[data-app-theme="light"] .otp-msg{color:#5b6b82}
+.otp-page[data-app-theme="light"] .otp-msg.bad{color:#dc2626}
+.otp-page[data-app-theme="light"] .otp-link{color:#5b6b82}
+</style>
+
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Babylon Chat - تليجرام البابلي</title>
@@ -2855,13 +2878,19 @@ function babylonOtpGate(user) {
     return babylonShowOtp(user);
   }).catch(err => (err && err.code === 'auth/network-request-failed') ? true : babylonShowOtp(user));
 }
+function babylonApplyOtpTheme(ov) {
+  let t = '';
+  try { const a = document.querySelector('.app-container[data-app-theme]'); t = a ? a.getAttribute('data-app-theme') : ''; } catch (e) {}
+  if (t !== 'light' && t !== 'dark') { try { t = localStorage.getItem('babylon_chat_app_theme') || ''; } catch (e) {} }
+  ov.setAttribute('data-app-theme', t === 'light' ? 'light' : 'dark');
+}
 function babylonShowOtp(user) {
   return new Promise(resolve => {
     ['authPage', 'mainPage', 'verifyPage'].forEach(id => { const e = document.getElementById(id); if (e) e.classList.add('hidden'); });
     const old = document.getElementById('otpPage'); if (old) old.remove();
     const ov = document.createElement('div');
-    ov.id = 'otpPage'; ov.className = 'otp-page';
-    ov.innerHTML = '<div class="otp-box"><div class="otp-ic">🔐</div><h1>رمز التحقق</h1>'
+    ov.id = 'otpPage'; ov.className = 'otp-page'; babylonApplyOtpTheme(ov);
+    ov.innerHTML = '<div class="otp-box"><div class="otp-ic otp-ic-svg"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/><path d="M12 14.5v2.5"/></svg></div><h1>رمز التحقق</h1>'
       + '<p>أرسلنا رمز من 6 أرقام إلى<br><b dir="ltr" class="otp-mail"></b></p>'
       + '<input id="otpInput" class="otp-input" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" dir="ltr" placeholder="••••••">'
       + '<div id="otpMsg" class="otp-msg"></div>'
@@ -2910,8 +2939,8 @@ function babylonShowOtp(user) {
 function sxDeleteAccount() {
   if (!currentUser) return;
   const old = document.getElementById('delPage'); if (old) old.remove();
-  const ov = document.createElement('div'); ov.id = 'delPage'; ov.className = 'otp-page';
-  ov.innerHTML = '<div class="otp-box"><div class="otp-ic">⚠️</div><h1 style="color:#ff6b6b">حذف الحساب</h1>'
+  const ov = document.createElement('div'); ov.id = 'delPage'; ov.className = 'otp-page'; babylonApplyOtpTheme(ov);
+  ov.innerHTML = '<div class="otp-box"><div class="otp-ic otp-ic-svg danger"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.3 4.2 2.9 17.5A2 2 0 0 0 4.6 20.5h14.8a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/><path d="M12 9.5v4.2M12 17h.01"/></svg></div><h1 class="otp-danger-title">حذف الحساب</h1>'
     + '<p style="text-align:right">الحذف <b>نهائي</b> ولا يمكن التراجع عنه:<br>• يُحذف ملفك وقصصك ومحادثاتك الخاصة.<br>• ينحذف رصيد النجوم وعروضك. الهدايا اللي تملكها تضيع.<br>• اسم المستخدم يصير متاح لغيرك، وتگدر تسجّل بنفس الإيميل من جديد.</p>'
     + '<div id="delStep1"><input id="delWord" class="otp-input" style="font-size:18px;letter-spacing:2px" type="text" placeholder="اكتب: حذف" autocomplete="off">'
     + '<button type="button" id="delSend" class="otp-btn" style="margin-top:12px;background:#b91c1c;color:#fff" disabled>إرسال رمز التأكيد لإيميلي</button></div>'
