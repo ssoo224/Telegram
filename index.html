@@ -9632,51 +9632,13 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 .app-container[data-app-theme="dark"] #toast.toast.bt-danger{--bt-bg:rgba(69,22,28,.95);--bt-fg:#fecaca;--bt-bd:rgba(248,113,113,.5)}
 .app-container[data-app-theme="light"] #toast.toast.bt-danger{--bt-bg:#fff1f1;--bt-fg:#b91c1c;--bt-bd:rgba(220,38,38,.45)}
 
-/* ===== نافذة الحظر / إلغاء الحظر: مزيج أحمر + ذهبي، والحقل في أقصى الأسفل ===== */
+/* ===== حقل الحظر في أقصى الأسفل (الألوان الأصلية) ===== */
 #chatView.bb-blk-on .chat-input-container{padding:0!important;bottom:0!important}
 #blockBanner.bb-blocked{
   margin:0!important;width:100%;
   padding:18px 16px max(16px,env(safe-area-inset-bottom,0px))!important;
   border-radius:24px 24px 0 0!important;
-  border:0!important;border-top:1.5px solid rgba(230,197,102,.65)!important;
-  background:
-    radial-gradient(120% 90% at 100% 0%,rgba(230,197,102,.20) 0%,rgba(230,197,102,0) 60%),
-    linear-gradient(180deg,#4a1218 0%,#2b0b10 100%)!important;
-  box-shadow:0 -14px 34px rgba(0,0,0,.40),0 -2px 18px rgba(212,175,55,.18),inset 0 1px 0 rgba(255,236,170,.18)!important}
-#blockBanner.bb-blocked::before{left:0!important;right:0!important;height:3px;border-radius:0;
-  background:linear-gradient(90deg,#b91c1c,#e6c566,#d4af37,#e6c566,#b91c1c)!important}
-#blockBanner .bb-blk-ic{
-  background:linear-gradient(135deg,#dc2626 0%,#e6c566 100%)!important;
-  box-shadow:0 0 0 5px rgba(230,197,102,.18),0 8px 18px rgba(185,28,28,.45)!important}
-.app-container #mainPage #blockBanner .bb-blk-txt,
-.app-container[data-app-theme] #mainPage #blockBanner .bb-blk-txt{color:#f6dc86!important}
-.app-container #mainPage #blockBanner .bb-blk-sub,
-.app-container[data-app-theme] #mainPage #blockBanner .bb-blk-sub{color:#e9b9a8!important}
-#blockBanner .bb-blk-btn,
-.app-container[data-app-theme] #blockBanner .bb-blk-btn{
-  background:linear-gradient(135deg,#b91c1c 0%,#d4893a 55%,#e6c566 100%)!important;
-  color:#fff!important;-webkit-text-fill-color:#fff!important;
-  border:1px solid rgba(255,236,170,.55)!important;
-  text-shadow:0 1px 2px rgba(90,20,10,.55)!important;
-  box-shadow:0 8px 20px rgba(185,28,28,.35),inset 0 1px 0 rgba(255,255,255,.25)!important}
-#blockBanner .bb-blk-btn:active,
-.app-container[data-app-theme] #blockBanner .bb-blk-btn:active{background:linear-gradient(135deg,#991b1b 0%,#c27a2c 55%,#d4af37 100%)!important}
-/* الوضع الفاتح */
-.app-container[data-app-theme="light"] #blockBanner.bb-blocked{
-  background:
-    radial-gradient(120% 90% at 100% 0%,rgba(230,197,102,.30) 0%,rgba(230,197,102,0) 60%),
-    linear-gradient(180deg,#fff4ec 0%,#ffe9dc 100%)!important;
-  border-top:1.5px solid rgba(190,150,40,.7)!important;
-  box-shadow:0 -12px 30px rgba(120,40,20,.16),0 -2px 12px rgba(212,175,55,.22)!important}
-.app-container[data-app-theme="light"] #mainPage #blockBanner .bb-blk-txt{color:#8f1d1d!important}
-.app-container[data-app-theme="light"] #mainPage #blockBanner .bb-blk-sub{color:#8a6a2a!important}
-.app-container[data-app-theme="light"] #blockBanner .bb-blk-btn{
-  background:linear-gradient(135deg,#b91c1c 0%,#d4893a 55%,#d4af37 100%)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border:1px solid rgba(160,110,20,.5)!important}
-/* نافذة تأكيد الحظر */
-.bb-dlg-ic.danger{background:linear-gradient(135deg,#dc2626 0%,#e6c566 100%)!important;box-shadow:0 8px 20px rgba(185,28,28,.4),0 0 0 4px rgba(230,197,102,.18)!important}
-.bb-dlg-ok.danger{background:linear-gradient(135deg,#b91c1c 0%,#d4893a 55%,#e6c566 100%)!important;color:#fff!important;text-shadow:0 1px 2px rgba(90,20,10,.5)!important;box-shadow:0 6px 16px rgba(185,28,28,.35)!important}
-/* زر إلغاء الحظر في قائمة المحظورين */
-.blk-ov .blk-row button{background:linear-gradient(135deg,#b91c1c 0%,#d4893a 55%,#e6c566 100%)!important;text-shadow:0 1px 2px rgba(90,20,10,.5)!important;box-shadow:0 5px 14px rgba(185,28,28,.32)!important}
+  border-width:1px 1px 0 1px!important}
 </style>
 </body>
 </html>
