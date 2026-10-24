@@ -3658,7 +3658,7 @@ function renderSettingsHero() {
 
 /* ===== الخصوصية والأمان ===== */
 function isMeUser(u){ return !!u && (u === currentUserData || (currentUser && (u.id === currentUser.uid || u.uid === currentUser.uid))); }
-function bbBlockedEither(id){ try { if (!id) return false; if (myBlocks && myBlocks[id]) return true; const c = blockedByCache[id]; return !!(c && c.v); } catch (e) { return false; } }
+function bbBlockedEither(id){ try { if (!id) return false; const c = blockedByCache[id]; return !!(c && c.v && !(myBlocks && myBlocks[id])); } catch (e) { return false; } }
 function pvUrl(u){ if (!u || !u.avatarUrl) return ''; if (u.hideAvatar && !isMeUser(u)) return ''; if (!isMeUser(u) && bbBlockedEither(u.id)) return ''; return u.avatarUrl; }
 // صورة مصغّرة (192px) لصورة المرسل تُرسل لإشعار أندرويد بدل الصورة الأصلية الكبيرة.
 const notifAvatarCache = {};
@@ -3821,10 +3821,6 @@ function bbApplyBlockPrivacy(u) {
   if (!u) return;
   const uid = u.id, st = document.getElementById('otherHeaderStatus'); if (!st) return;
   const sp = st.querySelector('span:last-child');
-  if (myBlocks[uid]) {
-    st.style.display = 'none'; st.classList.remove('online'); if (sp) sp.textContent = '';
-    applyCover('other', 'babylon'); bbProfileAvatar(u); return;
-  }
   st.style.display = '';
   setPfStatus(st, u.online, u.lastSeen, u);
   applyCover('other', u.cover || 'babylon');
@@ -3850,10 +3846,7 @@ function applyChatBlockState() {
   const setBars = blocked => { ['textInputBar', 'recordingBar'].forEach(id => { const el = document.getElementById(id); if (el && blocked) el.classList.add('hidden'); else if (el && id === 'textInputBar') el.classList.remove('hidden'); }); };
   if (!chatOpen) { chatBlockedNow = false; bn.classList.add('hidden'); return; }
   const stx = document.getElementById('chatSub');
-  if (stx) {
-    if (myBlocks[uid]) { if (stx.dataset.real === undefined) stx.dataset.real = stx.textContent; stx.textContent = ''; }
-    else if (stx.textContent === '' && stx.dataset.real) { stx.textContent = stx.dataset.real; stx.style.color = stx.dataset.realColor || ''; }
-  }
+  if (stx && myBlocks[uid] && stx.dataset.real) { stx.textContent = stx.dataset.real; stx.style.color = stx.dataset.realColor || ''; }
   if (myBlocks[uid]) {
     chatBlockedNow = true; chatBlockedMsg = 'أنت حاظر هذا المستخدم، ألغِ الحظر حتى تراسله';
     bn.className = 'block-banner bb-blocked'; bn.innerHTML = '<span class="bb-blk-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg></span><span class="bb-blk-txt">هذا المستخدم محظور</span><button type="button" class="bb-blk-btn" onclick="unblockUser(currentChatOtherUserId)">إلغاء الحظر</button>';
@@ -4274,7 +4267,6 @@ function openChatRoom(otherUserId, keepLimit) {
         sub.style.color = "var(--text-muted)";
       }
       sub.dataset.real = sub.textContent; sub.dataset.realColor = sub.style.color;
-      if (myBlocks[otherUserId]) sub.textContent = "";
       blockedByThem(otherUserId).then(b => {
         if (b && !myBlocks[otherUserId] && (!currentChatOtherUserId || currentChatOtherUserId === otherUserId)) {
           sub.textContent = "آخر ظهور كان منذ زمن طويل";
