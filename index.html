@@ -3769,12 +3769,16 @@ function sxChangeEmail(){
 function sxChangePassword() {
   const em = currentUser && currentUser.email;
   if (!em) return;
-  if (!confirm('نرسل رابط تغيير كلمة المرور إلى ' + em + ' ؟')) return;
-  babylonSendReset(em).then(() => showToast('تم إرسال الرابط إلى ' + em + ' (شيّك السبام)'))
-    .catch(e => showToast('تعذر الإرسال (' + ((e && e.code) || 'unknown') + ')'));
+  bbConfirm('نرسل رابط تغيير كلمة المرور إلى ' + em + ' ؟', {title:'تغيير كلمة المرور', ok:'إرسال الرابط', icon:'key'}).then(ok => {
+    if (!ok) return;
+    babylonSendReset(em).then(() => showToast('تم إرسال الرابط إلى ' + em + ' (شيّك السبام)'))
+      .catch(e => showToast('تعذر الإرسال (' + ((e && e.code) || 'unknown') + ')'));
+  });
 }
 function sxClearCache() {
-  if (!confirm('مسح الذاكرة المؤقتة؟ (ما يحذف حسابك ولا رسائلك)')) return;
+  bbConfirm('مسح الذاكرة المؤقتة؟ (ما يحذف حسابك ولا رسائلك)', {title:'مسح الذاكرة المؤقتة', ok:'مسح', icon:'trash'}).then(ok => { if (ok) sxClearCacheDo(); });
+}
+function sxClearCacheDo() {
   try { Object.keys(localStorage).filter(k => k.indexOf('babylon_seen_users') === 0).forEach(k => localStorage.removeItem(k)); } catch (e) {}
   const done = () => { showToast('تم المسح ✓'); setTimeout(() => location.reload(), 600); };
   if (window.caches && caches.keys) caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k)))).then(done).catch(done); else done();
@@ -3833,7 +3837,7 @@ function unblockUser(uid) {
 function toggleBlockCurrent() {
   const uid = currentChatOtherUserId; if (!uid) return;
   if (myBlocks[uid]) return unblockUser(uid);
-  if (confirm('تحظر هذا المستخدم؟ ما راح يكدر يراسلك، وراح تظهر له رسالة إنك حظرته.')) blockUser(uid);
+  bbConfirm('تحظر هذا المستخدم؟ ما راح يكدر يراسلك، وراح تظهر له رسالة إنك حظرته.', {title:'حظر المستخدم', ok:'حظر', danger:true, icon:'block'}).then(ok => { if (ok) blockUser(uid); });
 }
 function updateBlockBtn() {
   const b = document.getElementById('otherBlockBtn'); if (!b) return;
@@ -9465,6 +9469,69 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 /* زر تم التحقق، دخول: نص أبيض */
 #verifyPage button.babylon-btn:not(.verify-secondary-btn):not(.verify-danger-btn){color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 2px rgba(110,72,0,.45)!important}
 </style>
+<style id="bb-dialog-style">
+.bb-dlg-ov{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;padding:22px;box-sizing:border-box;background:rgba(5,12,22,.58);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);direction:rtl;opacity:0;transition:opacity .18s ease}
+.bb-dlg-ov.show{opacity:1}
+.bb-dlg{width:100%;max-width:340px;box-sizing:border-box;border-radius:22px;padding:24px 20px 18px;text-align:center;font-family:inherit;transform:translateY(14px) scale(.96);transition:transform .2s ease;background:#17212b;color:#e8eef6;border:1px solid #263445;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.bb-dlg-ov.show .bb-dlg{transform:none}
+.bb-dlg-ic{width:54px;height:54px;border-radius:16px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#e6c566 0%,#d3a93b 45%,#bc8e24 100%);box-shadow:0 8px 20px rgba(190,150,40,.35)}
+.bb-dlg-ic.danger{background:linear-gradient(135deg,#f87171,#dc2626);box-shadow:0 8px 20px rgba(220,38,38,.35)}
+.bb-dlg-ic svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.bb-dlg-title{margin:0 0 8px;font-size:18px;font-weight:800;color:#f0d77a}
+.bb-dlg-msg{margin:0 0 20px;font-size:15px;line-height:1.8;color:#cbd5e1;word-break:break-word}
+.bb-dlg-btns{display:flex;gap:10px;flex-direction:row}
+.bb-dlg-btns button{flex:1;border:0;border-radius:13px;padding:13px 10px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.bb-dlg-ok{color:#fff;background:linear-gradient(135deg,#e6c566 0%,#d3a93b 45%,#bc8e24 100%);text-shadow:0 1px 2px rgba(110,72,0,.45);box-shadow:0 6px 16px rgba(190,150,40,.32)}
+.bb-dlg-ok.danger{background:linear-gradient(135deg,#f87171,#dc2626);text-shadow:none;box-shadow:0 6px 16px rgba(220,38,38,.3)}
+.bb-dlg-cancel{background:transparent;color:#f0d77a;border:1px solid #2f3f52!important}
+.bb-dlg-btns button:active{transform:scale(.97)}
+.app-container[data-app-theme="light"] .bb-dlg{background:#fff;color:#17212b;border-color:#e1e7ef;box-shadow:0 24px 60px rgba(26,44,70,.25)}
+.app-container[data-app-theme="light"] .bb-dlg-title{color:#8b680e}
+.app-container[data-app-theme="light"] .bb-dlg-msg{color:#3b4a5e}
+.app-container[data-app-theme="light"] .bb-dlg-cancel{background:#f5f7fb;color:#334155;border:1px solid #dce4ee!important}
+</style>
+<script id="bb-dialog-script">
+(function(){
+  var ICONS={
+    key:'<svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3M14 9l2 2"/></svg>',
+    trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
+    block:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg>',
+    info:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
+    logout:'<svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3M15 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/></svg>'
+  };
+  function build(msg,o,single){
+    return new Promise(function(resolve){
+      o=o||{};
+      var host=document.querySelector('.app-container')||document.body;
+      var ov=document.createElement('div');
+      ov.className='bb-dlg-ov'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
+      var dg=!!o.danger;
+      var d=document.createElement('div'); d.className='bb-dlg';
+      var ic=document.createElement('div'); ic.className='bb-dlg-ic'+(dg?' danger':''); ic.innerHTML=ICONS[o.icon||(dg?'block':'info')]||ICONS.info;
+      var t=document.createElement('h3'); t.className='bb-dlg-title'; t.textContent=o.title||'Babylon Chat';
+      var m=document.createElement('p'); m.className='bb-dlg-msg'; m.textContent=String(msg==null?'':msg);
+      var b=document.createElement('div'); b.className='bb-dlg-btns';
+      var ok=document.createElement('button'); ok.type='button'; ok.className='bb-dlg-ok'+(dg?' danger':''); ok.textContent=o.ok||(single?'حسناً':'تأكيد');
+      b.appendChild(ok);
+      var cn=null;
+      if(!single){ cn=document.createElement('button'); cn.type='button'; cn.className='bb-dlg-cancel'; cn.textContent=o.cancel||'إلغاء'; b.appendChild(cn); }
+      d.appendChild(ic); d.appendChild(t); d.appendChild(m); d.appendChild(b); ov.appendChild(d); host.appendChild(ov);
+      requestAnimationFrame(function(){ ov.classList.add('show'); });
+      function close(v){ document.removeEventListener('keydown',key,true); ov.classList.remove('show'); setTimeout(function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); },180); resolve(v); }
+      function key(e){ if(e.key==='Escape'){ e.preventDefault(); close(single?true:false); } }
+      document.addEventListener('keydown',key,true);
+      ok.onclick=function(){ close(true); };
+      if(cn) cn.onclick=function(){ close(false); };
+      ov.addEventListener('click',function(e){ if(e.target===ov) close(single?true:false); });
+      setTimeout(function(){ try{ (cn||ok).focus(); }catch(e){} },60);
+    });
+  }
+  window.bbConfirm=function(msg,o){ return build(msg,o,false); };
+  window.bbAlert=function(msg,o){ return build(msg,o,true); };
+  /* أي alert لاحق يظهر بتصميم التطبيق بدل نافذة المتصفح */
+  window.alert=function(msg){ build(msg,null,true); };
+})();
+</script>
 </body>
 </html>
 
