@@ -4269,6 +4269,10 @@ function openChatRoom(otherUserId, keepLimit) {
     .onSnapshot({ includeMetadataChanges: true }, snap => {
       const box = document.getElementById("messagesArea");
       const prevH = box.scrollHeight;
+      const prevTop = box.scrollTop;
+      const wasNearBottom = (prevH - prevTop - box.clientHeight) < 90;
+      let hasAdded = false;
+      try { hasAdded = snap.docChanges().some(c => c.type === 'added'); } catch (e) { hasAdded = true; }
       
       const existingTyping = document.getElementById("typingIndicatorBubble");
 
@@ -4299,7 +4303,8 @@ function openChatRoom(otherUserId, keepLimit) {
       if (messageSelectionMode) refreshMessageSelectionUI();
       if (window.__pendingJump) setTimeout(runPendingJump, 30);
       if (loadingOlder) { box.scrollTop = Math.max(0, box.scrollHeight - prevH); loadingOlder = false; }
-      else box.scrollTop = box.scrollHeight;
+      else if (hasAdded || wasNearBottom) box.scrollTop = box.scrollHeight;   // رسالة جديدة أو كنت أسفل المحادثة
+      else box.scrollTop = prevTop;                                            // تفاعل/تعديل: ابقَ في مكانك
     });
 }
 
@@ -4333,7 +4338,7 @@ function reactionBadgesHtml(list, cls) {
     '.reaction-badge.mine{box-shadow:inset 0 0 0 1.5px rgba(212,175,55,.85)}' +
     '#chatView #messagesArea .msg-bubble .msg-image,#chatView #messagesArea .msg-bubble .msg-video{position:relative}' +
     '#chatView #messagesArea .msg-bubble.has-media-react{margin-bottom:16px}' +
-    '.media-react{position:absolute;right:10px;bottom:-12px;z-index:4;display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:14px;background:#1c2530;color:#fff;border:2px solid rgba(255,255,255,.14);box-shadow:0 2px 6px rgba(0,0,0,.35);line-height:1.3;direction:ltr;pointer-events:none}' +
+    '.media-react{position:absolute;right:10px;bottom:-12px;z-index:4;display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:14px;background:#1c2530;color:#fff;border:2px solid rgba(255,255,255,.14);box-shadow:0 2px 6px rgba(0,0,0,.35);line-height:1.3;direction:ltr;pointer-events:auto;cursor:pointer}' +
     '.app-container[data-app-theme="light"] .media-react{background:#fff;color:#17212b;border-color:#e1e7ef;box-shadow:0 2px 6px rgba(15,23,42,.2)}' +
     '.media-react .rb{font-size:15px;line-height:1.3;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}' +
     '.media-react .rb small{font-size:10.5px;margin-inline-start:2px;font-family:system-ui,sans-serif;font-weight:700}' +
@@ -4472,6 +4477,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         b.onmouseup = b.onmouseleave = () => clearTimeout(pressTimer);
         b.onclick = (e) => {
           if (suppressNextMessageClick) { suppressNextMessageClick = false; return; }
+          { const rc = e.target.closest && e.target.closest('.reactions-row,.media-react'); if (rc && !messageSelectionMode) { e.preventDefault(); e.stopPropagation(); openReactorsSheet(doc.id); return; } }
           { const rq = e.target.closest && e.target.closest('.reply-quote'); if (rq && !messageSelectionMode) { e.preventDefault(); e.stopPropagation(); goToReplied(rq.dataset.replyId, rq.textContent, doc.id); return; } }
           // Keep media controls interactive; a normal tap on the message opens its actions,
           // while a long press enters multi-select mode.
@@ -4612,6 +4618,87 @@ function selEmojiMore(id) {
 }
 document.getElementById('messagesArea')?.addEventListener('scroll', positionSelEmojiBar, { passive: true });
 window.addEventListener('resize', positionSelEmojiBar);
+
+/* ===== قائمة المتفاعلين على الرسالة (تتبع الثيم النهاري/الليلي) ===== */
+(function(){
+  var st = document.createElement('style');
+  st.textContent =
+    '#reactorsSheet{position:fixed;inset:0;z-index:4000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.5);animation:rsFade .18s ease-out}' +
+    '#reactorsSheet .rs-card{width:min(520px,100%);max-height:72vh;display:flex;flex-direction:column;border-radius:22px 22px 0 0;padding:8px 0 calc(10px + env(safe-area-inset-bottom,0px));background:#17212b;color:#f1f5f9;box-shadow:0 -10px 40px rgba(0,0,0,.4);animation:rsUp .22s ease-out;direction:rtl}' +
+    '#reactorsSheet.light .rs-card{background:#fff;color:#17212b;box-shadow:0 -10px 40px rgba(15,23,42,.18)}' +
+    '#reactorsSheet .rs-grab{width:38px;height:4px;border-radius:4px;background:rgba(127,140,160,.45);margin:2px auto 8px}' +
+    '#reactorsSheet .rs-head{display:flex;align-items:center;justify-content:space-between;padding:4px 18px 8px;font-weight:700;font-size:16px}' +
+    '#reactorsSheet .rs-x{width:34px;height:34px;border:0;border-radius:50%;background:rgba(127,140,160,.18);color:inherit;display:grid;place-items:center;cursor:pointer}' +
+    '#reactorsSheet .rs-x svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}' +
+    '#reactorsSheet .rs-tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 14px 10px;scrollbar-width:none}#reactorsSheet .rs-tabs::-webkit-scrollbar{display:none}' +
+    '#reactorsSheet .rs-tab{flex:0 0 auto;border:0;border-radius:16px;padding:6px 12px;background:rgba(127,140,160,.16);color:inherit;font:600 14px/1.2 system-ui,sans-serif;cursor:pointer;display:inline-flex;gap:6px;align-items:center}' +
+    '#reactorsSheet .rs-tab.on{background:rgba(212,175,55,.28);box-shadow:inset 0 0 0 1.5px rgba(212,175,55,.8)}' +
+    '#reactorsSheet .rs-list{overflow-y:auto;padding:0 6px}' +
+    '#reactorsSheet .rs-row{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:14px}' +
+    '#reactorsSheet .rs-row.mine{cursor:pointer}#reactorsSheet .rs-row.mine:active{background:rgba(127,140,160,.16)}' +
+    '#reactorsSheet .rs-row .g-av{width:42px;height:42px;font-size:17px}' +
+    '#reactorsSheet .rs-name{flex:1 1 auto;min-width:0;font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+    '#reactorsSheet .rs-name small{display:block;font-weight:400;font-size:12px;opacity:.65;margin-top:2px}' +
+    '#reactorsSheet .rs-emo{font-size:24px;line-height:1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}' +
+    '#reactorsSheet .rs-tab .rs-emo{font-size:17px}' +
+    '@keyframes rsFade{from{opacity:0}to{opacity:1}}@keyframes rsUp{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}';
+  document.head.appendChild(st);
+})();
+function closeReactorsSheet() { const el = document.getElementById('reactorsSheet'); if (el) el.remove(); }
+function openReactorsSheet(msgId) {
+  if (!activeChatId || !msgId) return;
+  db.collection('chats').doc(activeChatId).collection('messages').doc(msgId).get().then(async d => {
+    if (!d.exists) return;
+    const r = (d.data() || {}).reactions || {};
+    const rows = [];
+    for (const k in r) {
+      const v = r[k];
+      if (typeof v === 'string') rows.push({ uid: k, emoji: v });
+      else if (v) rows.push({ uid: '', emoji: k });
+    }
+    if (!rows.length) return;
+    const uids = Array.from(new Set(rows.map(x => x.uid).filter(Boolean)));
+    try { await loadUsers(uids); } catch (e) {}
+    renderReactorsSheet(msgId, rows);
+  }).catch(() => {});
+}
+function renderReactorsSheet(msgId, rows) {
+  closeReactorsSheet();
+  const me = meId();
+  const sheet = document.createElement('div');
+  sheet.id = 'reactorsSheet';
+  if (document.querySelector('.app-container[data-app-theme="light"]')) sheet.classList.add('light');
+  rows.sort((a, b) => ((b.uid === me) ? 1 : 0) - ((a.uid === me) ? 1 : 0));
+  const counts = new Map();
+  rows.forEach(r => counts.set(r.emoji, (counts.get(r.emoji) || 0) + 1));
+  sheet.innerHTML = '<div class="rs-card"><div class="rs-grab"></div><div class="rs-head"><span>التفاعلات · ' + rows.length + '</span><button type="button" class="rs-x" aria-label="إغلاق"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="rs-tabs"></div><div class="rs-list"></div></div>';
+  const card = sheet.querySelector('.rs-card'), tabs = sheet.querySelector('.rs-tabs'), list = sheet.querySelector('.rs-list');
+  let filter = 'all';
+  function paint() {
+    tabs.innerHTML = '<button type="button" class="rs-tab' + (filter === 'all' ? ' on' : '') + '" data-f="all">الكل ' + rows.length + '</button>' +
+      Array.from(counts).map(([e, n]) => '<button type="button" class="rs-tab' + (filter === e ? ' on' : '') + '" data-f="' + esc(e) + '"><span class="rs-emo">' + esc(e) + '</span>' + n + '</button>').join('');
+    list.innerHTML = rows.filter(r => filter === 'all' || r.emoji === filter).map(r => {
+      const mine = !!r.uid && r.uid === me;
+      const nm = r.uid ? gUserName(r.uid) : 'مستخدم';
+      return '<div class="rs-row' + (mine ? ' mine' : '') + '"' + (mine ? ' data-remove="1"' : '') + '>' +
+        (r.uid ? userAvHtml(r.uid, '') : '<div class="g-av" style="background:#556">؟</div>') +
+        '<div class="rs-name">' + esc(nm) + (mine ? '<small>اضغط لإزالة تفاعلك</small>' : '') + '</div>' +
+        '<span class="rs-emo">' + esc(r.emoji) + '</span></div>';
+    }).join('');
+  }
+  paint();
+  tabs.onclick = ev => { const t = ev.target.closest && ev.target.closest('.rs-tab'); if (!t) return; filter = t.dataset.f; paint(); };
+  list.onclick = ev => {
+    if (!(ev.target.closest && ev.target.closest('[data-remove]')) || !me) return;
+    db.collection('chats').doc(activeChatId).collection('messages').doc(msgId)
+      .update({ ['reactions.' + me]: firebase.firestore.FieldValue.delete() }).catch(() => {});
+    closeReactorsSheet();
+  };
+  card.onclick = ev => ev.stopPropagation();
+  sheet.onclick = closeReactorsSheet;
+  sheet.querySelector('.rs-x').onclick = closeReactorsSheet;
+  document.body.appendChild(sheet);
+}
 
 function deleteMultipleMessagesForMe() {
   if (!activeChatId || !selectedMessageIds.size) return showToast('حدد رسالة واحدة على الأقل');
