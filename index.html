@@ -2047,6 +2047,29 @@ body:has(.app-container[data-app-theme]) .sg-grid{gap:11px;padding:10px 14px 30p
 body:has(.app-container[data-app-theme]) .sg-card{border-radius:22px;padding:18px 6px 12px;box-shadow:0 1px 2px rgba(20,35,55,.05),0 6px 16px rgba(20,35,55,.06)}
 body:has(.app-container[data-app-theme]) .sg-price{padding:5px 14px;border-radius:14px;font-weight:800}
 </style>
+<style id="babylon-true-gold">
+/* ===== ذهبي أصلي لقسم النجوم والهدايا + أزرار: أسود قبل الذهبي، أبيض بعده ===== */
+body:has(.app-container[data-app-theme="light"]) :is(.gp-ov,#giftSend){--cl-gold:#b47f00}
+body:has(.app-container[data-app-theme="dark"]) :is(.gp-ov,#giftSend){--cl-gold:#f2c94c}
+body:has(.app-container[data-app-theme]) .sh-bal{color:#2a1d00;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' fill-opacity='.22' stroke='%23fff' stroke-opacity='.22' stroke-width='2' stroke-linejoin='round' d='M12 2.6 14.9 8.9 21.8 9.7 16.7 14.4 18 21.2 12 17.8 6 21.2 7.3 14.4 2.2 9.7 9.1 8.9Z'/%3E%3C/svg%3E") no-repeat left -14px bottom -22px/120px 120px,radial-gradient(120% 100% at 88% 0%,rgba(255,255,255,.38),rgba(255,255,255,0) 58%),linear-gradient(135deg,#fad65f,#d99a0b);box-shadow:0 10px 26px rgba(217,154,11,.32)}
+body:has(.app-container[data-app-theme="light"]) :is(.sg-price,.gp-pill,.gp-price,.rs-floor,.gp-listed,.gp-owner,.bs-bal .bs-num){color:#8f5f00!important}
+body:has(.app-container[data-app-theme="dark"]) :is(.sg-price,.gp-pill,.gp-price,.rs-floor,.gp-listed,.gp-owner,.bs-bal .bs-num){color:#ffd24d!important}
+body:has(.app-container[data-app-theme="light"]) :is(.sg-price,.gp-pill,.rs-floor,.gp-listed,.bs-bal){background:#fff1c9!important}
+body:has(.app-container[data-app-theme="dark"]) :is(.sg-price,.gp-pill,.rs-floor,.gp-listed,.bs-bal){background:rgba(255,193,7,.15)!important}
+body:has(.app-container[data-app-theme="light"]) .bs-bal{box-shadow:inset 0 0 0 1px rgba(224,168,16,.45)}
+body:has(.app-container[data-app-theme="dark"]) .bs-bal{box-shadow:inset 0 0 0 1px rgba(255,200,40,.30)}
+body:has(.app-container[data-app-theme="light"]) .bs-row .bs-ic{background:linear-gradient(145deg,#fff6d1,#ffe48a)!important;box-shadow:inset 0 0 0 1px rgba(245,158,11,.45)!important}
+body:has(.app-container[data-app-theme="dark"]) .bs-row .bs-ic{background:linear-gradient(145deg,#3b2d0b,#2a2108)!important;box-shadow:inset 0 0 0 1px rgba(255,193,7,.35)!important}
+/* التبويبات والشرائح: أسود قبل الذهبي، أبيض بعده */
+body:has(.app-container[data-app-theme]) .sh-tabs,body:has(.app-container[data-app-theme]) .st-seg{background:transparent!important;padding:0!important;box-shadow:none!important;gap:8px}
+body:has(.app-container[data-app-theme]) :is(.sh-tabs button,.st-seg button,.rs-chip){border-radius:14px;border:0}
+body:has(.app-container[data-app-theme]) :is(.sh-tabs button,.st-seg button,.rs-chip):not(.on){background:#ecf0f5!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important;box-shadow:none!important;text-shadow:none!important}
+body:has(.app-container[data-app-theme]) :is(.sh-tabs button,.st-seg button,.rs-chip).on{background:#d29a03!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 1px rgba(0,0,0,.2);box-shadow:0 4px 12px rgba(210,154,3,.35)!important}
+/* أزرار ذهبية دائمة: خط أبيض */
+body:has(.app-container[data-app-theme]) :is(.gp-cta:not(.alt):not(.danger),.gs-send,.gm-btn){background:linear-gradient(135deg,#eab624,#c78a00)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 1px rgba(0,0,0,.2);box-shadow:0 8px 20px rgba(199,138,0,.32)!important}
+body:has(.app-container[data-app-theme="light"]) .gp-cta.alt{color:#000!important}
+body:has(.app-container[data-app-theme]) .gs-sel{outline-color:#e0a810}
+</style>
 <style id="babylon-profile-buttons-and-avatar-expansion">
 /* أزرار الملف الشخصي: تصغير خفيف فقط مع الحفاظ على مساحة مريحة */
 #profileView .pf-quick .pf-q,
@@ -8883,6 +8906,16 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
     schedule();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start();
+})();
+</script>
+<script id="babylon-btn-text-fix">
+/* يمنع بقاء لون نص أبيض مضبوط مسبقًا على أزرار التبويبات بعد أن تصبح غير نشطة */
+(function(){
+  var SEL='.sh-tabs button,.st-seg button,.rs-chip',q=false;
+  function fix(){q=false;try{document.querySelectorAll(SEL).forEach(function(b){if(b.style&&(b.style.color||b.style.webkitTextFillColor)){b.style.removeProperty('color');b.style.removeProperty('-webkit-text-fill-color');}});}catch(e){}}
+  function sch(){if(q)return;q=true;(window.requestAnimationFrame||setTimeout)(fix);}
+  function start(){if(!document.body)return;new MutationObserver(sch).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});sch();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 </script>
 </body>
