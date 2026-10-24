@@ -8001,6 +8001,12 @@ html,body{overscroll-behavior-y:none}
         '<button type="button" class="pf-hero-dots" aria-label="المزيد"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button></div>'+
         '<div class="pf-hero-menu"><button type="button" data-a="set">اعتماد الصورة</button><button type="button" data-a="dl">تنزيل الصورة</button><button type="button" data-a="del" class="danger">حذف الصورة</button></div>');
     }
+    if(!own){
+      hero.insertAdjacentHTML('beforeend',
+        '<div class="pf-hero-top"><div class="pf-hero-count" style="visibility:hidden">1/1</div>'+
+        '<button type="button" class="pf-hero-dots" aria-label="المزيد"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button></div>'+
+        '<div class="pf-hero-menu"><button type="button" data-a="dl">تنزيل الصورة</button><button type="button" data-a="stars">إهداء نجوم</button></div>');
+    }
     var hTop=hero.querySelector('.pf-hero-top'), hCount=hero.querySelector('.pf-hero-count'), hMenu=hero.querySelector('.pf-hero-menu');
     var heroImg=hero.querySelector('img'), hImg=heroImg, hLet=hero.querySelector('.pf-hero-letter'),
         hInfo=hero.querySelector('.pf-hero-info'), hName=hero.querySelector('.pf-hero-name'),
@@ -8046,6 +8052,7 @@ html,body{overscroll-behavior-y:none}
 
     function sync(){
       var hasImg = img && !img.classList.contains('hidden') && img.getAttribute('src');
+      if(!own && hTop) hTop.style.display = hasImg ? '' : 'none';
       if(hasImg){ hero.style.background='transparent'; hImg.src = lite(img.getAttribute('src')); hImg.style.display='block'; hLet.style.display='none'; }
       else {
         hImg.style.display='none'; hLet.style.display='flex'; hLet.innerHTML = txt ? txt.innerHTML : '';
@@ -8279,9 +8286,31 @@ html,body{overscroll-behavior-y:none}
         else if(typeof avatarDelete==='function'){ Promise.resolve(avatarDelete()).then(refreshAfterEdit,refreshAfterEdit); }
       });
     }
+    if(!own){
+      var oDots=hero.querySelector('.pf-hero-dots'), oStars=hMenu.querySelector('[data-a="stars"]');
+      oDots.addEventListener('click',function(e){
+        e.stopPropagation();
+        /* "إهداء نجوم" يظهر بنفس شرط زر النجوم الأصلي في البروفايل */
+        var sb=document.getElementById('otherStarsBtn');
+        if(oStars) oStars.classList.toggle('show',!!sb && !sb.classList.contains('hidden'));
+        hMenu.classList.toggle('open');
+      });
+      hMenu.addEventListener('click',function(e){
+        e.stopPropagation(); var b=e.target.closest('button'); if(!b) return;
+        hMenu.classList.remove('open');
+        if(b.dataset.a==='dl'){
+          var src=img&&img.getAttribute('src');
+          if(!src||(img.classList&&img.classList.contains('hidden'))){ if(typeof showToast==='function') showToast('لا توجد صورة شخصية لتنزيلها'); return; }
+          avatarGalleryItems=[src]; avatarGalleryIndex=0; avatarGalleryReadOnly=true;
+          if(typeof avatarDownload==='function') avatarDownload();
+        }else if(b.dataset.a==='stars'){
+          if(typeof devGiftStars==='function') devGiftStars();
+        }
+      });
+    }
     function heroTap(ev){
+      if(hMenu && hMenu.classList.contains('open')){ hMenu.classList.remove('open'); return; }
       if(own){
-        if(hMenu.classList.contains('open')){ hMenu.classList.remove('open'); return; }
         var r=hero.getBoundingClientRect(), x=ev.clientX-r.left, y=ev.clientY-r.top;
         if(y>r.width) return;
         if(x>r.width*0.65){ go(1); return; }
@@ -8338,6 +8367,11 @@ html,body{overscroll-behavior-y:none}
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){init();initBase();}); else { init(); initBase(); }
 })();
 </script>
+
+<style id="pf-other-hero-menu">
+/* قائمة الصورة المكبّرة في بروفايل الشخص الآخر: "إهداء نجوم" تظهر فقط عند توفر الصلاحية */
+.pf-hero .pf-hero-menu button[data-a="stars"]:not(.show){display:none!important}
+</style>
 
 <style id="pf-bottom-bar-theme-fix">
 /* الشريط الأسفل الذي يظهر لحظة سحب الصورة: هو خلفية الصفحة (body) تظهر عند إعادة قياس الشاشة.
@@ -11191,48 +11225,90 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 
 <script id="babylon-offline">
 /* العمل بدون إنترنت: الواجهة تفتح، لكن لا إرسال ولا استلام.
-   - عند الدخول بدون اتصال: "عذرا الهاتف غير متصل بالانترنت".
-   - عند عودة الاتصال: "تم الاتصال بالانترنت". */
+   ثلاث حالات للشبكة:
+   - منقطعة تمامًا  → "عذرا الهاتف غير متصل بالانترنت" (ويُمنع الإرسال)
+   - ضعيفة/غير مستقرة → "عذرا الشبكة غير مستقره" (الإرسال مسموح)
+   - عودة الاتصال بعد انقطاع تام فقط → "تم الاتصال بالانترنت" (لا يظهر بعد الضعف العابر) */
 (function(){
-  var MSG_OFF='عذرا الهاتف غير متصل بالانترنت', MSG_ON='تم الاتصال بالانترنت';
-  window.__netOk = navigator.onLine !== false;
-  var wasOff=false, started=false, pollT=0;
+  var MSG_OFF='عذرا الهاتف غير متصل بالانترنت',
+      MSG_WEAK='عذرا الشبكة غير مستقره',
+      MSG_ON='تم الاتصال بالانترنت';
+  var state = navigator.onLine===false ? 'off' : 'ok';   /* ok | weak | off */
+  var hist=[], wasOff=(state==='off'), ready=false, lastWeakToast=0, pollT=0, retryT=0, running=false;
+  window.__netState=state; window.__netOk=(state!=='off');
 
   function toast(m,k){ try{ if(typeof showToast==='function') showToast(m,k); }catch(_){} }
+  function paint(){
+    try{
+      var c=document.documentElement.classList;
+      c.toggle('net-off',state==='off'); c.toggle('net-weak',state==='weak');
+    }catch(_){}
+  }
 
-  function apply(ok){
-    var prev=window.__netOk;
-    window.__netOk=ok;
-    try{ document.documentElement.classList.toggle('net-off',!ok); }catch(_){}
-    if(!ok){
-      if(prev!==false || !wasOff){ wasOff=true; toast(MSG_OFF,'error'); }
-    }else if(wasOff){
-      wasOff=false; toast(MSG_ON,'success');
+  /* تحديد الحالة من آخر نتائج الفحص */
+  function classify(){
+    if(navigator.onLine===false) return 'off';
+    var last3=hist.slice(-3), last4=hist.slice(-4), last=hist[hist.length-1];
+    if(last3.length>=3 && last3.every(function(r){return !r.ok;})) return 'off';    /* 3 إخفاقات متتالية = لا إنترنت */
+    if(last4.some(function(r){return !r.ok;})) return 'weak';                        /* تذبذب: نجاح وإخفاق */
+    if(last && last.ms>2500) return 'weak';                                          /* بطيء جدًا */
+    if(hist.slice(-2).some(function(r){return r.ms>2500;})) return 'weak';
+    return 'ok';
+  }
+
+  function setState(ns){
+    var prev=state;
+    if(ns===prev) return;
+    state=ns; window.__netState=ns; window.__netOk=(ns!=='off'); paint();
+    if(ns==='off'){
+      wasOff=true;
+      if(ready) toast(MSG_OFF,'error');
+    }else if(prev==='off'){
+      /* عودة بعد انقطاع تام فقط */
+      if(wasOff){ wasOff=false; if(ready) toast(MSG_ON,'success'); }
+    }else if(ns==='weak' && prev==='ok'){
+      var now=Date.now();
+      if(ready && now-lastWeakToast>45000){ lastWeakToast=now; toast(MSG_WEAK,'info'); }
     }
-    schedule();
+    /* weak → ok: بدون أي إشعار */
   }
 
-  /* فحص فعلي للاتصال (navigator.onLine وحده لا يكفي مع واي فاي بلا إنترنت) */
-  function probe(){
-    if(navigator.onLine===false) return Promise.resolve(false);
+  function probeOnce(){
+    var t0=Date.now();
     var ctl=('AbortController' in window)?new AbortController():null;
-    var t=setTimeout(function(){ try{ctl&&ctl.abort();}catch(_){} },5000);
+    var to=setTimeout(function(){ try{ctl&&ctl.abort();}catch(_){} },6000);
     return fetch('/manifest.json?__ping='+Date.now(),{cache:'no-store',signal:ctl?ctl.signal:undefined})
-      .then(function(){ clearTimeout(t); return true; })
-      .catch(function(){ clearTimeout(t); return false; });
-  }
-  function check(){ return probe().then(apply); }
-
-  function schedule(){
-    clearTimeout(pollT);
-    pollT=setTimeout(check, window.__netOk===false ? 6000 : 30000);
+      .then(function(){ clearTimeout(to); return {ok:true,ms:Date.now()-t0}; })
+      .catch(function(){ clearTimeout(to); return {ok:false,ms:Date.now()-t0}; });
   }
 
-  window.addEventListener('offline',function(){ apply(false); });
-  window.addEventListener('online',function(){ check(); });
-  document.addEventListener('visibilitychange',function(){ if(!document.hidden) check(); });
+  function trim(){ if(hist.length>6) hist=hist.slice(-6); }
 
-  /* عند فتح التطبيق: ننتظر اختفاء شاشة البداية ثم نُظهر الإشعار إن لم يكن هناك اتصال */
+  function run(){
+    if(running) return Promise.resolve();
+    running=true; clearTimeout(pollT); clearTimeout(retryT);
+    var p;
+    if(navigator.onLine===false){ hist.push({ok:false,ms:0}); trim(); p=Promise.resolve({ok:false}); }
+    else p=probeOnce().then(function(r){ hist.push(r); trim(); return r; });
+    return p.then(function(r){
+      var ns=classify();
+      if(state==='off' && ns!=='off' && !r.ok) ns='off';      /* لا نعلن العودة إلا بعد نجاح فعلي */
+      setState(ns);
+      running=false;
+      if(!r.ok && state!=='off'){
+        retryT=setTimeout(run,1200);                          /* تأكيد سريع عند الإخفاق حتى يتضح هل هو ضعف أم انقطاع */
+      }else{
+        pollT=setTimeout(run, state==='ok'?30000 : state==='weak'?5000 : 6000);
+      }
+    });
+  }
+  window.__netRun=run;   /* للاختبار */
+
+  window.addEventListener('offline',function(){ hist=[{ok:false,ms:0},{ok:false,ms:0},{ok:false,ms:0}]; setState('off'); clearTimeout(pollT); pollT=setTimeout(run,6000); });
+  window.addEventListener('online',function(){ if(state==='off') hist=[]; run(); });
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) run(); });
+
+  /* عند فتح التطبيق: ننتظر اختفاء شاشة البداية ثم نُظهر إشعار الحالة الحالية إن لم تكن سليمة */
   function whenSplashGone(cb){
     var tries=0;
     (function wait(){
@@ -11242,21 +11318,22 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
       setTimeout(wait,200);
     })();
   }
-  probe().then(function(ok){
-    window.__netOk=ok;
-    try{ document.documentElement.classList.toggle('net-off',!ok); }catch(_){}
-    if(!ok){ wasOff=true; whenSplashGone(function(){ if(window.__netOk===false) toast(MSG_OFF,'error'); }); }
-    schedule();
+  whenSplashGone(function(){
+    ready=true;
+    if(state==='off') toast(MSG_OFF,'error');
+    else if(state==='weak'){ lastWeakToast=Date.now(); toast(MSG_WEAK,'info'); }
   });
+  run();
 
-  /* منع الإرسال/الدخول بدون اتصال */
+  /* منع الإرسال/الدخول عند الانقطاع التام فقط (مع الضعف يُسمح بالإرسال) */
   var GUARDED=['sendMessage','sendImage','sendChatVideo','stopAndSendRecording','publishPost','publishStory',
                'sendStoryEmoji','sendStoryReply','createGroup','sendReset','loginUser','registerUser'];
+  function isOff(){ return window.__netOk===false || navigator.onLine===false; }
   function guard(name){
     var f=window[name];
     if(typeof f!=='function' || f.__offGuard) return;
     var g=function(){
-      if(window.__netOk===false || navigator.onLine===false){
+      if(isOff()){
         var a=arguments[0];
         try{ if(a && typeof a.preventDefault==='function') a.preventDefault(); }catch(_){}
         toast(MSG_OFF,'error');
@@ -11269,13 +11346,13 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
   }
   GUARDED.forEach(guard);
 
-  /* شبكة أمان: أي إضافة مستند جديد (رسالة/منشور...) تُرفض بدون اتصال بدل أن تُخزَّن وتُرسل لاحقًا */
+  /* شبكة أمان: أي إضافة مستند جديد (رسالة/منشور...) تُرفض عند الانقطاع التام بدل أن تُخزَّن وتُرسل لاحقًا */
   try{
     var CR=firebase.firestore.CollectionReference;
     if(CR && CR.prototype && typeof CR.prototype.add==='function' && !CR.prototype.add.__offGuard){
       var oAdd=CR.prototype.add;
       CR.prototype.add=function(){
-        if(window.__netOk===false || navigator.onLine===false){
+        if(isOff()){
           var e=new Error('offline'); e.code='unavailable';
           return Promise.reject(e);
         }
