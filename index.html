@@ -2020,6 +2020,33 @@ body:has(.app-container[data-app-theme="light"]) .gp-cta.alt{color:#000!importan
 body:has(.app-container[data-app-theme="light"]) .gs-sel{outline-color:#b39a4a}
 body:has(.app-container[data-app-theme="dark"]) .gs-sel{outline-color:#b39a4a}
 </style>
+<style id="babylon-stars-layout">
+/* ===== إعادة ترتيب صفحة نجوم بابل: بطاقة رصيد + تبويبات مقسّمة + سجل عمليات منظم ===== */
+body:has(.app-container[data-app-theme]) .sh-bal{position:relative;overflow:hidden;margin:14px 14px 6px;padding:26px 18px 22px;border-radius:26px;text-align:center;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' fill-opacity='.18' stroke='%23fff' stroke-opacity='.18' stroke-width='2' stroke-linejoin='round' d='M12 2.6 14.9 8.9 21.8 9.7 16.7 14.4 18 21.2 12 17.8 6 21.2 7.3 14.4 2.2 9.7 9.1 8.9Z'/%3E%3C/svg%3E") no-repeat left -14px bottom -22px/120px 120px,radial-gradient(120% 100% at 88% 0%,rgba(255,255,255,.34),rgba(255,255,255,0) 58%),linear-gradient(135deg,#cdb678,#a58a3c)}
+body:has(.app-container[data-app-theme]) .sh-lb{display:block;font-size:13px;font-weight:700;letter-spacing:.2px;opacity:.82;margin-bottom:2px}
+body:has(.app-container[data-app-theme]) .sh-n{display:flex;align-items:center;justify-content:center;gap:10px;font-size:46px;font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums}
+body:has(.app-container[data-app-theme]) .sh-n i{margin:0;display:inline-flex;align-items:center}
+body:has(.app-container[data-app-theme]) .sh-dev{display:inline-block;margin-top:10px;padding:4px 12px;border-radius:12px;background:rgba(255,255,255,.28);font-size:12px;font-weight:700;opacity:1}
+/* التبويبات: شريط مقسّم */
+body:has(.app-container[data-app-theme]) .sh-tabs{display:flex;gap:4px;margin:12px 14px 8px;padding:4px;border-radius:16px;background:var(--cl-card,#17212b);box-shadow:0 1px 2px rgba(20,35,55,.05);overflow-x:auto}
+body:has(.app-container[data-app-theme]) .sh-tabs button{flex:1 0 auto;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:700;background:transparent;transition:background .15s,color .15s}
+/* سجل العمليات: بطاقة واحدة بصفوف مفصولة */
+body:has(.app-container[data-app-theme]) .sh-list{margin:6px 14px 30px;padding:0;border-radius:22px;overflow:hidden;background:var(--cl-card,#17212b);box-shadow:0 1px 2px rgba(20,35,55,.05),0 8px 22px rgba(20,35,55,.06)}
+body:has(.app-container[data-app-theme]) .sh-list::before{content:"سجل العمليات";display:block;padding:15px 18px 9px;font-size:14px;font-weight:800;color:var(--cl-text,#f1f5f9)}
+body:has(.app-container[data-app-theme]) .sh-row{gap:14px;padding:13px 18px;position:relative;transition:background .12s}
+body:has(.app-container[data-app-theme]) .sh-row+.sh-row::before{content:"";position:absolute;top:0;inset-inline-start:76px;inset-inline-end:18px;height:1px;background:var(--cl-sep,rgba(255,255,255,.08))}
+body:has(.app-container[data-app-theme]) .sh-ic{flex:0 0 46px;width:46px;height:46px;border-radius:15px}
+body:has(.app-container[data-app-theme]) .sh-t{flex:1;min-width:0}
+body:has(.app-container[data-app-theme]) .sh-t b{font-size:15px;font-weight:700;line-height:1.35;color:var(--cl-text,#f1f5f9)}
+body:has(.app-container[data-app-theme]) .sh-t span{font-size:12.5px;margin-top:3px}
+body:has(.app-container[data-app-theme]) .sh-a{display:flex;align-items:center;gap:4px;direction:ltr;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.2px}
+body:has(.app-container[data-app-theme]) .sh-a i{display:inline-flex;align-items:center;font-size:13px}
+/* شبكة المتجر بنفس اللغة البصرية */
+body:has(.app-container[data-app-theme]) .sg-grid{gap:11px;padding:10px 14px 30px}
+body:has(.app-container[data-app-theme]) .sg-card{border-radius:22px;padding:18px 6px 12px;box-shadow:0 1px 2px rgba(20,35,55,.05),0 6px 16px rgba(20,35,55,.06)}
+body:has(.app-container[data-app-theme]) .sg-price{padding:5px 14px;border-radius:14px;font-weight:800}
+</style>
 <style id="babylon-profile-buttons-and-avatar-expansion">
 /* أزرار الملف الشخصي: تصغير خفيف فقط مع الحفاظ على مساحة مريحة */
 #profileView .pf-quick .pf-q,
