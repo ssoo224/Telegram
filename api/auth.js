@@ -1,49 +1,49 @@
-/* Username privacy: public usernames contain UID only; private email mapping is server-only. */
-const admin=require('firebase-admin');
-const nodemailer=require('nodemailer');
-if(!admin.apps.length)admin.initializeApp({credential:admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))});
-const db=admin.firestore();
-const mailer=nodemailer.createTransport({host:'smtp.gmail.com',port:465,secure:true,auth:{user:process.env.GMAIL_USER,pass:process.env.GMAIL_APP_PASSWORD}});
-const hits=new Map();
-function limited(k){const now=Date.now(),a=(hits.get(k)||[]).filter(t=>now-t<60000);if(a.length>=8){hits.set(k,a);return true;}a.push(now);hits.set(k,a);return false;}
-async function appCheck(req){if(process.env.APP_CHECK_ENFORCE!=='true')return;const t=req.headers['x-firebase-appcheck'];if(!t)throw Object.assign(new Error('app_check'),{status:401});await admin.appCheck().verifyToken(t);}
-module.exports=async(req,res)=>{
- res.setHeader('Cache-Control','no-store');if(req.method!=='POST')return res.status(405).json({error:'method'});
- try{
-  await appCheck(req);const b=typeof req.body==='string'?JSON.parse(req.body||'{}'):(req.body||{});
-  if(b.action==='rename'){
-   const m=/^Bearer (.+)$/.exec(req.headers.authorization||'');if(!m)return res.status(401).json({error:'auth'});
-   const u=await admin.auth().verifyIdToken(m[1]);const oldName=String(b.oldUsername||'').toLowerCase(),newName=String(b.newUsername||'').toLowerCase();
-   if(!/^[a-z][a-z0-9_.]{4,39}$/.test(newName)&&!(u.email==='anldheb429@gmail.com'&&/^[a-z][a-z0-9_.]{2,39}$/.test(newName)))return res.status(400).json({error:'username'});
-   await db.runTransaction(async tx=>{const np=db.collection('usernames').doc(newName),nq=db.collection('usernameLookup').doc(newName),op=oldName?db.collection('usernames').doc(oldName):null,oq=oldName?db.collection('usernameLookup').doc(oldName):null;const reads=[tx.get(np),tx.get(nq)];if(op&&oldName!==newName)reads.push(tx.get(op),tx.get(oq));const rr=await Promise.all(reads);if((rr[0].exists&&rr[0].data().uid!==u.uid)||(rr[1].exists&&rr[1].data().uid!==u.uid))throw new Error('taken');tx.set(np,{uid:u.uid});tx.set(nq,{uid:u.uid,email:u.email});if(op&&oldName!==newName){if(rr[2].exists&&rr[2].data().uid===u.uid)tx.delete(op);if(rr[3].exists&&rr[3].data().uid===u.uid)tx.delete(oq);}});
-   return res.json({ok:true});
-  }
-  if(b.action==='claim'){
-   const m=/^Bearer (.+)$/.exec(req.headers.authorization||'');if(!m)return res.status(401).json({error:'auth'});
-   const u=await admin.auth().verifyIdToken(m[1]);const username=String(b.username||'').toLowerCase();
-   if(!/^[a-z][a-z0-9_.]{4,39}$/.test(username)&&!(u.email==='anldheb429@gmail.com'&&/^[a-z][a-z0-9_.]{2,39}$/.test(username)))return res.status(400).json({error:'username'});
-   const pub=db.collection('usernames').doc(username),priv=db.collection('usernameLookup').doc(username);
-   await db.runTransaction(async tx=>{const [p,q]=await Promise.all([tx.get(pub),tx.get(priv)]);if((p.exists&&p.data().uid!==u.uid)||(q.exists&&q.data().uid!==u.uid))throw new Error('taken');tx.set(pub,{uid:u.uid});tx.set(priv,{uid:u.uid,email:u.email});});
-   return res.json({ok:true});
-  }
-  if(b.action==='reset-username'){
-   const username=String(b.username||'').replace(/^@/,'').toLowerCase();if(!/^[a-z][a-z0-9_.]{2,39}$/.test(username))return res.json({ok:true});
-   const snap=await db.collection('usernameLookup').doc(username).get();
-   if(snap.exists&&snap.data().email){try{const link=await admin.auth().generatePasswordResetLink(snap.data().email);await mailer.sendMail({from:'\"Babylon Chat\" <'+process.env.GMAIL_USER+'>',to:snap.data().email,subject:'إعادة تعيين كلمة المرور - Babylon Chat',text:'لإعادة تعيين كلمة المرور افتح الرابط التالي: '+link});}catch(e){console.error('reset mail',e);}}
-   return res.json({ok:true});
-  }
-  if(b.action==='username-login'){
-   const username=String(b.username||'').replace(/^@/,'').toLowerCase(),password=String(b.password||'');
-   const ip=String(req.headers['x-forwarded-for']||'unknown').split(',')[0];if(limited(ip+':'+username))return res.status(429).json({error:'rate'});
-   if(!/^[a-z][a-z0-9_.]{2,39}$/.test(username)||!password)return res.status(400).json({error:'credentials'});
-   const snap=await db.collection('usernameLookup').doc(username).get();if(!snap.exists)return res.status(401).json({error:'credentials'});
-   const email=snap.data().email;if(!email)return res.status(401).json({error:'credentials'});
-   const apiKey=process.env.FIREBASE_WEB_API_KEY;if(!apiKey)return res.status(500).json({error:'configuration'});
-   const verify=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(apiKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true})});
-   const authData=await verify.json();if(!verify.ok)return res.status(401).json({error:'credentials'});
-   const decoded=await admin.auth().verifyIdToken(authData.idToken);if(decoded.uid!==snap.data().uid)return res.status(401).json({error:'credentials'});
-   const customToken=await admin.auth().createCustomToken(decoded.uid);return res.json({customToken});
-  }
-  return res.status(400).json({error:'action'});
- }catch(e){console.error('auth api',e);return res.status(e.status||(/taken/.test(e.message)?409:500)).json({error:/taken/.test(e.message)?'taken':e.message==='app_check'?'app_check':'failed'});}
+/* api/auth.js — تسجيل الدخول باليوزر بدون كشف الإيميل + توفر اليوزر + البحث عن مستخدم
+   جدول usernames صار مقفول عن التطبيق بالقواعد؛ الخادم وحده يقرأه. */
+const { db, WEB_API_KEY, limited, HttpError, guard, authUser, send } = require('./_shared');
+
+const UNAME = /^[a-z0-9_.]{3,32}$/;
+const clean = s => String(s || '').trim().replace(/^@/, '').toLowerCase();
+
+module.exports = async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const { body, ip } = await guard(req);
+
+    /* يتحقق من كلمة السر بالخادم ويرجّع الإيميل فقط إذا كانت صحيحة (فما يتسرّب لأحد غير صاحبه) */
+    if (body.type === 'resolve-login') {
+      const name = clean(body.username), pw = String(body.password || '');
+      if (!UNAME.test(name) || !pw || pw.length > 128) throw new HttpError(401, 'invalid');
+      if (limited('rl:' + ip, 600000, 15) || limited('rln:' + name, 600000, 8)) throw new HttpError(429, 'rate');
+      const d = await db.collection('usernames').doc(name).get();
+      if (!d.exists || !d.data().email) throw new HttpError(401, 'invalid');
+      const r = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + WEB_API_KEY, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: d.data().email, password: pw, returnSecureToken: false })
+      });
+      if (!r.ok) throw new HttpError(401, 'invalid');
+      return res.status(200).json({ email: d.data().email });
+    }
+
+    /* هل اليوزر متاح؟ (للتسجيل) */
+    if (body.type === 'username-available') {
+      const name = clean(body.username);
+      if (!UNAME.test(name)) return res.status(200).json({ available: false, reason: 'format' });
+      if (limited('ua:' + ip, 60000, 30)) throw new HttpError(429, 'rate');
+      const d = await db.collection('usernames').doc(name).get();
+      return res.status(200).json({ available: !d.exists });
+    }
+
+    /* uid من اليوزر (للبحث والمنشن) — للمسجّلين فقط */
+    if (body.type === 'lookup') {
+      const u = await authUser(req, true);
+      const name = clean(body.username);
+      if (!UNAME.test(name)) throw new HttpError(404, 'nouser');
+      if (limited('lk:' + u.uid, 60000, 40)) throw new HttpError(429, 'rate');
+      const d = await db.collection('usernames').doc(name).get();
+      if (!d.exists || !d.data().uid) throw new HttpError(404, 'nouser');
+      return res.status(200).json({ uid: d.data().uid });
+    }
+    throw new HttpError(400, 'type');
+  } catch (e) { return send(res, e); }
 };
