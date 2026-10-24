@@ -4482,8 +4482,12 @@ function refreshMessageSelectionUI() {
   if (count) count.textContent = String(selectedMessageIds.size);
   document.getElementById('chatView')?.classList.toggle('msg-selecting', !!messageSelectionMode);
   if (bar) bar.classList.toggle('hidden', !messageSelectionMode);
+  // عند تحديد رسالة واحدة فقط (نص/صورة/فيديو) تظهر نافذة الإيموجي فوقها
+  if (messageSelectionMode && selectedMessageIds.size === 1) showSelEmojiBar(Array.from(selectedMessageIds)[0]);
+  else hideSelEmojiBar();
 }
 function clearMessageSelection() {
+  hideSelEmojiBar();
   messageSelectionMode = false;
   selectedMessageIds.clear();
   document.querySelectorAll('#messagesArea .msg-bubble.selected-message').forEach(b => {
@@ -4492,6 +4496,83 @@ function clearMessageSelection() {
   document.getElementById('multiSelectBar')?.classList.add('hidden');
   document.getElementById('chatView')?.classList.remove('msg-selecting');
 }
+/* ===== نافذة الإيموجي العائمة فوق الرسالة المحددة (رسالة واحدة فقط) ===== */
+(function(){
+  var st = document.createElement('style');
+  st.textContent =
+    '#selEmojiBar{position:fixed;z-index:3500;display:flex;align-items:center;gap:2px;padding:5px 8px;border-radius:28px;direction:ltr;background:#1c2530;color:#fff;border:1px solid rgba(255,255,255,.1);box-shadow:0 10px 30px rgba(0,0,0,.35);animation:selEmojiIn .16s ease-out}' +
+    '#selEmojiBar.light{background:#fff;color:#17212b;border-color:#dce4ee;box-shadow:0 10px 30px rgba(15,23,42,.18)}' +
+    '#selEmojiBar button{border:0;background:transparent;color:inherit;font-size:26px;line-height:1;padding:6px 7px;border-radius:50%;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}' +
+    '#selEmojiBar button:active{transform:scale(.85)}#selEmojiBar button.on{background:rgba(212,175,55,.3)}' +
+    '#selEmojiBar .sel-plus{width:38px;height:38px;display:grid;place-items:center;margin-inline-start:2px;background:rgba(127,140,160,.22)}' +
+    '#selEmojiBar .sel-plus svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}' +
+    '@keyframes selEmojiIn{from{opacity:0;transform:translateY(6px) scale(.92)}to{opacity:1;transform:none}}';
+  document.head.appendChild(st);
+})();
+let selEmojiBarEl = null, selEmojiMsgId = null;
+const SEL_EMOJIS = ['😂', '❤️', '👍🏻', '😭', '✨'];
+function selBubbleReaction(b) { const r = b && b.querySelector('.reaction-badge'); return r ? r.textContent.trim() : ''; }
+function hideSelEmojiBar() {
+  if (selEmojiBarEl) { selEmojiBarEl.remove(); selEmojiBarEl = null; }
+  selEmojiMsgId = null;
+}
+function positionSelEmojiBar() {
+  if (!selEmojiBarEl || selEmojiMsgId == null) return;
+  const b = document.getElementById('message_' + selEmojiMsgId);
+  if (!b || !b.isConnected || !messageSelectionMode) { hideSelEmojiBar(); return; }
+  const r = b.getBoundingClientRect();
+  const area = document.getElementById('messagesArea');
+  const ar = area ? area.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+  if (r.bottom < ar.top + 10 || r.top > ar.bottom - 10) { selEmojiBarEl.style.visibility = 'hidden'; return; }
+  selEmojiBarEl.style.visibility = 'visible';
+  const w = selEmojiBarEl.offsetWidth, h = selEmojiBarEl.offsetHeight, m = 8;
+  let left = r.left + r.width / 2 - w / 2;
+  left = Math.max(m, Math.min(left, window.innerWidth - w - m));
+  let top = r.top - h - 8;
+  if (top < ar.top + m) { const below = r.bottom + 8; top = (below + h <= ar.bottom - m) ? below : ar.top + m; }
+  selEmojiBarEl.style.left = left + 'px';
+  selEmojiBarEl.style.top = top + 'px';
+}
+function showSelEmojiBar(id) {
+  const b = document.getElementById('message_' + id);
+  if (!b || !b.isConnected) { hideSelEmojiBar(); return; }
+  selEmojiMsgId = id;
+  if (!selEmojiBarEl) {
+    selEmojiBarEl = document.createElement('div');
+    selEmojiBarEl.id = 'selEmojiBar';
+    document.body.appendChild(selEmojiBarEl);
+  }
+  selEmojiBarEl.classList.toggle('light', !!document.querySelector('.app-container[data-app-theme="light"]'));
+  const cur = selBubbleReaction(b);
+  selEmojiBarEl.innerHTML = SEL_EMOJIS.map(e => '<button type="button" data-e="' + e + '"' + (e === cur ? ' class="on"' : '') + '>' + e + '</button>').join('') +
+    '<button type="button" class="sel-plus" data-more="1" aria-label="المزيد"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>';
+  selEmojiBarEl.onclick = function (ev) {
+    ev.stopPropagation();
+    const t = ev.target.closest && ev.target.closest('button'); if (!t) return;
+    const mid = selEmojiMsgId; if (mid == null) return;
+    if (t.dataset.more) { selEmojiMore(mid); return; }
+    const bubble = document.getElementById('message_' + mid);
+    const curE = selBubbleReaction(bubble);
+    selectedMsgId = mid;
+    selectedMsgReactions = curE ? { [curE]: true } : {};
+    addReaction(t.dataset.e);
+    clearMessageSelection();
+  };
+  positionSelEmojiBar();
+}
+function selEmojiMore(id) {
+  if (!activeChatId) return;
+  const bubble = document.getElementById('message_' + id);
+  db.collection('chats').doc(activeChatId).collection('messages').doc(id).get().then(d => {
+    if (!d.exists) return;
+    const m = d.data() || {};
+    clearMessageSelection();
+    openMsgModal(id, m.text || (m.imageUrl ? 'صورة' : (m.videoUrl ? 'فيديو' : '')), m.senderId, m.reactions || {}, !!m.audioUrl, bubble);
+  }).catch(() => {});
+}
+document.getElementById('messagesArea')?.addEventListener('scroll', positionSelEmojiBar, { passive: true });
+window.addEventListener('resize', positionSelEmojiBar);
+
 function deleteMultipleMessagesForMe() {
   if (!activeChatId || !selectedMessageIds.size) return showToast('حدد رسالة واحدة على الأقل');
   const hidden = getLocalChatSet('babylon_hidden_messages_' + activeChatId);
