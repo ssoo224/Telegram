@@ -3854,7 +3854,7 @@ function applyChatBlockState() {
   if (myBlocks[uid]) {
     bbBlkLayout(true);
     chatBlockedNow = true; chatBlockedMsg = 'أنت حاظر هذا المستخدم، ألغِ الحظر حتى تراسله';
-    bn.className = 'block-banner bb-blocked'; bn.innerHTML = '<div class="bb-blk-top"><span class="bb-blk-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg></span><span class="bb-blk-txt">هذا المستخدم محظور</span></div><button type="button" class="bb-blk-btn" onclick="unblockUser(currentChatOtherUserId)">إلغاء الحظر</button>';
+    bn.className = 'block-banner bb-blocked'; bn.innerHTML = '<div class="bb-blk-top"><span class="bb-blk-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg></span><div class="bb-blk-info"><span class="bb-blk-txt">هذا المستخدم محظور</span><span class="bb-blk-sub">لا يمكنكما تبادل الرسائل حالياً</span></div></div><button type="button" class="bb-blk-btn" onclick="unblockUser(currentChatOtherUserId)"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 7.6-1.7"/></svg><span>إلغاء الحظر</span></button>';
     bn.classList.remove('hidden'); setBars(true); return;
   }
   blockedByThem(uid).then(b => {
@@ -9596,7 +9596,7 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 #chatView.bb-blk-on .chat-input-container{position:absolute!important;left:0!important;right:0!important;bottom:0!important;z-index:6;background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0 0 max(6px,env(safe-area-inset-bottom,0px))!important;min-height:0!important;pointer-events:none}
 #chatView.bb-blk-on .chat-input-container > :not(#blockBanner){display:none!important}
 #chatView.bb-blk-on #blockBanner{pointer-events:auto}
-#chatView.bb-blk-on .messages-area{padding-bottom:160px!important}
+#chatView.bb-blk-on .messages-area{padding-bottom:170px!important}
 #blockBanner .bb-blk-ic{width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff!important;-webkit-text-fill-color:#fff!important;background:linear-gradient(135deg,#f87171,#dc2626)!important}
 .app-container #mainPage #blockBanner .bb-blk-ic,.app-container[data-app-theme] #mainPage #blockBanner .bb-blk-ic{color:#fff!important}
 #blockBanner .bb-blk-ic svg,#blockBanner .bb-blk-ic svg *{fill:none!important;stroke:#fff!important;color:#fff!important}
@@ -9608,6 +9608,24 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 .app-container[data-app-theme="dark"] #mainPage #blockBanner .bb-blk-txt{color:#fca5a5!important}
 .app-container[data-app-theme="light"] #blockBanner .bb-blk-btn{background:#fff!important;color:#dc2626!important;-webkit-text-fill-color:#dc2626!important;border:2px solid #dc2626!important}
 .app-container[data-app-theme="dark"] #blockBanner .bb-blk-btn{background:rgba(220,38,38,.14)!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important;border:2px solid #f87171!important}
+/* ===== تصميم احترافي لبطاقة الحظر ===== */
+#blockBanner.bb-blocked{gap:14px;margin:8px 14px;padding:16px;border-radius:22px;text-align:right;position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(220,38,38,.10) 0%,rgba(220,38,38,0) 55%),var(--babylon-surface-card,#1e293b)!important;border:1px solid rgba(248,113,113,.38)!important;box-shadow:0 14px 34px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06)!important}
+#blockBanner.bb-blocked::before{content:"";position:absolute;top:0;right:22px;left:22px;height:3px;border-radius:0 0 4px 4px;background:linear-gradient(90deg,#f87171,#dc2626,#f87171)}
+#blockBanner .bb-blk-top{justify-content:flex-start;gap:14px}
+#blockBanner .bb-blk-ic{width:46px;height:46px;box-shadow:0 0 0 5px rgba(220,38,38,.16),0 8px 18px rgba(220,38,38,.35)}
+#blockBanner .bb-blk-ic svg{width:25px;height:25px;stroke-width:2.1}
+#blockBanner .bb-blk-info{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;text-align:right}
+#blockBanner .bb-blk-txt{font-size:16.5px;font-weight:800;line-height:1.35;letter-spacing:.1px}
+#blockBanner .bb-blk-sub{font-size:12.5px;font-weight:500;line-height:1.4}
+.app-container #mainPage #blockBanner .bb-blk-sub{color:#94a3b8!important}
+.app-container[data-app-theme="light"] #mainPage #blockBanner .bb-blk-sub{color:#64748b!important}
+#blockBanner .bb-blk-btn{display:flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 16px;border-radius:14px;font-size:14.5px;font-weight:800;transition:transform .12s ease,background .15s ease}
+#blockBanner .bb-blk-btn svg{width:19px;height:19px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#blockBanner .bb-blk-btn svg *{stroke:currentColor!important;fill:none!important}
+#blockBanner .bb-blk-btn span{color:inherit!important;-webkit-text-fill-color:inherit!important}
+#blockBanner .bb-blk-btn:active{transform:scale(.98)}
+.app-container[data-app-theme="light"] #blockBanner.bb-blocked{background:linear-gradient(180deg,rgba(220,38,38,.07) 0%,rgba(220,38,38,0) 55%),#fff!important;border-color:rgba(220,38,38,.28)!important;box-shadow:0 14px 34px rgba(26,44,70,.14),0 2px 6px rgba(26,44,70,.06)!important}
+.app-container[data-app-theme="light"] #blockBanner .bb-blk-btn:active{background:#fff1f1!important}
 /* إشعار: تم حظرك — أحمر مع علامة تحذير */
 #toast.toast.bt-danger{--bt-acc:#dc2626;--bt-bg:#fff1f1;--bt-fg:#b91c1c;--bt-bd:rgba(220,38,38,.45)}
 #toast.toast.bt-danger .bt-ic{color:#fff;background:linear-gradient(135deg,#f87171,#dc2626)}
