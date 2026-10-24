@@ -3660,7 +3660,6 @@ function renderSettingsHero() {
 
 /* ===== الخصوصية والأمان ===== */
 function isMeUser(u){ return !!u && (u === currentUserData || (currentUser && (u.id === currentUser.uid || u.uid === currentUser.uid))); }
-function bbBlockedEither(id){ try { if (!id) return false; const c = blockedByCache[id]; return !!(c && c.v && !(myBlocks && myBlocks[id])); } catch (e) { return false; } }
 function pvUrl(u){ if (!u || !u.avatarUrl) return ''; if (u.hideAvatar && !isMeUser(u)) return ''; if (!isMeUser(u) && bbBlockedEither(u.id)) return ''; return u.avatarUrl; }
 // صورة مصغّرة (192px) لصورة المرسل تُرسل لإشعار أندرويد بدل الصورة الأصلية الكبيرة.
 const notifAvatarCache = {};
@@ -3806,18 +3805,19 @@ function startBlocksListener() {
     if (document.getElementById('blkOverlay')) sxOpenBlocked(true);
   }, () => {});
 }
-function bbProfileAvatar(u) {
-  const img = document.getElementById('otherAvatarImg'), tx = document.getElementById('otherAvatarText'); if (!img || !tx) return;
-  const url = pvUrl(u);
-  if (url) { img.src = url; img.classList.remove('hidden'); tx.classList.add('hidden'); }
-  else { img.classList.add('hidden'); img.removeAttribute('src'); tx.classList.remove('hidden'); }
-}
+function bbBlockedEither(id){ try { if (!id) return false; const c = blockedByCache[id]; return !!(c && c.v && !(myBlocks && myBlocks[id])); } catch (e) { return false; } }
 function bbRefreshChatAvatar() {
   const u = window.__bbChatU, box = document.getElementById('chatAvatar');
   if (!u || !box || u.id !== currentChatOtherUserId) return;
   const url = pvUrl(u);
   box.innerHTML = url ? '<img src="' + esc(url) + '">' : '';
   if (!url) box.textContent = (u.displayName || '?').charAt(0).toUpperCase();
+}
+function bbProfileAvatar(u) {
+  const img = document.getElementById('otherAvatarImg'), tx = document.getElementById('otherAvatarText'); if (!img || !tx) return;
+  const url = pvUrl(u);
+  if (url) { img.src = url; img.classList.remove('hidden'); tx.classList.add('hidden'); }
+  else { img.classList.add('hidden'); img.removeAttribute('src'); tx.classList.remove('hidden'); }
 }
 function bbApplyBlockPrivacy(u) {
   if (!u) return;
@@ -3854,7 +3854,7 @@ function applyChatBlockState() {
   if (myBlocks[uid]) {
     bbBlkLayout(true);
     chatBlockedNow = true; chatBlockedMsg = 'أنت حاظر هذا المستخدم، ألغِ الحظر حتى تراسله';
-    bn.className = 'block-banner bb-blocked'; bn.innerHTML = '<span class="bb-blk-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg></span><span class="bb-blk-txt">هذا المستخدم محظور</span><button type="button" class="bb-blk-btn" onclick="unblockUser(currentChatOtherUserId)">إلغاء الحظر</button>';
+    bn.className = 'block-banner bb-blocked'; bn.innerHTML = '<div class="bb-blk-top"><span class="bb-blk-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg></span><span class="bb-blk-txt">هذا المستخدم محظور</span></div><button type="button" class="bb-blk-btn" onclick="unblockUser(currentChatOtherUserId)">إلغاء الحظر</button>';
     bn.classList.remove('hidden'); setBars(true); return;
   }
   blockedByThem(uid).then(b => {
@@ -9545,8 +9545,7 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
     key:'<svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3M14 9l2 2"/></svg>',
     trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
     block:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg>',
-    info:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
-    logout:'<svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3M15 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/></svg>'
+    info:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>'
   };
   function build(msg,o,single){
     return new Promise(function(resolve){
@@ -9577,43 +9576,11 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
   }
   window.bbConfirm=function(msg,o){ return build(msg,o,false); };
   window.bbAlert=function(msg,o){ return build(msg,o,true); };
-  /* أي alert لاحق يظهر بتصميم التطبيق بدل نافذة المتصفح */
   window.alert=function(msg){ build(msg,null,true); };
 })();
 </script>
 <style id="bb-block-ui-fix">
-/* ===== شريط الحظر داخل المحادثة (يغطي حقل الكتابة) ===== */
-#blockBanner.bb-blocked{display:flex!important;flex-direction:row;align-items:center;gap:10px;direction:rtl;box-sizing:border-box;margin:8px 10px;padding:6px 8px 6px 6px;min-height:46px;border-radius:24px;text-align:right;font-size:14px;font-weight:700;color:#fca5a5;background:var(--babylon-surface-card,#202b38)!important;border:1px solid var(--babylon-border,#334155)!important;box-shadow:none!important}
-#blockBanner.hidden{display:none!important}
-#chatView .chat-input-container:has(#blockBanner.bb-blocked:not(.hidden)){background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding-top:0!important}
-/* عند ظهور شريط الحظر: لا يبقى أي عنصر آخر من حقل الكتابة خلفه */
-#chatView .chat-input-container:has(#blockBanner.bb-blocked:not(.hidden)) > :not(#blockBanner){display:none!important}
-#chatView .chat-input-container:has(#blockBanner.bb-blocked:not(.hidden)){min-height:0!important;gap:0!important;padding-bottom:max(6px,env(safe-area-inset-bottom,0px))!important}
-/* شريط الحظر يطفو فوق المحادثة: لا خلفية خلفه ولا يغطي أي رسالة */
-#chatView.bb-blk-on .chat-input-container{position:absolute!important;left:0!important;right:0!important;bottom:0!important;z-index:6;background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0 0 max(6px,env(safe-area-inset-bottom,0px))!important;min-height:0!important;pointer-events:none}
-#chatView.bb-blk-on .chat-input-container > :not(#blockBanner){display:none!important}
-#chatView.bb-blk-on #blockBanner{pointer-events:auto}
-#chatView.bb-blk-on .messages-area{padding-bottom:84px!important}
-#blockBanner .bb-blk-ic{width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff!important;-webkit-text-fill-color:#fff!important;background:linear-gradient(135deg,#f87171,#dc2626)!important}
-.app-container #mainPage #blockBanner .bb-blk-ic,.app-container[data-app-theme] #mainPage #blockBanner .bb-blk-ic{color:#fff!important}
-#blockBanner .bb-blk-ic svg,#blockBanner .bb-blk-ic svg *{width:18px;height:18px;fill:none!important;stroke:#fff!important;color:#fff!important;stroke-width:2;stroke-linecap:round}
-#blockBanner .bb-blk-ic svg *{width:auto;height:auto}
-#blockBanner .bb-blk-txt{flex:1;color:inherit;text-shadow:0 1px 2px rgba(0,0,0,.25)}
-#blockBanner .bb-blk-btn{margin:0;flex:none;padding:7px 16px;border-radius:18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;text-shadow:none;box-shadow:none;background:rgba(220,38,38,.14)!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important;border:2px solid #f87171!important}
-.app-container[data-app-theme="light"] #blockBanner.bb-blocked{color:#b91c1c;background:#fff!important;border-color:#dce4ee!important}
-.app-container[data-app-theme="light"] #mainPage #blockBanner .bb-blk-txt{color:#b91c1c!important}
-.app-container[data-app-theme="dark"] #mainPage #blockBanner .bb-blk-txt{color:#fca5a5!important}
-.app-container[data-app-theme="light"] #blockBanner .bb-blk-txt{text-shadow:none}
-.app-container[data-app-theme="light"] #blockBanner .bb-blk-btn{background:#fff!important;color:#dc2626!important;-webkit-text-fill-color:#dc2626!important;border:2px solid #dc2626!important}
-.app-container[data-app-theme="dark"] #blockBanner .bb-blk-btn{background:rgba(220,38,38,.14)!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important;border:2px solid #f87171!important}
-/* إشعار: تم حظرك — أحمر مع علامة تحذير */
-#toast.toast.bt-danger{--bt-acc:#dc2626;--bt-bg:#fff1f1;--bt-fg:#b91c1c;--bt-bd:rgba(220,38,38,.45)}
-#toast.toast.bt-danger .bt-ic{color:#fff;background:linear-gradient(135deg,#f87171,#dc2626)}
-.app-container[data-app-theme="dark"] #toast.toast.bt-danger{--bt-bg:rgba(69,22,28,.95);--bt-fg:#fecaca;--bt-bd:rgba(248,113,113,.5)}
-.app-container[data-app-theme="light"] #toast.toast.bt-danger{--bt-bg:#fff1f1;--bt-fg:#b91c1c;--bt-bd:rgba(220,38,38,.45)}
-/* المحادثة المحظورة تبقى في القائمة */
-.chat-item.is-blocked .chat-item-sub,.chat-item.is-blocked .chat-item-last{opacity:.75}
-/* ===== قائمة المحظورين: زر إلغاء الحظر ===== */
+/* قائمة المحظورين: زر إلغاء الحظر */
 .blk-ov .blk-row button{border:0!important;border-radius:13px!important;padding:9px 16px!important;font-weight:800!important;font-family:inherit;color:#fff!important;-webkit-text-fill-color:#fff!important;background:linear-gradient(135deg,#e6c566 0%,#d3a93b 45%,#bc8e24 100%)!important;text-shadow:0 1px 2px rgba(110,72,0,.45);box-shadow:0 5px 14px rgba(190,150,40,.28)!important}
 .blk-ov[data-app-theme="light"]{background:#f5f7fb!important;color:#17212b!important}
 .blk-ov[data-app-theme="light"] .sx-top{background:#fff!important;color:#17212b!important;border-color:#e1e7ef!important}
@@ -9621,6 +9588,31 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 .blk-ov[data-app-theme="light"] .sx-back{background:#edf2f8!important;color:#52657a!important}
 .blk-ov[data-app-theme="light"] .blk-row{background:#fff!important;border:1px solid #e1e7ef!important;box-shadow:0 4px 14px rgba(26,44,70,.05)}
 .blk-ov[data-app-theme="light"] #blkList>div:not(.blk-row){color:#708094!important}
+.chat-item.is-blocked .chat-item-sub,.chat-item.is-blocked .chat-item-last{opacity:.75}
+/* شريط الحظر: مستطيل (العبارة وتحتها الزر) يطفو فوق المحادثة */
+#blockBanner.bb-blocked{display:flex!important;flex-direction:column;align-items:stretch;gap:12px;direction:rtl;box-sizing:border-box;margin:8px 14px;padding:14px;border-radius:18px;text-align:center;font-size:15px;font-weight:700;color:#fca5a5;background:var(--babylon-surface-card,#202b38)!important;border:1px solid var(--babylon-border,#334155)!important;box-shadow:0 8px 24px rgba(0,0,0,.12)!important}
+#blockBanner .bb-blk-top{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px}
+#blockBanner.hidden{display:none!important}
+#chatView.bb-blk-on .chat-input-container{position:absolute!important;left:0!important;right:0!important;bottom:0!important;z-index:6;background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:0 0 max(6px,env(safe-area-inset-bottom,0px))!important;min-height:0!important;pointer-events:none}
+#chatView.bb-blk-on .chat-input-container > :not(#blockBanner){display:none!important}
+#chatView.bb-blk-on #blockBanner{pointer-events:auto}
+#chatView.bb-blk-on .messages-area{padding-bottom:160px!important}
+#blockBanner .bb-blk-ic{width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff!important;-webkit-text-fill-color:#fff!important;background:linear-gradient(135deg,#f87171,#dc2626)!important}
+.app-container #mainPage #blockBanner .bb-blk-ic,.app-container[data-app-theme] #mainPage #blockBanner .bb-blk-ic{color:#fff!important}
+#blockBanner .bb-blk-ic svg,#blockBanner .bb-blk-ic svg *{fill:none!important;stroke:#fff!important;color:#fff!important}
+#blockBanner .bb-blk-ic svg{width:18px;height:18px;stroke-width:2;stroke-linecap:round}
+#blockBanner .bb-blk-txt{flex:none;color:inherit}
+#blockBanner .bb-blk-btn{margin:0;flex:none;width:100%;padding:11px 16px;border-radius:14px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;text-shadow:none;box-shadow:none;background:rgba(220,38,38,.14)!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important;border:2px solid #f87171!important}
+.app-container[data-app-theme="light"] #blockBanner.bb-blocked{color:#b91c1c;background:#fff!important;border-color:#dce4ee!important}
+.app-container[data-app-theme="light"] #mainPage #blockBanner .bb-blk-txt{color:#b91c1c!important}
+.app-container[data-app-theme="dark"] #mainPage #blockBanner .bb-blk-txt{color:#fca5a5!important}
+.app-container[data-app-theme="light"] #blockBanner .bb-blk-btn{background:#fff!important;color:#dc2626!important;-webkit-text-fill-color:#dc2626!important;border:2px solid #dc2626!important}
+.app-container[data-app-theme="dark"] #blockBanner .bb-blk-btn{background:rgba(220,38,38,.14)!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important;border:2px solid #f87171!important}
+/* إشعار: تم حظرك — أحمر مع علامة تحذير */
+#toast.toast.bt-danger{--bt-acc:#dc2626;--bt-bg:#fff1f1;--bt-fg:#b91c1c;--bt-bd:rgba(220,38,38,.45)}
+#toast.toast.bt-danger .bt-ic{color:#fff;background:linear-gradient(135deg,#f87171,#dc2626)}
+.app-container[data-app-theme="dark"] #toast.toast.bt-danger{--bt-bg:rgba(69,22,28,.95);--bt-fg:#fecaca;--bt-bd:rgba(248,113,113,.5)}
+.app-container[data-app-theme="light"] #toast.toast.bt-danger{--bt-bg:#fff1f1;--bt-fg:#b91c1c;--bt-bd:rgba(220,38,38,.45)}
 </style>
 </body>
 </html>
