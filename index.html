@@ -2153,6 +2153,9 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
 /* نقاط قائمة الصورة المكبّرة لبروفايل الآخر: يسار الشاشة بنفس مكان نقاط الأعلى */
 #otherUserProfileView .pf-hero .pf-hero-top{direction:rtl}
 #otherUserProfileView .pf-hero .pf-hero-menu{right:auto;left:10px;transform-origin:top left}
+/* إخفاء الصورة: ضبابية على الصورة المكبّرة */
+.pf-hero.pf-blurred img,.pf-hero.pf-blurred .pf-hero-ext{filter:blur(26px);transform:scale(1.18)}
+.pf-hero.pf-blurred .pf-hero-letter{filter:blur(18px)}
 </style>
 <script id="babylon-other-profile-more-js">
 (function(){
@@ -7995,6 +7998,21 @@ async function avatarDownload(){
   closeAvatarMenu();
   var url=avatarGalleryItems[avatarGalleryIndex];if(!url)return;
   try{
+    /* داخل تطبيق الأندرويد: حفظ أصلي في معرض الهاتف (MediaStore) مثل تنزيل الصور في المحادثة */
+    if(window.BabylonAndroid && typeof window.BabylonAndroid.saveMedia==='function'){
+      var nsrc=String(url);
+      if(/^blob:/.test(nsrc)){
+        var nb=await (await fetch(nsrc)).blob();
+        nsrc=await new Promise(function(res,rej){var fr=new FileReader();fr.onload=function(){res(fr.result);};fr.onerror=rej;fr.readAsDataURL(nb);});
+      }
+      var nl=nsrc.slice(0,40).toLowerCase(), next='jpg';
+      if(nl.indexOf('data:image/png')===0)next='png';else if(nl.indexOf('data:image/gif')===0)next='gif';else if(nl.indexOf('data:image/webp')===0)next='webp';
+      else if(/\.png(?:[?#]|$)/.test(nl))next='png';
+      var nmime=next==='png'?'image/png':next==='gif'?'image/gif':next==='webp'?'image/webp':'image/jpeg';
+      try{window.BabylonAndroid.saveMedia(nsrc,'babylon-photo-'+Date.now()+'.'+next,nmime);}
+      catch(ne){showToast('تعذر بدء الحفظ في المعرض');}
+      return;
+    }
     var href=url,revoke=null;
     if(!/^data:/.test(url)){var r=await fetch(url);var b=await r.blob();href=URL.createObjectURL(b);revoke=href;}
     var ext=(/^data:image\/(png|webp|gif)/.exec(url)||[])[1]||'jpg';
@@ -8378,6 +8396,11 @@ html,body{overscroll-behavior-y:none}
         else if(typeof avatarDelete==='function'){ Promise.resolve(avatarDelete()).then(refreshAfterEdit,refreshAfterEdit); }
       });
     }
+    var photoHidden=false;
+    function setPhotoHidden(on){
+      photoHidden=!!on; hero.classList.toggle('pf-blurred',photoHidden);
+      var hb=hMenu&&hMenu.querySelector('[data-a="hide"]'); if(hb) hb.textContent=photoHidden?'إرجاع الصورة':'إخفاء الصورة';
+    }
     if(!own){
       var oDots=hero.querySelector('.pf-hero-dots'), oStars=hMenu.querySelector('[data-a="stars"]');
       oDots.addEventListener('click',function(e){
@@ -8386,6 +8409,7 @@ html,body{overscroll-behavior-y:none}
         var sb=document.getElementById('otherStarsBtn');
         if(oStars) oStars.classList.add('show');
         var _hi=!!(img && img.getAttribute('src') && !img.classList.contains('hidden'));
+        setPhotoHidden(photoHidden);
         ['dl','hide'].forEach(function(k){ var bb=hMenu.querySelector('[data-a="'+k+'"]'); if(bb) bb.style.setProperty('display',_hi?'block':'none','important'); });
         hMenu.classList.toggle('open');
       });
@@ -8402,12 +8426,13 @@ html,body{overscroll-behavior-y:none}
           if(_sb && _sb.classList.contains('hidden')){ if(typeof showToast==='function') showToast('إرسال النجوم غير متاح لحسابك'); }
           else if(typeof devGiftStars==='function') devGiftStars();
         }else if(b.dataset.a==='hide'){
-          animateTo(0);
+          setPhotoHidden(!photoHidden);
         }
       });
     }
     function heroTap(ev){
       if(hMenu && hMenu.classList.contains('open')){ hMenu.classList.remove('open'); return; }
+      if(photoHidden) return; /* الصورة مخفية: لا تُفتح في المعرض */
       if(own){
         var r=hero.getBoundingClientRect(), x=ev.clientX-r.left, y=ev.clientY-r.top;
         if(y>r.width) return;
@@ -8429,7 +8454,7 @@ html,body{overscroll-behavior-y:none}
 
     // عند إخفاء الشاشة أو إعادة فتحها نرجع للوضع الطبيعي
     new MutationObserver(function(){
-      if(view.classList.contains('hidden')){ cancelAnimationFrame(raf); reset(); view.scrollTop=0; }
+      if(view.classList.contains('hidden')){ cancelAnimationFrame(raf); reset(); view.scrollTop=0; setPhotoHidden(false); }
     }).observe(view,{attributes:true,attributeFilter:['class']});
     // لا نعيد ضبط حركة الصورة عند resize؛ متصفحات الهاتف تطلق resize أثناء السحب
     // وقد يؤدي نقل عنصر الصورة الأصلي في منتصف الحركة إلى تعارض/كراش.
