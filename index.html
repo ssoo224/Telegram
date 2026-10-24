@@ -2136,17 +2136,17 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-ic{
 body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filter:brightness(0) invert(1) drop-shadow(0 1px 1px rgba(120,76,0,.35))}
 </style>
 <style id="babylon-other-profile-more">
-/* ثلاث نقاط في أعلى بروفايل الشخص الآخر (يسار الشاشة) + قائمة */
-#otherUserProfileView .pf-more-wrap{position:relative;display:block}
+/* ثلاث نقاط في أعلى بروفايل الشخص الآخر (يسار الشاشة، فوق الغلاف) + قائمة */
+#otherUserProfileView .pf-more-wrap{display:block}
 #otherUserProfileView .pf-more{padding:0}
 #otherUserProfileView.pf-expanded .pf-more-wrap{opacity:0;pointer-events:none}
-#otherUserProfileView .pf-top-menu{position:absolute;z-index:8;left:0;top:48px;min-width:176px;padding:6px;border-radius:16px;background:rgba(24,30,42,.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);box-shadow:0 12px 32px rgba(0,0,0,.4);direction:rtl;visibility:hidden;opacity:0;transform:scale(.92) translateY(-6px);transform-origin:top left;transition:opacity .16s,transform .16s,visibility .16s}
-#otherUserProfileView .pf-top-menu.open{visibility:visible;opacity:1;transform:none}
-#otherUserProfileView .pf-top-menu button{display:block;width:100%;text-align:right;padding:12px 14px;border:0;border-radius:11px;background:transparent;color:#f1f5f9;font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer}
-#otherUserProfileView .pf-top-menu button:active{background:rgba(255,255,255,.1)}
-.app-container[data-app-theme="light"] #otherUserProfileView .pf-top-menu{background:rgba(255,255,255,.96);border-color:rgba(15,23,42,.1);box-shadow:0 12px 32px rgba(15,23,42,.22)}
-.app-container[data-app-theme="light"] #otherUserProfileView .pf-top-menu button{color:#17212b}
-.app-container[data-app-theme="light"] #otherUserProfileView .pf-top-menu button:active{background:rgba(15,23,42,.07)}
+#otherTopMenu{position:absolute;z-index:30;left:12px;top:calc(60px + env(safe-area-inset-top,0px));min-width:176px;padding:6px;border-radius:16px;background:rgba(24,30,42,.96);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);box-shadow:0 12px 32px rgba(0,0,0,.4);direction:rtl;visibility:hidden;opacity:0;transform:scale(.92) translateY(-6px);transform-origin:top left;transition:opacity .16s,transform .16s,visibility .16s}
+#otherTopMenu.open{visibility:visible;opacity:1;transform:none}
+#otherTopMenu button{display:block;width:100%;text-align:right;padding:12px 14px;border:0;border-radius:11px;background:transparent;color:#f1f5f9;font-weight:600;font-size:14.5px;font-family:inherit;cursor:pointer}
+#otherTopMenu button:active{background:rgba(255,255,255,.1)}
+.app-container[data-app-theme="light"] #otherTopMenu{background:rgba(255,255,255,.97);border-color:rgba(15,23,42,.1);box-shadow:0 12px 32px rgba(15,23,42,.22)}
+.app-container[data-app-theme="light"] #otherTopMenu button{color:#17212b}
+.app-container[data-app-theme="light"] #otherTopMenu button:active{background:rgba(15,23,42,.07)}
 /* نقاط قائمة الصورة المكبّرة لبروفايل الآخر: يسار الشاشة بنفس مكان نقاط الأعلى */
 #otherUserProfileView .pf-hero .pf-hero-top{direction:rtl}
 #otherUserProfileView .pf-hero .pf-hero-menu{right:auto;left:10px;transform-origin:top left}
@@ -2154,18 +2154,32 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
 <script id="babylon-other-profile-more-js">
 (function(){
   function init(){
-    var wrap=document.getElementById('otherMoreWrap'), btn=document.getElementById('otherMoreBtn'), menu=document.getElementById('otherTopMenu'), sb=document.getElementById('otherStarsBtn');
-    if(!wrap||!btn||!menu||!sb) return;
-    function upd(){ var ok=!sb.classList.contains('hidden'); wrap.style.display=ok?'block':'none'; if(!ok) menu.classList.remove('open'); }
-    upd();
-    new MutationObserver(upd).observe(sb,{attributes:true,attributeFilter:['class']});
-    btn.addEventListener('click',function(e){ e.stopPropagation(); menu.classList.toggle('open'); });
+    var view=document.getElementById('otherUserProfileView'), btn=document.getElementById('otherMoreBtn');
+    if(!view||!btn) return;
+    var menu=document.createElement('div'); menu.id='otherTopMenu'; view.appendChild(menu);
+    function toast(t){ if(typeof showToast==='function') showToast(t); }
+    function build(){
+      var img=document.getElementById('otherAvatarImg');
+      var hasImg=!!(img && img.getAttribute('src') && !img.classList.contains('hidden'));
+      menu.innerHTML='<button type="button" data-a="stars">إرسال نجوم</button>'+(hasImg?'<button type="button" data-a="dl">تنزيل الصورة</button>':'');
+    }
+    btn.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); build(); menu.classList.toggle('open'); });
     menu.addEventListener('click',function(e){
       e.stopPropagation(); var b=e.target.closest('button'); if(!b) return;
       menu.classList.remove('open');
-      if(b.dataset.a==='stars' && typeof devGiftStars==='function') devGiftStars();
+      if(b.dataset.a==='stars'){
+        var sb=document.getElementById('otherStarsBtn');
+        if(sb && sb.classList.contains('hidden')) toast('إرسال النجوم غير متاح لحسابك');
+        else if(typeof devGiftStars==='function') devGiftStars();
+      }else if(b.dataset.a==='dl'){
+        var img=document.getElementById('otherAvatarImg'), src=img&&img.getAttribute('src');
+        if(!src){ toast('لا توجد صورة شخصية لتنزيلها'); return; }
+        avatarGalleryItems=[src]; avatarGalleryIndex=0; avatarGalleryReadOnly=true;
+        if(typeof avatarDownload==='function') avatarDownload();
+      }
     });
     document.addEventListener('click',function(){ menu.classList.remove('open'); });
+    new MutationObserver(function(){ if(view.classList.contains('hidden')) menu.classList.remove('open'); }).observe(view,{attributes:true,attributeFilter:['class']});
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
 })();
@@ -2376,7 +2390,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
         <div class="pattern-layer" id="otherCoverPattern"></div>
         <div class="pf-topbar">
           <button type="button" class="pf-round" onclick="goBackFromOtherProfile()" aria-label="رجوع"><i data-ic="chevron" data-size="22"></i></button>
-          <span class="pf-more-wrap" id="otherMoreWrap" style="display:none"><button type="button" class="pf-round pf-more" id="otherMoreBtn" aria-label="المزيد"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button><div class="pf-top-menu" id="otherTopMenu"><button type="button" data-a="stars">إرسال نجوم</button></div></span>
+          <span class="pf-more-wrap" id="otherMoreWrap"><button type="button" class="pf-round pf-more" id="otherMoreBtn" aria-label="المزيد"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button></span>
         </div>
       </div>
 
@@ -8134,7 +8148,7 @@ html,body{overscroll-behavior-y:none}
 
     function sync(){
       var hasImg = img && !img.classList.contains('hidden') && img.getAttribute('src');
-      if(!own && hTop){ var _sb0=document.getElementById('otherStarsBtn'); hTop.style.display = (hasImg || (_sb0 && !_sb0.classList.contains('hidden'))) ? '' : 'none'; }
+      if(!own && hTop){ hTop.style.display=''; }
       if(hasImg){ hero.style.background='transparent'; hImg.src = lite(img.getAttribute('src')); hImg.style.display='block'; hLet.style.display='none'; }
       else {
         hImg.style.display='none'; hLet.style.display='flex'; hLet.innerHTML = txt ? txt.innerHTML : '';
@@ -8374,7 +8388,7 @@ html,body{overscroll-behavior-y:none}
         e.stopPropagation();
         /* "إهداء نجوم" يظهر بنفس شرط زر النجوم الأصلي في البروفايل */
         var sb=document.getElementById('otherStarsBtn');
-        if(oStars) oStars.classList.toggle('show',!!sb && !sb.classList.contains('hidden'));
+        if(oStars) oStars.classList.add('show');
         var _hi=!!(img && img.getAttribute('src') && !img.classList.contains('hidden'));
         ['dl','hide'].forEach(function(k){ var bb=hMenu.querySelector('[data-a="'+k+'"]'); if(bb) bb.style.setProperty('display',_hi?'block':'none','important'); });
         hMenu.classList.toggle('open');
@@ -8388,7 +8402,9 @@ html,body{overscroll-behavior-y:none}
           avatarGalleryItems=[src]; avatarGalleryIndex=0; avatarGalleryReadOnly=true;
           if(typeof avatarDownload==='function') avatarDownload();
         }else if(b.dataset.a==='stars'){
-          if(typeof devGiftStars==='function') devGiftStars();
+          var _sb=document.getElementById('otherStarsBtn');
+          if(_sb && _sb.classList.contains('hidden')){ if(typeof showToast==='function') showToast('إرسال النجوم غير متاح لحسابك'); }
+          else if(typeof devGiftStars==='function') devGiftStars();
         }else if(b.dataset.a==='hide'){
           animateTo(0);
         }
