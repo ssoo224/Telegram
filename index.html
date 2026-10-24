@@ -6058,7 +6058,7 @@ function showVerifyPage(user) {
   if (Date.now() - last > 60000) {
     try { localStorage.setItem(k, String(Date.now())); } catch (e) {}
     sendVerification(user).then(() => {
-      showToast('أرسلنا رابط التحقق إلى ' + (user.email || 'بريدك') + ' (شيّك السبام)');
+      showToast('أرسلنا رابط التحقق إلى البريد (شيّك السبام)');
     }).catch(e => { console.error('verify send error', e); try { localStorage.removeItem(k); } catch (x) {} showToast(verifyErrMsg(e)); });
   }
 }
@@ -6070,7 +6070,7 @@ function resendVerification() {
   resendCooldown = true;
   
   sendVerification(u).then(() => {
-    showToast('أرسلنا الرابط من جديد إلى ' + (u.email || 'بريدك') + ' (شيّك السبام)');
+    showToast('أرسلنا الرابط من جديد إلى البريد (شيّك السبام)');
   }).catch(e => {
     console.error('resend error', e); showToast(verifyErrMsg(e));
   });
@@ -9462,6 +9462,8 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 /* الطور الليلي */
 .app-container[data-app-theme="dark"] #verifyPage .verify-secondary-btn{background:transparent!important;border:1px solid var(--babylon-border)!important;color:#f0d77a!important;-webkit-text-fill-color:#f0d77a!important}
 .app-container[data-app-theme="dark"] #verifyPage .verify-danger-btn{background:transparent!important;border:1px solid #f87171!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important}
+/* زر تم التحقق، دخول: نص أبيض */
+#verifyPage button.babylon-btn:not(.verify-secondary-btn):not(.verify-danger-btn){color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 2px rgba(110,72,0,.45)!important}
 </style>
 </body>
 </html>
