@@ -16,6 +16,12 @@ const PEPE_SYMS=[
  {n:'Skull',p:10,e:1,d:'M12 2.2c-4.6 0-8 3.2-8 7.6 0 2.5 1.1 4.3 2.6 5.5V19a1 1 0 0 0 1 1H9v1.8h1.8V20h2.4v1.8H15V20h1.4a1 1 0 0 0 1-1v-3.7c1.5-1.2 2.6-3 2.6-5.5 0-4.4-3.4-7.6-8-7.6zM8.6 12.9a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2zm6.8 0a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2zM12 14.2l1.2 2.3h-2.4z'}
 ];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+/* كل عمليات النجوم والهدايا الحساسة تمر من الخادم (/api/gifts) */
+async function giftApi(op,body){
+  const r=await babylonApi('/api/gifts',Object.assign({op:op},body||{}),currentUser);
+  if(r.status===200)return r.data;
+  const e=new Error((r.data&&r.data.error)||('http '+r.status));e.code=e.message;e.status=r.status;throw e;
+}
 function wpick(a){let r=Math.random()*a.reduce((s,x)=>s+x.p,0);for(let i=0;i<a.length;i++){r-=a[i].p;if(r<0)return i;}return a.length-1;}
 function fmtN(n){return Number(n).toLocaleString('en-US');}
 
@@ -242,23 +248,24 @@ let upgrading=false;
 async function doUpgrade(ov,uid,g){
   if(upgrading)return;upgrading=true;
   const K=gk(g.k);
-  const res={model:wpick(K.models),bg:wpick(PEPE_BGS),sym:wpick(PEPE_SYMS)};
   const hero=ov.querySelector('#gpHero'),btn=ov.querySelector('#gpUp'),chip=ov.querySelector('#gpChip');
   if(btn){btn.disabled=true;btn.textContent='جاري الترقية…';}
   hero.classList.add('rolling');
+  const apiP=giftApi('upgrade',{kind:K.key,number:g.number});apiP.catch(()=>{});
   let pat=hero.querySelector('.ga-pat');
   if(!pat){hero.insertAdjacentHTML('afterbegin',patSvg(0));pat=hero.querySelector('.ga-pat');}
-  const steps=24;
-  for(let i=0;i<steps;i++){
-    const last=i===steps-1,bi=last?res.bg:Math.floor(Math.random()*5),si=last?res.sym:Math.floor(Math.random()*5);
-    hero.style.background=bgCss({upgraded:true,bg:bi});
-    pat.innerHTML=patInner(si);
-    if(chip)chip.textContent=PEPE_BGS[bi].n+' · '+PEPE_SYMS[si].n;
-    await sleep(60+i*i*0.55);
-  }
-  await sleep(250);
   try{
-    await db.collection('users').doc(uid).collection(K.coll).doc(gid(K,g.number)).update({upgraded:true,model:res.model,bg:res.bg,sym:res.sym});
+    const steps=24;let res=null;
+    for(let i=0;i<steps;i++){
+      const last=i===steps-1;
+      if(last)res=await apiP;   /* النتيجة تجي من الخادم (عشوائية حقيقية لا يتحكم بها المستخدم) */
+      const bi=last?res.bg:Math.floor(Math.random()*5),si=last?res.sym:Math.floor(Math.random()*5);
+      hero.style.background=bgCss({upgraded:true,bg:bi});
+      pat.innerHTML=patInner(si);
+      if(chip)chip.textContent=PEPE_BGS[bi].n+' · '+PEPE_SYMS[si].n;
+      await sleep(60+i*i*0.55);
+    }
+    await sleep(250);
     showToast('✨ تمت الترقية: '+K.models[res.model].n);
     const doc=ov.querySelector('#gpHero');if(doc)doc.classList.add('reveal');
   }catch(e){console.error(e);showToast('تعذرت الترقية');hero.classList.remove('rolling');renderGiftPage(ov,uid,g,null);}
@@ -351,17 +358,19 @@ async function refreshStore(){
 let buying=false;
 async function buyGift(kind){
   if(buying)return;
-  const K=gk(kind); buying=true;
+  const K=gk(kind),dev=isDevUser();
+  if(!dev&&myStars<K.price)return showToast('رصيدك غير كافٍ ⭐');
+  buying=true;
   const btn=document.getElementById('stBuy');if(btn){btn.disabled=true;btn.textContent='جاري الشراء…';}
   try{
-    const u=auth.currentUser;if(!u)throw new Error('auth');
-    const token=await u.getIdToken(true);
-    const r=await fetch('/api/stars',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'purchase',kind:K.key})});
-    const d=await r.json();if(!r.ok)throw new Error(d.error||'failed');
-    showToast('🎉 اشتريت '+K.name+' #'+d.number);
-    if(btn){btn.disabled=false;btn.textContent='شراء بـ '+K.price+' نجمة';}
-    refreshStore();
-  }catch(e){console.error(e);showToast(e.message==='insufficient_stars'?'رصيدك غير كافٍ ⭐':e.message==='sold_out'?'نفدت الكمية':'تعذر إتمام الشراء، حاول مرة ثانية');refreshStore();if(btn){btn.disabled=false;btn.textContent='شراء بـ '+K.price+' نجمة';}}
+    const r=await giftApi('buy',{kind:K.key});
+    showToast('🎉 اشتريت '+K.name+' #'+r.number);
+  }catch(e){
+    console.error(e);
+    showToast(e.code==='soldout'?'نفدت الكمية':e.code==='funds'?'رصيدك غير كافٍ ⭐':(e.code==='otp'||e.code==='auth')?'سجّل خروج وادخل من جديد':'ممكن أحد سبقك، حاول مرة ثانية');
+  }
+  const sb=document.getElementById('stBuy');if(sb){sb.disabled=false;sb.textContent='شراء بـ '+K.price+' نجمة';}
+  refreshStore();
   buying=false;
 }
 
@@ -403,12 +412,22 @@ function openStarsHistory(){
 /* ===== إهداء هدية لمستخدم: تنتقل الملكية له وتوصله رسالة كارت بالمحادثة ===== */
 function closeSend(){document.getElementById('giftSend')?.remove();}
 async function transferGift(g,to){
-  const K=gk(g.k),me=meId(),id=gid(K,g.number);
-  const token=await auth.currentUser.getIdToken(true);
-  const resp=await fetch('/api/stars',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'transfer-gift',to,kind:K.key,number:Number(g.number)})});
-  const data=await resp.json();if(!resp.ok)throw new Error(data.error||'failed');
+  const K=gk(g.k),me=meId(),now=Date.now(),id=gid(K,g.number);
+  const cref=db.collection('chats').doc([me,to].sort().join('__'));
+  const cs=await cref.get();
+  if(cs.exists)await cref.update({updatedAt:now});else await cref.set({participants:[me,to],updatedAt:now});
+  const doc={number:g.number,upgraded:!!g.upgraded,at:g.at||now};
+  if(K.gen)doc.k=K.key;
+  const msg={senderId:me,type:'gift',k:K.key,number:g.number,upgraded:!!g.upgraded,to:to,text:'🎁 هدية '+K.name+' #'+g.number,createdAt:now,read:false};
+  if(g.upgraded){doc.model=g.model;doc.bg=g.bg;doc.sym=g.sym;msg.model=g.model;msg.bg=g.bg;msg.sym=g.sym;}
+  const b=db.batch();
+  b.delete(db.collection('users').doc(me).collection(K.coll).doc(id));
+  b.set(db.collection('users').doc(to).collection(K.coll).doc(id),doc);
+  b.update(db.collection(K.gen?'giftSales':K.sales).doc(id),{ownerId:to});
+  b.set(evRef(K,g.number),{k:K.key,number:g.number,coll:K.coll,type:'send',from:me,to:to,at:now});
+  b.set(cref.collection('messages').doc(),msg);
+  await b.commit();
 }
-
 async function openSendGift(){
   const to=currentChatOtherUserId,me=meId();
   if(!to||to===me)return showToast('افتح بروفايل المستخدم أولاً');
@@ -526,24 +545,15 @@ async function buyListing(ov,l){
   buying=true;
   const btn=document.getElementById('gpBuy');if(btn){btn.disabled=true;btn.textContent='جاري الشراء…';}
   try{
-    const lid=listId(K,l.number),now=Date.now();
-    const token=await auth.currentUser.getIdToken(true);
-    const resp=await fetch('/api/stars',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'buy-listing',listingId:lid})});
-    const result=await resp.json();if(!resp.ok)throw new Error(result.error||'failed');
+    await giftApi('buy-listing',{kind:K.key,number:l.number});
     _lc.t=0;
-    /* إشعار للبائع برسالة بالمحادثة (إذا فشلت ما تأثر على الشراء) */
-    try{
-      const cref=db.collection('chats').doc([me,l.sellerId].sort().join('__'));
-      const cs=await cref.get();
-      if(cs.exists)await cref.update({updatedAt:now});else await cref.set({participants:[me,l.sellerId],updatedAt:now});
-      await cref.collection('messages').add({senderId:me,type:'sold',k:K.key,number:l.number,price:l.price,net:netOf(l.price),text:'🛒 انباعت '+K.name+' #'+l.number+' بـ '+fmtN(l.price)+' ⭐',createdAt:now,read:false});
-    }catch(e){console.warn('sold notice',e);}
     showToast('🎉 مبروك! صارت '+K.name+' #'+l.number+' إلك');
     buying=false;
     closeGiftPage();closeStore();openGiftPage(me,l.number,K.key);
     return;
   }catch(e){
-    console.error(e);showToast('ما تم الشراء، يمكن أحد سبقك');
+    console.error(e);
+    showToast(e.code==='funds'?'رصيدك غير كافٍ ⭐':e.code==='gone'?'العرض تغيّر أو انباع':'ما تم الشراء، يمكن أحد سبقك');
     const b2=document.getElementById('gpBuy');if(b2){b2.disabled=false;b2.textContent='🛒 شراء بـ ⭐ '+fmtN(l.price);}
   }
   buying=false;
