@@ -2120,9 +2120,15 @@ body:has(.app-container[data-app-theme]) .sh-bal .sh-dev{background:rgba(255,255
 body:has(.app-container[data-app-theme]) :is(.sh-tabs button,.st-seg button,.rs-chip).on{
   background:linear-gradient(135deg,#f0c233,#eab624 45%,#c78a00)!important;
   box-shadow:0 4px 12px rgba(199,138,0,.34)!important}
-body:has(.app-container[data-app-theme]) :is(.sg-price,.gp-pill){
+body:has(.app-container[data-app-theme]) .gp-pill{
   background:linear-gradient(135deg,#f0c233,#eab624 45%,#c78a00)!important;
   color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 1px rgba(120,76,0,.3)}
+/* سعر الهدية: بدون تعبئة، إطار ذهبي فقط */
+body:has(.app-container[data-app-theme]) .sg-price{
+  background:transparent!important;background-image:none!important;box-shadow:none!important;text-shadow:none!important;
+  border:1.5px solid #eab624;box-sizing:border-box}
+body:has(.app-container[data-app-theme="light"]) .sg-price{color:#b47f00!important;-webkit-text-fill-color:#b47f00!important}
+body:has(.app-container[data-app-theme="dark"]) .sg-price{color:#f2c94c!important;-webkit-text-fill-color:#f2c94c!important}
 </style>
 </head>
 
