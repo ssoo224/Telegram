@@ -2153,9 +2153,9 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
 /* نقاط قائمة الصورة المكبّرة لبروفايل الآخر: يسار الشاشة بنفس مكان نقاط الأعلى */
 #otherUserProfileView .pf-hero .pf-hero-top{direction:rtl}
 #otherUserProfileView .pf-hero .pf-hero-menu{right:auto;left:10px;transform-origin:top left}
-/* إخفاء الصورة: ضبابية على الصورة المكبّرة */
-.pf-hero.pf-blurred img,.pf-hero.pf-blurred .pf-hero-ext{filter:blur(26px);transform:scale(1.18)}
-.pf-hero.pf-blurred .pf-hero-letter{filter:blur(18px)}
+/* رموز SVG في خيارات قوائم بروفايل الآخر */
+#otherUserProfileView .pf-hero .pf-hero-menu button,#otherTopMenu button{display:flex!important;align-items:center;gap:11px}
+#otherUserProfileView .pf-mi,#otherTopMenu .pf-mi{width:20px;height:20px;flex:0 0 20px;display:block}
 </style>
 <script id="babylon-other-profile-more-js">
 (function(){
@@ -2165,7 +2165,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
     var menu=document.createElement('div'); menu.id='otherTopMenu'; view.appendChild(menu);
     function toast(t){ if(typeof showToast==='function') showToast(t); }
     function build(){
-      menu.innerHTML='<button type="button" data-a="stars">إرسال نجوم</button>';
+      menu.innerHTML='<button type="button" data-a="stars"><svg class="pf-mi" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#bbStar"/></svg><span>إرسال نجوم</span></button>';
     }
     btn.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); build(); menu.classList.toggle('open'); });
     menu.addEventListener('click',function(e){
@@ -8115,7 +8115,7 @@ html,body{overscroll-behavior-y:none}
       hero.insertAdjacentHTML('beforeend',
         '<div class="pf-hero-top"><div class="pf-hero-count" style="visibility:hidden">1/1</div>'+
         '<button type="button" class="pf-hero-dots" aria-label="المزيد"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button></div>'+
-        '<div class="pf-hero-menu"><button type="button" data-a="stars">إرسال نجوم</button><button type="button" data-a="dl">تنزيل الصورة</button><button type="button" data-a="hide">إخفاء الصورة</button></div>');
+        '<div class="pf-hero-menu"><button type="button" data-a="stars"><svg class=\"pf-mi\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#bbStar\"/></svg><span>إرسال نجوم</span></button><button type="button" data-a="dl"><svg class=\"pf-mi\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3v12m-5-5 5 5 5-5M4 17v3h16v-3\"/></svg><span>تنزيل الصورة</span></button></div>');
     }
     var hTop=hero.querySelector('.pf-hero-top'), hCount=hero.querySelector('.pf-hero-count'), hMenu=hero.querySelector('.pf-hero-menu');
     var heroImg=hero.querySelector('img'), hImg=heroImg, hLet=hero.querySelector('.pf-hero-letter'),
@@ -8396,11 +8396,6 @@ html,body{overscroll-behavior-y:none}
         else if(typeof avatarDelete==='function'){ Promise.resolve(avatarDelete()).then(refreshAfterEdit,refreshAfterEdit); }
       });
     }
-    var photoHidden=false;
-    function setPhotoHidden(on){
-      photoHidden=!!on; hero.classList.toggle('pf-blurred',photoHidden);
-      var hb=hMenu&&hMenu.querySelector('[data-a="hide"]'); if(hb) hb.textContent=photoHidden?'إرجاع الصورة':'إخفاء الصورة';
-    }
     if(!own){
       var oDots=hero.querySelector('.pf-hero-dots'), oStars=hMenu.querySelector('[data-a="stars"]');
       oDots.addEventListener('click',function(e){
@@ -8409,8 +8404,7 @@ html,body{overscroll-behavior-y:none}
         var sb=document.getElementById('otherStarsBtn');
         if(oStars) oStars.classList.add('show');
         var _hi=!!(img && img.getAttribute('src') && !img.classList.contains('hidden'));
-        setPhotoHidden(photoHidden);
-        ['dl','hide'].forEach(function(k){ var bb=hMenu.querySelector('[data-a="'+k+'"]'); if(bb) bb.style.setProperty('display',_hi?'block':'none','important'); });
+        var _dlb=hMenu.querySelector('[data-a="dl"]'); if(_dlb) _dlb.style.setProperty('display',_hi?'flex':'none','important');
         hMenu.classList.toggle('open');
       });
       hMenu.addEventListener('click',function(e){
@@ -8425,14 +8419,11 @@ html,body{overscroll-behavior-y:none}
           var _sb=document.getElementById('otherStarsBtn');
           if(_sb && _sb.classList.contains('hidden')){ if(typeof showToast==='function') showToast('إرسال النجوم غير متاح لحسابك'); }
           else if(typeof devGiftStars==='function') devGiftStars();
-        }else if(b.dataset.a==='hide'){
-          setPhotoHidden(!photoHidden);
         }
       });
     }
     function heroTap(ev){
       if(hMenu && hMenu.classList.contains('open')){ hMenu.classList.remove('open'); return; }
-      if(photoHidden) return; /* الصورة مخفية: لا تُفتح في المعرض */
       if(own){
         var r=hero.getBoundingClientRect(), x=ev.clientX-r.left, y=ev.clientY-r.top;
         if(y>r.width) return;
@@ -8454,7 +8445,7 @@ html,body{overscroll-behavior-y:none}
 
     // عند إخفاء الشاشة أو إعادة فتحها نرجع للوضع الطبيعي
     new MutationObserver(function(){
-      if(view.classList.contains('hidden')){ cancelAnimationFrame(raf); reset(); view.scrollTop=0; setPhotoHidden(false); }
+      if(view.classList.contains('hidden')){ cancelAnimationFrame(raf); reset(); view.scrollTop=0; }
     }).observe(view,{attributes:true,attributeFilter:['class']});
     // لا نعيد ضبط حركة الصورة عند resize؛ متصفحات الهاتف تطلق resize أثناء السحب
     // وقد يؤدي نقل عنصر الصورة الأصلي في منتصف الحركة إلى تعارض/كراش.
