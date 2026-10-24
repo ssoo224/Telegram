@@ -3258,7 +3258,8 @@ function babylonStartSession(user) {
       db.collection("users").doc(user.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
     }, 20000);
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && currentUser) db.collection("users").doc(currentUser.uid).set({ online: true, lastSeen: Date.now() }, { merge: true });
+      if (!currentUser) return;
+      db.collection("users").doc(currentUser.uid).set({ online: !document.hidden, lastSeen: Date.now() }, { merge: true });
     });
 
     window.addEventListener('beforeunload', () => {
