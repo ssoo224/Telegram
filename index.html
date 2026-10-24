@@ -2185,6 +2185,12 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
 })();
 </script>
+<style id="babylon-composer-multiline">
+/* حقل الكتابة: يتمدد عند النزول لسطر جديد حتى حدّ أقصى ثم يمرّر */
+#chatView #messageInput.msg-editable{height:auto!important;min-height:42px!important;max-height:132px!important;white-space:pre-wrap!important;overflow-x:hidden!important;overflow-y:auto!important;overflow-wrap:anywhere;word-break:break-word}
+#textInputBar.chat-input-bar{align-items:flex-end!important}
+#textInputBar.chat-input-bar>.icon-btn,#textInputBar.chat-input-bar>.mic-button{align-self:flex-end}
+</style>
 </head>
 
 <body>
@@ -2621,7 +2627,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
         </div>
 
         <form id="textInputBar" class="chat-input-bar" onsubmit="sendMessage(event)" autocomplete="off" novalidate data-form-type="other">
-          <div id="messageInput" class="msg-editable" contenteditable="plaintext-only" role="textbox" aria-multiline="false" aria-label="اكتب رسالتك" data-placeholder="اكتب رسالتك..." dir="auto" spellcheck="false" autocorrect="off" autocapitalize="sentences" inputmode="text" enterkeyhint="send" tabindex="0"></div>
+          <div id="messageInput" class="msg-editable" contenteditable="plaintext-only" role="textbox" aria-multiline="true" aria-label="اكتب رسالتك" data-placeholder="اكتب رسالتك..." dir="auto" spellcheck="false" autocorrect="off" autocapitalize="sentences" inputmode="text" enterkeyhint="enter" tabindex="0"></div>
           <label class="icon-btn" for="chatImageInput" style="color:var(--text-muted); cursor:pointer;" title="إرسال صورة أو فيديو"><i data-ic="image" data-size="22"></i></label>
           <input type="file" id="chatImageInput" accept="image/*,video/*" class="hidden" onchange="sendImage(event)">
           <button type="button" class="icon-btn mic-button" style="color:var(--text-muted)" onclick="startRecording()" title="تسجيل صوت" aria-label="تسجيل صوت"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"></rect><path d="M5.5 10.5v1a6.5 6.5 0 0 0 13 0v-1M12 18v3M8.5 21h7"></path></svg></button>
@@ -2643,16 +2649,14 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
   var nativeFocus = el.focus.bind(el);
   el.focus = function(opts){ try { nativeFocus(opts); } catch(e) { nativeFocus(); } caretToEnd(); };
   el.addEventListener('input', function(){ if (!el.textContent) el.innerHTML = ''; });
-  el.addEventListener('keydown', function(e){
-    if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
-      e.preventDefault();
-      if (form && form.requestSubmit) form.requestSubmit();
-      else if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-    }
-  });
+  /* زر Enter ينزل سطراً جديداً؛ الإرسال بزر الإرسال فقط */
   el.addEventListener('paste', function(e){
     e.preventDefault();
-    var t = ((e.clipboardData || window.clipboardData).getData('text') || '').replace(/[\r\n]+/g, ' ');
+    var cd = e.clipboardData || window.clipboardData;
+    /* صورة/ملصق/GIF قادم من لوحة المفاتيح: يُرسل كصورة */
+    var f = cd && cd.files && cd.files[0];
+    if (f && /^image\//.test(f.type) && typeof sendImage === 'function') { sendImage({ target: { files: [f], value: '' } }); return; }
+    var t = ((cd && cd.getData('text')) || '').replace(/\r\n?/g, '\n');
     document.execCommand('insertText', false, t);
   });
   el.addEventListener('drop', function(e){ e.preventDefault(); });
