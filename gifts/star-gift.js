@@ -10,16 +10,9 @@ async function devGiftStars(){
   const n=parseInt(String(r.value).replace(/[^\d]/g,''),10);
   if(!n||n<1||n>1000000)return showToast('اكتب عدداً بين 1 و 1,000,000');
   try{
-    const token=await auth.currentUser.getIdToken(true);
-    const resp=await fetch('/api/stars',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'gift-stars',to,amount:n})});
-    const data=await resp.json();if(!resp.ok)throw new Error(data.error||'failed');
+    await giftApi('dev-stars',{to:to,amount:n});
     showToast('تم إهداء '+fmtN(n)+' ⭐ إلى '+toName);
-  }catch(e){console.error(e);return showToast('تعذر إهداء النجوم');}
-  try{
-    const now=Date.now(),cid=[me,to].sort().join('__'),cref=db.collection('chats').doc(cid),cs=await cref.get();
-    if(cs.exists)await cref.update({updatedAt:now});else await cref.set({participants:[me,to],updatedAt:now});
-    await cref.collection('messages').add({senderId:me,type:'stars',stars:n,text:'🎁 هدية '+fmtN(n)+' نجمة',createdAt:now,read:false});
-  }catch(e){console.error('star-gift message',e);showToast('وصلت النجوم لكن تعذر إظهار الهدية بالمحادثة');}
+  }catch(e){console.error(e);showToast('تعذر إهداء النجوم');}
 }
 
 /* رسم الكارت البابلي: نجمة عشتار ذهبية داخل ميدالية لازورد */
