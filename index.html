@@ -9641,19 +9641,11 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
   border-width:1px 1px 0 1px!important}
 #blockBanner.bb-blocked::before{display:none!important;content:none!important}
 
-/* ===== إشعار: تم حظرك من قبل هذا المستخدم — أحمر مع علامة تحذير ===== */
-.app-container[data-app-theme] #toast.toast.bt-danger,#toast.toast.bt-danger{
-  background:linear-gradient(135deg,#dc2626 0%,#991b1b 100%)!important;
-  color:#fff!important;-webkit-text-fill-color:#fff!important;
-  border:1.5px solid #fca5a5!important;
-  box-shadow:0 14px 36px rgba(185,28,28,.5),0 2px 8px rgba(0,0,0,.25)!important}
-#toast.toast.bt-danger .bt-msg,.app-container[data-app-theme] #toast.toast.bt-danger .bt-msg{
-  color:#fff!important;-webkit-text-fill-color:#fff!important;font-weight:800}
-#toast.toast.bt-danger .bt-ic,.app-container[data-app-theme] #toast.toast.bt-danger .bt-ic{
-  width:34px;height:34px;flex:0 0 34px;color:#dc2626!important;background:#fff!important;
-  box-shadow:0 0 0 4px rgba(255,255,255,.22)}
-#toast.toast.bt-danger .bt-ic svg{width:21px;height:21px;stroke:#dc2626!important}
-#toast.toast.bt-danger .bt-bar{background:#fecaca!important;opacity:.9}
+/* ===== إشعار "تم حظرك": نفس الشكل الأصلي، لون التمييز أحمر فقط ===== */
+#toast.toast.bt-danger{--bt-acc:#dc2626!important}
+#toast.toast.bt-danger .bt-ic{color:#fff!important;background:linear-gradient(135deg,#f87171,#dc2626)!important}
+#toast.toast.bt-danger .bt-ic svg{stroke:#fff!important}
+#toast.toast.bt-danger .bt-bar{background:#dc2626!important;opacity:1}
 </style>
 </body>
 </html>
