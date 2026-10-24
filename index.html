@@ -11062,10 +11062,13 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
 </style>
 
 <script id="babylon-tab-slide">
-/* انتقال جانبي سلس بين أقسام الشريط السفلي (المحادثات / الإعدادات / الملف الشخصي).
+/* انتقال جانبي سريع بين أقسام الشريط السفلي (المحادثات / الإعدادات / الملف الشخصي).
    - الاتجاه يُحسب من موضع الأزرار.
    - حالة شريط الإشعارات تُرسل لأندرويد مرة واحدة من أول إطار.
-   - عند الدخول للملف الشخصي تنزلق منطقة شريط الإشعارات (بلون الغلاف) مع الصفحة الجديدة نفسها، فلا يتلوّن الشريط قبل وصولها. */
+   - منطقة شريط الإشعارات أثناء الدخول للملف الشخصي تُرسم بطبقتين متناسقتين مع الحركة:
+       1) طبقة ثابتة بلون الشريط السابق (كي لا يظهر محتوى القسم القديم خلف الشريط في أول إطار)،
+       2) طبقة بلون الغلاف تنزلق مع الصفحة الجديدة نفسها.
+     وبعد انتهاء الحركة تُزال الطبقتان ويبقى الغلاف الحقيقي. */
 (function(){
   var TABS={homeView:'navChats',profileView:'navProfile',settingsView:'navSettings'};
   var cleanup=null, orig=window.showView;
@@ -11075,22 +11078,41 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
     return null;
   }
   function cx(id){ var b=document.getElementById(TABS[id]); if(!b) return 0; var r=b.getBoundingClientRect(); return r.left+r.width/2; }
-  function makeStrip(app){
+  /* ارتفاع شريط الإشعارات: يُقاس عند توفره، ويُخزَّن، ويُستعمل تقدير 28 عند عدم توفره (قبل أول وضع شفاف) */
+  function barH(app){
+    var h=0;
+    try{
+      var p=document.createElement('div');
+      p.style.cssText='position:absolute;top:0;left:0;width:1px;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none;';
+      app.appendChild(p); h=p.getBoundingClientRect().height; p.remove();
+    }catch(_){}
+    try{
+      if(h>0){ window.__sbInset=h; try{ localStorage.setItem('babylon_sb_inset',String(h)); }catch(_){} }
+      else { h=window.__sbInset||parseFloat(localStorage.getItem('babylon_sb_inset'))||28; }
+    }catch(_){ h=h||28; }
+    return h;
+  }
+  function solid(c){ return c && c!=='transparent' && c!=='rgba(0, 0, 0, 0)'; }
+  function barColor(app){
+    var hdr=document.getElementById('mainHeader'), c=null;
+    try{
+      if(hdr && !hdr.classList.contains('hidden') && hdr.getBoundingClientRect().height>0){ c=getComputedStyle(hdr).backgroundColor; }
+      if(!solid(c)) c=getComputedStyle(app).backgroundColor;
+    }catch(_){}
+    return c;
+  }
+  function makeStrips(app,baseColor){
     try{
       var cover=document.getElementById('pCover'); if(!cover) return null;
-      var strip=document.createElement('div');
-      strip.setAttribute('aria-hidden','true');
-      strip.style.cssText='position:absolute;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:7;pointer-events:none;';
-      app.appendChild(strip);
-      var h=strip.getBoundingClientRect().height;
-      if(!(h>0)){ strip.remove(); return null; }
-      var cs=getComputedStyle(cover), w=app.getBoundingClientRect().width;
-      strip.style.backgroundColor=cs.backgroundColor;
-      strip.style.backgroundImage=cs.backgroundImage;
-      strip.style.backgroundSize=w+'px '+(176+h)+'px';
-      strip.style.backgroundPosition='0 0';
-      strip.style.backgroundRepeat='no-repeat';
-      return strip;
+      var h=barH(app), w=app.getBoundingClientRect().width;
+      var base=document.createElement('div'); base.setAttribute('aria-hidden','true');
+      base.style.cssText='position:absolute;top:0;left:0;right:0;height:'+h+'px;z-index:6;pointer-events:none;background-color:'+(baseColor||'transparent')+';';
+      var el=document.createElement('div'); el.setAttribute('aria-hidden','true');
+      var cs=getComputedStyle(cover);
+      el.style.cssText='position:absolute;top:0;left:0;right:0;height:'+h+'px;z-index:7;pointer-events:none;background-repeat:no-repeat;background-position:0 0;'
+        +'background-color:'+cs.backgroundColor+';background-image:'+cs.backgroundImage+';background-size:'+w+'px '+(176+h)+'px;';
+      app.appendChild(base); app.appendChild(el);
+      return {el:el, base:base, remove:function(){ try{base.remove();}catch(_){} try{el.remove();}catch(_){} }};
     }catch(e){ return null; }
   }
   window.showView=function(viewId){
@@ -11106,7 +11128,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
     var strip=null;
     if(from){
       window.__pfBaseTarget=(viewId==='profileView'||viewId==='otherUserProfileView');
-      if(viewId==='profileView' && app) strip=makeStrip(app);
+      if(viewId==='profileView' && app) strip=makeStrips(app,barColor(app));   /* قبل تبديل القسم */
     }
     var r;
     try{ r=orig.apply(this,arguments); }catch(err){ window.__pfBaseTarget=null; if(strip) strip.remove(); throw err; }
@@ -11126,8 +11148,7 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
       var opt={duration:140,easing:'cubic-bezier(.25,.9,.3,1)',fill:'both'};   /* سريع جدًا */
       var aOld=oldEl.animate([{transform:'translateX(0)'},{transform:'translateX('+(-dir*100)+'%)'}],opt);
       var aNew=newEl.animate([{transform:'translateX('+(dir*100)+'%)'},{transform:'translateX(0)'}],opt);
-      /* لون الغلاف في منطقة شريط الإشعارات يدخل مع الصفحة الجديدة بالضبط (لا يظهر مبكرًا قبل وصول الصفحة) */
-      var aStrip=strip ? strip.animate([{transform:'translateX('+(dir*100)+'%)'},{transform:'translateX(0)'}],opt) : null;
+      var aStrip=strip ? strip.el.animate([{transform:'translateX('+(dir*100)+'%)'},{transform:'translateX(0)'}],opt) : null;
       var done=false;
       cleanup=function(){
         if(done) return; done=true; cleanup=null;
