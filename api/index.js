@@ -42,6 +42,7 @@ module.exports = async (req, res) => {
         notification: { icon: '/icon-512.png', badge: '/badge-96.png', tag: chatId, renotify: true },
         fcmOptions: { link: '/' }
       },
+      android: { priority: 'high', notification: { channelId: 'messages', tag: chatId } },
       data: { chatId, senderId: decoded.uid }
     });
 
