@@ -53,6 +53,45 @@ else:
 (res / "values").mkdir(parents=True, exist_ok=True)
 wr(res / "values" / "notif_colors.xml", '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="notif_gold">#C9961F</color>\n</resources>\n')
 
+# 2.6) Android 15+ يفرض edge-to-edge: المحتوى يطلع تحت شريط الحالة. نضيف حشوة (padding) بحجم الأشرطة.
+java_root = app / "src" / "main" / "java"
+mains = list(java_root.rglob("MainActivity.java"))
+if not mains: die("ما لقيت MainActivity.java", java_root)
+ma = mains[0]
+pkg = re.search(r"^\s*package\s+([\w.]+)\s*;", rd(ma), re.M)
+if not pkg: die("ما لقيت package", ma)
+wr(ma, """package %s;
+
+import android.graphics.Color;
+import android.os.Build;
+import android.os.Bundle;
+import android.view.View;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= 35) {
+            View root = findViewById(android.R.id.content);
+            root.setBackgroundColor(Color.parseColor("#0b1220"));
+            ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+                Insets i = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                    | WindowInsetsCompat.Type.displayCutout()
+                    | WindowInsetsCompat.Type.ime());
+                v.setPadding(i.left, i.top, i.right, i.bottom);
+                return WindowInsetsCompat.CONSUMED;
+            });
+        }
+    }
+}
+""" % pkg.group(1))
+print("MainActivity patched:", ma)
+
 # 3) build.gradle: رقم النسخة + التوقيع
 bg = app / "build.gradle"
 g = rd(bg)
