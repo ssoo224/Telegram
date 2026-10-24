@@ -5382,11 +5382,11 @@ function openImageViewer(src, messageId = '', isMine = false) {
   const toolbar = createMediaViewerToolbar(src, 'image', messageId, isMine, () => closeImageViewer());
   v.appendChild(im); v.appendChild(toolbar);
   document.body.appendChild(v);
-  window.__babylonMediaViewerOpen = true;
+  window.__babylonMediaViewerOpen = true; babylonMediaBars(true);
   let viewerClosed = false, viewerHistoryEntry = false;
   const closeImageViewer = (fromBack = false) => {
     if (viewerClosed) return;
-    viewerClosed = true; window.__babylonMediaViewerOpen = false;
+    viewerClosed = true; window.__babylonMediaViewerOpen = false; babylonMediaBars(false);
     window.removeEventListener('popstate', onImageViewerBack); v.remove();
     if (viewerHistoryEntry && !fromBack) { viewerHistoryEntry = false; window.__babylonIgnoreNextBack = true; history.back(); }
   };
@@ -5425,16 +5425,20 @@ function openImageViewer(src, messageId = '', isMine = false) {
   im.addEventListener('wheel', e => { e.preventDefault(); scale=clamp(scale+(e.deltaY<0?.2:-.2),1,5); if(scale===1){tx=0;ty=0;} render(); }, {passive:false});
 }
 
+/* شريطا النظام (الإشعارات والتنقل) أسودان أثناء عرض صورة أو فيديو داخل تطبيق الأندرويد */
+function babylonMediaBars(on) {
+  try { if (window.BabylonAndroid && typeof window.BabylonAndroid.setMediaViewerSystemBars === 'function') window.BabylonAndroid.setMediaViewerSystemBars(!!on); } catch (_) {}
+}
 function createMediaViewerToolbar(src, type, messageId, isMine, closeViewer) {
   const bar = document.createElement('div');
   bar.className = 'babylon-media-toolbar';
   bar.style.cssText = 'position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:max(10px,env(safe-area-inset-top)) 14px 10px;background:linear-gradient(to bottom,rgba(0,0,0,.78),rgba(0,0,0,0));transition:transform .24s ease,opacity .2s ease;';
   const close = document.createElement('button'); close.type='button'; close.className='media-viewer-close'; close.setAttribute('aria-label','إغلاق');
-  close.style.cssText='width:42px;height:42px;display:grid;place-items:center;border:0;border-radius:50%;background:rgba(255,255,255,.13);color:#fff;';
+  close.style.cssText='width:42px;height:42px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:#fff;filter:drop-shadow(0 1px 3px rgba(0,0,0,.8));-webkit-tap-highlight-color:transparent;outline:none;';
   close.innerHTML='<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   const menuWrap=document.createElement('div'); menuWrap.style.cssText='position:relative;';
   const dots=document.createElement('button'); dots.type='button'; dots.setAttribute('aria-label','خيارات الوسائط');
-  dots.style.cssText='width:42px;height:42px;display:grid;place-items:center;border:0;border-radius:50%;background:rgba(255,255,255,.13);color:#fff;';
+  dots.style.cssText='width:42px;height:42px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:#fff;filter:drop-shadow(0 1px 3px rgba(0,0,0,.8));-webkit-tap-highlight-color:transparent;outline:none;';
   dots.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
   const menu=document.createElement('div');
   menu.style.cssText='display:none;position:absolute;top:48px;left:0;min-width:170px;padding:6px;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:#17191f;color:#fff;box-shadow:0 10px 35px rgba(0,0,0,.4);direction:rtl;';
@@ -5540,10 +5544,10 @@ function openVideoViewer(src, messageId = '', isMine = false) {
     st.textContent =
       '.bvp{position:absolute;inset:0;pointer-events:none;direction:ltr;-webkit-tap-highlight-color:transparent;transition:opacity .22s}' +
       '.bvp.is-hidden{opacity:0}.bvp.is-hidden *{pointer-events:none!important}' +
-      '.bvp-center{position:absolute;top:50%;left:50%;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;border:1.5px solid rgba(255,255,255,.28);background:rgba(18,22,28,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;padding:0;transition:transform .12s,background .15s}' +
+      '.bvp-center{position:absolute;top:50%;left:50%;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;border:0;outline:none;background:rgba(18,22,28,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;padding:0;transition:transform .12s,background .15s}' +
       '.bvp-center:active{transform:scale(.92)}.bvp-center svg{width:34px;height:34px;fill:currentColor}' +
       '.bvp-center .i-pause,.bvp.is-playing .bvp-center .i-play{display:none}.bvp.is-playing .bvp-center .i-pause{display:block}' +
-      '.bvp.is-loading .bvp-center svg{display:none}.bvp-center .bvp-spin{display:none;width:30px;height:30px;border:3px solid rgba(255,255,255,.3);border-top-color:var(--babylon-gold,#d4af37);border-radius:50%;animation:bvpspin .8s linear infinite}' +
+      '.bvp.is-loading .bvp-center svg{display:none!important}.bvp-center .bvp-spin{display:none;width:30px;height:30px;border:3px solid rgba(255,255,255,.3);border-top-color:var(--babylon-gold,#d4af37);border-radius:50%;animation:bvpspin .8s linear infinite}' +
       '.bvp.is-loading .bvp-spin{display:block}@keyframes bvpspin{to{transform:rotate(360deg)}}' +
       '.bvp-bar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;padding:30px 16px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,0));pointer-events:auto}' +
       '.bvp-t{flex:0 0 auto;min-width:42px;color:#fff;font:600 13px/1 system-ui,-apple-system,sans-serif;font-variant-numeric:tabular-nums;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.6)}' +
@@ -5559,7 +5563,7 @@ function openVideoViewer(src, messageId = '', isMine = false) {
   v.className = 'babylon-media-viewer video-viewer';
   v.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;';
   const vid = document.createElement('video');
-  vid.src = src; vid.controls = false; vid.autoplay = true; vid.playsInline = true;
+  vid.preload = 'auto'; vid.src = src; vid.controls = false; vid.autoplay = true; vid.playsInline = true;
   vid.setAttribute('playsinline', ''); vid.setAttribute('webkit-playsinline', '');
   vid.style.cssText = 'max-width:100%;max-height:100%;background:#000;';
 
@@ -5641,9 +5645,9 @@ function openVideoViewer(src, messageId = '', isMine = false) {
   seek.addEventListener('pointerup', endDrag);
   seek.addEventListener('touchend', endDrag);
 
-  let viewerClosed = false, viewerHistoryEntry = false; window.__babylonMediaViewerOpen = true;
+  let viewerClosed = false, viewerHistoryEntry = false; window.__babylonMediaViewerOpen = true; babylonMediaBars(true);
   const close = (fromBack = false) => {
-    if (viewerClosed) return; viewerClosed = true; window.__babylonMediaViewerOpen = false;
+    if (viewerClosed) return; viewerClosed = true; window.__babylonMediaViewerOpen = false; babylonMediaBars(false);
     clearTimeout(hideTimer);
     window.removeEventListener('popstate', onVideoViewerBack);
     try { vid.pause(); vid.removeAttribute('src'); vid.load(); } catch (e) {}
