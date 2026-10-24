@@ -3795,7 +3795,7 @@ function startBlocksListener() {
   blocksFor = currentUser.uid; myBlocks = {};
   blocksUnsub = db.collection('users').doc(currentUser.uid).collection('blocks').onSnapshot(q => {
     myBlocks = {}; q.forEach(d => { myBlocks[d.id] = true; });
-    document.querySelectorAll('.chat-item[data-other]').forEach(el => { el.style.display = myBlocks[el.dataset.other] ? 'none' : ''; });
+    document.querySelectorAll('.chat-item[data-other]').forEach(el => { el.style.display = ''; el.classList.toggle('is-blocked', !!myBlocks[el.dataset.other]); });
     updateBlockBtn(); applyChatBlockState(); renderStoriesBar();
     if (document.getElementById('blkOverlay')) sxOpenBlocked(true);
   }, () => {});
@@ -3815,13 +3815,13 @@ function applyChatBlockState() {
   if (!chatOpen) { chatBlockedNow = false; bn.classList.add('hidden'); return; }
   if (myBlocks[uid]) {
     chatBlockedNow = true; chatBlockedMsg = 'أنت حاظر هذا المستخدم، ألغِ الحظر حتى تراسله';
-    bn.innerHTML = ' أنت حظرت هذا المستخدم<br><button onclick="unblockUser(currentChatOtherUserId)">إلغاء الحظر</button>';
+    bn.className = 'block-banner bb-blocked'; bn.innerHTML = '<span class="bb-blk-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg></span><span class="bb-blk-txt">هذا المستخدم محظور</span><button type="button" class="bb-blk-btn" onclick="unblockUser(currentChatOtherUserId)">إلغاء الحظر</button>';
     bn.classList.remove('hidden'); setBars(true); return;
   }
   blockedByThem(uid).then(b => {
     if (currentChatOtherUserId !== uid) return;
     chatBlockedNow = b; chatBlockedMsg = 'تم حظرك من قبل هذا المستخدم';
-    if (b) { bn.textContent = ' تم حظرك من قبل هذا المستخدم، ما تكدر ترسل له رسائل'; bn.classList.remove('hidden'); setBars(true); }
+    if (b) { bn.className = 'block-banner bb-blocked bb-by-them'; bn.innerHTML = '<span class="bb-blk-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg></span><span class="bb-blk-txt">تم حظرك من قبل هذا المستخدم</span>'; bn.classList.remove('hidden'); setBars(true); }
     else { bn.classList.add('hidden'); setBars(false); }
   });
 }
@@ -5145,7 +5145,7 @@ function loadChats() {
         existingItem.dataset.other = otherId;
         existingItem.dataset.chatid = chatId;
         existingItem.dataset.updatedat = String(chatData.updatedAt || 0);
-        existingItem.style.display = myBlocks[otherId] ? 'none' : '';
+        existingItem.style.display = ''; existingItem.classList.toggle('is-blocked', !!myBlocks[otherId]);
 
         db.collection("users").doc(otherId).get().then(userDoc => {
           if (!userDoc.exists) return;
@@ -9532,6 +9532,26 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
   window.alert=function(msg){ build(msg,null,true); };
 })();
 </script>
+<style id="bb-block-ui-fix">
+/* ===== شريط الحظر داخل المحادثة (يغطي حقل الكتابة) ===== */
+#blockBanner.bb-blocked{display:flex;flex-direction:row;align-items:center;gap:10px;direction:rtl;margin:8px 10px;padding:10px 12px;border-radius:18px;text-align:right;font-size:14px;font-weight:700;color:#fca5a5;background:rgba(220,38,38,.12);border:1px solid rgba(248,113,113,.35)}
+#blockBanner.hidden{display:none!important}
+#blockBanner .bb-blk-ic{width:34px;height:34px;flex:none;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#f87171,#dc2626)}
+#blockBanner .bb-blk-ic svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+#blockBanner .bb-blk-txt{flex:1;color:inherit}
+#blockBanner .bb-blk-btn{margin:0;flex:none;padding:9px 16px;border:0;border-radius:13px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;color:#fff;-webkit-text-fill-color:#fff;background:linear-gradient(135deg,#e6c566 0%,#d3a93b 45%,#bc8e24 100%);text-shadow:0 1px 2px rgba(110,72,0,.45);box-shadow:0 5px 14px rgba(190,150,40,.3)}
+.app-container[data-app-theme="light"] #blockBanner.bb-blocked{color:#b91c1c;background:#fff5f5;border-color:#fecaca}
+/* المحادثة المحظورة تبقى في القائمة */
+.chat-item.is-blocked .chat-item-sub,.chat-item.is-blocked .chat-item-last{opacity:.75}
+/* ===== قائمة المحظورين: زر إلغاء الحظر ===== */
+.blk-ov .blk-row button{border:0!important;border-radius:13px!important;padding:9px 16px!important;font-weight:800!important;font-family:inherit;color:#fff!important;-webkit-text-fill-color:#fff!important;background:linear-gradient(135deg,#e6c566 0%,#d3a93b 45%,#bc8e24 100%)!important;text-shadow:0 1px 2px rgba(110,72,0,.45);box-shadow:0 5px 14px rgba(190,150,40,.28)!important}
+.blk-ov[data-app-theme="light"]{background:#f5f7fb!important;color:#17212b!important}
+.blk-ov[data-app-theme="light"] .sx-top{background:#fff!important;color:#17212b!important;border-color:#e1e7ef!important}
+.blk-ov[data-app-theme="light"] .sx-top h2,.blk-ov[data-app-theme="light"] .blk-row .n{color:#17212b!important}
+.blk-ov[data-app-theme="light"] .sx-back{background:#edf2f8!important;color:#52657a!important}
+.blk-ov[data-app-theme="light"] .blk-row{background:#fff!important;border:1px solid #e1e7ef!important;box-shadow:0 4px 14px rgba(26,44,70,.05)}
+.blk-ov[data-app-theme="light"] #blkList>div:not(.blk-row){color:#708094!important}
+</style>
 </body>
 </html>
 
