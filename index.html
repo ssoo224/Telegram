@@ -3090,9 +3090,11 @@ const TOAST_ICONS = {
   success:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   error:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v6.5M12 17.2v.1"/></svg>',
   loading:'<svg class="bt-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9" /></svg>',
-  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v5.5M12 7.6v.1"/></svg>'
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v5.5M12 7.6v.1"/></svg>',
+  danger:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 2.4 17.6A2 2 0 0 0 4.1 20.6h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4.2M12 17v.1"/></svg>'
 };
 function toastKind(msg){
+  if (/حظرك/.test(msg)) return 'danger';
   if (/جاري|جارٍ|\.\.\./.test(msg)) return 'loading';
   if (/تعذر|فشل|خطأ|غير صح|لا يمكن|حدث خطأ|الرجاء|يجب|مرفوض|ممنوع/.test(msg)) return 'error';
   if (/تم|نجاح|✧|✓|✔/.test(msg)) return 'success';
@@ -3104,7 +3106,7 @@ function showToast(msg, kind) {
   kind = kind || toastKind(String(msg));
   const app = document.querySelector('.app-container');
   if (app) t.setAttribute('data-app-theme', app.getAttribute('data-app-theme') || 'light');
-  const dur = kind === 'loading' ? 6000 : kind === 'error' ? 4200 : 3000;
+  const dur = kind === 'loading' ? 6000 : (kind === 'error' || kind === 'danger') ? 4200 : 3000;
   t.className = "toast bt-" + kind;
   t.innerHTML = '<span class="bt-ic">' + TOAST_ICONS[kind] + '</span><span class="bt-msg"></span><i class="bt-bar"></i>';
   t.querySelector('.bt-msg').textContent = String(msg).replace(/\s*[✧✓✔]\s*$/, '');
@@ -9578,15 +9580,22 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 </script>
 <style id="bb-block-ui-fix">
 /* ===== شريط الحظر داخل المحادثة (يغطي حقل الكتابة) ===== */
-#blockBanner.bb-blocked{display:flex!important;flex-direction:row;align-items:center;gap:10px;direction:rtl;box-sizing:border-box;margin:8px 10px;padding:6px 8px 6px 6px;min-height:46px;border-radius:24px;text-align:right;font-size:14px;font-weight:700;color:#fca5a5;background:var(--babylon-surface-card,#202b38)!important;border:1px solid var(--babylon-border,#334155)!important;box-shadow:none}
+#blockBanner.bb-blocked{display:flex!important;flex-direction:row;align-items:center;justify-content:center;gap:10px;direction:rtl;box-sizing:border-box;margin:0;padding:8px 12px;min-height:0;text-align:right;font-size:14px;font-weight:800;color:#fca5a5;background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 #blockBanner.hidden{display:none!important}
-#blockBanner .bb-blk-ic{width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#f87171,#dc2626)}
-#blockBanner .bb-blk-ic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-#blockBanner .bb-blk-txt{flex:1;color:inherit}
+#chatView .chat-input-container:has(#blockBanner.bb-blocked:not(.hidden)){background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding-top:0!important}
+#blockBanner .bb-blk-ic{width:30px;height:30px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#f87171,#dc2626)}
+#blockBanner .bb-blk-ic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+#blockBanner .bb-blk-txt{flex:none;color:inherit;text-shadow:0 1px 2px rgba(0,0,0,.25)}
 #blockBanner .bb-blk-btn{margin:0;flex:none;padding:7px 16px;border-radius:18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;text-shadow:none;box-shadow:none;background:rgba(220,38,38,.14)!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important;border:2px solid #f87171!important}
-.app-container[data-app-theme="light"] #blockBanner.bb-blocked{background:#fff!important;border-color:#dce4ee!important;color:#b91c1c}
+.app-container[data-app-theme="light"] #blockBanner.bb-blocked{color:#b91c1c}
+.app-container[data-app-theme="light"] #blockBanner .bb-blk-txt{text-shadow:none}
 .app-container[data-app-theme="light"] #blockBanner .bb-blk-btn{background:#fff!important;color:#dc2626!important;-webkit-text-fill-color:#dc2626!important;border:2px solid #dc2626!important}
 .app-container[data-app-theme="dark"] #blockBanner .bb-blk-btn{background:rgba(220,38,38,.14)!important;color:#fca5a5!important;-webkit-text-fill-color:#fca5a5!important;border:2px solid #f87171!important}
+/* إشعار: تم حظرك — أحمر مع علامة تحذير */
+#toast.toast.bt-danger{--bt-acc:#dc2626;--bt-bg:#fff1f1;--bt-fg:#b91c1c;--bt-bd:rgba(220,38,38,.45)}
+#toast.toast.bt-danger .bt-ic{color:#fff;background:linear-gradient(135deg,#f87171,#dc2626)}
+.app-container[data-app-theme="dark"] #toast.toast.bt-danger{--bt-bg:rgba(69,22,28,.95);--bt-fg:#fecaca;--bt-bd:rgba(248,113,113,.5)}
+.app-container[data-app-theme="light"] #toast.toast.bt-danger{--bt-bg:#fff1f1;--bt-fg:#b91c1c;--bt-bd:rgba(220,38,38,.45)}
 /* المحادثة المحظورة تبقى في القائمة */
 .chat-item.is-blocked .chat-item-sub,.chat-item.is-blocked .chat-item-last{opacity:.75}
 /* ===== قائمة المحظورين: زر إلغاء الحظر ===== */
