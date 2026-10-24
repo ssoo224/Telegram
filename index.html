@@ -2543,13 +2543,13 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
         <span class="nav-icon"><i data-ic="chat" data-size="22"></i></span>
         <span>المحادثات</span>
       </button>
-      <button id="navProfile" class="nav-item" onclick="openProfile()">
-        <span class="nav-icon"><i data-ic="user" data-size="22"></i></span>
-        <span>الملف الشخصي</span>
-      </button>
       <button id="navSettings" class="nav-item" onclick="openSettings()">
         <span class="nav-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span>
         <span>الإعدادات</span>
+      </button>
+      <button id="navProfile" class="nav-item" onclick="openProfile()">
+        <span class="nav-icon"><i data-ic="user" data-size="22"></i></span>
+        <span>الملف الشخصي</span>
       </button>
     </nav>
   </section>
@@ -3338,7 +3338,7 @@ function applyAppTheme(theme) {
   if (label) label.textContent = isLight ? 'ليلي' : 'نهاري';
   if (description) description.textContent = isLight ? 'الوضع النهاري مفعّل' : 'الوضع الليلي مفعّل';
   const metaTheme = document.querySelector('meta[name="theme-color"]');
-  if (metaTheme) metaTheme.setAttribute('content', isLight ? '#f5f7fb' : '#17212b');
+  if (metaTheme) metaTheme.setAttribute('content', isLight ? '#ffffff' : '#000000');
 }
 function toggleAppTheme() {
   const app = document.querySelector('.app-container');
@@ -3748,9 +3748,10 @@ function setProfileExpandedStatusBlur(enabled, imageUrl) {
   var blur = document.getElementById('profileStatusBarBlur');
   if (blur) blur.remove();
   try {
-    if (window.__pfSBState !== !!enabled && window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') {
-      window.__pfSBState = !!enabled;
-      window.BabylonAndroid.setProfileExpandedSystemBars(!!enabled);
+    var eff = !!enabled || !!window.__pfBase;   /* الغلاف يبقى ممتدًا خلف شريط الإشعارات ما دام البروفايل ظاهرًا */
+    if (window.__pfSBState !== eff && window.BabylonAndroid && typeof window.BabylonAndroid.setProfileExpandedSystemBars === 'function') {
+      window.__pfSBState = eff;
+      window.BabylonAndroid.setProfileExpandedSystemBars(eff);
     }
   } catch (err) { console.warn('profile system bars update failed', err); }
 }
@@ -7929,9 +7930,29 @@ html,body{overscroll-behavior-y:none}
   var RANGE = 110;      // كم بكسل سحب لتكتمل الصورة
   var THRESH = 0.45;    // بعد هذه النسبة تثبت مفتوحة عند ترك الإصبع
   // صور البروفايل مخزنة base64 (ميغابايتات). نحولها مرة وحدة إلى blob حتى ما نكرر نص ضخم بالـCSS كل سحبة
-  var _lc={};
+  var _lc={}, _sm={}, _smBusy={};
+  function shrink(key,url){
+    if(_smBusy[key]) return; _smBusy[key]=1;
+    setTimeout(function(){
+      try{
+        var im=new Image();
+        im.onload=function(){
+          try{
+            var w=im.naturalWidth,h=im.naturalHeight,M=1080;
+            if(!w||!h||Math.max(w,h)<=M) return;
+            var k=M/Math.max(w,h), c=document.createElement('canvas');
+            c.width=Math.round(w*k); c.height=Math.round(h*k);
+            c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+            c.toBlob(function(b){ if(b) _sm[key]=URL.createObjectURL(b); c.width=c.height=0; },'image/jpeg',0.9);
+          }catch(_){}
+        };
+        im.src=url;
+      }catch(_){}
+    },700);
+  }
   function lite(u){
     if(!u||String(u).slice(0,5)!=='data:') return u;
+    if(_sm[u]) return _sm[u];
     if(_lc[u]) return _lc[u];
     try{
       var i=u.indexOf(','), mime=(u.slice(5,i).split(';')[0])||'image/jpeg';
@@ -7939,7 +7960,7 @@ html,body{overscroll-behavior-y:none}
       for(var k=0;k<n;k++) a[k]=bin.charCodeAt(k);
       var url=URL.createObjectURL(new Blob([a],{type:mime}));
       var ks=Object.keys(_lc); if(ks.length>8){ try{URL.revokeObjectURL(_lc[ks[0]]);}catch(_){} delete _lc[ks[0]]; }
-      _lc[u]=url; return url;
+      _lc[u]=url; shrink(u,url); return url;
     }catch(e){ return u; }
   }
   function setup(cfg){
@@ -8007,6 +8028,11 @@ html,body{overscroll-behavior-y:none}
     function hideRing(){ if(!view.classList.contains('pf-ring-off')) view.classList.add('pf-ring-off'); }
     function showRing(){ if(view.classList.contains('pf-ring-off')) view.classList.remove('pf-ring-off'); }
     var g=null, p=0, expanded=false, pulling=false, sy=0, sx=0, p0=0, raf=0, track=false;
+    var sbTimer=0;
+    function sysBars(on){
+      clearTimeout(sbTimer);
+      try{ if(typeof setProfileExpandedStatusBlur==='function') setProfileExpandedStatusBlur(!!on); }catch(_){}
+    }
 
     function sync(){
       var hasImg = img && !img.classList.contains('hidden') && img.getAttribute('src');
@@ -8074,10 +8100,8 @@ html,body{overscroll-behavior-y:none}
       var wasExpanded = view.classList.contains('pf-expanded');
       if(wasExpanded !== (v>=0.5)) {
         view.classList.toggle('pf-expanded', v>=0.5);
-        if (typeof setProfileExpandedStatusBlur === 'function') {
-          if (v>=0.5) setProfileExpandedStatusBlur(true, hImg && hImg.style.display!=='none' ? hImg.src : '');
-          else setProfileExpandedStatusBlur(false);
-        }
+        /* إصلاح الشاشة السوداء: لا نغيّر أشرطة النظام (جسر أندرويد) أثناء السحب لأنها تعيد قياس الـWebView
+           وتسبب وميضًا/شاشة سوداء. يتم ذلك فقط بعد استقرار الحركة (animateTo). */
       }
       cover.style.height=(g.coverH+g.delta*v)+'px';
       cover.style.opacity=clamp(1-v*1.5);
@@ -8102,6 +8126,9 @@ html,body{overscroll-behavior-y:none}
       }
     }
     function reset(keepRingOff){
+      clearTimeout(sbTimer);
+      /* مهم: لا نلمس classList إلا إذا كان الصنف موجودًا، وإلا يُطلق MutationObserver حلقة لا نهائية */
+      if(view.classList.contains('pf-dragging')) view.classList.remove('pf-dragging');
       restoreOriginalAvatar();
       p=0; expanded=false;
       hero.style.display='none'; hero.style.pointerEvents='none'; hInfo.style.opacity=0;
@@ -8125,7 +8152,12 @@ html,body{overscroll-behavior-y:none}
         var k=clamp((now-t0)/dur), e=1-Math.pow(1-k,4);
         try { apply(from+(t-from)*e); } catch (err) { console.warn('profile pull animation stopped', err); pulling=false; track=false; try { reset(); } catch (_) {} return; }
         if(k<1) raf=requestAnimationFrame(step);
-        else { expanded = t>=1; if(t<=0) reset(); }
+        else {
+          expanded = t>=1;
+          if(view.classList.contains('pf-dragging')) view.classList.remove('pf-dragging');
+          if(t<=0) reset();
+          else if(expanded) sysBars(true);
+        }
       })(t0);
     }
 
@@ -8153,6 +8185,8 @@ html,body{overscroll-behavior-y:none}
         if(!wantPull && !wantBack) return;
         cancelAnimationFrame(raf);
         if(!expanded){ hideRing(); reset(true); sync(); measure(); }
+        view.classList.add('pf-dragging');
+        sysBars(true);   /* تركيب الصورة على شريط الإشعارات من أول إطار (مرة واحدة فقط، بلا تبديل أثناء السحب) */
         pulling=true; p0=expanded?1:0; sy=t.clientY; tv=p; vel=0; lastT=0;   // نبدأ من نقطة بدء السحب الفعلي
         // إخفاء الحلقة فور بدء السحب المقبول، ومنع ظهورها في إطارات التحديث الأولى.
         hideRing();
@@ -8274,9 +8308,41 @@ html,body{overscroll-behavior-y:none}
            nameBox:'otherHeaderName',nameTxt:'otherHeaderNameText',status:'otherHeaderStatus',gallery:'openOtherAvatarGallery'});
     }catch(err){ console.warn('other profile pull setup failed',err); }
   }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+  /* الغلاف يمتد على شريط الإشعارات دائمًا ما دام أحد البروفايلين ظاهرًا */
+  function baseSync(){
+    var on;
+    if(window.__pfBaseTarget!=null) on=!!window.__pfBaseTarget;   /* أثناء انتقال الأقسام: الحالة النهائية تُطبَّق فورًا ومرة واحدة */
+    else on=['profileView','otherUserProfileView'].some(function(id){var e=document.getElementById(id);return e&&!e.classList.contains('hidden');});
+    if(!!window.__pfBase===on) return;
+    window.__pfBase=on;
+    try{ if(typeof setProfileExpandedStatusBlur==='function') setProfileExpandedStatusBlur(false); }catch(_){}
+  }
+  window.pfBaseSync=baseSync;
+  function initBase(){
+    ['profileView','otherUserProfileView'].forEach(function(id){
+      var e=document.getElementById(id); if(!e) return;
+      new MutationObserver(baseSync).observe(e,{attributes:true,attributeFilter:['class']});
+    });
+    baseSync();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){init();initBase();}); else { init(); initBase(); }
 })();
 </script>
+
+<style id="pf-bottom-bar-theme-fix">
+/* الشريط الأسفل الذي يظهر لحظة سحب الصورة: هو خلفية الصفحة (body) تظهر عند إعادة قياس الشاشة.
+   نجعل خلفية الصفحة تتبع الطور: أبيض نهاري / أسود ليلي. */
+html:has(.app-container[data-app-theme="light"]),
+body:has(.app-container[data-app-theme="light"]){background:#ffffff!important;background-color:#ffffff!important}
+html:has(.app-container[data-app-theme="dark"]),
+body:has(.app-container[data-app-theme="dark"]){background:#000000!important;background-color:#000000!important}
+</style>
+
+<style id="pf-drag-perf-fix">
+/* إصلاح الشاشة السوداء أثناء سحب الصورة: تعطيل التمويه الثقيل والطبقات الإضافية أثناء السحب فقط */
+.pf-dragging .pf-hero .pf-hero-ext::before{filter:none!important;transform:none!important;inset:0!important}
+.pf-dragging .pf-hero{will-change:auto}
+</style>
 
 <style id="babylon-profile-v2">
 /* ===== Profile v2 — Telegram-style ===== */
@@ -10994,3 +11060,101 @@ body:has(.app-container[data-app-theme="dark"]) #publishTypeModal button.story-t
   -webkit-text-fill-color:#fff !important;
 }
 </style>
+
+<script id="babylon-tab-slide">
+/* انتقال جانبي سلس بين أقسام الشريط السفلي (المحادثات / الإعدادات / الملف الشخصي).
+   - الاتجاه يُحسب من موضع الأزرار.
+   - حالة شريط الإشعارات تُرسل لأندرويد مرة واحدة من أول إطار.
+   - عند الدخول للملف الشخصي تنزلق منطقة شريط الإشعارات (بلون الغلاف) مع الصفحة الجديدة نفسها، فلا يتلوّن الشريط قبل وصولها. */
+(function(){
+  var TABS={homeView:'navChats',profileView:'navProfile',settingsView:'navSettings'};
+  var cleanup=null, orig=window.showView;
+  if(typeof orig!=='function') return;
+  function visibleTab(){
+    for(var id in TABS){ var e=document.getElementById(id); if(e&&!e.classList.contains('hidden')) return id; }
+    return null;
+  }
+  function cx(id){ var b=document.getElementById(TABS[id]); if(!b) return 0; var r=b.getBoundingClientRect(); return r.left+r.width/2; }
+  function makeStrip(app){
+    try{
+      var cover=document.getElementById('pCover'); if(!cover) return null;
+      var strip=document.createElement('div');
+      strip.setAttribute('aria-hidden','true');
+      strip.style.cssText='position:absolute;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:7;pointer-events:none;';
+      app.appendChild(strip);
+      var h=strip.getBoundingClientRect().height;
+      if(!(h>0)){ strip.remove(); return null; }
+      var cs=getComputedStyle(cover), w=app.getBoundingClientRect().width;
+      strip.style.backgroundColor=cs.backgroundColor;
+      strip.style.backgroundImage=cs.backgroundImage;
+      strip.style.backgroundSize=w+'px '+(176+h)+'px';
+      strip.style.backgroundPosition='0 0';
+      strip.style.backgroundRepeat='no-repeat';
+      return strip;
+    }catch(e){ return null; }
+  }
+  window.showView=function(viewId){
+    var from=null;
+    try{
+      if(cleanup){ cleanup(); }
+      from=visibleTab();
+      if(!(from&&TABS[viewId]&&from!==viewId)) from=null;
+      if(from && window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) from=null;
+      if(from){ var bn=document.getElementById('bottomNav'); if(!bn||bn.classList.contains('hidden')) from=null; }
+    }catch(e){ from=null; }
+    var app=document.querySelector('.app-container');
+    var strip=null;
+    if(from){
+      window.__pfBaseTarget=(viewId==='profileView'||viewId==='otherUserProfileView');
+      if(viewId==='profileView' && app) strip=makeStrip(app);
+    }
+    var r;
+    try{ r=orig.apply(this,arguments); }catch(err){ window.__pfBaseTarget=null; if(strip) strip.remove(); throw err; }
+    if(from){ try{ if(window.pfBaseSync) window.pfBaseSync(); }catch(_){} }
+    if(!from) return r;
+    try{
+      var oldEl=document.getElementById(from), newEl=document.getElementById(viewId);
+      if(!oldEl||!newEl||!app||!oldEl.animate){ window.__pfBaseTarget=null; if(strip) strip.remove(); return r; }
+      var a=app.getBoundingClientRect(), n=newEl.getBoundingClientRect();
+      if(!n.width||!n.height){ window.__pfBaseTarget=null; if(strip) strip.remove(); return r; }
+      var dir = cx(viewId) < cx(from) ? -1 : 1;   /* الهدف على يسار الزر الحالي => يدخل من اليسار */
+      var bg=getComputedStyle(app).backgroundColor;
+      var saved={oldStyle:oldEl.getAttribute('style'), newStyle:newEl.getAttribute('style')};
+      oldEl.classList.remove('hidden');
+      oldEl.style.cssText=(saved.oldStyle||'')+';position:absolute!important;left:'+(n.left-a.left)+'px;top:'+(n.top-a.top)+'px;width:'+n.width+'px;height:'+n.height+'px;z-index:4;pointer-events:none;overflow:hidden;background-color:'+bg+';';
+      newEl.style.cssText=(saved.newStyle||'')+';pointer-events:none;';
+      var opt={duration:140,easing:'cubic-bezier(.25,.9,.3,1)',fill:'both'};   /* سريع جدًا */
+      var aOld=oldEl.animate([{transform:'translateX(0)'},{transform:'translateX('+(-dir*100)+'%)'}],opt);
+      var aNew=newEl.animate([{transform:'translateX('+(dir*100)+'%)'},{transform:'translateX(0)'}],opt);
+      /* لون الغلاف في منطقة شريط الإشعارات يدخل مع الصفحة الجديدة بالضبط (لا يظهر مبكرًا قبل وصول الصفحة) */
+      var aStrip=strip ? strip.animate([{transform:'translateX('+(dir*100)+'%)'},{transform:'translateX(0)'}],opt) : null;
+      var done=false;
+      cleanup=function(){
+        if(done) return; done=true; cleanup=null;
+        window.__pfBaseTarget=null;
+        try{ aOld.cancel(); aNew.cancel(); if(aStrip) aStrip.cancel(); }catch(_){}
+        oldEl.classList.add('hidden');
+        if(saved.oldStyle==null) oldEl.removeAttribute('style'); else oldEl.setAttribute('style',saved.oldStyle);
+        if(saved.newStyle==null) newEl.removeAttribute('style'); else newEl.setAttribute('style',saved.newStyle);
+        if(strip) strip.remove();
+      };
+      aNew.onfinish=cleanup; aNew.oncancel=function(){ if(cleanup) cleanup(); };
+      setTimeout(function(){ if(cleanup) cleanup(); },350);
+    }catch(e){ try{ if(cleanup) cleanup(); }catch(_){} window.__pfBaseTarget=null; if(strip) try{strip.remove();}catch(_){} }
+    return r;
+  };
+})();
+</script>
+
+<style id="pf-cover-statusbar-extension">
+/* شريط الإشعارات = امتداد لخلفية الغلاف (نفس لونه/تدرجه)، أما الغلاف نفسه فيبقى بحجمه (176px) وتحت الشريط تمامًا.
+   الخلفية تمتد للأعلى بمقدار الإزاحة العلوية، بينما النقوش والتلاشي السفلي يبقيان ضمن مساحة الغلاف الأصلية. */
+:is(#profileView,#otherUserProfileView) .pf-cover{
+  height:calc(176px + env(safe-area-inset-top,0px))!important;
+  min-height:calc(176px + env(safe-area-inset-top,0px))!important}
+:is(#profileView,#otherUserProfileView) .pf-cover .pattern-layer{
+  top:env(safe-area-inset-top,0px)!important;bottom:0!important;left:0!important;right:0!important;inset-block-start:env(safe-area-inset-top,0px)!important}
+:is(#profileView,#otherUserProfileView) .pf-cover::after{
+  height:calc(176px * .55)!important}
+</style>
+
