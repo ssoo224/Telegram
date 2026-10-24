@@ -8430,6 +8430,83 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
   outline: none !important;
 }
 </style>
+<script id="babylon-native-js">
+/* يشتغل فقط داخل تطبيق الأندرويد (Capacitor): إشعارات FCM + لون شريط الحالة + فحص التحديثات */
+(function(){
+  var C = window.Capacitor;
+  if (!C || typeof C.isNativePlatform !== 'function' || !C.isNativePlatform()) return;
+  window.babylonNative = true;
+  var P = C.Plugins || {}, PN = P.PushNotifications, SB = P.StatusBar, AP = P.App;
+  var tokenVal = null, saved = false;
+
+  /* الجسر القديم: نوفر فقط اللي نقدر نسويه فعلاً، والباقي يرجع للسلوك العادي */
+  window.BabylonAndroid = {
+    setTheme: function (t) { try { if (SB) { SB.setStyle({ style: t === 'dark' ? 'DARK' : 'LIGHT' }); SB.setBackgroundColor({ color: t === 'dark' ? '#0b1220' : '#ffffff' }); } } catch (e) {} },
+    requestNativeNotificationPermission: function () {
+      if (!PN) return;
+      PN.requestPermissions().then(function (r) {
+        var ok = r && r.receive === 'granted';
+        if (ok) PN.register();
+        if (typeof window.onNativeNotificationPermissionResult === 'function') window.onNativeNotificationPermissionResult(ok);
+      }).catch(function () { if (typeof window.onNativeNotificationPermissionResult === 'function') window.onNativeNotificationPermissionResult(false); });
+    }
+  };
+
+  function saveToken() {
+    if (saved || !tokenVal) return;
+    try {
+      if (typeof currentUser === 'undefined' || !currentUser) return;
+      db.collection('users').doc(currentUser.uid).set({ fcmToken: tokenVal, fcmTokens: firebase.firestore.FieldValue.arrayUnion(tokenVal) }, { merge: true })
+        .then(function () { saved = true; }).catch(function () {});
+    } catch (e) {}
+  }
+  setInterval(saveToken, 4000);
+
+  function afterLogin(fn) {
+    var t = setInterval(function () { try { if (typeof currentUser !== 'undefined' && currentUser) { clearInterval(t); fn(); } } catch (e) {} }, 1500);
+  }
+  if (PN) {
+    PN.addListener('registration', function (t) { tokenVal = t && t.value; saved = false; saveToken(); });
+    PN.addListener('registrationError', function (e) { console.warn('push registration error', e); });
+    try { if (PN.createChannel) PN.createChannel({ id: 'messages', name: 'الرسائل', description: 'إشعارات الرسائل الجديدة', importance: 5, visibility: 1, vibration: true }); } catch (e) {}
+    PN.checkPermissions().then(function (r) {
+      if (r.receive === 'granted') PN.register();
+      else if (r.receive === 'prompt' && localStorage.getItem('babylon_push_asked') !== '1') {
+        afterLogin(function () {
+          localStorage.setItem('babylon_push_asked', '1');
+          PN.requestPermissions().then(function (x) { if (x.receive === 'granted') PN.register(); });
+        });
+      }
+    }).catch(function () {});
+  }
+
+  /* فحص التحديث: version.json بالموقع (minVersion = إجباري، latest = اختياري) */
+  function banner(v, force) {
+    if (document.getElementById('updPage')) return;
+    var ov = document.createElement('div'); ov.id = 'updPage'; ov.className = 'otp-page';
+    ov.innerHTML = '<div class="otp-box"><div class="otp-ic">⬆️</div><h1>' + (force ? 'تحديث مطلوب' : 'يوجد تحديث جديد') + '</h1>'
+      + '<p></p><button type="button" id="updGo" class="otp-btn">تحديث الآن</button>'
+      + (force ? '' : '<button type="button" id="updLater" class="otp-link">لاحقاً</button>') + '</div>';
+    document.body.appendChild(ov);
+    ov.querySelector('p').textContent = (v.notes && String(v.notes)) || (force ? 'لازم تحدّث التطبيق حتى يكمل يشتغل.' : 'صدرت نسخة جديدة من Babylon Chat.');
+    ov.querySelector('#updGo').onclick = function () { window.open(v.url, '_blank'); };
+    var l = ov.querySelector('#updLater'); if (l) l.onclick = function () { ov.remove(); };
+  }
+  function checkVersion() {
+    if (!AP) return;
+    AP.getInfo().then(function (info) {
+      var cur = parseInt(info.build, 10) || 0;
+      return fetch('/version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (v) {
+        if (!v || !v.url) return;
+        if (cur < (v.minVersion || 0)) banner(v, true);
+        else if (cur < (v.latest || 0)) banner(v, false);
+      });
+    }).catch(function () {});
+  }
+  checkVersion();
+  if (AP && AP.addListener) AP.addListener('resume', checkVersion);
+})();
+</script>
 <script id="babylon-security-js">
 (function(){
   'use strict';
