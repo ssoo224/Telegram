@@ -9155,6 +9155,13 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 
   /* الجسر القديم: نوفر فقط اللي نقدر نسويه فعلاً، والباقي يرجع للسلوك العادي */
   window.BabylonAndroid = {
+    saveMedia: function (source, filename, mimeType) {
+      var nativeBridge = window.BabylonAndroidNative;
+      if (!nativeBridge || typeof nativeBridge.saveMedia !== 'function') {
+        throw new Error('Android media bridge unavailable');
+      }
+      nativeBridge.saveMedia(String(source || ''), String(filename || ''), String(mimeType || 'application/octet-stream'));
+    },
     setTheme: function (t) { try { if (SB) { SB.setStyle({ style: t === 'dark' ? 'DARK' : 'LIGHT' }); SB.setBackgroundColor({ color: t === 'dark' ? '#0b1220' : '#ffffff' }); } } catch (e) {} },
     requestNativeNotificationPermission: function () {
       if (!PN) return;
