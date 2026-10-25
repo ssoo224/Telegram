@@ -12236,7 +12236,7 @@ body.light #viewersModal .viewer-item {
    - الخلفية تمتد خلف الشريط بنفس لون رأس كل قسم (نهاري/ليلي/ثيم المحادثة)
    ============================================================ */
 :root{
-  --sat-real:max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px));
+  --sat-real:max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px),var(--sat-fb,0px));
   --sat:var(--sat-real);
 }
 
@@ -12269,8 +12269,31 @@ body.light #viewersModal .viewer-item {
 .sp-header{padding-top:calc(14px + var(--sat))}
 .gx-top{padding-top:calc(10px + var(--sat))}
 .blk-ov .sx-top{padding-top:calc(14px + var(--sat))!important}
-#storyViewer .sv-bars{padding-top:calc(10px + var(--sat))}
+/* القصص: شريط بلون خلفية العارض (أسود) فوق الوسائط */
+#storyViewer .sv-stage{padding-top:var(--sat)}
+#storyViewer .sv-bars{top:var(--sat);padding-top:10px}
 #storyViewer .sv-top{top:calc(14px + var(--sat))}
+#storyViewer .sv-tap{top:calc(80px + var(--sat))}
+.app-container.vp-on #storyViewer{--sat:var(--sat-real)}
+
+/* عارض الصور والفيديو: الوسائط تبدأ تحت الشريط الأسود */
+.babylon-media-viewer{box-sizing:border-box}
+.babylon-media-viewer.image-viewer{padding-top:calc(12px + var(--sat))!important}
+.babylon-media-viewer.video-viewer{padding-top:var(--sat)!important}
+.babylon-media-viewer .babylon-media-toolbar{top:var(--sat)!important;padding-top:10px!important}
+.babylon-media-viewer.video-viewer .bvp{top:var(--sat)}
+
+/* معرض صور الملف */
+#avatarGalleryModal{padding-top:calc(70px + var(--sat))!important}
+#avatarGalleryModal .ag-top{top:calc(12px + var(--sat))!important}
+
+/* الملف الشخصي: الغلاف/الصورة تمتد خلف الشريط بلا فراغ */
+:is(#profileView,#otherUserProfileView) .pf-cover{height:calc(176px + var(--sat))!important;min-height:calc(176px + var(--sat))!important}
+:is(#profileView,#otherUserProfileView) .pf-cover .pattern-layer{top:var(--sat)!important;inset-block-start:var(--sat)!important}
+.pf-topbar{padding-top:calc(12px + var(--sat))}
+.pf-hero .pf-hero-top{padding-top:calc(12px + var(--sat))!important}
+.pf-hero .pf-hero-menu{top:calc(56px + var(--sat))}
+#otherTopMenu{top:calc(60px + var(--sat))}
 </style>
 
 <script id="status-bar-color-sync">
@@ -12279,7 +12302,7 @@ body.light #viewersModal .viewer-item {
 (function(){
   var app=document.querySelector('.app-container'); if(!app) return;
   var meta=document.querySelector('meta[name="theme-color"]');
-  var last='', raf=0, tmr=0;
+  var last='', raf=0, tmr=0, ovOn=false, ovTimer=0;
 
   function parse(c){
     if(!c) return null; var m;
@@ -12304,6 +12327,8 @@ body.light #viewersModal .viewer-item {
   function vis(id){ var e=document.getElementById(id); return (e && !e.classList.contains('hidden')) ? e : null; }
 
   function target(){
+    if(document.querySelector('.babylon-media-viewer')) return 'black';
+    if(vis('storyViewer')||vis('avatarGalleryModal')) return 'black';
     var ov=document.getElementById('blkOverlay'); if(ov) return ov.querySelector('.sx-top')||ov;
     var gx=document.querySelectorAll('.gx-ov'); if(gx.length) return gx[gx.length-1];
     if(vis('profileView')||vis('otherUserProfileView')) return null;   /* منطق الغلاف الحالي */
@@ -12322,11 +12347,11 @@ body.light #viewersModal .viewer-item {
     raf=0;
     try{
       var t=target(); if(!t) return;
-      var c=colorOf(t), h=hex(c); if(h===last) return; last=h;
+      var c=(t==='black')?[0,0,0,1]:colorOf(t), h=hex(c); if(h===last) return; last=h;
       if(meta) meta.setAttribute('content',h);
       var lum=(0.299*c[0]+0.587*c[1]+0.114*c[2])/255;
       var SB=window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
-      if(SB){
+      if(SB && !ovOn){
         try{ var p=SB.setBackgroundColor({color:h}); if(p&&p.catch) p.catch(function(){}); }catch(_){}
         try{ var q=SB.setStyle({style: lum>0.55?'LIGHT':'DARK'}); if(q&&q.catch) q.catch(function(){}); }catch(_){}
       }
@@ -12336,6 +12361,40 @@ body.light #viewersModal .viewer-item {
     if(!raf) raf=requestAnimationFrame(sync);
     clearTimeout(tmr); tmr=setTimeout(function(){ last=''; sync(); },380);   /* بعد انتهاء انتقالات الألوان */
   }
+
+  /* امتداد الصورة/الغلاف خلف شريط الإشعارات (Capacitor): يُفعَّل أثناء الملف الشخصي ومعرض الصور فقط */
+  function probe(){
+    var p=document.createElement('div');
+    p.style.cssText='position:absolute;top:0;left:0;width:1px;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none';
+    document.body.appendChild(p); var h=p.getBoundingClientRect().height; p.remove(); return h;
+  }
+  function edge(on){
+    var SBp=window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
+    if(!SBp || ovOn===!!on) return; ovOn=!!on; clearTimeout(ovTimer);
+    var root=document.documentElement;
+    function go(fn,a){ try{ var r=fn&&fn.call(SBp,a); if(r&&r.catch) r.catch(function(){}); }catch(_){} }
+    if(on){
+      var st=0; try{ st=parseFloat(localStorage.getItem('babylon_sb_inset'))||0; }catch(_){}
+      root.style.setProperty('--sat-fb',(st||28)+'px');
+      go(SBp.setOverlaysWebView,{overlay:true});
+      go(SBp.setStyle,{style:'DARK'});
+      ovTimer=setTimeout(function(){
+        var h=probe();
+        if(h>0){ root.style.removeProperty('--sat-fb'); try{ localStorage.setItem('babylon_sb_inset',String(h)); }catch(_){} }
+      },220);
+    }else{
+      root.style.removeProperty('--sat-fb');
+      go(SBp.setOverlaysWebView,{overlay:false});
+      last=''; schedule();
+    }
+  }
+  try{
+    var B=window.BabylonAndroid;
+    if(window.babylonNative && B){
+      if(typeof B.setProfileExpandedSystemBars!=='function') B.setProfileExpandedSystemBars=function(on){ edge(on); };
+      if(typeof B.setStorySystemBars!=='function') B.setStorySystemBars=function(on){ edge(on); };
+    }
+  }catch(_){}
 
   try{
     var mo=new MutationObserver(schedule);
