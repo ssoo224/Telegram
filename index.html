@@ -74,7 +74,7 @@
 </style>
 
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Babylon Chat - تليجرام البابلي</title>
 
 <!-- ربط ملف الـ Manifest الخارجي -->
@@ -12228,3 +12228,124 @@ body.light #viewersModal .viewer-item {
 })();
 </script>
 <script src="/dev-panel.js"></script>
+
+<style id="status-bar-safe-area">
+/* ============================================================
+   مساحة شريط الإشعارات وأيقونات الهاتف (Status Bar) في كل قسم
+   - --sat = ارتفاع شريط الإشعارات (0 على الشاشات التي لا تحتاجه)
+   - الخلفية تمتد خلف الشريط بنفس لون رأس كل قسم (نهاري/ليلي/ثيم المحادثة)
+   ============================================================ */
+:root{
+  --sat-real:max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px));
+  --sat:var(--sat-real);
+}
+
+/* شريط تشغيل الصوت العلوي: يأخذ مساحة الشريط بنفسه فلا تتكرر المساحة في الأقسام */
+.app-container.vp-on{--sat:0px;padding-top:calc(34px + var(--sat-real))}
+#vpBar:not(.inflow){height:calc(34px + var(--sat-real));padding-top:var(--sat-real)}
+
+/* 1) الرئيسية (المحادثات) + شريط التحديد */
+.app-container #mainPage #mainHeader#mainHeader{height:calc(62px + var(--sat))!important;min-height:calc(62px + var(--sat))!important;padding-top:var(--sat)!important}
+.app-container #mainPage #selBar#selBar{height:calc(54px + var(--sat))!important;min-height:calc(54px + var(--sat))!important;padding-top:var(--sat)!important}
+
+/* 2) البحث */
+.app-container #searchView#searchView .search-screen-top{padding-top:calc(14px + var(--sat))!important}
+
+/* 3) الإعدادات + الخصوصية + الإشعارات + المحادثات (شريط بنفس لون القسم، ثابت أثناء التمرير) */
+.app-container .settings-view::before{content:"";display:block;flex:0 0 auto;height:var(--sat);position:sticky;top:0;z-index:20;background:inherit;pointer-events:none}
+
+/* 4) غرفة المحادثة + القوائم المرتبطة برأسها */
+.app-container #chatView .telegram-chat-header{padding-top:calc(8px + var(--sat))!important}
+.app-container .chat-more-menu,.app-container .chat-search-panel{top:calc(62px + var(--sat))!important}
+.app-container .chat-delete-panel{top:calc(72px + var(--sat))!important}
+
+/* 5) تعديل البيانات الشخصية */
+.app-container #editProfileView .edit-profile-header{padding-top:calc(17px + var(--sat))!important}
+
+/* 6) تسجيل الدخول / التحقق */
+.app-container .auth-page{padding-top:calc(30px + var(--sat))}
+
+/* 7) صفحات وطبقات ملء الشاشة */
+.sp-header{padding-top:calc(14px + var(--sat))}
+.gx-top{padding-top:calc(10px + var(--sat))}
+.blk-ov .sx-top{padding-top:calc(14px + var(--sat))!important}
+#storyViewer .sv-bars{padding-top:calc(10px + var(--sat))}
+#storyViewer .sv-top{top:calc(14px + var(--sat))}
+</style>
+
+<script id="status-bar-color-sync">
+/* مزامنة لون شريط الإشعارات (theme-color + Capacitor StatusBar) مع لون رأس القسم الظاهر حاليًا.
+   الملف الشخصي يُترك لمنطق الغلاف الموجود أصلًا. */
+(function(){
+  var app=document.querySelector('.app-container'); if(!app) return;
+  var meta=document.querySelector('meta[name="theme-color"]');
+  var last='', raf=0, tmr=0;
+
+  function parse(c){
+    if(!c) return null; var m;
+    m=c.match(/rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,\/]+([\d.]+%?))?\s*\)/);
+    if(m){ var a=m[4]==null?1:(m[4].indexOf('%')>0?parseFloat(m[4])/100:parseFloat(m[4])); return [+m[1],+m[2],+m[3],a]; }
+    m=c.match(/color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+%?))?\s*\)/);
+    if(m){ var b=m[4]==null?1:(m[4].indexOf('%')>0?parseFloat(m[4])/100:parseFloat(m[4])); return [m[1]*255,m[2]*255,m[3]*255,b]; }
+    return null;
+  }
+  function colorOf(el){
+    for(var n=el; n && n.nodeType===1; n=n.parentElement){
+      var cs=getComputedStyle(n), c=parse(cs.backgroundColor);
+      if(!c || c[3]<.9){
+        var bi=cs.backgroundImage;
+        if(bi && bi!=='none'){ var g=bi.match(/rgba?\([^)]*\)|color\(srgb[^)]*\)/); if(g) c=parse(g[0]); }
+      }
+      if(c && c[3]>=.9) return c;
+    }
+    return parse(getComputedStyle(document.body).backgroundColor)||[14,22,33,1];
+  }
+  function hex(c){ return '#'+[0,1,2].map(function(i){ var v=Math.max(0,Math.min(255,Math.round(c[i]))).toString(16); return v.length<2?'0'+v:v; }).join(''); }
+  function vis(id){ var e=document.getElementById(id); return (e && !e.classList.contains('hidden')) ? e : null; }
+
+  function target(){
+    var ov=document.getElementById('blkOverlay'); if(ov) return ov.querySelector('.sx-top')||ov;
+    var gx=document.querySelectorAll('.gx-ov'); if(gx.length) return gx[gx.length-1];
+    if(vis('profileView')||vis('otherUserProfileView')) return null;   /* منطق الغلاف الحالي */
+    var v;
+    if((v=vis('chatView'))) return v;
+    if((v=vis('editProfileView'))) return v.querySelector('.edit-profile-header')||v;
+    if((v=vis('searchView'))) return v.querySelector('.search-screen-top')||v;
+    var S=['settingsView','privacySettingsView','notificationSettingsView','chatSettingsView'];
+    for(var i=0;i<S.length;i++){ if((v=vis(S[i]))) return v; }
+    if(vis('mainPage') && (v=vis('homeView'))){ return vis('selBar')||vis('mainHeader')||v; }
+    if((v=vis('authPage'))||(v=vis('verifyPage'))) return v;
+    return app;
+  }
+
+  function sync(){
+    raf=0;
+    try{
+      var t=target(); if(!t) return;
+      var c=colorOf(t), h=hex(c); if(h===last) return; last=h;
+      if(meta) meta.setAttribute('content',h);
+      var lum=(0.299*c[0]+0.587*c[1]+0.114*c[2])/255;
+      var SB=window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
+      if(SB){
+        try{ var p=SB.setBackgroundColor({color:h}); if(p&&p.catch) p.catch(function(){}); }catch(_){}
+        try{ var q=SB.setStyle({style: lum>0.55?'LIGHT':'DARK'}); if(q&&q.catch) q.catch(function(){}); }catch(_){}
+      }
+    }catch(_){}
+  }
+  function schedule(){
+    if(!raf) raf=requestAnimationFrame(sync);
+    clearTimeout(tmr); tmr=setTimeout(function(){ last=''; sync(); },380);   /* بعد انتهاء انتقالات الألوان */
+  }
+
+  try{
+    var mo=new MutationObserver(schedule);
+    mo.observe(app,{subtree:true,attributes:true,attributeFilter:['class','data-app-theme']});
+    mo.observe(document.documentElement,{attributes:true,attributeFilter:['data-chat-theme','data-theme','class']});
+    mo.observe(document.body,{childList:true});
+  }catch(_){}
+  window.addEventListener('resize',schedule);
+  window.addEventListener('orientationchange',schedule);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',schedule,{once:true}); else schedule();
+  window.addEventListener('load',schedule,{once:true});
+})();
+</script>
