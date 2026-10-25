@@ -115,13 +115,8 @@ public class MainActivity extends BridgeActivity {
         controller.setAppearanceLightStatusBars(false);
         controller.setAppearanceLightNavigationBars(false);
 
-        // إتاحة واجهة الحفظ التي يستدعيها index.html داخل WebView.
-        decor.post(() -> {
-            try {
-                WebView webView = getBridge().getWebView();
-                webView.addJavascriptInterface(new BabylonAndroidBridge(), "BabylonAndroidNative");
-            } catch (Exception ignored) { }
-        });
+        // تسجيل واجهة الحفظ فوراً (قبل تحميل الصفحة) ليعمل التنزيل إلى المعرض.
+        registerNativeBridge();
 
         // طلب صلاحيات الوسائط/الإشعارات مرة واحدة عند أول تشغيل فقط.
         android.content.SharedPreferences prefs =
@@ -130,6 +125,31 @@ public class MainActivity extends BridgeActivity {
             prefs.edit().putBoolean("first_request_done", true).apply();
             decor.postDelayed(this::requestInitialPermissions, 700);
         }
+    }
+
+    private boolean nativeBridgeRegistered = false;
+
+    private void registerNativeBridge() {
+        if (nativeBridgeRegistered) return;
+        try {
+            WebView webView = getBridge().getWebView();
+            webView.addJavascriptInterface(new BabylonAndroidBridge(), "BabylonAndroidNative");
+            nativeBridgeRegistered = true;
+        } catch (Throwable t) {
+            android.util.Log.e("BabylonChat", "registerNativeBridge failed", t);
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        registerNativeBridge();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        registerNativeBridge();
     }
 
     private void requestInitialPermissions() {
@@ -239,25 +259,40 @@ public class MainActivity extends BridgeActivity {
 print("MainActivity patched:", ma)
 
 # 2.7) ربط حفظ الصور والفيديوهات من index.html بجسر أندرويد الأصلي
-html_file = root / "index.html"
-if html_file.exists():
-    hs = rd(html_file)
-    marker = "window.BabylonAndroid = {"
-    if marker in hs and "saveMedia: function (source, filename, mimeType)" not in hs:
-        hs = hs.replace(marker, marker + """
+# نعدّل كل النسخ الممكنة من index.html، بما فيها النسخة المنسوخة داخل assets (هي التي تُشحن فعلاً).
+SAVE_SIG = "saveMedia: function (source, filename, mimeType)"
+SAVE_JS = """
      saveMedia: function (source, filename, mimeType) {
        var nativeBridge = window.BabylonAndroidNative;
        if (!nativeBridge || typeof nativeBridge.saveMedia !== 'function') {
          throw new Error('Android media bridge unavailable');
        }
        nativeBridge.saveMedia(String(source || ''), String(filename || ''), String(mimeType || 'application/octet-stream'));
-     },""", 1)
-        wr(html_file, hs)
-        print("index.html patched: native gallery downloads enabled")
-    elif marker not in hs:
-        print("::warning::لم أجد BabylonAndroid في index.html — تحقق من اسم ملف الواجهة")
-else:
-    print("::warning::index.html مفقود — لم يتم ربط زر التنزيل بالجسر الأصلي")
+     },"""
+marker = "window.BabylonAndroid = {"
+candidates = [
+    root / "index.html",
+    root / "www" / "index.html",
+    root / "dist" / "index.html",
+    root / "public" / "index.html",
+    app / "src" / "main" / "assets" / "public" / "index.html",
+]
+ok_count = 0
+for html_file in candidates:
+    if not html_file.exists():
+        continue
+    hs = rd(html_file)
+    if SAVE_SIG in hs:
+        ok_count += 1
+        print("index.html already has saveMedia:", html_file)
+    elif marker in hs:
+        wr(html_file, hs.replace(marker, marker + SAVE_JS, 1))
+        ok_count += 1
+        print("index.html patched: native gallery downloads enabled:", html_file)
+    else:
+        print("::warning::لم أجد BabylonAndroid في", html_file)
+if ok_count == 0:
+    print("::error::لم يتم ربط زر التنزيل بالجسر الأصلي — لا توجد نسخة index.html صالحة")
 
 # 3) build.gradle: رقم النسخة + التوقيع
 bg = app / "build.gradle"
