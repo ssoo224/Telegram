@@ -182,6 +182,11 @@ public class MainActivity extends BridgeActivity {
         }
 
         @JavascriptInterface
+        public void cacheAvatar(String otherId, String src) {
+            BabylonNotifications.cacheAvatar(getApplicationContext(), otherId, src);
+        }
+
+        @JavascriptInterface
         public void ackAction(String id) {
             BabylonNotifications.ack(getApplicationContext(), id);
         }
@@ -350,12 +355,20 @@ public class BabylonNotifications {
                             final String avatarSrc, final String otherId, final String chatId) {
         exec.execute(() -> {
             try {
-                Bitmap av = circle(loadBitmap(avatarSrc));
+                Bitmap raw = loadBitmap(avatarSrc);
+                if (raw != null) saveAvatar(ctx, otherId, raw); else raw = readAvatar(ctx, otherId);
+                Bitmap av = circle(raw);
                 if (av == null) av = letterAvatar(title);
                 String key = (chatId != null && !chatId.isEmpty()) ? chatId : ("t:" + title);
                 synchronized (chats) {
                     Chat c = chats.get(key);
                     if (c == null) { c = new Chat(); chats.put(key, c); }
+                    // منع تكرار نفس الرسالة (إشعار الخادم + إشعار الصفحة)
+                    if (!c.msgs.isEmpty()) {
+                        Msg last = c.msgs.get(c.msgs.size() - 1);
+                        if (!last.mine && last.text.equals(body == null ? "" : body)
+                            && System.currentTimeMillis() - last.time < 10000) return;
+                    }
                     c.chatId = chatId == null ? "" : chatId;
                     c.otherId = otherId == null ? "" : otherId;
                     c.title = title == null ? "" : title;
@@ -438,6 +451,40 @@ public class BabylonNotifications {
         } catch (SecurityException e) {
             android.util.Log.w("BabylonNotif", "notify denied", e);
         }
+    }
+
+    // ---------- تخزين صور المرسلين (لإشعارات التطبيق المغلق) ----------
+
+    /** تحفظ صورة المستخدم محلياً ليستعملها الإشعار حتى لو كان التطبيق مغلقاً. */
+    public static void cacheAvatar(final Context ctx, final String otherId, final String src) {
+        exec.execute(() -> {
+            Bitmap b = loadBitmap(src);
+            if (b != null) saveAvatar(ctx, otherId, b);
+        });
+    }
+
+    private static java.io.File avatarFile(Context ctx, String otherId) {
+        if (otherId == null || otherId.isEmpty()) return null;
+        java.io.File dir = new java.io.File(ctx.getFilesDir(), "notif_avatars");
+        if (!dir.exists()) dir.mkdirs();
+        return new java.io.File(dir, otherId.replaceAll("[^A-Za-z0-9_-]", "_") + ".jpg");
+    }
+
+    private static void saveAvatar(Context ctx, String otherId, Bitmap b) {
+        try {
+            java.io.File f = avatarFile(ctx, otherId);
+            if (f == null) return;
+            try (java.io.FileOutputStream out = new java.io.FileOutputStream(f)) {
+                b.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            }
+        } catch (Throwable ignored) { }
+    }
+
+    private static Bitmap readAvatar(Context ctx, String otherId) {
+        try {
+            java.io.File f = avatarFile(ctx, otherId);
+            return (f != null && f.exists()) ? BitmapFactory.decodeFile(f.getAbsolutePath()) : null;
+        } catch (Throwable t) { return null; }
     }
 
     // ---------- ردود أزرار الإشعار ----------
@@ -653,6 +700,69 @@ if "BabylonNotificationReceiver" not in m2:
     wr(mf, m2)
     print("notification receiver registered in manifest")
 
+# 2.66) خدمة FCM الأصلية: تعرض إشعار الرسالة (صورة + أزرار) والتطبيق مغلق
+NOTIF_SERVICE = r"""package __PKG__;
+
+import com.capacitorjs.plugins.pushnotifications.MessagingService;
+import com.google.firebase.messaging.RemoteMessage;
+import java.util.Map;
+
+/** يعرض إشعار الرسالة (صورة + رد + مقروءة) حتى لو كان التطبيق مغلقاً. */
+public class BabylonMessagingService extends MessagingService {
+    /** التطبيق ظاهر أمام المستخدم: الصفحة تتولى التنبيه، فلا نعرض إشعاراً هنا. */
+    private boolean appInForeground() {
+        try {
+            android.app.ActivityManager am = (android.app.ActivityManager) getSystemService(ACTIVITY_SERVICE);
+            if (am == null) return false;
+            for (android.app.ActivityManager.RunningAppProcessInfo p : am.getRunningAppProcesses()) {
+                if (p.pid == android.os.Process.myPid()) {
+                    return p.importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+                }
+            }
+        } catch (Throwable ignored) { }
+        return false;
+    }
+
+    @Override
+    public void onMessageReceived(RemoteMessage message) {
+        try {
+            Map<String, String> d = message.getData();
+            if (d != null && "msg".equals(d.get("type")) && !appInForeground()) {
+                BabylonNotifications.show(getApplicationContext(), d.get("title"), d.get("body"),
+                    d.get("avatar"), d.get("senderId"), d.get("chatId"));
+            }
+        } catch (Throwable t) {
+            android.util.Log.e("BabylonNotif", "onMessageReceived failed", t);
+        }
+        super.onMessageReceived(message);
+    }
+}
+"""
+plug_dir = root / "node_modules" / "@capacitor" / "push-notifications"
+plug_svc = next(plug_dir.rglob("MessagingService.java"), None) if plug_dir.exists() else None
+if plug_svc and "public class MessagingService" in rd(plug_svc):
+    wr(ma.parent / "BabylonMessagingService.java", NOTIF_SERVICE.replace("__PKG__", NOTIF_PKG))
+    m3 = rd(mf)
+    if "BabylonMessagingService" not in m3:
+        if "xmlns:tools" not in m3:
+            m3 = re.sub(r"<manifest\b", '<manifest xmlns:tools="http://schemas.android.com/tools"', m3, count=1)
+        svc = ('        <service android:name="%s.BabylonMessagingService" android:exported="false">\n'
+               '            <intent-filter><action android:name="com.google.firebase.MESSAGING_EVENT" /></intent-filter>\n'
+               '        </service>\n'
+               '        <service android:name="com.capacitorjs.plugins.pushnotifications.MessagingService" tools:node="remove" />\n'
+               '    </application>') % NOTIF_PKG
+        m3 = m3.replace("</application>", svc)
+        wr(mf, m3)
+    bg0 = app / "build.gradle"
+    g0 = rd(bg0)
+    if "firebase-messaging" not in g0:
+        g0, nd = re.subn(r"(\ndependencies\s*\{)", r"\1\n    implementation 'com.google.firebase:firebase-messaging:23.4.1'", g0, count=1)
+        if nd == 1: wr(bg0, g0)
+        else: print("::warning::ما لقيت dependencies في build.gradle — أضف firebase-messaging يدوياً")
+    print("BabylonMessagingService registered (closed-app notifications)")
+else:
+    print("::warning::ما لقيت MessagingService الخاص بـ @capacitor/push-notifications — إشعارات التطبيق المغلق بدون صورة/أزرار")
+
 # 2.7) ربط حفظ الصور والفيديوهات من index.html بجسر أندرويد الأصلي
 # نعدّل كل النسخ الممكنة من index.html، بما فيها النسخة المنسوخة داخل assets (هي التي تُشحن فعلاً).
 SAVE_SIG = "saveMedia: function (source, filename, mimeType)"
@@ -692,6 +802,10 @@ if ok_count == 0:
 # 2.8) ربط إشعارات الرسائل (الصورة + أزرار رد/مقروءة) في index.html بالجسر الأصلي
 NOTIF_SIG = "showMessageNotificationEx: function"
 NOTIF_JS = """
+     cacheAvatar: function (otherId, src) {
+       var nb = window.BabylonAndroidNative;
+       if (nb && typeof nb.cacheAvatar === 'function') nb.cacheAvatar(String(otherId || ''), String(src || ''));
+     },
      showMessageNotificationEx: function (title, body, avatar, otherId, chatId) {
        var nb = window.BabylonAndroidNative;
        if (!nb || typeof nb.showMessageNotificationEx !== 'function') return;
@@ -712,6 +826,11 @@ FLUSH_SIG = "n.flushPending"
 FLUSH_JS = """
   setInterval(function () { try { var n = window.BabylonAndroidNative; if (n && typeof n.flushPending === 'function') n.flushPending(); } catch (e) {} }, 5000);"""
 FLUSH_ANCHOR = "setInterval(saveToken, 4000);"
+AV_SIG = "__nAvCached"
+AV_ANCHOR = """                // إشعار نظام واحد فقط للرسالة الواردة الجديدة"""
+AV_JS = """                // حفظ صورة المرسل محلياً في أندرويد لتظهر في إشعارات التطبيق المغلق.
+                try { var __nb = window.BabylonAndroid; if (__nb && typeof __nb.cacheAvatar === 'function') { window.__nAvCached = window.__nAvCached || {}; var __av = pvUrl(u) || ''; if (__av && window.__nAvCached[otherId] !== __av.length) { window.__nAvCached[otherId] = __av.length; notifAvatarThumb(__av, otherId, function (th) { try { if (th) __nb.cacheAvatar(otherId, th); } catch (e) {} }); } } } catch (e) {}
+"""
 for html_file in candidates:
     if not html_file.exists():
         continue
@@ -721,6 +840,8 @@ for html_file in candidates:
         hs = hs.replace(marker, marker + NOTIF_JS, 1); changed = True
     if FLUSH_SIG not in hs and FLUSH_ANCHOR in hs:
         hs = hs.replace(FLUSH_ANCHOR, FLUSH_ANCHOR + FLUSH_JS, 1); changed = True
+    if AV_SIG not in hs and AV_ANCHOR in hs:
+        hs = hs.replace(AV_ANCHOR, AV_JS + AV_ANCHOR, 1); changed = True
     if changed:
         wr(html_file, hs)
         print("index.html patched: message notifications (avatar + reply/read):", html_file)
