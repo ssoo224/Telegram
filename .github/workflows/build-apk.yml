@@ -105,7 +105,9 @@ jobs:
           if force:
               v["minVersion"] = max(b, int(v.get("minVersion") or 0))
           v.setdefault("minVersion", 1)
-          v["url"] = "/api/apk"
+          u = str(v.get("url") or "")
+          if not u or "github.com" in u:
+              v["url"] = "/api/apk"
           v.setdefault("notes", "يوجد تحديث جديد، حدّث التطبيق للمتابعة.")
           with open("version.json", "w", encoding="utf-8") as f:
               json.dump(v, f, ensure_ascii=False, indent=2)
