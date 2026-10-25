@@ -127,6 +127,8 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
+    // مرجع للصفحة الحيّة: تستخدمه أزرار الإشعار لإرسال (رد) و(مقروءة) إلى التطبيق.
+    static WebView liveWebView;
     private boolean nativeBridgeRegistered = false;
 
     private void registerNativeBridge() {
@@ -134,6 +136,7 @@ public class MainActivity extends BridgeActivity {
         try {
             WebView webView = getBridge().getWebView();
             webView.addJavascriptInterface(new BabylonAndroidBridge(), "BabylonAndroidNative");
+            liveWebView = webView;
             nativeBridgeRegistered = true;
         } catch (Throwable t) {
             android.util.Log.e("BabylonChat", "registerNativeBridge failed", t);
@@ -150,6 +153,7 @@ public class MainActivity extends BridgeActivity {
     public void onResume() {
         super.onResume();
         registerNativeBridge();
+        BabylonNotifications.dispatchPending(getApplicationContext(), liveWebView);
     }
 
     private void requestInitialPermissions() {
@@ -172,6 +176,21 @@ public class MainActivity extends BridgeActivity {
     }
 
     private class BabylonAndroidBridge {
+        @JavascriptInterface
+        public void showMessageNotificationEx(String title, String body, String avatar, String otherId, String chatId) {
+            BabylonNotifications.show(getApplicationContext(), title, body, avatar, otherId, chatId);
+        }
+
+        @JavascriptInterface
+        public void ackAction(String id) {
+            BabylonNotifications.ack(getApplicationContext(), id);
+        }
+
+        @JavascriptInterface
+        public void flushPending() {
+            runOnUiThread(() -> BabylonNotifications.dispatchPending(getApplicationContext(), liveWebView));
+        }
+
         @JavascriptInterface
         public void saveMedia(String source, String filename, String mimeType) {
             if (source == null || source.isEmpty()) {
@@ -258,6 +277,382 @@ public class MainActivity extends BridgeActivity {
 """ % pkg.group(1))
 print("MainActivity patched:", ma)
 
+# 2.65) إشعارات الرسائل: صورة المرسل + أزرار (رد) و(اعتبارها مقروءة)
+NOTIF_PKG = pkg.group(1)
+NOTIF_JAVA = r"""package __PKG__;
+
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
+import android.graphics.Typeface;
+import android.os.Build;
+import android.util.Base64;
+import android.webkit.WebView;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.app.Person;
+import androidx.core.app.RemoteInput;
+import androidx.core.graphics.drawable.IconCompat;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+/** إشعارات الرسائل: صورة المرسل + أزرار (رد) و(اعتبارها مقروءة). */
+public class BabylonNotifications {
+    static final String CHANNEL_ID = "messages";
+    static final String ACTION_REPLY = "__PKG__.NOTIF_REPLY";
+    static final String ACTION_READ = "__PKG__.NOTIF_READ";
+    static final String KEY_TEXT = "babylon_reply_text";
+    private static final String PREFS = "babylon_notif";
+    private static final String PENDING = "pending";
+    private static final int MAX_MSGS = 8;
+
+    private static final ExecutorService exec = Executors.newSingleThreadExecutor();
+    private static final Map<String, Chat> chats = new HashMap<>();
+    private static final Map<String, Long> dispatched = new HashMap<>();
+
+    private static class Msg {
+        final String text; final long time; final boolean mine;
+        Msg(String text, long time, boolean mine) { this.text = text; this.time = time; this.mine = mine; }
+    }
+
+    private static class Chat {
+        String chatId = "", otherId = "", title = "";
+        Bitmap avatar;
+        final List<Msg> msgs = new ArrayList<>();
+    }
+
+    // ---------- عرض الإشعار ----------
+
+    public static void show(final Context ctx, final String title, final String body,
+                            final String avatarSrc, final String otherId, final String chatId) {
+        exec.execute(() -> {
+            try {
+                Bitmap av = circle(loadBitmap(avatarSrc));
+                if (av == null) av = letterAvatar(title);
+                String key = (chatId != null && !chatId.isEmpty()) ? chatId : ("t:" + title);
+                synchronized (chats) {
+                    Chat c = chats.get(key);
+                    if (c == null) { c = new Chat(); chats.put(key, c); }
+                    c.chatId = chatId == null ? "" : chatId;
+                    c.otherId = otherId == null ? "" : otherId;
+                    c.title = title == null ? "" : title;
+                    c.avatar = av;
+                    c.msgs.add(new Msg(body == null ? "" : body, System.currentTimeMillis(), false));
+                    while (c.msgs.size() > MAX_MSGS) c.msgs.remove(0);
+                    post(ctx, key, c, false);
+                }
+            } catch (Throwable t) {
+                android.util.Log.e("BabylonNotif", "show failed", t);
+            }
+        });
+    }
+
+    private static void post(Context ctx, String key, Chat c, boolean quiet) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ctx.checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) return;
+        ensureChannel(ctx);
+        int id = key.hashCode();
+
+        Person me = new Person.Builder().setName("أنت").build();
+        Person.Builder pb = new Person.Builder().setName(c.title);
+        if (!c.otherId.isEmpty()) pb.setKey(c.otherId);
+        if (c.avatar != null) pb.setIcon(IconCompat.createWithBitmap(c.avatar));
+        Person other = pb.build();
+
+        NotificationCompat.MessagingStyle style = new NotificationCompat.MessagingStyle(me);
+        for (Msg m : c.msgs) style.addMessage(m.text, m.time, m.mine ? me : other);
+
+        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL_ID)
+            .setSmallIcon(smallIcon(ctx))
+            .setColor(Color.parseColor("#C9961F"))
+            .setStyle(style)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(quiet)
+            .setShowWhen(true)
+            .setWhen(System.currentTimeMillis());
+        if (c.avatar != null) b.setLargeIcon(c.avatar);
+
+        Intent open = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
+        if (open != null) {
+            open.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            b.setContentIntent(PendingIntent.getActivity(ctx, id, open,
+                PendingIntent.FLAG_UPDATE_CURRENT | immutableFlag()));
+        }
+
+        if (!c.chatId.isEmpty()) {
+            // زر (رد): إدخال نص مباشرة من الإشعار
+            Intent replyIntent = new Intent(ctx, BabylonNotificationReceiver.class)
+                .setAction(ACTION_REPLY)
+                .putExtra("chatId", c.chatId)
+                .putExtra("otherId", c.otherId);
+            PendingIntent replyPi = PendingIntent.getBroadcast(ctx, id + 1, replyIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | mutableFlag());
+            RemoteInput remote = new RemoteInput.Builder(KEY_TEXT).setLabel("رد").build();
+            b.addAction(new NotificationCompat.Action.Builder(0, "رد", replyPi)
+                .addRemoteInput(remote)
+                .setAllowGeneratedReplies(true)
+                .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY)
+                .setShowsUserInterface(false)
+                .build());
+
+            // زر (اعتبارها مقروءة)
+            Intent readIntent = new Intent(ctx, BabylonNotificationReceiver.class)
+                .setAction(ACTION_READ)
+                .putExtra("chatId", c.chatId)
+                .putExtra("otherId", c.otherId);
+            PendingIntent readPi = PendingIntent.getBroadcast(ctx, id + 2, readIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | immutableFlag());
+            b.addAction(new NotificationCompat.Action.Builder(0, "اعتبارها مقروءة", readPi)
+                .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ)
+                .setShowsUserInterface(false)
+                .build());
+        }
+
+        try {
+            NotificationManagerCompat.from(ctx).notify(id, b.build());
+        } catch (SecurityException e) {
+            android.util.Log.w("BabylonNotif", "notify denied", e);
+        }
+    }
+
+    // ---------- ردود أزرار الإشعار ----------
+
+    static void onReply(Context ctx, String chatId, String otherId, String text) {
+        synchronized (chats) {
+            Chat c = chats.get(chatId);
+            if (c != null) {
+                c.msgs.add(new Msg(text, System.currentTimeMillis(), true));
+                while (c.msgs.size() > MAX_MSGS) c.msgs.remove(0);
+                post(ctx, chatId, c, true); // يحدّث الإشعار ويوقف مؤشر التحميل
+            } else {
+                NotificationManagerCompat.from(ctx).cancel(chatId.hashCode());
+            }
+        }
+        enqueue(ctx, "reply", otherId, chatId, text);
+    }
+
+    static void onRead(Context ctx, String chatId, String otherId) {
+        synchronized (chats) { chats.remove(chatId); }
+        NotificationManagerCompat.from(ctx).cancel(chatId.hashCode());
+        enqueue(ctx, "read", otherId, chatId, "");
+    }
+
+    // ---------- طابور الأوامر المنتظرة للصفحة ----------
+
+    private static SharedPreferences prefs(Context ctx) {
+        return ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
+
+    private static synchronized JSONArray loadPending(Context ctx) {
+        try { return new JSONArray(prefs(ctx).getString(PENDING, "[]")); }
+        catch (Exception e) { return new JSONArray(); }
+    }
+
+    private static synchronized void enqueue(Context ctx, String action, String otherId, String chatId, String text) {
+        try {
+            JSONArray arr = loadPending(ctx);
+            JSONObject o = new JSONObject();
+            o.put("id", UUID.randomUUID().toString());
+            o.put("action", action);
+            o.put("otherId", otherId == null ? "" : otherId);
+            o.put("chatId", chatId == null ? "" : chatId);
+            o.put("text", text == null ? "" : text);
+            o.put("time", System.currentTimeMillis());
+            arr.put(o);
+            prefs(ctx).edit().putString(PENDING, arr.toString()).apply();
+        } catch (Exception e) {
+            android.util.Log.e("BabylonNotif", "enqueue failed", e);
+        }
+        dispatchPending(ctx, MainActivity.liveWebView);
+    }
+
+    /** تستدعيها الصفحة بعد استلام الأمر حتى يُحذف من الطابور. */
+    public static synchronized void ack(Context ctx, String id) {
+        try {
+            JSONArray arr = loadPending(ctx), out = new JSONArray();
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject o = arr.getJSONObject(i);
+                if (!id.equals(o.optString("id"))) out.put(o);
+            }
+            prefs(ctx).edit().putString(PENDING, out.toString()).apply();
+            dispatched.remove(id);
+        } catch (Exception ignored) { }
+    }
+
+    /** تُرسل الأوامر المنتظرة إلى الصفحة (يجب استدعاؤها من الخيط الرئيسي). */
+    public static synchronized void dispatchPending(Context ctx, WebView wv) {
+        if (wv == null) return;
+        try {
+            JSONArray arr = loadPending(ctx);
+            long now = System.currentTimeMillis();
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject o = arr.getJSONObject(i);
+                String id = o.optString("id");
+                if (now - o.optLong("time", now) > 24L * 3600 * 1000) { ack(ctx, id); continue; }
+                Long last = dispatched.get(id);
+                if (last != null && now - last < 10000) continue;
+                dispatched.put(id, now);
+                String js = "try{var B=window.BabylonAndroid;if(B&&B.runNativeNotifAction)B.runNativeNotifAction("
+                    + JSONObject.quote(id) + "," + JSONObject.quote(o.optString("action")) + ","
+                    + JSONObject.quote(o.optString("otherId")) + "," + JSONObject.quote(o.optString("chatId")) + ","
+                    + JSONObject.quote(o.optString("text")) + ");}catch(e){}";
+                wv.evaluateJavascript(js, null);
+            }
+        } catch (Exception e) {
+            android.util.Log.e("BabylonNotif", "dispatch failed", e);
+        }
+    }
+
+    // ---------- مساعدات ----------
+
+    private static int immutableFlag() { return Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0; }
+    private static int mutableFlag() { return Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0; }
+
+    private static int smallIcon(Context ctx) {
+        int r = ctx.getResources().getIdentifier("ic_stat_notify", "drawable", ctx.getPackageName());
+        return r != 0 ? r : ctx.getApplicationInfo().icon;
+    }
+
+    private static void ensureChannel(Context ctx) {
+        if (Build.VERSION.SDK_INT < 26) return;
+        NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null || nm.getNotificationChannel(CHANNEL_ID) != null) return;
+        NotificationChannel ch = new NotificationChannel(CHANNEL_ID, "الرسائل", NotificationManager.IMPORTANCE_HIGH);
+        ch.setDescription("إشعارات الرسائل الجديدة");
+        ch.enableVibration(true);
+        nm.createNotificationChannel(ch);
+    }
+
+    private static Bitmap loadBitmap(String src) {
+        if (src == null || src.isEmpty()) return null;
+        try {
+            byte[] bytes;
+            if (src.startsWith("data:")) {
+                int comma = src.indexOf(',');
+                if (comma < 0 || !src.substring(0, comma).contains(";base64")) return null;
+                bytes = Base64.decode(src.substring(comma + 1), Base64.DEFAULT);
+            } else if (src.startsWith("http")) {
+                HttpURLConnection con = (HttpURLConnection) new URL(src).openConnection();
+                con.setConnectTimeout(10000);
+                con.setReadTimeout(15000);
+                con.setInstanceFollowRedirects(true);
+                try (InputStream in = con.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                    byte[] buf = new byte[8192];
+                    int n;
+                    while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
+                    bytes = out.toByteArray();
+                } finally {
+                    con.disconnect();
+                }
+            } else {
+                return null;
+            }
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** قصّ الصورة على شكل دائرة. */
+    private static Bitmap circle(Bitmap src) {
+        if (src == null) return null;
+        int w = src.getWidth(), h = src.getHeight(), s = Math.min(w, h);
+        Bitmap out = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888);
+        Canvas cv = new Canvas(out);
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        cv.drawCircle(s / 2f, s / 2f, s / 2f, p);
+        p.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        Rect from = new Rect((w - s) / 2, (h - s) / 2, (w - s) / 2 + s, (h - s) / 2 + s);
+        cv.drawBitmap(src, from, new Rect(0, 0, s, s), p);
+        return out;
+    }
+
+    /** إذا ما عنده صورة: دائرة ذهبية فيها أول حرف من اسمه. */
+    private static Bitmap letterAvatar(String name) {
+        int size = 192;
+        Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas cv = new Canvas(out);
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setColor(Color.parseColor("#C9961F"));
+        cv.drawCircle(size / 2f, size / 2f, size / 2f, p);
+        String letter = "؟";
+        if (name != null && !name.trim().isEmpty()) {
+            String t = name.trim();
+            letter = new String(Character.toChars(t.codePointAt(0)));
+        }
+        p.setColor(Color.WHITE);
+        p.setTextAlign(Paint.Align.CENTER);
+        p.setTypeface(Typeface.DEFAULT_BOLD);
+        p.setTextSize(size * 0.5f);
+        float y = size / 2f - (p.descent() + p.ascent()) / 2f;
+        cv.drawText(letter, size / 2f, y, p);
+        return out;
+    }
+}
+"""
+NOTIF_RECEIVER = r"""package __PKG__;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import androidx.core.app.RemoteInput;
+
+/** يستقبل ضغطات زر (رد) و(اعتبارها مقروءة) من الإشعار. */
+public class BabylonNotificationReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context ctx, Intent intent) {
+        if (intent == null || intent.getAction() == null) return;
+        String chatId = intent.getStringExtra("chatId");
+        String otherId = intent.getStringExtra("otherId");
+        if (chatId == null || chatId.isEmpty()) return;
+
+        if (BabylonNotifications.ACTION_REPLY.equals(intent.getAction())) {
+            Bundle results = RemoteInput.getResultsFromIntent(intent);
+            CharSequence text = results == null ? null : results.getCharSequence(BabylonNotifications.KEY_TEXT);
+            if (text == null || text.toString().trim().isEmpty()) return;
+            BabylonNotifications.onReply(ctx.getApplicationContext(), chatId, otherId, text.toString().trim());
+        } else if (BabylonNotifications.ACTION_READ.equals(intent.getAction())) {
+            BabylonNotifications.onRead(ctx.getApplicationContext(), chatId, otherId);
+        }
+    }
+}
+"""
+wr(ma.parent / "BabylonNotifications.java", NOTIF_JAVA.replace("__PKG__", NOTIF_PKG))
+wr(ma.parent / "BabylonNotificationReceiver.java", NOTIF_RECEIVER.replace("__PKG__", NOTIF_PKG))
+print("notification helpers written:", ma.parent)
+m2 = rd(mf)
+if "BabylonNotificationReceiver" not in m2:
+    if "</application>" not in m2: die("ما لقيت application", mf)
+    m2 = m2.replace("</application>", '        <receiver android:name="%s.BabylonNotificationReceiver" android:exported="false" />\n    </application>' % NOTIF_PKG)
+    wr(mf, m2)
+    print("notification receiver registered in manifest")
+
 # 2.7) ربط حفظ الصور والفيديوهات من index.html بجسر أندرويد الأصلي
 # نعدّل كل النسخ الممكنة من index.html، بما فيها النسخة المنسوخة داخل assets (هي التي تُشحن فعلاً).
 SAVE_SIG = "saveMedia: function (source, filename, mimeType)"
@@ -293,6 +688,42 @@ for html_file in candidates:
         print("::warning::لم أجد BabylonAndroid في", html_file)
 if ok_count == 0:
     print("::error::لم يتم ربط زر التنزيل بالجسر الأصلي — لا توجد نسخة index.html صالحة")
+
+# 2.8) ربط إشعارات الرسائل (الصورة + أزرار رد/مقروءة) في index.html بالجسر الأصلي
+NOTIF_SIG = "showMessageNotificationEx: function"
+NOTIF_JS = """
+     showMessageNotificationEx: function (title, body, avatar, otherId, chatId) {
+       var nb = window.BabylonAndroidNative;
+       if (!nb || typeof nb.showMessageNotificationEx !== 'function') return;
+       nb.showMessageNotificationEx(String(title || ''), String(body || ''), String(avatar || ''), String(otherId || ''), String(chatId || ''));
+     },
+     showMessageNotification: function (title, body, avatar) {
+       window.BabylonAndroid.showMessageNotificationEx(title, body, avatar, '', '');
+     },
+     runNativeNotifAction: function (id, action, otherId, chatId, text) {
+       try {
+         if (typeof currentUser === 'undefined' || !currentUser || typeof window.onNativeNotificationAction !== 'function') return false;
+         try { window.BabylonAndroidNative.ackAction(String(id)); } catch (e0) {}
+         window.onNativeNotificationAction(action, otherId, chatId, text);
+         return true;
+       } catch (e) { return false; }
+     },"""
+FLUSH_SIG = "n.flushPending"
+FLUSH_JS = """
+  setInterval(function () { try { var n = window.BabylonAndroidNative; if (n && typeof n.flushPending === 'function') n.flushPending(); } catch (e) {} }, 5000);"""
+FLUSH_ANCHOR = "setInterval(saveToken, 4000);"
+for html_file in candidates:
+    if not html_file.exists():
+        continue
+    hs = rd(html_file)
+    changed = False
+    if NOTIF_SIG not in hs and marker in hs:
+        hs = hs.replace(marker, marker + NOTIF_JS, 1); changed = True
+    if FLUSH_SIG not in hs and FLUSH_ANCHOR in hs:
+        hs = hs.replace(FLUSH_ANCHOR, FLUSH_ANCHOR + FLUSH_JS, 1); changed = True
+    if changed:
+        wr(html_file, hs)
+        print("index.html patched: message notifications (avatar + reply/read):", html_file)
 
 # 3) build.gradle: رقم النسخة + التوقيع
 bg = app / "build.gradle"
