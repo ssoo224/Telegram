@@ -353,11 +353,29 @@ public class BabylonNotifications {
 
     public static void show(final Context ctx, final String title, final String body,
                             final String avatarSrc, final String otherId, final String chatId) {
-        exec.execute(() -> {
+        exec.execute(() -> render(ctx, title, body, avatarSrc, otherId, chatId, false));
+    }
+
+    /** للتطبيق المغلق: تُنفَّذ على خيط FCM نفسه، فيظهر الإشعار فوراً قبل أن تُجمَّد العملية. */
+    public static void showNow(Context ctx, String title, String body,
+                               String avatarSrc, String otherId, String chatId) {
+        render(ctx, title, body, avatarSrc, otherId, chatId, true);
+    }
+
+    private static void render(final Context ctx, final String title, final String body,
+                               final String avatarSrc, final String otherId, final String chatId,
+                               final boolean fast) {
+        {
             try {
-                Bitmap raw = loadBitmap(avatarSrc);
-                if (raw != null) saveAvatar(ctx, otherId, raw); else raw = readAvatar(ctx, otherId);
+                Bitmap raw;
+                if (fast) {
+                    raw = readAvatar(ctx, otherId); // من القرص فقط: بدون انتظار الشبكة
+                } else {
+                    raw = loadBitmap(avatarSrc);
+                    if (raw != null) saveAvatar(ctx, otherId, raw); else raw = readAvatar(ctx, otherId);
+                }
                 Bitmap av = circle(raw);
+                final boolean placeholder = (av == null);
                 if (av == null) av = letterAvatar(title);
                 String key = (chatId != null && !chatId.isEmpty()) ? chatId : ("t:" + title);
                 synchronized (chats) {
@@ -377,10 +395,21 @@ public class BabylonNotifications {
                     while (c.msgs.size() > MAX_MSGS) c.msgs.remove(0);
                     post(ctx, key, c, false);
                 }
+                // الإشعار ظهر الآن. إذا ما عندنا صورة محفوظة نحاول تحميلها بمهلة قصيرة ونحدّث الإشعار بصمت.
+                if (fast && placeholder && avatarSrc != null && (avatarSrc.startsWith("http") || avatarSrc.startsWith("data:"))) {
+                    Bitmap net = loadBitmap(avatarSrc, 3000, 4000);
+                    if (net != null) {
+                        saveAvatar(ctx, otherId, net);
+                        synchronized (chats) {
+                            Chat c2 = chats.get(key);
+                            if (c2 != null) { c2.avatar = circle(net); post(ctx, key, c2, true); }
+                        }
+                    }
+                }
             } catch (Throwable t) {
                 android.util.Log.e("BabylonNotif", "show failed", t);
             }
-        });
+        }
     }
 
     private static void post(Context ctx, String key, Chat c, boolean quiet) {
@@ -595,7 +624,9 @@ public class BabylonNotifications {
         nm.createNotificationChannel(ch);
     }
 
-    private static Bitmap loadBitmap(String src) {
+    private static Bitmap loadBitmap(String src) { return loadBitmap(src, 10000, 15000); }
+
+    private static Bitmap loadBitmap(String src, int connectMs, int readMs) {
         if (src == null || src.isEmpty()) return null;
         try {
             byte[] bytes;
@@ -605,8 +636,8 @@ public class BabylonNotifications {
                 bytes = Base64.decode(src.substring(comma + 1), Base64.DEFAULT);
             } else if (src.startsWith("http")) {
                 HttpURLConnection con = (HttpURLConnection) new URL(src).openConnection();
-                con.setConnectTimeout(10000);
-                con.setReadTimeout(15000);
+                con.setConnectTimeout(connectMs);
+                con.setReadTimeout(readMs);
                 con.setInstanceFollowRedirects(true);
                 try (InputStream in = con.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                     byte[] buf = new byte[8192];
@@ -728,7 +759,7 @@ public class BabylonMessagingService extends MessagingService {
         try {
             Map<String, String> d = message.getData();
             if (d != null && "msg".equals(d.get("type")) && !appInForeground()) {
-                BabylonNotifications.show(getApplicationContext(), d.get("title"), d.get("body"),
+                BabylonNotifications.showNow(getApplicationContext(), d.get("title"), d.get("body"),
                     d.get("avatar"), d.get("senderId"), d.get("chatId"));
             }
         } catch (Throwable t) {
