@@ -9659,23 +9659,51 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 <style id="bottom-bar-safe-area">
 /* ============================================================
    المساحة السفلية لأزرار الهاتف (Navigation Bar / Gesture Bar)
-   - الشريط السفلي يكبر بمقدار مساحة أزرار الهاتف فقط (مع بقاء مقاس الأيقونات كما هو)
+   - الشريط السفلي يكبر بمقدار مساحة أزرار الهاتف فقط
    - العناصر العائمة فوقه تتحرك معه فلا تتراكب عليه
-   - داخل المحادثات لا تغيير على المسافات الأصلية
+   - داخل المحادثة: مسافة سفلية أقل، وتصغر أكثر عند ظهور الكيبورد
    ============================================================ */
 :root{
   --sab-real:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px));
 }
+/* شريط التنقل: أنحف بدرجة واحدة (66px -> 60px) */
 .app-container #bottomNav.telegram-bottom-nav{
   box-sizing:border-box!important;
   height:auto!important;
-  min-height:calc(66px + var(--sab-real))!important;
-  padding:6px 10px calc(6px + var(--sab-real))!important;
+  min-height:calc(60px + var(--sab-real))!important;
+  padding:4px 10px calc(4px + var(--sab-real))!important;
 }
-/* زر إنشاء مجموعة: يبقى فوق الشريط بنفس المسافة الأصلية */
-#newGroupFab{bottom:calc(78px + var(--sab-real))!important}
-.app-container #homeView#homeView #chatList{padding-bottom:calc(88px + var(--sab-real))!important}
+.app-container[data-app-theme] #bottomNav .nav-item{gap:2px!important;padding:2px 2px!important;font-size:11px!important}
+.app-container[data-app-theme] #bottomNav .nav-item .nav-icon{height:26px!important;border-radius:13px!important}
+.app-container[data-app-theme] #bottomNav .nav-item svg{width:20px!important;height:20px!important}
+/* العناصر فوق الشريط */
+#newGroupFab{bottom:calc(72px + var(--sab-real))!important}
+.app-container #homeView#homeView #chatList{padding-bottom:calc(82px + var(--sab-real))!important}
+/* داخل المحادثة: مسافة سفلية أقل */
+#chatView .chat-input-container{padding:4px 10px max(6px,var(--sab-real))!important;gap:6px!important}
+#chatView #textInputBar.chat-input-bar{min-height:48px!important}
+html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 </style>
+<script id="bottom-bar-keyboard-js">
+(function(){
+  /* عند ظهور الكيبورد لا حاجة لمساحة أزرار الهاتف تحت خانة الكتابة */
+  var root=document.documentElement;
+  function set(on){ root.classList.toggle('kb-open',!!on); }
+  function check(){
+    try{
+      var vv=window.visualViewport;
+      var shrunk=vv && (window.innerHeight-vv.height)>120;
+      var ae=document.activeElement;
+      var typing=ae && (ae.id==='messageInput' || ae.tagName==='INPUT' || ae.tagName==='TEXTAREA');
+      set(shrunk || (typing && vv && (window.screen.height-vv.height)>200));
+    }catch(_){}
+  }
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',check);
+  window.addEventListener('resize',check);
+  document.addEventListener('focusout',function(){ setTimeout(check,120); });
+  document.addEventListener('focusin',function(){ setTimeout(check,250); });
+})();
+</script>
 </body>
 </html>
 
