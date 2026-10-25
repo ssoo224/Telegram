@@ -23,9 +23,10 @@ else:
 # 2) AndroidManifest
 mf = app / "src" / "main" / "AndroidManifest.xml"
 m = rd(mf)
-perms = ["POST_NOTIFICATIONS", "RECORD_AUDIO", "CAMERA", "MODIFY_AUDIO_SETTINGS", "VIBRATE"]
+perms = ["POST_NOTIFICATIONS", "RECORD_AUDIO", "CAMERA", "MODIFY_AUDIO_SETTINGS", "VIBRATE", "READ_MEDIA_IMAGES", "READ_MEDIA_VIDEO", "READ_EXTERNAL_STORAGE"]
 add = "".join('    <uses-permission android:name="android.permission.%s" />\n' % p
               for p in perms if 'android.permission.%s"' % p not in m)
+add += '    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />\n'
 add += '    <uses-feature android:name="android.hardware.camera" android:required="false" />\n'
 add += '    <uses-feature android:name="android.hardware.microphone" android:required="false" />\n'
 if "</manifest>" not in m: die("manifest غير متوقع", mf)
