@@ -770,7 +770,10 @@ public class BabylonMessagingService extends MessagingService {
     }
 }
 """
-plug_dir = root / "node_modules" / "@capacitor" / "push-notifications"
+plug_dir = next((d for d in [root / "node_modules" / "@capacitor" / "push-notifications",
+                             root.parent / "node_modules" / "@capacitor" / "push-notifications",
+                             root.parent.parent / "node_modules" / "@capacitor" / "push-notifications"] if d.exists()),
+                root / "node_modules" / "@capacitor" / "push-notifications")
 plug_svc = next(plug_dir.rglob("MessagingService.java"), None) if plug_dir.exists() else None
 if plug_svc and "public class MessagingService" in rd(plug_svc):
     wr(ma.parent / "BabylonMessagingService.java", NOTIF_SERVICE.replace("__PKG__", NOTIF_PKG))
