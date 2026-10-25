@@ -9155,6 +9155,22 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 
   /* الجسر القديم: نوفر فقط اللي نقدر نسويه فعلاً، والباقي يرجع للسلوك العادي */
   window.BabylonAndroid = {
+     showMessageNotificationEx: function (title, body, avatar, otherId, chatId) {
+       var nb = window.BabylonAndroidNative;
+       if (!nb || typeof nb.showMessageNotificationEx !== 'function') return;
+       nb.showMessageNotificationEx(String(title || ''), String(body || ''), String(avatar || ''), String(otherId || ''), String(chatId || ''));
+     },
+     showMessageNotification: function (title, body, avatar) {
+       window.BabylonAndroid.showMessageNotificationEx(title, body, avatar, '', '');
+     },
+     runNativeNotifAction: function (id, action, otherId, chatId, text) {
+       try {
+         if (typeof currentUser === 'undefined' || !currentUser || typeof window.onNativeNotificationAction !== 'function') return false;
+         try { window.BabylonAndroidNative.ackAction(String(id)); } catch (e0) {}
+         window.onNativeNotificationAction(action, otherId, chatId, text);
+         return true;
+       } catch (e) { return false; }
+     },
     saveMedia: function (source, filename, mimeType) {
       var nativeBridge = window.BabylonAndroidNative;
       if (!nativeBridge || typeof nativeBridge.saveMedia !== 'function') {
@@ -9182,6 +9198,7 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
     } catch (e) {}
   }
   setInterval(saveToken, 4000);
+  setInterval(function () { try { var n = window.BabylonAndroidNative; if (n && typeof n.flushPending === 'function') n.flushPending(); } catch (e) {} }, 5000);
 
   function afterLogin(fn) {
     var t = setInterval(function () { try { if (typeof currentUser !== 'undefined' && currentUser) { clearInterval(t); fn(); } } catch (e) {} }, 1500);
