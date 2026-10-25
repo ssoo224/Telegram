@@ -9711,6 +9711,30 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
   document.addEventListener('focusin',function(){ setTimeout(check,250); });
 })();
 </script>
+<style id="story-safe-bottom">
+/* مساحة سفلية آمنة في القصص حسب شريط التنقل/الحافة السفلية للهاتف */
+:root{--sv-sab:max(env(safe-area-inset-bottom,0px),var(--bb-nav-inset,0px))}
+#storyViewer .sv-foot{padding-bottom:calc(16px + var(--sv-sab))!important}
+</style>
+<script>
+(function(){
+  function apply(){
+    try{
+      var n=window.BabylonAndroidNative;
+      if(n&&typeof n.getNavInsetDp==='function'){
+        var v=parseFloat(n.getNavInsetDp())||0;
+        document.documentElement.style.setProperty('--bb-nav-inset',v+'px');
+      }
+    }catch(e){}
+  }
+  apply();
+  [300,1000,2500].forEach(function(t){setTimeout(apply,t)});
+  window.addEventListener('load',apply);
+  window.addEventListener('resize',apply);
+  window.addEventListener('orientationchange',function(){setTimeout(apply,200)});
+  document.addEventListener('visibilitychange',apply);
+})();
+</script>
 </body>
 </html>
 
@@ -11616,13 +11640,13 @@ function openMention(username){
 #storyViewer .sv-mini-heart{position:absolute;right:-4px;bottom:-3px;font-size:9px;line-height:10px;font-style:normal;color:#ff414d;text-shadow:0 0 2px rgba(0,0,0,.8);display:none;}
 #storyViewer .sv-action-views.has-reaction .sv-mini-heart{display:block;}
 #storyViewer .sv-action-label{display:none!important;}
-#storyViewer .sv-cap{left:14px;right:14px;bottom:calc(92px + env(safe-area-inset-bottom, 0px));width:auto;box-sizing:border-box;padding:8px 11px;text-align:right;border:1px solid rgba(255,255,255,.22);border-radius:12px;background:rgba(15,18,24,.42);backdrop-filter:blur(14px) saturate(130%);-webkit-backdrop-filter:blur(14px) saturate(130%);box-shadow:0 5px 18px rgba(0,0,0,.12);font-size:13px;line-height:1.45;}
+#storyViewer .sv-cap{left:14px;right:14px;bottom:calc(92px + var(--sv-sab,0px));width:auto;box-sizing:border-box;padding:8px 11px;text-align:right;border:1px solid rgba(255,255,255,.22);border-radius:12px;background:rgba(15,18,24,.42);backdrop-filter:blur(14px) saturate(130%);-webkit-backdrop-filter:blur(14px) saturate(130%);box-shadow:0 5px 18px rgba(0,0,0,.12);font-size:13px;line-height:1.45;}
 #storyViewer .sv-foot{z-index:6;}
 #storyViewer .sv-reacts{gap:8px;padding:7px 10px;border:1px solid rgba(255,255,255,.18);border-radius:18px;background:rgba(18,22,28,.42);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
 #storyViewer .sv-reacts span{display:inline-flex;align-items:center;justify-content:center;min-width:32px;min-height:32px;padding:2px;border-radius:10px;transition:transform .16s ease,background .16s ease;}
 #storyViewer .sv-reacts span:active{transform:scale(1.1)}
 #storyViewer .sv-reacts span.on{background:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
-@media(max-width:380px){#storyViewer .sv-own{gap:6px}#storyViewer .sv-action{width:35px;height:34px;min-width:35px;min-height:34px;max-width:35px}#storyViewer .sv-action-views{width:auto;min-width:50px;max-width:none}#storyViewer .sv-cap{left:10px;right:10px;bottom:calc(88px + env(safe-area-inset-bottom, 0px));padding:7px 9px;font-size:12px}}
+@media(max-width:380px){#storyViewer .sv-own{gap:6px}#storyViewer .sv-action{width:35px;height:34px;min-width:35px;min-height:34px;max-width:35px}#storyViewer .sv-action-views{width:auto;min-width:50px;max-width:none}#storyViewer .sv-cap{left:10px;right:10px;bottom:calc(88px + var(--sv-sab,0px));padding:7px 9px;font-size:12px}}
 </style>
 
 
@@ -11699,7 +11723,7 @@ button.story-type-btn,
  user-select:none!important;
 }
 /* وصف القصة أخفض قليلاً */
-#storyViewer .sv-cap{bottom:calc(68px + env(safe-area-inset-bottom,0px))!important}
+#storyViewer .sv-cap{bottom:calc(68px + var(--sv-sab,0px))!important}
 /* التفاعلات لا تظهر للمشاهد إلا أثناء التركيز على حقل الرد */
 #storyViewer .sv-reacts{display:none!important}
 #storyViewer .sv-foot.reply-focused .sv-reacts{display:flex!important}
@@ -11723,7 +11747,7 @@ body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-title{ba
 @media(max-width:380px){#storyViewer .sv-top{gap:4px}#storyViewer .sv-top .sv-action{width:31px;height:32px;min-width:31px;max-width:31px}#storyViewer .sv-top .sv-action-views{min-width:43px;max-width:none}}
 
 /* ملخص المشاهدات والتفاعلات أسفل وصف القصة */
-#storyViewer .sv-story-stats{display:flex;position:absolute;left:50%;right:auto;bottom:calc(82px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);align-items:center;justify-content:center;gap:3px;width:max-content;max-width:calc(100% - 24px);margin:0;padding:7px 13px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(8,12,18,.68);color:#fff;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;direction:rtl;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;z-index:8;box-sizing:border-box}
+#storyViewer .sv-story-stats{display:flex;position:absolute;left:50%;right:auto;bottom:calc(82px + var(--sv-sab,0px));transform:translateX(-50%);align-items:center;justify-content:center;gap:3px;width:max-content;max-width:calc(100% - 24px);margin:0;padding:7px 13px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(8,12,18,.68);color:#fff;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;direction:rtl;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;z-index:8;box-sizing:border-box}
 #storyViewer .sv-cap{z-index:5}
 #storyViewer .sv-own .sv-action-views{display:none!important}
 body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-card{max-height:min(76vh,620px);overflow:auto}
@@ -11769,7 +11793,7 @@ body.light #viewersModal .viewer-item {
   background:#fff!important;border-bottom:1px solid #e7edf4!important;
 }
 /* العداد يأتي كسطر مستقل أسفل نص وصف القصة */
-#storyViewer .sv-story-stats{display:flex!important;position:absolute!important;left:50%!important;right:auto!important;bottom:calc(82px + env(safe-area-inset-bottom,0px))!important;transform:translateX(-50%)!important;margin:0!important;z-index:8!important;flex-shrink:0;color:#fff!important;background:rgba(8,12,18,.72)!important;border:1px solid rgba(255,255,255,.3)!important}
+#storyViewer .sv-story-stats{display:flex!important;position:absolute!important;left:50%!important;right:auto!important;bottom:calc(82px + var(--sv-sab,0px))!important;transform:translateX(-50%)!important;margin:0!important;z-index:8!important;flex-shrink:0;color:#fff!important;background:rgba(8,12,18,.72)!important;border:1px solid rgba(255,255,255,.3)!important}
 #storyViewer .sv-story-stats span{color:#fff!important;font-weight:700!important;display:inline-flex;align-items:center;gap:4px}
 #storyViewer .sv-heart-svg{width:14px;height:14px;flex:0 0 14px;fill:#ff414d;stroke:#ff414d;stroke-width:1.2;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(0,0,0,.45))}
 #storyViewer .sv-cap{overflow:visible!important}
@@ -11779,8 +11803,8 @@ body.light #viewersModal .viewer-item {
 
 /* زر المشاهدات منفصل تماماً عن حقل الوصف، والوصف يختفي إذا كان فارغاً */
 #storyViewer .sv-cap.hidden{display:none!important}
-#storyViewer .sv-story-stats{bottom:calc(18px + env(safe-area-inset-bottom,0px))!important}
-#storyViewer .sv-cap{bottom:calc(72px + env(safe-area-inset-bottom,0px))!important}
+#storyViewer .sv-story-stats{bottom:calc(18px + var(--sv-sab,0px))!important}
+#storyViewer .sv-cap{bottom:calc(72px + var(--sv-sab,0px))!important}
 
 /* الأيقونات بجانب زر الإغلاق وليس بجانب الاسم والصورة */
 #storyViewer .sv-top .story-user-info{margin-inline-end:auto!important}
