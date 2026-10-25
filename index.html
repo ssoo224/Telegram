@@ -9655,6 +9655,26 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 #blockBanner .bb-blk-info{align-items:center!important;text-align:center!important}
 #blockBanner .bb-blk-ic{box-shadow:none!important}
 </style>
+
+<style id="bottom-bar-safe-area">
+/* ============================================================
+   المساحة السفلية لشريط أزرار الهاتف (Navigation Bar / Gesture Bar)
+   - الارتفاع لم يعد ثابتاً: يكبر بمقدار مساحة أزرار الهاتف
+   - الخلفية تمتد خلف الأزرار بنفس لون الشريط
+   ============================================================ */
+:root{
+  --sab-real:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px));
+}
+.app-container #bottomNav.telegram-bottom-nav{
+  box-sizing:border-box!important;
+  height:auto!important;
+  min-height:calc(66px + var(--sab-real))!important;
+  padding:6px 10px calc(10px + var(--sab-real))!important;
+}
+/* بقية العناصر السفلية: نفس المبدأ */
+#chatView .chat-input-container{padding-bottom:calc(10px + var(--sab-real))!important}
+#chatView #multiSelectBar.multi-select-bar{margin-bottom:calc(10px + var(--sab-real))!important}
+</style>
 </body>
 </html>
 
