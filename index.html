@@ -12269,6 +12269,9 @@ body.light #viewersModal .viewer-item {
 .sp-header{padding-top:calc(14px + var(--sat))}
 .gx-top{padding-top:calc(10px + var(--sat))}
 .blk-ov .sx-top{padding-top:calc(14px + var(--sat))!important}
+/* الشريط السفلي (الأيقونات): شفاف ويأخذ لون القسم الظاهر */
+.app-container #mainPage #bottomNav.telegram-bottom-nav{background:var(--nav-bg,transparent)!important;border-color:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+
 /* القصص: شريط بلون خلفية العارض (أسود) فوق الوسائط */
 #storyViewer .sv-stage{padding-top:var(--sat)}
 #storyViewer .sv-bars{top:var(--sat);padding-top:10px}
@@ -12343,8 +12346,16 @@ body.light #viewersModal .viewer-item {
     return app;
   }
 
+  function navSync(){
+    var nav=document.getElementById('bottomNav'); if(!nav) return;
+    var ids=['editProfileView','searchView','settingsView','privacySettingsView','notificationSettingsView','chatSettingsView','profileView','otherUserProfileView','homeView'], v=null;
+    for(var i=0;i<ids.length && !v;i++) v=vis(ids[i]);
+    if(!v) return;
+    nav.style.setProperty('--nav-bg',hex(colorOf(v)));
+  }
   function sync(){
     raf=0;
+    try{ navSync(); }catch(_){}
     try{
       var t=target(); if(!t) return;
       var c=(t==='black')?[0,0,0,1]:colorOf(t), h=hex(c); if(h===last) return; last=h;
