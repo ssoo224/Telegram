@@ -129,8 +129,6 @@ public class MainActivity extends BridgeActivity {
 
     // مرجع للصفحة الحيّة: تستخدمه أزرار الإشعار لإرسال (رد) و(مقروءة) إلى التطبيق.
     static WebView liveWebView;
-    /** true فقط والتطبيق ظاهر أمام المستخدم (بين onResume و onPause). */
-    static volatile boolean resumed = false;
     private boolean nativeBridgeRegistered = false;
 
     private void registerNativeBridge() {
@@ -152,15 +150,8 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    public void onPause() {
-        resumed = false;
-        super.onPause();
-    }
-
-    @Override
     public void onResume() {
         super.onResume();
-        resumed = true;
         registerNativeBridge();
         BabylonNotifications.dispatchPending(getApplicationContext(), liveWebView);
     }
@@ -342,6 +333,7 @@ public class BabylonNotifications {
     private static final String PREFS = "babylon_notif";
     private static final String PENDING = "pending";
     private static final int MAX_MSGS = 8;
+    static final String ME_ID = "__me__";
 
     private static final ExecutorService exec = Executors.newSingleThreadExecutor();
     private static final Map<String, Chat> chats = new HashMap<>();
@@ -427,7 +419,13 @@ public class BabylonNotifications {
         ensureChannel(ctx);
         int id = key.hashCode();
 
-        Person me = new Person.Builder().setName("أنت").build();
+        // صورتي أنا (تُحفظ تحت المعرّف __me__) حتى تظهر مع ردّي بدل صورة الطرف الآخر.
+        Person.Builder mb = new Person.Builder().setName("أنت").setKey("__me__");
+        Bitmap myRaw = readAvatar(ctx, ME_ID);
+        Bitmap myAv = circle(myRaw);
+        if (myAv == null) myAv = letterAvatar("أنا");
+        mb.setIcon(IconCompat.createWithBitmap(myAv));
+        Person me = mb.build();
         Person.Builder pb = new Person.Builder().setName(c.title);
         if (!c.otherId.isEmpty()) pb.setKey(c.otherId);
         if (c.avatar != null) pb.setIcon(IconCompat.createWithBitmap(c.avatar));
@@ -498,6 +496,22 @@ public class BabylonNotifications {
         exec.execute(() -> {
             Bitmap b = loadBitmap(src);
             if (b != null) saveAvatar(ctx, otherId, b);
+        });
+    }
+
+    /** تحفظ صورتي أنا (المستلم) لتُستعمل مع الردود من الإشعار. تُحمَّل فقط إذا تغيّر الرابط. */
+    public static void cacheMyAvatar(final Context ctx, final String src) {
+        if (src == null || !src.startsWith("http")) return;
+        exec.execute(() -> {
+            try {
+                java.io.File f = avatarFile(ctx, ME_ID);
+                if (f != null && f.exists() && src.equals(prefs(ctx).getString("me_src", ""))) return;
+                Bitmap b = loadBitmap(src);
+                if (b != null) {
+                    saveAvatar(ctx, ME_ID, b);
+                    prefs(ctx).edit().putString("me_src", src).apply();
+                }
+            } catch (Throwable ignored) { }
         });
     }
 
@@ -751,15 +765,24 @@ import java.util.Map;
 public class BabylonMessagingService extends MessagingService {
     /** التطبيق ظاهر أمام المستخدم: الصفحة تتولى التنبيه، فلا نعرض إشعاراً هنا. */
     private boolean appInForeground() {
-        return MainActivity.resumed;
+        try {
+            android.app.ActivityManager am = (android.app.ActivityManager) getSystemService(ACTIVITY_SERVICE);
+            if (am == null) return false;
+            for (android.app.ActivityManager.RunningAppProcessInfo p : am.getRunningAppProcesses()) {
+                if (p.pid == android.os.Process.myPid()) {
+                    return p.importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+                }
+            }
+        } catch (Throwable ignored) { }
+        return false;
     }
 
     @Override
     public void onMessageReceived(RemoteMessage message) {
         try {
             Map<String, String> d = message.getData();
-            android.util.Log.d("BabylonNotif", "FCM received, resumed=" + MainActivity.resumed + ", data=" + d);
-            if (d != null && "msg".equals(d.get("type"))) { // يُعرض الإشعار دائماً (مغلق/خلفية/مفتوح)
+            if (d != null && "msg".equals(d.get("type")) && !appInForeground()) {
+                BabylonNotifications.cacheMyAvatar(getApplicationContext(), d.get("meAvatar"));
                 BabylonNotifications.showNow(getApplicationContext(), d.get("title"), d.get("body"),
                     d.get("avatar"), d.get("senderId"), d.get("chatId"));
             }
@@ -859,15 +882,21 @@ FLUSH_JS = """
   setInterval(function () { try { var n = window.BabylonAndroidNative; if (n && typeof n.flushPending === 'function') n.flushPending(); } catch (e) {} }, 5000);"""
 FLUSH_ANCHOR = "setInterval(saveToken, 4000);"
 AV_SIG = "__nAvCached"
+ME_SIG = "__nMeCached"
 AV_ANCHOR = """                // إشعار نظام واحد فقط للرسالة الواردة الجديدة"""
 AV_JS = """                // حفظ صورة المرسل محلياً في أندرويد لتظهر في إشعارات التطبيق المغلق.
                 try { var __nb = window.BabylonAndroid; if (__nb && typeof __nb.cacheAvatar === 'function') { window.__nAvCached = window.__nAvCached || {}; var __av = pvUrl(u) || ''; if (__av && window.__nAvCached[otherId] !== __av.length) { window.__nAvCached[otherId] = __av.length; notifAvatarThumb(__av, otherId, function (th) { try { if (th) __nb.cacheAvatar(otherId, th); } catch (e) {} }); } } } catch (e) {}
+"""
+ME_JS = """                // حفظ صورتي أنا محلياً لتظهر مع ردّي من الإشعار.
+                try { var __nbm = window.BabylonAndroid; if (__nbm && typeof __nbm.cacheAvatar === 'function' && typeof currentUser !== 'undefined' && currentUser) { var __me = (typeof pvUrl === 'function' ? pvUrl(currentUser) : '') || ''; window.__nMeCached = window.__nMeCached || 0; if (__me && window.__nMeCached !== __me.length) { window.__nMeCached = __me.length; notifAvatarThumb(__me, '__me__', function (th) { try { if (th) __nbm.cacheAvatar('__me__', th); } catch (e) {} }); } } } catch (e) {}
 """
 for html_file in candidates:
     if not html_file.exists():
         continue
     hs = rd(html_file)
     changed = False
+    if ME_SIG not in hs and AV_ANCHOR in hs:
+        hs = hs.replace(AV_ANCHOR, ME_JS + AV_ANCHOR, 1); changed = True
     if NOTIF_SIG not in hs and marker in hs:
         hs = hs.replace(marker, marker + NOTIF_JS, 1); changed = True
     if FLUSH_SIG not in hs and FLUSH_ANCHOR in hs:
