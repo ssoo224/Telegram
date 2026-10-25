@@ -129,6 +129,8 @@ public class MainActivity extends BridgeActivity {
 
     // مرجع للصفحة الحيّة: تستخدمه أزرار الإشعار لإرسال (رد) و(مقروءة) إلى التطبيق.
     static WebView liveWebView;
+    /** true فقط والتطبيق ظاهر أمام المستخدم (بين onResume و onPause). */
+    static volatile boolean resumed = false;
     private boolean nativeBridgeRegistered = false;
 
     private void registerNativeBridge() {
@@ -150,8 +152,15 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
+    public void onPause() {
+        resumed = false;
+        super.onPause();
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
+        resumed = true;
         registerNativeBridge();
         BabylonNotifications.dispatchPending(getApplicationContext(), liveWebView);
     }
@@ -742,23 +751,15 @@ import java.util.Map;
 public class BabylonMessagingService extends MessagingService {
     /** التطبيق ظاهر أمام المستخدم: الصفحة تتولى التنبيه، فلا نعرض إشعاراً هنا. */
     private boolean appInForeground() {
-        try {
-            android.app.ActivityManager am = (android.app.ActivityManager) getSystemService(ACTIVITY_SERVICE);
-            if (am == null) return false;
-            for (android.app.ActivityManager.RunningAppProcessInfo p : am.getRunningAppProcesses()) {
-                if (p.pid == android.os.Process.myPid()) {
-                    return p.importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
-                }
-            }
-        } catch (Throwable ignored) { }
-        return false;
+        return MainActivity.resumed;
     }
 
     @Override
     public void onMessageReceived(RemoteMessage message) {
         try {
             Map<String, String> d = message.getData();
-            if (d != null && "msg".equals(d.get("type")) && !appInForeground()) {
+            android.util.Log.d("BabylonNotif", "FCM received, resumed=" + MainActivity.resumed + ", data=" + d);
+            if (d != null && "msg".equals(d.get("type"))) { // يُعرض الإشعار دائماً (مغلق/خلفية/مفتوح)
                 BabylonNotifications.showNow(getApplicationContext(), d.get("title"), d.get("body"),
                     d.get("avatar"), d.get("senderId"), d.get("chatId"));
             }
