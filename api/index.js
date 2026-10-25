@@ -52,10 +52,14 @@ module.exports = async (req, res) => {
     const av = String(mine.avatarUrl || '');
     const avatar = (!mine.hideAvatar && /^https?:\/\//.test(av) && av.length < 1000) ? av : '';
 
+    // صورة المستلم نفسه (أنا): تُستعمل في الإشعار عند الرد حتى يظهر ردّي بصورتي لا بصورة المرسل.
+    const mav = String(o.avatarUrl || '');
+    const meAvatar = (/^https?:\/\//.test(mav) && mav.length < 1000) ? mav : '';
+
     const r = await admin.messaging().sendEachForMulticast({
       tokens,
       // لا يوجد حقل notification في المستوى الأعلى عمداً: أندرويد يستقبل بيانات فقط ويبني الإشعار بنفسه.
-      data: { type: 'msg', chatId, senderId: decoded.uid, title, body, avatar },
+      data: { type: 'msg', chatId, senderId: decoded.uid, title, body, avatar, meAvatar },
       android: { priority: 'high', ttl: 86400 * 1000 },
       webpush: {
         headers: { Urgency: 'high' },
