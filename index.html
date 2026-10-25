@@ -9658,9 +9658,10 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 
 <style id="bottom-bar-safe-area">
 /* ============================================================
-   المساحة السفلية لشريط أزرار الهاتف (Navigation Bar / Gesture Bar)
-   - الارتفاع لم يعد ثابتاً: يكبر بمقدار مساحة أزرار الهاتف
-   - الخلفية تمتد خلف الأزرار بنفس لون الشريط
+   المساحة السفلية لأزرار الهاتف (Navigation Bar / Gesture Bar)
+   - الشريط السفلي يكبر بمقدار مساحة أزرار الهاتف فقط (مع بقاء مقاس الأيقونات كما هو)
+   - العناصر العائمة فوقه تتحرك معه فلا تتراكب عليه
+   - داخل المحادثات لا تغيير على المسافات الأصلية
    ============================================================ */
 :root{
   --sab-real:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px));
@@ -9669,11 +9670,11 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
   box-sizing:border-box!important;
   height:auto!important;
   min-height:calc(66px + var(--sab-real))!important;
-  padding:6px 10px calc(10px + var(--sab-real))!important;
+  padding:6px 10px calc(6px + var(--sab-real))!important;
 }
-/* بقية العناصر السفلية: نفس المبدأ */
-#chatView .chat-input-container{padding-bottom:calc(10px + var(--sab-real))!important}
-#chatView #multiSelectBar.multi-select-bar{margin-bottom:calc(10px + var(--sab-real))!important}
+/* زر إنشاء مجموعة: يبقى فوق الشريط بنفس المسافة الأصلية */
+#newGroupFab{bottom:calc(78px + var(--sab-real))!important}
+.app-container #homeView#homeView #chatList{padding-bottom:calc(88px + var(--sab-real))!important}
 </style>
 </body>
 </html>
