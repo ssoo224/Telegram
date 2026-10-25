@@ -2,6 +2,11 @@ name: Build APK
 
 on:
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'إجبار كل المستخدمين على التحديث'
+        type: boolean
+        default: true
   push:
     paths:
       - 'app/**'
@@ -82,3 +87,38 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: Babylon Chat 1.0.${{ github.run_number }}
           files: babylon-chat.apk
+
+      - name: Update version.json (forced update)
+        env:
+          BUILD: ${{ github.run_number }}
+          FORCE: ${{ github.event_name != 'workflow_dispatch' || inputs.force }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          b = int(os.environ["BUILD"])
+          force = os.environ.get("FORCE", "true") == "true"
+          try:
+              v = json.load(open("version.json", encoding="utf-8"))
+          except Exception:
+              v = {}
+          v["latest"] = max(b, int(v.get("latest") or 0))
+          if force:
+              v["minVersion"] = max(b, int(v.get("minVersion") or 0))
+          v.setdefault("minVersion", 1)
+          v["url"] = "/api/apk"
+          v.setdefault("notes", "يوجد تحديث جديد، حدّث التطبيق للمتابعة.")
+          with open("version.json", "w", encoding="utf-8") as f:
+              json.dump(v, f, ensure_ascii=False, indent=2)
+              f.write("\n")
+          PY
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add version.json
+          if git diff --cached --quiet; then echo "version.json unchanged"; exit 0; fi
+          git commit -m "Release v1.0.${BUILD}: version.json"
+          for i in 1 2 3; do
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then exit 0; fi
+            sleep 3
+          done
+          echo "::error::ما قدرت أحدّث version.json"
+          exit 1
