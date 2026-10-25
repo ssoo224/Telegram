@@ -74,7 +74,7 @@
 </style>
 
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Babylon Chat - تليجرام البابلي</title>
 
 <!-- ربط ملف الـ Manifest الخارجي -->
@@ -9155,6 +9155,29 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 
   /* الجسر القديم: نوفر فقط اللي نقدر نسويه فعلاً، والباقي يرجع للسلوك العادي */
   window.BabylonAndroid = {
+     showMessageNotificationEx: function (title, body, avatar, otherId, chatId) {
+       var nb = window.BabylonAndroidNative;
+       if (!nb || typeof nb.showMessageNotificationEx !== 'function') return;
+       nb.showMessageNotificationEx(String(title || ''), String(body || ''), String(avatar || ''), String(otherId || ''), String(chatId || ''));
+     },
+     showMessageNotification: function (title, body, avatar) {
+       window.BabylonAndroid.showMessageNotificationEx(title, body, avatar, '', '');
+     },
+     runNativeNotifAction: function (id, action, otherId, chatId, text) {
+       try {
+         if (typeof currentUser === 'undefined' || !currentUser || typeof window.onNativeNotificationAction !== 'function') return false;
+         try { window.BabylonAndroidNative.ackAction(String(id)); } catch (e0) {}
+         window.onNativeNotificationAction(action, otherId, chatId, text);
+         return true;
+       } catch (e) { return false; }
+     },
+    saveMedia: function (source, filename, mimeType) {
+      var nativeBridge = window.BabylonAndroidNative;
+      if (!nativeBridge || typeof nativeBridge.saveMedia !== 'function') {
+        throw new Error('Android media bridge unavailable');
+      }
+      nativeBridge.saveMedia(String(source || ''), String(filename || ''), String(mimeType || 'application/octet-stream'));
+    },
     setTheme: function (t) { try { if (SB) { SB.setStyle({ style: t === 'dark' ? 'DARK' : 'LIGHT' }); SB.setBackgroundColor({ color: t === 'dark' ? '#0b1220' : '#ffffff' }); } } catch (e) {} },
     requestNativeNotificationPermission: function () {
       if (!PN) return;
@@ -9175,6 +9198,7 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
     } catch (e) {}
   }
   setInterval(saveToken, 4000);
+  setInterval(function () { try { var n = window.BabylonAndroidNative; if (n && typeof n.flushPending === 'function') n.flushPending(); } catch (e) {} }, 5000);
 
   function afterLogin(fn) {
     var t = setInterval(function () { try { if (typeof currentUser !== 'undefined' && currentUser) { clearInterval(t); fn(); } } catch (e) {} }, 1500);
@@ -9655,6 +9679,79 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
 #blockBanner .bb-blk-info{align-items:center!important;text-align:center!important}
 #blockBanner .bb-blk-ic{box-shadow:none!important}
 </style>
+
+<style id="bottom-bar-safe-area">
+/* ============================================================
+   المساحة السفلية لأزرار الهاتف (Navigation Bar / Gesture Bar)
+   - الشريط السفلي يكبر بمقدار مساحة أزرار الهاتف فقط
+   - العناصر العائمة فوقه تتحرك معه فلا تتراكب عليه
+   - داخل المحادثة: مسافة سفلية أقل، وتصغر أكثر عند ظهور الكيبورد
+   ============================================================ */
+:root{
+  --sab-real:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px));
+}
+/* شريط التنقل: أنحف بدرجة واحدة (66px -> 60px) */
+.app-container #bottomNav.telegram-bottom-nav{
+  box-sizing:border-box!important;
+  height:auto!important;
+  min-height:calc(60px + var(--sab-real))!important;
+  padding:4px 10px calc(4px + var(--sab-real))!important;
+}
+.app-container[data-app-theme] #bottomNav .nav-item{gap:2px!important;padding:2px 2px!important;font-size:11px!important}
+.app-container[data-app-theme] #bottomNav .nav-item .nav-icon{height:26px!important;border-radius:13px!important}
+.app-container[data-app-theme] #bottomNav .nav-item svg{width:20px!important;height:20px!important}
+/* العناصر فوق الشريط */
+#newGroupFab{bottom:calc(72px + var(--sab-real))!important}
+.app-container #homeView#homeView #chatList{padding-bottom:calc(82px + var(--sab-real))!important}
+/* داخل المحادثة: مسافة سفلية أقل */
+#chatView .chat-input-container{padding:4px 10px max(6px,var(--sab-real))!important;gap:6px!important}
+#chatView #textInputBar.chat-input-bar{min-height:48px!important}
+html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
+</style>
+<script id="bottom-bar-keyboard-js">
+(function(){
+  /* عند ظهور الكيبورد لا حاجة لمساحة أزرار الهاتف تحت خانة الكتابة */
+  var root=document.documentElement;
+  function set(on){ root.classList.toggle('kb-open',!!on); }
+  function check(){
+    try{
+      var vv=window.visualViewport;
+      var shrunk=vv && (window.innerHeight-vv.height)>120;
+      var ae=document.activeElement;
+      var typing=ae && (ae.id==='messageInput' || ae.tagName==='INPUT' || ae.tagName==='TEXTAREA');
+      set(shrunk || (typing && vv && (window.screen.height-vv.height)>200));
+    }catch(_){}
+  }
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',check);
+  window.addEventListener('resize',check);
+  document.addEventListener('focusout',function(){ setTimeout(check,120); });
+  document.addEventListener('focusin',function(){ setTimeout(check,250); });
+})();
+</script>
+<style id="story-safe-bottom">
+/* مساحة سفلية آمنة في القصص حسب شريط التنقل/الحافة السفلية للهاتف */
+:root{--sv-sab:max(env(safe-area-inset-bottom,0px),var(--bb-nav-inset,0px))}
+#storyViewer .sv-foot{padding-bottom:calc(16px + var(--sv-sab))!important}
+</style>
+<script>
+(function(){
+  function apply(){
+    try{
+      var n=window.BabylonAndroidNative;
+      if(n&&typeof n.getNavInsetDp==='function'){
+        var v=parseFloat(n.getNavInsetDp())||0;
+        document.documentElement.style.setProperty('--bb-nav-inset',v+'px');
+      }
+    }catch(e){}
+  }
+  apply();
+  [300,1000,2500].forEach(function(t){setTimeout(apply,t)});
+  window.addEventListener('load',apply);
+  window.addEventListener('resize',apply);
+  window.addEventListener('orientationchange',function(){setTimeout(apply,200)});
+  document.addEventListener('visibilitychange',apply);
+})();
+</script>
 </body>
 </html>
 
@@ -11560,13 +11657,13 @@ function openMention(username){
 #storyViewer .sv-mini-heart{position:absolute;right:-4px;bottom:-3px;font-size:9px;line-height:10px;font-style:normal;color:#ff414d;text-shadow:0 0 2px rgba(0,0,0,.8);display:none;}
 #storyViewer .sv-action-views.has-reaction .sv-mini-heart{display:block;}
 #storyViewer .sv-action-label{display:none!important;}
-#storyViewer .sv-cap{left:14px;right:14px;bottom:calc(92px + env(safe-area-inset-bottom, 0px));width:auto;box-sizing:border-box;padding:8px 11px;text-align:right;border:1px solid rgba(255,255,255,.22);border-radius:12px;background:rgba(15,18,24,.42);backdrop-filter:blur(14px) saturate(130%);-webkit-backdrop-filter:blur(14px) saturate(130%);box-shadow:0 5px 18px rgba(0,0,0,.12);font-size:13px;line-height:1.45;}
+#storyViewer .sv-cap{left:14px;right:14px;bottom:calc(92px + var(--sv-sab,0px));width:auto;box-sizing:border-box;padding:8px 11px;text-align:right;border:1px solid rgba(255,255,255,.22);border-radius:12px;background:rgba(15,18,24,.42);backdrop-filter:blur(14px) saturate(130%);-webkit-backdrop-filter:blur(14px) saturate(130%);box-shadow:0 5px 18px rgba(0,0,0,.12);font-size:13px;line-height:1.45;}
 #storyViewer .sv-foot{z-index:6;}
 #storyViewer .sv-reacts{gap:8px;padding:7px 10px;border:1px solid rgba(255,255,255,.18);border-radius:18px;background:rgba(18,22,28,.42);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
 #storyViewer .sv-reacts span{display:inline-flex;align-items:center;justify-content:center;min-width:32px;min-height:32px;padding:2px;border-radius:10px;transition:transform .16s ease,background .16s ease;}
 #storyViewer .sv-reacts span:active{transform:scale(1.1)}
 #storyViewer .sv-reacts span.on{background:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
-@media(max-width:380px){#storyViewer .sv-own{gap:6px}#storyViewer .sv-action{width:35px;height:34px;min-width:35px;min-height:34px;max-width:35px}#storyViewer .sv-action-views{width:auto;min-width:50px;max-width:none}#storyViewer .sv-cap{left:10px;right:10px;bottom:calc(88px + env(safe-area-inset-bottom, 0px));padding:7px 9px;font-size:12px}}
+@media(max-width:380px){#storyViewer .sv-own{gap:6px}#storyViewer .sv-action{width:35px;height:34px;min-width:35px;min-height:34px;max-width:35px}#storyViewer .sv-action-views{width:auto;min-width:50px;max-width:none}#storyViewer .sv-cap{left:10px;right:10px;bottom:calc(88px + var(--sv-sab,0px));padding:7px 9px;font-size:12px}}
 </style>
 
 
@@ -11643,7 +11740,7 @@ button.story-type-btn,
  user-select:none!important;
 }
 /* وصف القصة أخفض قليلاً */
-#storyViewer .sv-cap{bottom:calc(68px + env(safe-area-inset-bottom,0px))!important}
+#storyViewer .sv-cap{bottom:calc(68px + var(--sv-sab,0px))!important}
 /* التفاعلات لا تظهر للمشاهد إلا أثناء التركيز على حقل الرد */
 #storyViewer .sv-reacts{display:none!important}
 #storyViewer .sv-foot.reply-focused .sv-reacts{display:flex!important}
@@ -11667,7 +11764,7 @@ body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-title{ba
 @media(max-width:380px){#storyViewer .sv-top{gap:4px}#storyViewer .sv-top .sv-action{width:31px;height:32px;min-width:31px;max-width:31px}#storyViewer .sv-top .sv-action-views{min-width:43px;max-width:none}}
 
 /* ملخص المشاهدات والتفاعلات أسفل وصف القصة */
-#storyViewer .sv-story-stats{display:flex;position:absolute;left:50%;right:auto;bottom:calc(82px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);align-items:center;justify-content:center;gap:3px;width:max-content;max-width:calc(100% - 24px);margin:0;padding:7px 13px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(8,12,18,.68);color:#fff;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;direction:rtl;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;z-index:8;box-sizing:border-box}
+#storyViewer .sv-story-stats{display:flex;position:absolute;left:50%;right:auto;bottom:calc(82px + var(--sv-sab,0px));transform:translateX(-50%);align-items:center;justify-content:center;gap:3px;width:max-content;max-width:calc(100% - 24px);margin:0;padding:7px 13px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(8,12,18,.68);color:#fff;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;direction:rtl;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;z-index:8;box-sizing:border-box}
 #storyViewer .sv-cap{z-index:5}
 #storyViewer .sv-own .sv-action-views{display:none!important}
 body:has(.app-container[data-app-theme="light"]) #viewersModal .viewers-card{max-height:min(76vh,620px);overflow:auto}
@@ -11713,7 +11810,7 @@ body.light #viewersModal .viewer-item {
   background:#fff!important;border-bottom:1px solid #e7edf4!important;
 }
 /* العداد يأتي كسطر مستقل أسفل نص وصف القصة */
-#storyViewer .sv-story-stats{display:flex!important;position:absolute!important;left:50%!important;right:auto!important;bottom:calc(82px + env(safe-area-inset-bottom,0px))!important;transform:translateX(-50%)!important;margin:0!important;z-index:8!important;flex-shrink:0;color:#fff!important;background:rgba(8,12,18,.72)!important;border:1px solid rgba(255,255,255,.3)!important}
+#storyViewer .sv-story-stats{display:flex!important;position:absolute!important;left:50%!important;right:auto!important;bottom:calc(82px + var(--sv-sab,0px))!important;transform:translateX(-50%)!important;margin:0!important;z-index:8!important;flex-shrink:0;color:#fff!important;background:rgba(8,12,18,.72)!important;border:1px solid rgba(255,255,255,.3)!important}
 #storyViewer .sv-story-stats span{color:#fff!important;font-weight:700!important;display:inline-flex;align-items:center;gap:4px}
 #storyViewer .sv-heart-svg{width:14px;height:14px;flex:0 0 14px;fill:#ff414d;stroke:#ff414d;stroke-width:1.2;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(0,0,0,.45))}
 #storyViewer .sv-cap{overflow:visible!important}
@@ -11723,8 +11820,8 @@ body.light #viewersModal .viewer-item {
 
 /* زر المشاهدات منفصل تماماً عن حقل الوصف، والوصف يختفي إذا كان فارغاً */
 #storyViewer .sv-cap.hidden{display:none!important}
-#storyViewer .sv-story-stats{bottom:calc(18px + env(safe-area-inset-bottom,0px))!important}
-#storyViewer .sv-cap{bottom:calc(72px + env(safe-area-inset-bottom,0px))!important}
+#storyViewer .sv-story-stats{bottom:calc(18px + var(--sv-sab,0px))!important}
+#storyViewer .sv-cap{bottom:calc(72px + var(--sv-sab,0px))!important}
 
 /* الأيقونات بجانب زر الإغلاق وليس بجانب الاسم والصورة */
 #storyViewer .sv-top .story-user-info{margin-inline-end:auto!important}
@@ -12227,4 +12324,184 @@ body.light #viewersModal .viewer-item {
   }catch(_){}
 })();
 </script>
+<script src="/dev-panel.js"></script>
 
+<style id="status-bar-safe-area">
+/* ============================================================
+   مساحة شريط الإشعارات وأيقونات الهاتف (Status Bar) في كل قسم
+   - --sat = ارتفاع شريط الإشعارات (0 على الشاشات التي لا تحتاجه)
+   - الخلفية تمتد خلف الشريط بنفس لون رأس كل قسم (نهاري/ليلي/ثيم المحادثة)
+   ============================================================ */
+:root{
+  --sat-real:max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px),var(--sat-fb,0px));
+  --sat:var(--sat-real);
+}
+
+/* شريط تشغيل الصوت العلوي: يأخذ مساحة الشريط بنفسه فلا تتكرر المساحة في الأقسام */
+.app-container.vp-on{--sat:0px;padding-top:calc(34px + var(--sat-real))}
+#vpBar:not(.inflow){height:calc(34px + var(--sat-real));padding-top:var(--sat-real)}
+
+/* 1) الرئيسية (المحادثات) + شريط التحديد */
+.app-container #mainPage #mainHeader#mainHeader{height:calc(62px + var(--sat))!important;min-height:calc(62px + var(--sat))!important;padding-top:var(--sat)!important}
+.app-container #mainPage #selBar#selBar{height:calc(54px + var(--sat))!important;min-height:calc(54px + var(--sat))!important;padding-top:var(--sat)!important}
+
+/* 2) البحث */
+.app-container #searchView#searchView .search-screen-top{padding-top:calc(14px + var(--sat))!important}
+
+/* 3) الإعدادات + الخصوصية + الإشعارات + المحادثات (شريط بنفس لون القسم، ثابت أثناء التمرير) */
+.app-container .settings-view::before{content:"";display:block;flex:0 0 auto;height:var(--sat);position:sticky;top:0;z-index:20;background:inherit;pointer-events:none}
+
+/* 4) غرفة المحادثة + القوائم المرتبطة برأسها */
+.app-container #chatView .telegram-chat-header{padding-top:calc(8px + var(--sat))!important}
+.app-container .chat-more-menu,.app-container .chat-search-panel{top:calc(62px + var(--sat))!important}
+.app-container .chat-delete-panel{top:calc(72px + var(--sat))!important}
+
+/* 5) تعديل البيانات الشخصية */
+.app-container #editProfileView .edit-profile-header{padding-top:calc(17px + var(--sat))!important}
+
+/* 6) تسجيل الدخول / التحقق */
+.app-container .auth-page{padding-top:calc(30px + var(--sat))}
+
+/* 7) صفحات وطبقات ملء الشاشة */
+.sp-header{padding-top:calc(14px + var(--sat))}
+.gx-top{padding-top:calc(10px + var(--sat))}
+.blk-ov .sx-top{padding-top:calc(14px + var(--sat))!important}
+/* القصص: شريط بلون خلفية العارض (أسود) فوق الوسائط */
+#storyViewer .sv-stage{padding-top:var(--sat)}
+#storyViewer .sv-bars{top:var(--sat);padding-top:10px}
+#storyViewer .sv-top{top:calc(14px + var(--sat))}
+#storyViewer .sv-tap{top:calc(80px + var(--sat))}
+.app-container.vp-on #storyViewer{--sat:var(--sat-real)}
+
+/* عارض الصور والفيديو: الوسائط تبدأ تحت الشريط الأسود */
+.babylon-media-viewer{box-sizing:border-box}
+.babylon-media-viewer.image-viewer{padding-top:calc(12px + var(--sat))!important}
+.babylon-media-viewer.video-viewer{padding-top:var(--sat)!important}
+.babylon-media-viewer .babylon-media-toolbar{top:var(--sat)!important;padding-top:10px!important}
+.babylon-media-viewer.video-viewer .bvp{top:var(--sat)}
+
+/* معرض صور الملف */
+#avatarGalleryModal{padding-top:calc(70px + var(--sat))!important}
+#avatarGalleryModal .ag-top{top:calc(12px + var(--sat))!important}
+
+/* الملف الشخصي: الغلاف/الصورة تمتد خلف الشريط بلا فراغ */
+:is(#profileView,#otherUserProfileView) .pf-cover{height:calc(176px + var(--sat))!important;min-height:calc(176px + var(--sat))!important}
+:is(#profileView,#otherUserProfileView) .pf-cover .pattern-layer{top:var(--sat)!important;inset-block-start:var(--sat)!important}
+.pf-topbar{padding-top:calc(12px + var(--sat))}
+.pf-hero .pf-hero-top{padding-top:calc(12px + var(--sat))!important}
+.pf-hero .pf-hero-menu{top:calc(56px + var(--sat))}
+#otherTopMenu{top:calc(60px + var(--sat))}
+</style>
+
+<script id="status-bar-color-sync">
+/* مزامنة لون شريط الإشعارات (theme-color + Capacitor StatusBar) مع لون رأس القسم الظاهر حاليًا.
+   الملف الشخصي يُترك لمنطق الغلاف الموجود أصلًا. */
+(function(){
+  var app=document.querySelector('.app-container'); if(!app) return;
+  var meta=document.querySelector('meta[name="theme-color"]');
+  var last='', raf=0, tmr=0, ovOn=false, ovTimer=0;
+
+  function parse(c){
+    if(!c) return null; var m;
+    m=c.match(/rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,\/]+([\d.]+%?))?\s*\)/);
+    if(m){ var a=m[4]==null?1:(m[4].indexOf('%')>0?parseFloat(m[4])/100:parseFloat(m[4])); return [+m[1],+m[2],+m[3],a]; }
+    m=c.match(/color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+%?))?\s*\)/);
+    if(m){ var b=m[4]==null?1:(m[4].indexOf('%')>0?parseFloat(m[4])/100:parseFloat(m[4])); return [m[1]*255,m[2]*255,m[3]*255,b]; }
+    return null;
+  }
+  function colorOf(el){
+    for(var n=el; n && n.nodeType===1; n=n.parentElement){
+      var cs=getComputedStyle(n), c=parse(cs.backgroundColor);
+      if(!c || c[3]<.9){
+        var bi=cs.backgroundImage;
+        if(bi && bi!=='none'){ var g=bi.match(/rgba?\([^)]*\)|color\(srgb[^)]*\)/); if(g) c=parse(g[0]); }
+      }
+      if(c && c[3]>=.9) return c;
+    }
+    return parse(getComputedStyle(document.body).backgroundColor)||[14,22,33,1];
+  }
+  function hex(c){ return '#'+[0,1,2].map(function(i){ var v=Math.max(0,Math.min(255,Math.round(c[i]))).toString(16); return v.length<2?'0'+v:v; }).join(''); }
+  function vis(id){ var e=document.getElementById(id); return (e && !e.classList.contains('hidden')) ? e : null; }
+
+  function target(){
+    if(document.querySelector('.babylon-media-viewer')) return 'black';
+    if(vis('storyViewer')||vis('avatarGalleryModal')) return 'black';
+    var ov=document.getElementById('blkOverlay'); if(ov) return ov.querySelector('.sx-top')||ov;
+    var gx=document.querySelectorAll('.gx-ov'); if(gx.length) return gx[gx.length-1];
+    if(vis('profileView')||vis('otherUserProfileView')) return null;   /* منطق الغلاف الحالي */
+    var v;
+    if((v=vis('chatView'))) return v;
+    if((v=vis('editProfileView'))) return v.querySelector('.edit-profile-header')||v;
+    if((v=vis('searchView'))) return v.querySelector('.search-screen-top')||v;
+    var S=['settingsView','privacySettingsView','notificationSettingsView','chatSettingsView'];
+    for(var i=0;i<S.length;i++){ if((v=vis(S[i]))) return v; }
+    if(vis('mainPage') && (v=vis('homeView'))){ return vis('selBar')||vis('mainHeader')||v; }
+    if((v=vis('authPage'))||(v=vis('verifyPage'))) return v;
+    return app;
+  }
+
+  function sync(){
+    raf=0;
+    try{
+      var t=target(); if(!t) return;
+      var c=(t==='black')?[0,0,0,1]:colorOf(t), h=hex(c); if(h===last) return; last=h;
+      if(meta) meta.setAttribute('content',h);
+      var lum=(0.299*c[0]+0.587*c[1]+0.114*c[2])/255;
+      var SB=window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
+      if(SB && !ovOn){
+        try{ var p=SB.setBackgroundColor({color:h}); if(p&&p.catch) p.catch(function(){}); }catch(_){}
+        try{ var q=SB.setStyle({style: lum>0.55?'LIGHT':'DARK'}); if(q&&q.catch) q.catch(function(){}); }catch(_){}
+      }
+    }catch(_){}
+  }
+  function schedule(){
+    if(!raf) raf=requestAnimationFrame(sync);
+    clearTimeout(tmr); tmr=setTimeout(function(){ last=''; sync(); },380);   /* بعد انتهاء انتقالات الألوان */
+  }
+
+  /* امتداد الصورة/الغلاف خلف شريط الإشعارات (Capacitor): يُفعَّل أثناء الملف الشخصي ومعرض الصور فقط */
+  function probe(){
+    var p=document.createElement('div');
+    p.style.cssText='position:absolute;top:0;left:0;width:1px;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none';
+    document.body.appendChild(p); var h=p.getBoundingClientRect().height; p.remove(); return h;
+  }
+  function edge(on){
+    var SBp=window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
+    if(!SBp || ovOn===!!on) return; ovOn=!!on; clearTimeout(ovTimer);
+    var root=document.documentElement;
+    function go(fn,a){ try{ var r=fn&&fn.call(SBp,a); if(r&&r.catch) r.catch(function(){}); }catch(_){} }
+    if(on){
+      var st=0; try{ st=parseFloat(localStorage.getItem('babylon_sb_inset'))||0; }catch(_){}
+      root.style.setProperty('--sat-fb',(st||28)+'px');
+      go(SBp.setOverlaysWebView,{overlay:true});
+      go(SBp.setStyle,{style:'DARK'});
+      ovTimer=setTimeout(function(){
+        var h=probe();
+        if(h>0){ root.style.removeProperty('--sat-fb'); try{ localStorage.setItem('babylon_sb_inset',String(h)); }catch(_){} }
+      },220);
+    }else{
+      root.style.removeProperty('--sat-fb');
+      go(SBp.setOverlaysWebView,{overlay:false});
+      last=''; schedule();
+    }
+  }
+  try{
+    var B=window.BabylonAndroid;
+    if(window.babylonNative && B){
+      if(typeof B.setProfileExpandedSystemBars!=='function') B.setProfileExpandedSystemBars=function(on){ edge(on); };
+      if(typeof B.setStorySystemBars!=='function') B.setStorySystemBars=function(on){ edge(on); };
+    }
+  }catch(_){}
+
+  try{
+    var mo=new MutationObserver(schedule);
+    mo.observe(app,{subtree:true,attributes:true,attributeFilter:['class','data-app-theme']});
+    mo.observe(document.documentElement,{attributes:true,attributeFilter:['data-chat-theme','data-theme','class']});
+    mo.observe(document.body,{childList:true});
+  }catch(_){}
+  window.addEventListener('resize',schedule);
+  window.addEventListener('orientationchange',schedule);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',schedule,{once:true}); else schedule();
+  window.addEventListener('load',schedule,{once:true});
+})();
+</script>
