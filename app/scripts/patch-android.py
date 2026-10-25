@@ -64,30 +64,34 @@ if not pkg: die("ما لقيت package", ma)
 wr(ma, """package %s;
 
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import android.view.Window;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (Build.VERSION.SDK_INT >= 35) {
-            View root = findViewById(android.R.id.content);
-            root.setBackgroundColor(Color.parseColor("#0b1220"));
-            ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
-                Insets i = insets.getInsets(
-                    WindowInsetsCompat.Type.systemBars()
-                    | WindowInsetsCompat.Type.displayCutout()
-                    | WindowInsetsCompat.Type.ime());
-                v.setPadding(i.left, i.top, i.right, i.bottom);
-                return WindowInsetsCompat.CONSUMED;
-            });
-        }
+
+        Window window = getWindow();
+        window.setStatusBarColor(Color.TRANSPARENT);
+        window.setNavigationBarColor(Color.TRANSPARENT);
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+
+        View decor = window.getDecorView();
+        decor.setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        );
+
+        WindowInsetsControllerCompat controller =
+            WindowCompat.getInsetsController(window, decor);
+        controller.setAppearanceLightStatusBars(false);
+        controller.setAppearanceLightNavigationBars(false);
     }
 }
 """ % pkg.group(1))
