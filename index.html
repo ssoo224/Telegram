@@ -75,6 +75,7 @@
 
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script src="/update-gate.js"></script>
 <title>Babylon Chat - تليجرام البابلي</title>
 
 <!-- ربط ملف الـ Manifest الخارجي -->
@@ -9227,7 +9228,7 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
       + (force ? '' : '<button type="button" id="updLater" class="otp-link">لاحقاً</button>') + '</div>';
     document.body.appendChild(ov);
     ov.querySelector('p').textContent = (v.notes && String(v.notes)) || (force ? 'لازم تحدّث التطبيق حتى يكمل يشتغل.' : 'صدرت نسخة جديدة من Babylon Chat.');
-    ov.querySelector('#updGo').onclick = function () { window.open(v.url, '_blank'); };
+    ov.querySelector('#updGo').onclick = function () { window.open(location.origin + '/api/apk', '_blank'); };
     var l = ov.querySelector('#updLater'); if (l) l.onclick = function () { ov.remove(); };
   }
   function checkVersion() {
