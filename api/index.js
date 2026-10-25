@@ -56,7 +56,13 @@ module.exports = async (req, res) => {
       tokens,
       // لا يوجد حقل notification في المستوى الأعلى عمداً: أندرويد يستقبل بيانات فقط ويبني الإشعار بنفسه.
       data: { type: 'msg', chatId, senderId: decoded.uid, title, body, avatar },
-      android: { priority: 'high', ttl: 86400 * 1000 },
+      // notification + data معاً: النظام نفسه يعرض الإشعار والتطبيق مغلق (لا يعتمد على بقاء تطبيقنا حيّاً).
+      // وإذا كانت خدمة التطبيق تعمل فهي تستقبل data أيضاً (عند فتح التطبيق).
+      android: {
+        priority: 'high',
+        ttl: 86400 * 1000,
+        notification: { title, body, channelId: 'messages', tag: chatId, sound: 'default', defaultVibrateTimings: true }
+      },
       webpush: {
         headers: { Urgency: 'high' },
         notification: { title, body, icon: '/icon-512.png', badge: '/badge-96.png', tag: chatId, renotify: true },
@@ -65,14 +71,19 @@ module.exports = async (req, res) => {
     });
 
     const bad = [];
+    const errors = [];
     r.responses.forEach((x, i) => {
       const code = (x.error && x.error.code) || '';
+      if (!x.success) {
+        errors.push(code || 'unknown');
+        console.error('FCM send failed:', code, x.error && x.error.message);
+      }
       if (!x.success && /not-registered|invalid-registration/.test(code)) bad.push(tokens[i]);
     });
     if (bad.length) {
       await db.collection('users').doc(recipientId).update({ fcmTokens: admin.firestore.FieldValue.arrayRemove(...bad) });
     }
-    return res.json({ sent: r.successCount });
+    return res.json({ sent: r.successCount, failed: r.failureCount, errors });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: 'failed' });
