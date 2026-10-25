@@ -66,6 +66,7 @@ wr(ma, r"""package %s;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
@@ -189,6 +190,17 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public void ackAction(String id) {
             BabylonNotifications.ack(getApplicationContext(), id);
+        }
+
+        /** يفتح رابط https بالمتصفح الخارجي (لتنزيل تحديث التطبيق). */
+        @JavascriptInterface
+        public void openExternal(String url) {
+            try {
+                if (url == null || !url.startsWith("https://")) return;
+                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
+            } catch (Throwable ignored) { }
         }
 
         @JavascriptInterface
