@@ -54,6 +54,12 @@
     },
     "api/gifts.js": {
       "maxDuration": 30
+    },
+    "api/apk.js": {
+      "maxDuration": 60
+    },
+    "api/broadcast.js": {
+      "maxDuration": 60
     }
   }
 }
