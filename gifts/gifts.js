@@ -184,14 +184,21 @@ function loadGiftsGrid(uid,gridId,wrapId){
 
 /* ---------- صفحة تفاصيل الهدية (مثل تليجرام) ---------- */
 let gpUnsub=null;
-function closeGiftPage(){if(gpUnsub){gpUnsub();gpUnsub=null;}document.getElementById('giftPage')?.remove();}
+function closeGiftPage(){if(gpUnsub){gpUnsub();gpUnsub=null;}document.getElementById('giftPage')?.remove();document.getElementById('giftPageBackdrop')?.remove();}
 const IC_BACK='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
+const IC_X='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
 const IC_DOTS='<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
 async function openGiftPage(uid,n,kind){
   const K=gk(kind);
   closeGiftPage();
+  const bd=document.createElement('div');bd.id='giftPageBackdrop';bd.onclick=closeGiftPage;uiRoot().appendChild(bd);
   const ov=document.createElement('div');ov.id='giftPage';ov.className='gp-ov';uiRoot().appendChild(ov);
-  ov.innerHTML='<div class="gp-hero" style="background:'+bgCss({})+'"><div class="gp-top"><button type="button" class="gp-round" id="gpBack" aria-label="رجوع">'+IC_BACK+'</button></div></div>';
+  ov.innerHTML='<div class="gp-hero" style="background:'+bgCss({})+'"><div class="gp-top"><button type="button" class="gp-round" id="gpBack" aria-label="إغلاق">'+IC_X+'</button></div></div>';
+  /* سحب الورقة للأسفل لإغلاقها (فقط وهي بأعلى المحتوى) */
+  let sy=null,dy=0;
+  ov.addEventListener('touchstart',e=>{if(ov.scrollTop<=0&&e.touches.length===1){sy=e.touches[0].clientY;dy=0;ov.style.transition='none';}},{passive:true});
+  ov.addEventListener('touchmove',e=>{if(sy==null)return;dy=e.touches[0].clientY-sy;if(dy>0)ov.style.transform='translateY('+dy+'px)';else{dy=0;ov.style.transform='';}},{passive:true});
+  ov.addEventListener('touchend',()=>{if(sy==null)return;const d=dy;sy=null;ov.style.transition='transform .2s ease';if(d>110){ov.style.transform='translateY(100%)';setTimeout(closeGiftPage,180);}else ov.style.transform='';},{passive:true});
   ov.querySelector('#gpBack').onclick=closeGiftPage;
   const issuedP=salesQ(K).get().then(s=>s.size).catch(()=>null);
   await loadUsers([uid]);
@@ -207,6 +214,8 @@ async function openGiftPage(uid,n,kind){
     renderGiftPage(ov,uid,g,issued,false,lst);
   },()=>{closeGiftPage();});
 }
+/* نسبة ظهور النموذج الحقيقية = وزنه / مجموع الأوزان (Plush Pepe و Scared Cat مجموعها 1000، والهدايا الجديدة أوزانها متساوية) */
+function rarePct(K,m){const t=K.models.reduce((a,x)=>a+(Number(x.p)||0),0)||1;return String(+((Number(m.p)||0)/t*100).toFixed(1));}
 function gpRow(k,v){return '<div class="gp-row"><div class="gp-k">'+k+'</div><div class="gp-v">'+v+'</div></div>';}
 function renderGiftPage(ov,uid,g,issued,reveal,lst){
   const K=gk(g.k);
@@ -215,13 +224,13 @@ function renderGiftPage(ov,uid,g,issued,reveal,lst){
   const ownerV='<div class="gp-owner" id="gpOwner">'+userAvHtml(uid,'gp-oav')+'<span>'+esc(u.displayName||'مستخدم')+(mine?' <em>(أنت)</em>':'')+'</span></div>';
   const lock='<span class="gp-lock">غير مُرقّاة</span>';
   ov.innerHTML='<div class="gp-hero'+(reveal?' reveal':'')+'" id="gpHero" style="background:'+bgCss(g)+'">'+(up?patSvg(g.sym):'')
-    +'<div class="gp-top"><button type="button" class="gp-round" id="gpBack" aria-label="رجوع">'+IC_BACK+'</button><button type="button" class="gp-round" id="gpMore" aria-label="المزيد">'+IC_DOTS+'</button></div>'
+    +'<div class="gp-top"><button type="button" class="gp-round" id="gpBack" aria-label="إغلاق">'+IC_X+'</button><button type="button" class="gp-round" id="gpMore" aria-label="المزيد">'+IC_DOTS+'</button></div>'
     +'<div class="gp-pepe"'+(up?'':' style="filter:grayscale(1) brightness(.8)"')+'></div>'
     +'<div class="gp-title">'+K.name+' <span>#'+g.number+'</span></div>'
     +'<div class="gp-chip" id="gpChip">'+(up?'نسخة '+g.number+' من '+K.max:'هدية بانتظار الترقية')+'</div></div>'
     +'<div class="gp-body"><div class="gp-table">'
     +gpRow('المالك',ownerV)
-    +gpRow('النموذج',up?esc(m.n)+'<span class="gp-pill">'+(m.p/10)+'%</span>':lock)
+    +gpRow('النموذج',up?esc(m.n)+'<span class="gp-pill">'+rarePct(K,m)+'%</span>':lock)
     +gpRow('الرمز',up?esc(s.n)+'<span class="gp-pill">'+s.p+'%</span>':lock)
     +gpRow('الخلفية',up?esc(b.n)+'<span class="gp-pill">'+b.p+'%</span>':lock)
     +gpRow('الكمية',(issued!=null?issued:'—')+'/'+K.max+' صادرة')
@@ -231,8 +240,10 @@ function renderGiftPage(ov,uid,g,issued,reveal,lst){
     +(mine&&lst?'<div class="gp-listed">معروضة للبيع بـ ⭐ '+fmtN(lst.price)+'</div><div class="gp-btns"><button type="button" class="gp-cta alt" id="gpEdit">تعديل السعر</button><button type="button" class="gp-cta danger" id="gpUnlist">إلغاء العرض</button></div>':'')
     +(!mine&&lst?'<button type="button" class="gp-cta" id="gpBuy">🛒 شراء بـ ⭐ '+fmtN(lst.price)+'</button><div class="gp-note">النجوم تروح لصاحب الهدية وتنتقل الهدية إلك مباشرة.</div>':'')
     +(mine&&!up?'<button type="button" class="gp-cta" id="gpUp">✨ ترقية الهدية مجاناً</button><div class="gp-note">ستحصل على نموذج وخلفية ورمز عشوائي، وبعضها نادر جداً.</div>':'')
+    +(!mine&&!lst?'<button type="button" class="gp-cta alt" id="gpOk">حسنًا</button>':'')
     +'</div>';
   ov.querySelector('#gpBack').onclick=closeGiftPage;
+  const okb=ov.querySelector('#gpOk');if(okb)okb.onclick=closeGiftPage;
   const mb=ov.querySelector('#gpMore');if(mb)mb.onclick=ev=>{ev.stopPropagation();if(window.giftMoreMenu)window.giftMoreMenu(ov,g);};
   mountPepeAnim(ov.querySelector('.gp-pepe'),up?g.model:-1,{kind:g.k});
   ov.querySelector('#gpOwner').onclick=()=>{
