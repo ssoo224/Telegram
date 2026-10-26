@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   var pc = null, localStream = null, callId = null, role = null, unsubs = [], ringTimer = null, tick = null, startedAt = 0, muted = false, ending = false;
-  var seenCand = {};
+  var seenCand = {}, candReady = false, candQueue = [];
 
   /* ---------- ستايل ---------- */
   var st = document.createElement('style');
@@ -57,7 +57,12 @@
     pc = new RTCPeerConnection({ iceServers: ice });
     localStream.getTracks().forEach(function (t) { pc.addTrack(t, localStream); });
     pc.ontrack = function (e) { $('bbCallAudio').srcObject = e.streams[0]; };
-    pc.onicecandidate = function (e) { if (e.candidate) callRef().collection(candCol).add(e.candidate.toJSON()).catch(function () {}); };
+    pc.onicecandidate = function (e) {
+      if (!e.candidate) return;
+      var j = e.candidate.toJSON();
+      if (!candReady) { candQueue.push([candCol, j]); return; }
+      callRef().collection(candCol).add(j).catch(function () {});
+    };
     pc.onconnectionstatechange = function () {
       if (pc.connectionState === 'connected') onConnected();
       if (pc.connectionState === 'failed') endCall('ended');
@@ -87,7 +92,7 @@
     if (pc) { try { pc.close(); } catch (e) {} pc = null; }
     if (localStream) { localStream.getTracks().forEach(function (t) { t.stop(); }); localStream = null; }
     $('bbCallAudio').srcObject = null; ov.classList.remove('on');
-    callId = null; role = null; muted = false; ending = false; seenCand = {}; $('bbCallMut').classList.remove('on');
+    callId = null; role = null; muted = false; ending = false; seenCand = {}; candReady = false; candQueue = []; $('bbCallMut').classList.remove('on');
   }
   function endCall(status) {
     if (ending) return; ending = true;
@@ -128,6 +133,8 @@
         });
       });
     }).then(function () {
+      candReady = true;
+      candQueue.splice(0).forEach(function (q) { callRef().collection(q[0]).add(q[1]).catch(function () {}); });
       watchStatus(); listenCandidates('calleeCandidates');
       $('bbCallStt').textContent = 'يرن…';
       ringTimer = setTimeout(function () { endCall('missed'); }, 45000);
@@ -154,6 +161,7 @@
     $('bbCallStt').textContent = 'جاري الاتصال…'; $('bbCallAcc').style.display = 'none'; $('bbCallMut').style.display = '';
     Promise.all([getMic(), getIce()]).then(function (a) {
       localStream = a[0];
+      candReady = true;
       makePC(a[1], 'calleeCandidates');
       listenCandidates('callerCandidates');
       return pc.setRemoteDescription(new RTCSessionDescription(incoming.offer)).then(function () { return pc.createAnswer(); }).then(function (ans) {
