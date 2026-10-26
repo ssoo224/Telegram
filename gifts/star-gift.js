@@ -1,18 +1,27 @@
 /* ===== star-gift.js — هدية النجوم (المطور يهدي) + كارتها بالمحادثة ===== */
 /* يعتمد على gifts.js (fmtN, openStarsHistory, isDevUser, meId) */
 
-async function devGiftStars(){
-  if(!isDevUser()||!currentChatOtherUserId)return;
-  const to=currentChatOtherUserId,me=meId();
-  const toName=(document.getElementById('otherHeaderNameText')||{}).textContent||'مستخدم';
-  const r=await clAsk({title:'إهداء نجوم ⭐',body:'كم نجمة تريد إهداءها إلى <b>'+esc(toName)+'</b>؟',input:{value:'100',placeholder:'عدد النجوم',max:9},buttons:[{text:'إهداء'},{text:'إلغاء',cls:'cl-cancel'}]});
+/* إهداء نجوم: لكل المستخدمين. الرصيد يتحقق منه الخادم، والمستلم ياخذ 95% (عمولة 5%) */
+async function devGiftStars(target){
+  const to=(typeof target==='string'&&target)?target:currentChatOtherUserId,me=meId();
+  if(!to||!me||to===me)return;
+  const dev=isDevUser();
+  const toName=(typeof GU!=='undefined'&&GU[to]&&GU[to].displayName)||(document.getElementById('otherHeaderNameText')||{}).textContent||'مستخدم';
+  const body=dev?('كم نجمة تريد إهداءها إلى <b>'+esc(toName)+'</b>؟')
+    :('رصيدك: <b>'+fmtN(myStars)+'</b> ⭐<br>كم نجمة تريد إهداءها إلى <b>'+esc(toName)+'</b>؟<br><small>ينخصم المبلغ من رصيدك، ويستلم 95% منه (عمولة '+FEE_PCT+'%).</small>');
+  const r=await clAsk({title:'إهداء نجوم ⭐',body:body,input:{value:'',placeholder:dev?'عدد النجوم':('حتى '+fmtN(myStars)),max:9},buttons:[{text:'إهداء'},{text:'إلغاء',cls:'cl-cancel'}]});
   if(!r||r.i!==0)return;
   const n=parseInt(String(r.value).replace(/[^\d]/g,''),10);
-  if(!n||n<1||n>1000000)return showToast('اكتب عدداً بين 1 و 1,000,000');
+  if(!n||n<2||n>1000000)return showToast('اكتب عدداً بين 2 و 1,000,000');
+  if(!dev&&n>myStars)return showToast('رصيدك لا يكفي (رصيدك '+fmtN(myStars)+' ⭐)');
   try{
-    await giftApi('dev-stars',{to:to,amount:n});
-    showToast('تم إهداء '+fmtN(n)+' ⭐ إلى '+toName);
-  }catch(e){console.error(e);showToast('تعذر إهداء النجوم');}
+    const res=await giftApi('send-stars',{to:to,amount:n});
+    showToast(dev?('تم إهداء '+fmtN(n)+' ⭐ إلى '+toName):('تم الإهداء ✅ وصل '+fmtN(res&&res.net!=null?res.net:n)+' ⭐ إلى '+toName+' بعد العمولة'));
+  }catch(e){
+    console.error(e);
+    const m={funds:'رصيدك لا يكفي',blocked:'ما تكدر تهدي هذا المستخدم',nouser:'المستخدم غير موجود',rate:'انتظر شوي وحاول مرة ثانية',bad:'المبلغ غير صحيح'};
+    showToast(m[e.code]||'تعذر إهداء النجوم');
+  }
 }
 
 /* رسم الكارت البابلي: نجمة عشتار ذهبية داخل ميدالية لازورد */
@@ -61,8 +70,8 @@ function starGiftNode(m,id,isMine){
   const pill='<div class="sys-msg">'+line+'</div>';
   w.innerHTML=pill
     +'<div class="gm-card"><div class="gm-frieze"></div>'+starGiftArt()
-    +'<div class="gm-amt">'+fmtN(m.stars||0)+' نجمة</div>'
-    +'<div class="gm-sub">بالنجوم تفتح المحتوى والخدمات داخل بابل.</div>'
+    +'<div class="gm-amt">'+fmtN((isMine&&m.gross)?m.gross:(m.stars||0))+' نجمة</div>'
+    +'<div class="gm-sub">'+((isMine&&m.fee>0)?('وصل '+fmtN(m.stars||0)+' ⭐ بعد عمولة '+fmtN(m.fee)+' ⭐'):'بالنجوم تفتح المحتوى والخدمات داخل بابل.')+'</div>'
     +'<button type="button" class="gm-btn">عرض</button><div class="gm-frieze bot"></div></div>';
   /* sys-msg عادةً نص عادي؛ نخلي الاسم غامق */
   w.querySelector('.gm-btn').onclick=ev=>{ev.stopPropagation();try{openStarsHistory();}catch(e){}};
