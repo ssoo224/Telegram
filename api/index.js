@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
     if (!m) return res.status(401).json({ error: 'unauthorized' });
     const decoded = await admin.auth().verifyIdToken(m[1]);
 
-    const { recipientId, messageText, chatId: bodyChatId, senderName } = req.body || {};
+    const { recipientId, messageText, chatId: bodyChatId, senderName, callId, callEnd } = req.body || {};
     if (!recipientId || typeof recipientId !== 'string') return res.status(400).json({ error: 'bad request' });
 
     const db = admin.firestore();
@@ -34,6 +34,15 @@ module.exports = async (req, res) => {
     }
     const isGroup = chatId !== pairId;
 
+    // مكالمة: نتأكد أن المتصل صاحب المكالمة فعلاً والمستلم هو الطرف الثاني
+    const isCall = typeof callId === 'string' && callId.length > 0 && callId.length < 100 && !callId.includes('/');
+    if (isCall) {
+      const cd = await db.collection('calls').doc(callId).get();
+      if (!cd.exists || cd.data().from !== decoded.uid || cd.data().to !== recipientId) {
+        return res.status(403).json({ error: 'forbidden' });
+      }
+    }
+
     const [me, other] = await Promise.all([
       db.collection('users').doc(decoded.uid).get(),
       db.collection('users').doc(recipientId).get()
@@ -47,7 +56,7 @@ module.exports = async (req, res) => {
     if (!tokens.length) return res.json({ sent: 0 });
 
     const title = String((isGroup && senderName) ? senderName : (mine.displayName || 'رسالة جديدة')).slice(0, 40);
-    const body = String(messageText || '').slice(0, 150);
+    const body = String(messageText || (isCall ? 'مكالمة صوتية واردة' : '')).slice(0, 150);
     // صورة المرسل: تُرسل فقط إذا كانت رابطاً قصيراً وغير مخفية. غير ذلك يستخدم التطبيق الصورة المحفوظة عنده.
     const av = String(mine.avatarUrl || '');
     const avatar = (!mine.hideAvatar && /^https?:\/\//.test(av) && av.length < 1000) ? av : '';
@@ -59,13 +68,17 @@ module.exports = async (req, res) => {
     const r = await admin.messaging().sendEachForMulticast({
       tokens,
       // لا يوجد حقل notification في المستوى الأعلى عمداً: أندرويد يستقبل بيانات فقط ويبني الإشعار بنفسه.
-      data: { type: 'msg', chatId, senderId: decoded.uid, title, body, avatar, meAvatar },
-      android: { priority: 'high', ttl: 86400 * 1000 },
-      webpush: {
-        headers: { Urgency: 'high' },
-        notification: { title, body, icon: '/icon-512.png', badge: '/badge-96.png', tag: chatId, renotify: true },
-        fcmOptions: { link: '/' }
-      }
+      data: isCall
+        ? { type: callEnd ? 'call_end' : 'call', callId, chatId, senderId: decoded.uid, title, body, avatar }
+        : { type: 'msg', chatId, senderId: decoded.uid, title, body, avatar, meAvatar },
+      android: { priority: 'high', ttl: isCall ? 45 * 1000 : 86400 * 1000 },
+      webpush: (isCall && callEnd)
+        ? { headers: { Urgency: 'high' } }
+        : {
+            headers: { Urgency: 'high' },
+            notification: { title, body, icon: '/icon-512.png', badge: '/badge-96.png', tag: chatId, renotify: true },
+            fcmOptions: { link: '/' }
+          }
     });
 
     const bad = [];
