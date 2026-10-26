@@ -5,6 +5,7 @@
   var pc = null, localStream = null, callId = null, role = null, peerId = null, unsubs = [], ringTimer = null, tick = null;
   var startedAt = 0, muted = false, spkOn = false, ending = false, incoming = null;
   var seenCand = {}, candReady = false, candQueue = [], nativePending = null;
+  var restartN = 0, appliedAnswerN = 0, handledRestart = 0, restartTries = 0, discTimer = null, failTimer = null, wl = null;
 
   /* ---------- أيقونات SVG ---------- */
   var IC = {
@@ -62,6 +63,7 @@
   $('bbCallSpk').onclick = function () {
     spkOn = !spkOn;
     try { if (nat()) nat().setSpeaker(spkOn); } catch (e) {}
+    prox();
     $('bbCallSpk').classList.toggle('on', spkOn);
   };
 
@@ -95,8 +97,43 @@
   }
   function endTone() { beep(520, 0.15, 0); beep(380, 0.25, 0.2); }
 
+  /* ---------- شاشة شغالة + حساس القرب + خدمة المكالمة ---------- */
+  function startFg(name) { try { if (nat() && nat().startService) nat().startService(name || ''); } catch (e) {} }
+  function awake(on) {
+    try { if (nat() && nat().keepScreenOn) nat().keepScreenOn(!!on); } catch (e) {}
+    try {
+      if (on && navigator.wakeLock && !wl) navigator.wakeLock.request('screen').then(function (l) { wl = l; }).catch(function () {});
+      else if (!on && wl) { wl.release(); wl = null; }
+    } catch (e) {}
+  }
+  function prox() {
+    try { if (nat() && nat().setProximity) nat().setProximity(!!(startedAt && !spkOn && !ending)); } catch (e) {}
+  }
+
+  /* ---------- إعادة الاتصال تلقائياً عند تغيّر الشبكة ---------- */
+  function tryRestart() {
+    if (role !== 'caller' || !pc || ending || restartTries >= 4) return;
+    restartTries++; restartN++;
+    var n = restartN;
+    pc.createOffer({ iceRestart: true }).then(function (o) {
+      return pc.setLocalDescription(o).then(function () {
+        return callRef().update({ offer: { type: o.type, sdp: o.sdp }, restartN: n });
+      });
+    }).catch(function () {});
+  }
+  function armFail() {
+    if (failTimer) return;
+    failTimer = setTimeout(function () { failTimer = null; if (pc && pc.connectionState !== 'connected') endCall('ended'); }, 25000);
+  }
+  function netChanged() {
+    if (pc && role === 'caller' && startedAt && !ending) { restartTries = 0; setTimeout(tryRestart, 800); }
+  }
+  window.addEventListener('online', netChanged);
+  try { if (navigator.connection) navigator.connection.addEventListener('change', netChanged); } catch (e) {}
+
   /* ---------- أدوات ---------- */
   function setUI(name, status, incomingMode, avatarUrl) {
+    if (incomingMode && (pc || startedAt)) return;
     $('bbCallNm').textContent = name || '';
     $('bbCallStt').textContent = status || '';
     $('bbRowIn').style.display = incomingMode ? 'flex' : 'none';
@@ -138,8 +175,15 @@
       callRef().collection(candCol).add(j).catch(function () {});
     };
     pc.onconnectionstatechange = function () {
-      if (pc.connectionState === 'connected') onConnected();
-      if (pc.connectionState === 'failed') endCall('ended');
+      var st = pc.connectionState;
+      if (st === 'connected') onConnected();
+      else if (st === 'disconnected') {
+        $('bbCallStt').textContent = 'جاري إعادة الاتصال…';
+        clearTimeout(discTimer); discTimer = setTimeout(tryRestart, 3000); armFail();
+      } else if (st === 'failed') {
+        $('bbCallStt').textContent = 'جاري إعادة الاتصال…';
+        tryRestart(); armFail();
+      }
     };
   }
   function listenCandidates(col) {
@@ -153,6 +197,8 @@
   function onConnected() {
     stopRing(); clearTimeout(ringTimer);
     try { if (nat()) nat().setSpeaker(spkOn); } catch (e) {}
+    clearTimeout(discTimer); clearTimeout(failTimer); failTimer = null; restartTries = 0;
+    awake(true); prox();
     if (tick) return;
     startedAt = Date.now();
     tick = setInterval(function () {
@@ -162,14 +208,19 @@
   }
   function cleanup() {
     stopRing(); if (callId) endTone();
+    clearTimeout(discTimer); clearTimeout(failTimer);
     clearTimeout(ringTimer); if (tick) clearInterval(tick); tick = null;
     unsubs.forEach(function (u) { try { u(); } catch (e) {} }); unsubs = [];
     if (pc) { try { pc.close(); } catch (e) {} pc = null; }
     if (localStream) { localStream.getTracks().forEach(function (t) { t.stop(); }); localStream = null; }
     try { if (nat()) nat().resetAudio(); } catch (e) {}
+    try { if (nat() && nat().setProximity) nat().setProximity(false); } catch (e) {}
+    awake(false);
+    try { if (nat() && nat().stopService) nat().stopService(); } catch (e) {}
     $('bbCallAudio').srcObject = null; ov.classList.remove('on');
     callId = null; role = null; peerId = null; incoming = null; muted = false; spkOn = false; ending = false; startedAt = 0;
     seenCand = {}; candReady = false; candQueue = [];
+    restartN = 0; appliedAnswerN = 0; handledRestart = 0; restartTries = 0; failTimer = null; discTimer = null;
   }
   function endCall(status) {
     if (ending) return; ending = true;
@@ -185,7 +236,21 @@
         pc.setRemoteDescription(new RTCSessionDescription(c.answer)).catch(function () {});
         $('bbCallStt').textContent = 'جاري الاتصال…'; stopRing();
       }
-      if (['ended', 'rejected', 'missed'].indexOf(c.status) > -1) {
+      /* إعادة تفاوض بعد انقطاع الشبكة: المتصل يرسل عرضاً جديداً، المستقبِل يجيب */
+      if (role === 'callee' && pc && c.restartN && c.restartN > handledRestart && c.offer) {
+        var rn = c.restartN; handledRestart = rn;
+        pc.setRemoteDescription(new RTCSessionDescription(c.offer)).then(function () { return pc.createAnswer(); }).then(function (ans) {
+          return pc.setLocalDescription(ans).then(function () {
+            return callRef().update({ answer: { type: ans.type, sdp: ans.sdp }, answerN: rn });
+          });
+        }).catch(function () {});
+      }
+      if (role === 'caller' && pc && c.answer && c.answerN && c.answerN === restartN && c.answerN > appliedAnswerN) {
+        appliedAnswerN = c.answerN;
+        pc.setRemoteDescription(new RTCSessionDescription(c.answer)).catch(function () {});
+      }
+      if (['ended', 'rejected', 'missed', 'busy'].indexOf(c.status) > -1) {
+        if (role === 'caller' && c.status === 'busy') toast('الخط مشغول');
         if (role === 'caller' && c.status === 'rejected') toast('رفض المكالمة');
         if (role === 'caller' && c.status === 'missed') toast('ما رد على المكالمة');
         ending = true; cleanup();
@@ -201,7 +266,7 @@
     actx();
     var nm = (document.getElementById('chatTitleText') || {}).textContent || '', av = (document.querySelector('#chatAvatar img') || {}).src;
     setUI(nm, 'جاري الاتصال…', false, av);
-    role = 'caller'; peerId = other;
+    role = 'caller'; peerId = other; startFg(nm);
     Promise.all([getMic(), getIce()]).then(function (a) {
       localStream = a[0];
       callId = db.collection('calls').doc().id;
@@ -225,13 +290,13 @@
 
   /* ---------- المستقبِل ---------- */
   function showIncoming(id, c) {
-    if (callId) { db.collection('calls').doc(id).update({ status: 'rejected' }).catch(function () {}); return; }
+    if (callId) { db.collection('calls').doc(id).update({ status: 'busy', endedBy: currentUser.uid }).catch(function () {}); return; }
     callId = id; role = 'callee'; incoming = c; peerId = c.from;
     db.collection('users').doc(c.from).get().then(function (u) {
       var d = u.exists ? u.data() : {};
       var url = (typeof pvUrl === 'function' && u.exists) ? pvUrl(d) : '';
-      if (callId === id) setUI(d.displayName || 'مستخدم', 'مكالمة صوتية واردة…', true, url);
-    }).catch(function () { setUI('مستخدم', 'مكالمة صوتية واردة…', true); });
+      if (callId === id && !pc) setUI(d.displayName || 'مستخدم', 'مكالمة صوتية واردة…', true, url);
+    }).catch(function () { if (callId === id && !pc) setUI('مستخدم', 'مكالمة صوتية واردة…', true); });
     watchStatus(); startRing('in');
     ringTimer = setTimeout(function () { if (callId === id && !pc) { ending = true; cleanup(); } }, 45000);
     /* فُتح التطبيق من زر (رد) بالإشعار: رد تلقائياً */
@@ -242,7 +307,7 @@
   }
   function acceptCall() {
     if (!callId || !incoming || pc) return;
-    stopRing();
+    stopRing(); startFg($('bbCallNm').textContent);
     setUI($('bbCallNm').textContent, 'جاري الاتصال…', false, (document.querySelector('#bbCallAv img') || {}).src);
     Promise.all([getMic(), getIce()]).then(function (a) {
       localStream = a[0];
