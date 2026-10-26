@@ -173,3 +173,15 @@
 .gl-sep{height:1px;background:rgba(255,255,255,.22);margin:6px 0 8px}
 .gl-btn{font-weight:700;font-size:14px}
 .gl-card.gone{opacity:.65}
+
+/* ===== صفحة الهدية: ورقة سفلية مثل تلكرام (مو شاشة كاملة) ===== */
+#giftPageBackdrop{position:fixed;inset:0;z-index:8999;background:rgba(0,0,0,.55);animation:gpFade .2s ease}
+#giftPage.gp-ov{inset:auto 0 0 0;height:auto;min-height:min(74vh,700px);max-height:calc(100% - 48px - env(safe-area-inset-top,0px));border-radius:26px 26px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.45);animation:gpSheetIn .26s cubic-bezier(.2,.8,.2,1);overscroll-behavior:contain}
+#giftPage .gp-hero{min-height:min(84vw,380px);border-radius:26px 26px 30px 30px}
+#giftPage .gp-top{top:14px}
+#giftPage .gp-pepe{width:min(50vw,220px);height:min(50vw,220px)}
+#giftPage .gp-title{font-size:25px}
+#giftPage .gp-body{padding:16px 14px calc(26px + env(safe-area-inset-bottom,0px))}
+#giftPage .gp-cta.alt{background:var(--cl-chip,rgba(255,255,255,.1));color:var(--cl-text,#f1f5f9);box-shadow:none}
+@keyframes gpSheetIn{from{transform:translateY(100%)}to{transform:none}}
+@keyframes gpFade{from{opacity:0}to{opacity:1}}
