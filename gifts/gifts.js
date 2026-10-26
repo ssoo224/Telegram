@@ -186,6 +186,7 @@ function loadGiftsGrid(uid,gridId,wrapId){
 let gpUnsub=null;
 function closeGiftPage(){if(gpUnsub){gpUnsub();gpUnsub=null;}document.getElementById('giftPage')?.remove();}
 const IC_BACK='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
+const IC_DOTS='<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
 async function openGiftPage(uid,n,kind){
   const K=gk(kind);
   closeGiftPage();
@@ -214,7 +215,7 @@ function renderGiftPage(ov,uid,g,issued,reveal,lst){
   const ownerV='<div class="gp-owner" id="gpOwner">'+userAvHtml(uid,'gp-oav')+'<span>'+esc(u.displayName||'مستخدم')+(mine?' <em>(أنت)</em>':'')+'</span></div>';
   const lock='<span class="gp-lock">غير مُرقّاة</span>';
   ov.innerHTML='<div class="gp-hero'+(reveal?' reveal':'')+'" id="gpHero" style="background:'+bgCss(g)+'">'+(up?patSvg(g.sym):'')
-    +'<div class="gp-top"><button type="button" class="gp-round" id="gpBack" aria-label="رجوع">'+IC_BACK+'</button></div>'
+    +'<div class="gp-top"><button type="button" class="gp-round" id="gpBack" aria-label="رجوع">'+IC_BACK+'</button><button type="button" class="gp-round" id="gpMore" aria-label="المزيد">'+IC_DOTS+'</button></div>'
     +'<div class="gp-pepe"'+(up?'':' style="filter:grayscale(1) brightness(.8)"')+'></div>'
     +'<div class="gp-title">'+K.name+' <span>#'+g.number+'</span></div>'
     +'<div class="gp-chip" id="gpChip">'+(up?'نسخة '+g.number+' من '+K.max:'هدية بانتظار الترقية')+'</div></div>'
@@ -232,6 +233,7 @@ function renderGiftPage(ov,uid,g,issued,reveal,lst){
     +(mine&&!up?'<button type="button" class="gp-cta" id="gpUp">✨ ترقية الهدية مجاناً</button><div class="gp-note">ستحصل على نموذج وخلفية ورمز عشوائي، وبعضها نادر جداً.</div>':'')
     +'</div>';
   ov.querySelector('#gpBack').onclick=closeGiftPage;
+  const mb=ov.querySelector('#gpMore');if(mb)mb.onclick=ev=>{ev.stopPropagation();if(window.giftMoreMenu)window.giftMoreMenu(ov,g);};
   mountPepeAnim(ov.querySelector('.gp-pepe'),up?g.model:-1,{kind:g.k});
   ov.querySelector('#gpOwner').onclick=()=>{
     if(mine){closeGiftPage();openProfile();return;}
@@ -382,7 +384,7 @@ function openStarsHistory(){
   closeHistory();
   const dev=isDevUser();
   const ov=document.createElement('div');ov.id='starsHist';ov.className='gp-ov st-ov';uiRoot().appendChild(ov);
-  const tabs=[['all','الكل'],['buy','المشتريات'],['sell','المبيعات'],['in','المستلمة']].concat(dev?[['out','المُهداة']]:[]);
+  const tabs=[['all','الكل'],['buy','المشتريات'],['sell','المبيعات'],['in','المستلمة'],['out','المُهداة']];
   ov.innerHTML='<div class="gx-top"><button type="button" class="gx-ib" id="shBack" aria-label="رجوع">'+IC_BACK+'</button><div class="gx-title"><b>نجوم بابل</b></div></div>'
     +'<div class="sh-bal"><div class="sh-lb">رصيدك</div><div class="sh-n"><span data-stars>'+starsLabel()+'</span><i>⭐</i></div>'+(dev?'<div class="sh-dev">حساب المطور · رصيد لا نهائي</div>':'')+'</div>'
     +'<div class="sh-tabs" id="shTabs">'+tabs.map((t,i)=>'<button type="button" class="'+(i?'':'on')+'" data-t="'+t[0]+'">'+t[1]+'</button>').join('')+'</div>'
@@ -398,7 +400,7 @@ function openStarsHistory(){
       if(r.type==='buy'){ic='🎁';title='اشتريت '+gk(r.kind).name+' #'+r.gift;amt='−'+fmtN(r.stars);cls='neg';}
       else if(r.type==='sell'){ic='💰';title='بعت '+gk(r.kind).name+' #'+r.gift+(r.buyerName?' إلى '+esc(r.buyerName):'');amt='+'+fmtN(r.stars);cls='pos';}
       else if(r.type==='in'){ic='⭐';title='هدية نجوم من '+esc(r.fromName||'المطور');amt='+'+fmtN(r.stars);cls='pos';}
-      else if(r.type==='out'){ic='📤';title='أهديت '+esc(r.toName||'مستخدم');amt=fmtN(r.stars);cls='out';}
+      else if(r.type==='out'){ic='📤';title='أهديت '+esc(r.toName||'مستخدم')+(r.fee?' <small>(عمولة '+fmtN(r.fee)+')</small>':'');amt='−'+fmtN(r.stars);cls='neg';}
       return '<div class="sh-row" data-g="'+(r.type==='buy'?r.gift:'')+'" data-k="'+(r.kind||'pepe')+'"><div class="sh-ic">'+ic+'</div><div class="sh-t"><b>'+title+'</b><span>'+fmtWhen(r.at)+'</span></div><div class="sh-a '+cls+'">'+amt+' <i>⭐</i></div></div>';
     }).join('');
     list.querySelectorAll('.sh-row[data-g]').forEach(el=>{if(el.dataset.g)el.onclick=()=>{closeHistory();openGiftPage(meId(),Number(el.dataset.g),el.dataset.k);};});
