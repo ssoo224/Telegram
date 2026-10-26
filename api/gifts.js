@@ -1,5 +1,5 @@
 /* api/gifts.js — كل ما يخص النجوم والهدايا يصير هنا (الرصيد ما يتعدل من التطبيق أبداً)
-   العمليات: buy | upgrade | buy-listing | dev-stars */
+   العمليات: buy | upgrade | buy-listing | dev-stars | send-stars */
 const crypto = require('crypto');
 const { db, FieldValue, limited, HttpError, guard, authUser, send, ensureChat } = require('./_shared');
 const { loadKinds } = require('./_gift-kinds');
@@ -105,6 +105,39 @@ async function opDevStars(uid, to, amount, myName) {
   return { ok: true };
 }
 
+/* إهداء نجوم من أي مستخدم لمستخدم ثاني: ما يتجاوز رصيده، والمستلم ياخذ 95% (عمولة 5%) */
+const GIFT_FEE_PCT = 5;
+async function opSendStars(uid, to, amount, myName) {
+  if (!to || typeof to !== 'string' || to.length > 128 || to === uid) throw new HttpError(400, 'bad');
+  if (!Number.isInteger(amount) || amount < 2 || amount > 1000000) throw new HttpError(400, 'bad');
+  const net = Math.floor(amount * (100 - GIFT_FEE_PCT) / 100), fee = amount - net;
+  if (net < 1) throw new HttpError(400, 'bad');
+  const tu = await db.collection('users').doc(to).get();
+  if (!tu.exists) throw new HttpError(404, 'nouser');
+  const [b1, b2] = await Promise.all([
+    db.collection('users').doc(to).collection('blocks').doc(uid).get(),
+    db.collection('users').doc(uid).collection('blocks').doc(to).get()
+  ]);
+  if (b1.exists || b2.exists) throw new HttpError(403, 'blocked');
+  const toName = tu.data().displayName || 'مستخدم', now = Date.now();
+  const wref = db.collection('wallets').doc(uid), rref = db.collection('wallets').doc(to);
+  await db.runTransaction(async tx => {
+    const ws = await tx.get(wref);
+    const bal = ws.exists ? Number(ws.data().stars) || 0 : 0;
+    if (bal < amount) throw new HttpError(402, 'funds', { balance: bal });
+    tx.set(wref, { stars: bal - amount }, { merge: true });
+    tx.set(rref, { stars: FieldValue.increment(net) }, { merge: true });
+    tx.set(db.collection('users').doc(to).collection('txs').doc(), { type: 'in', from: uid, fromName: myName, stars: net, gross: amount, fee, at: now });
+    tx.set(db.collection('users').doc(uid).collection('txs').doc(), { type: 'out', to, toName, stars: amount, net, fee, at: now });
+    tx.set(db.collection('appStats').doc('fees'), { stars: FieldValue.increment(fee), count: FieldValue.increment(1), updatedAt: now }, { merge: true });
+  });
+  try {
+    const cref = await ensureChat(uid, to, now);
+    await cref.collection('messages').add({ senderId: uid, type: 'stars', stars: net, gross: amount, fee, text: '🎁 هدية ' + fmt(net) + ' نجمة', createdAt: now, read: false });
+  } catch (e) { console.warn('star message', e && e.message); }
+  return { ok: true, net, fee };
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   try {
@@ -118,6 +151,13 @@ module.exports = async (req, res) => {
       if (!u.isDev) throw new HttpError(403, 'dev');
       const me = await db.collection('users').doc(u.uid).get();
       return res.status(200).json(await opDevStars(u.uid, body.to, Number(body.amount), (me.exists && me.data().displayName) || 'المطور'));
+    }
+    if (body.op === 'send-stars') {
+      if (limited('ss:' + u.uid, 60000, 8)) throw new HttpError(429, 'rate');
+      const me = await db.collection('users').doc(u.uid).get();
+      const myName = (me.exists && me.data().displayName) || 'مستخدم';
+      if (u.isDev) return res.status(200).json(await opDevStars(u.uid, body.to, Number(body.amount), myName));
+      return res.status(200).json(await opSendStars(u.uid, body.to, Number(body.amount), myName));
     }
     const K = kinds[String(body.kind || '')];
     if (!K) throw new HttpError(400, 'kind');
