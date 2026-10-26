@@ -48,6 +48,9 @@
       ]
     }
   ],
+  "redirects": [
+    { "source": "/nft/:slug", "destination": "/?nft=:slug", "permanent": false }
+  ],
   "functions": {
     "api/account.js": {
       "maxDuration": 60
