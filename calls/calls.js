@@ -1,36 +1,68 @@
-/* calls/calls.js — مكالمات صوتية 1:1 (WebRTC + إشارات عبر Firestore)
-   يعتمد على متغيرات index.html: db, currentUser, activeChatId, currentChatOtherUserId, isGroupChat, babylonApi, showToast */
+/* calls/calls.js (v4) — مكالمات صوتية 1:1 (WebRTC + إشارات عبر Firestore)
+   يعتمد على متغيرات index.html: db, currentUser, currentChatOtherUserId, isGroupChat, babylonApi, showToast */
 (function () {
   'use strict';
-  var pc = null, localStream = null, callId = null, role = null, unsubs = [], ringTimer = null, tick = null, startedAt = 0, muted = false, ending = false;
-  var seenCand = {}, candReady = false, candQueue = [];
+  var pc = null, localStream = null, callId = null, role = null, peerId = null, unsubs = [], ringTimer = null, tick = null;
+  var startedAt = 0, muted = false, spkOn = false, ending = false, incoming = null;
+  var seenCand = {}, candReady = false, candQueue = [], nativePending = null;
+
+  /* ---------- أيقونات SVG ---------- */
+  var IC = {
+    mic: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v4M8 22h8"/></svg>',
+    micOff: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"/><path d="M9 9v2a3 3 0 0 0 5.1 2.1M15 9.3V5a3 3 0 0 0-5.9-.8"/><path d="M5 10v1a7 7 0 0 0 11.3 5.5M19 10v1a7 7 0 0 1-.6 2.8M12 18v4M8 22h8"/></svg>',
+    spk: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+    end: '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.956.956 0 0 1-.29-.7c0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28a11.27 11.27 0 0 0-2.67-1.85.996.996 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>',
+    answer: '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>'
+  };
 
   /* ---------- ستايل ---------- */
   var st = document.createElement('style');
   st.textContent =
     '#bbCallBtn{display:inline-flex}#bbCallBtn.hidden{display:none}' +
-    '#bbCallOv{position:fixed;inset:0;z-index:99999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:linear-gradient(160deg,#1b1306,#3a2a0b 55%,#14100a);color:#f5e6b8;font-family:inherit;text-align:center;padding:24px}' +
+    '#bbCallOv{position:fixed;inset:0;z-index:99999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(165deg,#1b1306,#3a2a0b 55%,#120d07);color:#f5e6b8;font-family:inherit;text-align:center;padding:24px}' +
     '#bbCallOv.on{display:flex}' +
-    '#bbCallOv .av{width:120px;height:120px;border-radius:50%;background:rgba(212,175,55,.18);border:2px solid rgba(212,175,55,.6);display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden}' +
+    '#bbCallOv .av{width:124px;height:124px;border-radius:50%;background:rgba(212,175,55,.16);border:2px solid rgba(212,175,55,.55);display:flex;align-items:center;justify-content:center;font-size:50px;overflow:hidden;box-shadow:0 0 0 10px rgba(212,175,55,.07)}' +
     '#bbCallOv .av img{width:100%;height:100%;object-fit:cover}' +
-    '#bbCallOv .nm{font-size:24px;font-weight:700}#bbCallOv .stt{opacity:.8;font-size:15px;min-height:20px}' +
-    '#bbCallOv .row{display:flex;gap:26px;margin-top:30px}' +
-    '#bbCallOv button{width:68px;height:68px;border-radius:50%;border:0;font-size:28px;color:#fff;cursor:pointer}' +
-    '#bbCallOv .acc{background:#22a559}#bbCallOv .rej{background:#e0443e}#bbCallOv .mut{background:rgba(255,255,255,.16)}#bbCallOv .mut.on{background:#d4af37;color:#000}';
+    '#bbCallOv .nm{font-size:25px;font-weight:700;margin-top:6px}#bbCallOv .stt{opacity:.8;font-size:15px;min-height:20px}' +
+    '#bbCallOv .row{display:none;gap:30px;margin-top:46px;align-items:flex-start;justify-content:center}' +
+    '#bbCallOv .cb{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12.5px;opacity:.95}' +
+    '#bbCallOv button{width:66px;height:66px;border-radius:50%;border:0;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:transform .12s,background .15s}' +
+    '#bbCallOv button:active{transform:scale(.92)}' +
+    '#bbCallOv .acc{background:#22a559}#bbCallOv .rej{background:#e0443e}' +
+    '#bbCallOv .tg{background:rgba(255,255,255,.14)}#bbCallOv .tg.on{background:#f5e6b8;color:#2a1d06}';
   document.head.appendChild(st);
 
   var ov = document.createElement('div');
   ov.id = 'bbCallOv';
-  ov.innerHTML = '<div class="av" id="bbCallAv">📞</div><div class="nm" id="bbCallNm"></div><div class="stt" id="bbCallStt"></div>' +
-    '<div class="row"><button class="mut" id="bbCallMut" title="كتم">🎙️</button><button class="acc" id="bbCallAcc" title="رد">📞</button><button class="rej" id="bbCallRej" title="إنهاء">✖</button></div>' +
+  ov.innerHTML =
+    '<div class="av" id="bbCallAv"></div><div class="nm" id="bbCallNm"></div><div class="stt" id="bbCallStt"></div>' +
+    '<div class="row" id="bbRowActive">' +
+      '<div class="cb"><button class="tg" id="bbCallMut" aria-label="كتم">' + IC.mic + '</button><span>كتم</span></div>' +
+      '<div class="cb"><button class="rej" id="bbCallEnd" aria-label="إنهاء">' + IC.end + '</button><span>إنهاء</span></div>' +
+      '<div class="cb" id="bbSpkWrap"><button class="tg" id="bbCallSpk" aria-label="السماعة">' + IC.spk + '</button><span>السماعة</span></div>' +
+    '</div>' +
+    '<div class="row" id="bbRowIn">' +
+      '<div class="cb"><button class="rej" id="bbCallRej" aria-label="رفض">' + IC.end + '</button><span>رفض</span></div>' +
+      '<div class="cb"><button class="acc" id="bbCallAcc" aria-label="رد">' + IC.answer + '</button><span>رد</span></div>' +
+    '</div>' +
     '<audio id="bbCallAudio" autoplay playsinline></audio>';
   document.body.appendChild(ov);
   var $ = function (i) { return document.getElementById(i); };
-  $('bbCallRej').onclick = function () { stopRing(); endCall(role === 'callee' && $('bbCallAcc').style.display !== 'none' ? 'rejected' : 'ended'); };
+  function nat() { return window.BabylonCallNative || null; }
+
+  $('bbCallEnd').onclick = function () { stopRing(); endCall('ended'); };
+  $('bbCallRej').onclick = function () { stopRing(); endCall('rejected'); };
   $('bbCallAcc').onclick = acceptCall;
   $('bbCallMut').onclick = function () {
-    muted = !muted; if (localStream) localStream.getAudioTracks().forEach(function (t) { t.enabled = !muted; });
+    muted = !muted;
+    if (localStream) localStream.getAudioTracks().forEach(function (t) { t.enabled = !muted; });
     $('bbCallMut').classList.toggle('on', muted);
+    $('bbCallMut').innerHTML = muted ? IC.micOff : IC.mic;
+  };
+  $('bbCallSpk').onclick = function () {
+    spkOn = !spkOn;
+    try { if (nat()) nat().setSpeaker(spkOn); } catch (e) {}
+    $('bbCallSpk').classList.toggle('on', spkOn);
   };
 
   /* ---------- الأصوات (بدون ملفات) ---------- */
@@ -64,16 +96,20 @@
   function endTone() { beep(520, 0.15, 0); beep(380, 0.25, 0.2); }
 
   /* ---------- أدوات ---------- */
-  function setUI(name, status, showAccept, avatarUrl) {
+  function setUI(name, status, incomingMode, avatarUrl) {
     $('bbCallNm').textContent = name || '';
     $('bbCallStt').textContent = status || '';
-    $('bbCallAcc').style.display = showAccept ? '' : 'none';
-    $('bbCallMut').style.display = showAccept ? 'none' : '';
+    $('bbRowIn').style.display = incomingMode ? 'flex' : 'none';
+    $('bbRowActive').style.display = incomingMode ? 'none' : 'flex';
+    $('bbSpkWrap').style.display = nat() ? '' : 'none';
+    $('bbCallMut').classList.remove('on'); $('bbCallMut').innerHTML = IC.mic;
+    $('bbCallSpk').classList.toggle('on', spkOn);
     var av = $('bbCallAv'); av.innerHTML = '';
     if (avatarUrl) { var im = document.createElement('img'); im.src = avatarUrl; av.appendChild(im); } else av.textContent = (name || '؟').charAt(0);
     ov.classList.add('on');
   }
   function toast(m) { try { showToast(m); } catch (e) { console.log(m); } }
+  function myName() { return (typeof currentUserData !== 'undefined' && currentUserData && currentUserData.displayName) || (currentUser && currentUser.displayName) || 'بابل'; }
   function getIce() {
     return babylonApi('/api/turn', {}, currentUser).then(function (r) {
       return (r && r.data && r.data.iceServers) || [{ urls: 'stun:stun.l.google.com:19302' }];
@@ -82,6 +118,14 @@
   function getMic() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.reject(new Error('nomic'));
     return navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: false });
+  }
+  function callRef() { return db.collection('calls').doc(callId); }
+  function pushCall(end) {
+    try {
+      if (!peerId || !callId) return;
+      var cid = [currentUser.uid, peerId].sort().join('__');
+      babylonApi('/api/index', { recipientId: peerId, chatId: cid, callId: callId, callEnd: !!end, senderName: myName(), messageText: end ? '' : 'مكالمة صوتية واردة' }, currentUser).catch(function () {});
+    } catch (e) {}
   }
   function makePC(ice, candCol) {
     pc = new RTCPeerConnection({ iceServers: ice });
@@ -98,7 +142,6 @@
       if (pc.connectionState === 'failed') endCall('ended');
     };
   }
-  function callRef() { return db.collection('calls').doc(callId); }
   function listenCandidates(col) {
     unsubs.push(callRef().collection(col).onSnapshot(function (s) {
       s.docChanges().forEach(function (c) {
@@ -109,6 +152,7 @@
   }
   function onConnected() {
     stopRing(); clearTimeout(ringTimer);
+    try { if (nat()) nat().setSpeaker(spkOn); } catch (e) {}
     if (tick) return;
     startedAt = Date.now();
     tick = setInterval(function () {
@@ -122,13 +166,16 @@
     unsubs.forEach(function (u) { try { u(); } catch (e) {} }); unsubs = [];
     if (pc) { try { pc.close(); } catch (e) {} pc = null; }
     if (localStream) { localStream.getTracks().forEach(function (t) { t.stop(); }); localStream = null; }
+    try { if (nat()) nat().resetAudio(); } catch (e) {}
     $('bbCallAudio').srcObject = null; ov.classList.remove('on');
-    callId = null; role = null; muted = false; ending = false; seenCand = {}; candReady = false; candQueue = []; $('bbCallMut').classList.remove('on');
+    callId = null; role = null; peerId = null; incoming = null; muted = false; spkOn = false; ending = false; startedAt = 0;
+    seenCand = {}; candReady = false; candQueue = [];
   }
   function endCall(status) {
     if (ending) return; ending = true;
     var id = callId;
     if (id) db.collection('calls').doc(id).update({ status: status || 'ended', endedBy: currentUser.uid }).catch(function () {});
+    if (role === 'caller' && !startedAt) pushCall(true);   /* ألغِ رنين الطرف الثاني */
     cleanup();
   }
   function watchStatus() {
@@ -154,7 +201,7 @@
     actx();
     var nm = (document.getElementById('chatTitleText') || {}).textContent || '', av = (document.querySelector('#chatAvatar img') || {}).src;
     setUI(nm, 'جاري الاتصال…', false, av);
-    role = 'caller';
+    role = 'caller'; peerId = other;
     Promise.all([getMic(), getIce()]).then(function (a) {
       localStream = a[0];
       callId = db.collection('calls').doc().id;
@@ -169,10 +216,7 @@
       candQueue.splice(0).forEach(function (q) { callRef().collection(q[0]).add(q[1]).catch(function () {}); });
       watchStatus(); listenCandidates('calleeCandidates');
       $('bbCallStt').textContent = 'يرن…'; startRing('out');
-      try {
-        var cid = [currentUser.uid, other].sort().join('__');
-        babylonApi('/api/index', { recipientId: other, chatId: cid, senderName: (typeof currentUserData !== 'undefined' && currentUserData && currentUserData.displayName) || 'بابل', messageText: '📞 مكالمة صوتية واردة' }, currentUser).catch(function () {});
-      } catch (e) {}
+      pushCall(false);
       ringTimer = setTimeout(function () { endCall('missed'); }, 45000);
     }).catch(function (e) {
       toast(e && e.message === 'nomic' ? 'المتصفح لا يدعم المايك' : 'تعذّر بدء المكالمة (اسمح للمايك)'); cleanup();
@@ -180,10 +224,9 @@
   }
 
   /* ---------- المستقبِل ---------- */
-  var incoming = null;
   function showIncoming(id, c) {
     if (callId) { db.collection('calls').doc(id).update({ status: 'rejected' }).catch(function () {}); return; }
-    callId = id; role = 'callee'; incoming = c;
+    callId = id; role = 'callee'; incoming = c; peerId = c.from;
     db.collection('users').doc(c.from).get().then(function (u) {
       var d = u.exists ? u.data() : {};
       var url = (typeof pvUrl === 'function' && u.exists) ? pvUrl(d) : '';
@@ -191,11 +234,16 @@
     }).catch(function () { setUI('مستخدم', 'مكالمة صوتية واردة…', true); });
     watchStatus(); startRing('in');
     ringTimer = setTimeout(function () { if (callId === id && !pc) { ending = true; cleanup(); } }, 45000);
+    /* فُتح التطبيق من زر (رد) بالإشعار: رد تلقائياً */
+    if (nativePending && nativePending.id === id) {
+      var mode = nativePending.mode; nativePending = null;
+      if (mode === 'accept') setTimeout(function () { if (callId === id) acceptCall(); }, 350);
+    }
   }
   function acceptCall() {
-    if (!callId || !incoming) return;
+    if (!callId || !incoming || pc) return;
     stopRing();
-    $('bbCallStt').textContent = 'جاري الاتصال…'; $('bbCallAcc').style.display = 'none'; $('bbCallMut').style.display = '';
+    setUI($('bbCallNm').textContent, 'جاري الاتصال…', false, (document.querySelector('#bbCallAv img') || {}).src);
     Promise.all([getMic(), getIce()]).then(function (a) {
       localStream = a[0];
       candReady = true;
@@ -218,6 +266,24 @@
       });
     }, function () {});
   }
+
+  /* ---------- تسليم من تطبيق الأندرويد (إشعار المكالمة) ---------- */
+  function takeNative() {
+    try {
+      var n = nat(); if (!n) return;
+      var s = n.takePending();
+      if (s) { var p = s.split('|'); nativePending = { id: p[0], mode: p[1] || 'show' }; }
+    } catch (e) {}
+  }
+  window.BabylonCalls = {
+    decline: function (id) {
+      if (callId === id && role === 'callee') { stopRing(); endCall('rejected'); return; }
+      try { db.collection('calls').doc(id).update({ status: 'rejected', endedBy: currentUser.uid }).catch(function () {}); } catch (e) {}
+    }
+  };
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) takeNative(); });
+  window.addEventListener('focus', takeNative);
+  takeNative(); setTimeout(takeNative, 1500); setTimeout(takeNative, 4000);
 
   /* ---------- زر المكالمة بالهيدر ---------- */
   function ensureBtn() {
