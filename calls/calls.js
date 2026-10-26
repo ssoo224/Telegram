@@ -26,12 +26,42 @@
     '<audio id="bbCallAudio" autoplay playsinline></audio>';
   document.body.appendChild(ov);
   var $ = function (i) { return document.getElementById(i); };
-  $('bbCallRej').onclick = function () { endCall(role === 'callee' && $('bbCallAcc').style.display !== 'none' ? 'rejected' : 'ended'); };
+  $('bbCallRej').onclick = function () { stopRing(); endCall(role === 'callee' && $('bbCallAcc').style.display !== 'none' ? 'rejected' : 'ended'); };
   $('bbCallAcc').onclick = acceptCall;
   $('bbCallMut').onclick = function () {
     muted = !muted; if (localStream) localStream.getAudioTracks().forEach(function (t) { t.enabled = !muted; });
     $('bbCallMut').classList.toggle('on', muted);
   };
+
+  /* ---------- الأصوات (بدون ملفات) ---------- */
+  var AC = null, ringIv = null;
+  function actx() {
+    if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (AC && AC.state === 'suspended') AC.resume().catch(function () {});
+    return AC;
+  }
+  ['pointerdown', 'touchstart', 'keydown'].forEach(function (ev) {
+    document.addEventListener(ev, function () { actx(); }, { once: true, passive: true });
+  });
+  function beep(freq, dur, when, vol) {
+    var a = actx(); if (!a) return;
+    var o = a.createOscillator(), g = a.createGain(), t = a.currentTime + (when || 0), v = vol || 0.25;
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.02);
+    g.gain.setValueAtTime(v, t + dur - 0.03); g.gain.linearRampToValueAtTime(0, t + dur);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function vib(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  function stopRing() { if (ringIv) { clearInterval(ringIv); ringIv = null; } vib(0); }
+  function startRing(kind) {
+    stopRing();
+    function once() {
+      if (kind === 'in') { beep(880, 0.18, 0); beep(660, 0.18, 0.22); beep(880, 0.18, 0.55); beep(660, 0.18, 0.77); vib([300, 150, 300]); }
+      else beep(440, 0.9, 0, 0.18);
+    }
+    once(); ringIv = setInterval(once, kind === 'in' ? 2200 : 3000);
+  }
+  function endTone() { beep(520, 0.15, 0); beep(380, 0.25, 0.2); }
 
   /* ---------- أدوات ---------- */
   function setUI(name, status, showAccept, avatarUrl) {
@@ -78,7 +108,7 @@
     }));
   }
   function onConnected() {
-    clearTimeout(ringTimer);
+    stopRing(); clearTimeout(ringTimer);
     if (tick) return;
     startedAt = Date.now();
     tick = setInterval(function () {
@@ -87,6 +117,7 @@
     }, 500);
   }
   function cleanup() {
+    stopRing(); if (callId) endTone();
     clearTimeout(ringTimer); if (tick) clearInterval(tick); tick = null;
     unsubs.forEach(function (u) { try { u(); } catch (e) {} }); unsubs = [];
     if (pc) { try { pc.close(); } catch (e) {} pc = null; }
@@ -105,7 +136,7 @@
       var c = d.data(); if (!c || ending) return;
       if (c.status === 'active' && role === 'caller' && pc && c.answer && !pc.currentRemoteDescription) {
         pc.setRemoteDescription(new RTCSessionDescription(c.answer)).catch(function () {});
-        $('bbCallStt').textContent = 'جاري الاتصال…';
+        $('bbCallStt').textContent = 'جاري الاتصال…'; stopRing();
       }
       if (['ended', 'rejected', 'missed'].indexOf(c.status) > -1) {
         if (role === 'caller' && c.status === 'rejected') toast('رفض المكالمة');
@@ -120,6 +151,7 @@
     var other = (typeof currentChatOtherUserId !== 'undefined') ? currentChatOtherUserId : null;
     if (!other || !currentUser || callId) return;
     if (typeof isGroupChat === 'function' && isGroupChat()) return toast('المكالمات للمحادثات الفردية فقط');
+    actx();
     var nm = (document.getElementById('chatTitleText') || {}).textContent || '', av = (document.querySelector('#chatAvatar img') || {}).src;
     setUI(nm, 'جاري الاتصال…', false, av);
     role = 'caller';
@@ -136,7 +168,11 @@
       candReady = true;
       candQueue.splice(0).forEach(function (q) { callRef().collection(q[0]).add(q[1]).catch(function () {}); });
       watchStatus(); listenCandidates('calleeCandidates');
-      $('bbCallStt').textContent = 'يرن…';
+      $('bbCallStt').textContent = 'يرن…'; startRing('out');
+      try {
+        var cid = [currentUser.uid, other].sort().join('__');
+        babylonApi('/api/index', { recipientId: other, chatId: cid, senderName: (typeof currentUserData !== 'undefined' && currentUserData && currentUserData.displayName) || 'بابل', messageText: '📞 مكالمة صوتية واردة' }, currentUser).catch(function () {});
+      } catch (e) {}
       ringTimer = setTimeout(function () { endCall('missed'); }, 45000);
     }).catch(function (e) {
       toast(e && e.message === 'nomic' ? 'المتصفح لا يدعم المايك' : 'تعذّر بدء المكالمة (اسمح للمايك)'); cleanup();
@@ -153,11 +189,12 @@
       var url = (typeof pvUrl === 'function' && u.exists) ? pvUrl(d) : '';
       if (callId === id) setUI(d.displayName || 'مستخدم', 'مكالمة صوتية واردة…', true, url);
     }).catch(function () { setUI('مستخدم', 'مكالمة صوتية واردة…', true); });
-    watchStatus();
+    watchStatus(); startRing('in');
     ringTimer = setTimeout(function () { if (callId === id && !pc) { ending = true; cleanup(); } }, 45000);
   }
   function acceptCall() {
     if (!callId || !incoming) return;
+    stopRing();
     $('bbCallStt').textContent = 'جاري الاتصال…'; $('bbCallAcc').style.display = 'none'; $('bbCallMut').style.display = '';
     Promise.all([getMic(), getIce()]).then(function (a) {
       localStream = a[0];
