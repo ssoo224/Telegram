@@ -23,7 +23,7 @@ else:
 # 2) AndroidManifest
 mf = app / "src" / "main" / "AndroidManifest.xml"
 m = rd(mf)
-perms = ["POST_NOTIFICATIONS", "RECORD_AUDIO", "CAMERA", "MODIFY_AUDIO_SETTINGS", "VIBRATE", "READ_MEDIA_IMAGES", "READ_MEDIA_VIDEO", "READ_EXTERNAL_STORAGE"]
+perms = ["POST_NOTIFICATIONS", "RECORD_AUDIO", "CAMERA", "MODIFY_AUDIO_SETTINGS", "VIBRATE", "READ_MEDIA_IMAGES", "READ_MEDIA_VIDEO", "READ_EXTERNAL_STORAGE", "REQUEST_INSTALL_PACKAGES"]
 add = "".join('    <uses-permission android:name="android.permission.%s" />\n' % p
               for p in perms if 'android.permission.%s"' % p not in m)
 add += '    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />\n'
@@ -74,11 +74,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.view.View;
 import android.view.Window;
 import android.widget.Toast;
+import androidx.core.content.FileProvider;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
@@ -203,6 +205,12 @@ public class MainActivity extends BridgeActivity {
             } catch (Throwable ignored) { }
         }
 
+        /** تحديث بضغطة وحدة: ينزّل الـ APK من موقعنا ويفتح شاشة التثبيت. */
+        @JavascriptInterface
+        public void installUpdate(String url) {
+            runUpdate(url);
+        }
+
         @JavascriptInterface
         public void flushPending() {
             runOnUiThread(() -> BabylonNotifications.dispatchPending(getApplicationContext(), liveWebView));
@@ -217,6 +225,107 @@ public class MainActivity extends BridgeActivity {
             mediaExecutor.execute(() -> saveMediaInternal(source, filename, mimeType));
         }
     }
+
+    // BABYLON-UPD-BEGIN
+    private volatile boolean updating = false;
+
+    private void updJs(String state, int pct) {
+        runOnUiThread(() -> {
+            try {
+                WebView w = liveWebView;
+                if (w != null) w.evaluateJavascript("window.__babylonUpd&&window.__babylonUpd('" + state + "'," + pct + ")", null);
+            } catch (Throwable ignored) { }
+        });
+    }
+
+    /** مسموح فقط رابط /api/apk من نفس موقع التطبيق (حتى ما تنفتح الدالة لروابط غريبة). */
+    private boolean updUrlAllowed(String url) {
+        try {
+            if (url == null || !url.startsWith("https://")) return false;
+            WebView w = liveWebView;
+            String cur = (w == null) ? null : w.getUrl();
+            if (cur == null) return false;
+            Uri u = Uri.parse(url);
+            String host = u.getHost();
+            String path = u.getPath();
+            return host != null && host.equals(Uri.parse(cur).getHost()) && "/api/apk".equals(path);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private void runUpdate(String url) {
+        if (!updUrlAllowed(url)) { updJs("error", 0); return; }
+        if (updating) return;
+        if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
+            runOnUiThread(() -> {
+                try {
+                    Intent i = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()));
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(i);
+                } catch (Throwable ignored) { }
+            });
+            updJs("perm", 0);
+            return;
+        }
+        updating = true;
+        new Thread(() -> {
+            try {
+                downloadAndInstall(url);
+            } catch (Throwable t) {
+                updJs("error", 0);
+            } finally {
+                updating = false;
+            }
+        }).start();
+    }
+
+    private void downloadAndInstall(String source) throws Exception {
+        File dir = new File(getCacheDir(), "updates");
+        if (!dir.exists() && !dir.mkdirs()) throw new Exception("mkdir");
+        File apk = new File(dir, "babylon-chat.apk");
+        HttpURLConnection c = (HttpURLConnection) new URL(source).openConnection();
+        c.setConnectTimeout(20000);
+        c.setReadTimeout(30000);
+        c.setInstanceFollowRedirects(true);
+        c.connect();
+        if (c.getResponseCode() != 200) throw new Exception("http " + c.getResponseCode());
+        long total = c.getContentLengthLong();
+        long done = 0;
+        int last = -1;
+        updJs("dl", 0);
+        try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(apk)) {
+            byte[] buf = new byte[32768];
+            int n;
+            while ((n = in.read(buf)) != -1) {
+                out.write(buf, 0, n);
+                done += n;
+                if (total > 0) {
+                    int p = (int) (done * 100L / total);
+                    if (p != last) { last = p; updJs("dl", p); }
+                }
+            }
+        } finally {
+            c.disconnect();
+        }
+        if (apk.length() < 1000000L) throw new Exception("small");
+        try (InputStream chk = new java.io.FileInputStream(apk)) {
+            if (chk.read() != 'P' || chk.read() != 'K') throw new Exception("not apk");
+        }
+        updJs("ready", 100);
+        final Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".updates", apk);
+        runOnUiThread(() -> {
+            try {
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setDataAndType(uri, "application/vnd.android.package-archive");
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
+            } catch (Throwable t) {
+                updJs("error", 0);
+            }
+        });
+    }
+    // BABYLON-UPD-END
 
     private void saveMediaInternal(String source, String filename, String mimeType) {
         try {
@@ -765,6 +874,21 @@ if "BabylonNotificationReceiver" not in m2:
     m2 = m2.replace("</application>", '        <receiver android:name="%s.BabylonNotificationReceiver" android:exported="false" />\n    </application>' % NOTIF_PKG)
     wr(mf, m2)
     print("notification receiver registered in manifest")
+
+# 2.67) تحديث التطبيق بضغطة وحدة: مزوّد ملفات يسمح لمثبّت أندرويد بقراءة الـ APK من كاش التطبيق
+wr(ma.parent / "BabylonUpdateProvider.java",
+   "package %s;\n\nimport androidx.core.content.FileProvider;\n\npublic class BabylonUpdateProvider extends FileProvider {}\n" % NOTIF_PKG)
+(res / "xml").mkdir(parents=True, exist_ok=True)
+wr(res / "xml" / "babylon_update_paths.xml",
+   '<?xml version="1.0" encoding="utf-8"?>\n<paths>\n    <cache-path name="updates" path="updates/" />\n</paths>\n')
+m3 = rd(mf)
+if "BabylonUpdateProvider" not in m3:
+    prov = ('        <provider android:name="%s.BabylonUpdateProvider" android:authorities="${applicationId}.updates" android:exported="false" android:grantUriPermissions="true">\n'
+            '            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/babylon_update_paths" />\n'
+            '        </provider>\n') % NOTIF_PKG
+    if "</application>" not in m3: die("ما لقيت application", mf)
+    wr(mf, m3.replace("</application>", prov + "    </application>"))
+    print("update provider registered in manifest")
 
 # 2.66) خدمة FCM الأصلية: تعرض إشعار الرسالة (صورة + أزرار) والتطبيق مغلق
 NOTIF_SERVICE = r"""package __PKG__;
