@@ -8,9 +8,14 @@
   'use strict';
   var RE_URL = /(?:https?:\/\/[^\s<>"']+)?\/(?:nft\/|\?nft=)([A-Za-z0-9]+-\d{1,7})/;
   var cache = {};
+  /* نطاق الرابط. إذا عندك نطاق قصير غيّر هالسطر، مثال: 'https://bbl.link' (فارغ = نفس موقع التطبيق) */
+  var LINK_BASE = '';
+  function base() { return String(LINK_BASE || location.origin).replace(/\/+$/, ''); }
+  /* النص اللي يبين بالمحادثة: قصير مثل t.me/nft/... */
+  function linkLabel(slug) { var h = LINK_BASE ? String(LINK_BASE).replace(/^https?:\/\//, '').replace(/\/+$/, '') : 'Babylon'; return h + '/nft/' + slug; }
 
   function slugName(K) { return String(K.name || K.key).replace(/[^A-Za-z0-9]+/g, ''); }
-  function giftLink(kind, n) { return location.origin + '/nft/' + slugName(gk(kind)) + '-' + n; }
+  function giftLink(kind, n) { return base() + '/nft/' + slugName(gk(kind)) + '-' + n; }
   function parseSlug(s) {
     var m = /^([A-Za-z0-9]+)-(\d{1,7})$/.exec(String(s || ''));
     if (!m) return null;
@@ -93,7 +98,7 @@
       /* الرابط يصير أزرق وقابل للضغط */
       try {
         var full = m[0].replace(/&/g, '&amp;');
-        if (box.innerHTML.indexOf(full) >= 0) box.innerHTML = box.innerHTML.replace(full, '<span class="gl-link" data-gl="' + m[1] + '">' + full + '</span>');
+        if (box.innerHTML.indexOf(full) >= 0) box.innerHTML = box.innerHTML.replace(full, '<span class="gl-link" data-gl="' + m[1] + '">' + linkLabel(m[1]) + '</span>');
       } catch (e) {}
       var card = document.createElement('div'); card.className = 'gl-card'; card.dataset.gl = m[1];
       card.innerHTML = cardHtml(p.K, p.n, null);
