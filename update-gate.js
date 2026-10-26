@@ -23,7 +23,7 @@
     }
     try { navigator.clipboard.writeText(t).then(function () { done(true); }, fallback); } catch (e) { fallback(); }
   }
-  function hide() { if (el) { try { el.remove(); } catch (e) {} } el = null; mode = ''; }
+  function hide() { if (el) { try { el.remove(); } catch (e) {} } el = null; mode = ''; try { delete window.__babylonUpd; } catch (e) { window.__babylonUpd = null; } }
 
   function show(force, notes, url) {
     var m = force ? 'force' : 'soft';
@@ -39,6 +39,7 @@
       '<div style="font-size:54px;margin-bottom:10px">⬆️</div>' +
       '<h1 style="margin:0 0 10px;font-size:22px;font-weight:800;color:#e8c85d">' + (force ? 'تحديث مطلوب' : 'يوجد تحديث جديد') + '</h1>' +
       '<p id="updMsg" style="margin:0 0 22px;font-size:14px;line-height:1.9;color:#cbd5e1"></p>' +
+      '<div id="updBar" style="display:none;height:6px;border-radius:3px;background:rgba(255,255,255,.12);margin:0 0 14px;overflow:hidden"><div id="updFill" style="height:100%;width:0;background:#e8c85d;transition:width .2s"></div></div>' +
       '<button id="updGo" type="button" style="width:100%;border:0;border-radius:14px;min-height:52px;font-size:16px;font-weight:800;font-family:inherit;background:linear-gradient(135deg,#e8c85d,#cba843);color:#292216">تحديث الآن</button>' +
       '<div id="updAlt" style="display:none;margin-top:18px;font-size:12px;line-height:1.8;color:#8798aa">إذا ما بدأ التنزيل، انسخ الرابط وافتحه بكروم:' +
       '<div id="updLink" dir="ltr" style="background:rgba(255,255,255,.07);border-radius:10px;padding:10px;margin:8px 0;color:#cbd5e1;word-break:break-all;user-select:all"></div>' +
@@ -52,12 +53,28 @@
       var b = this;
       copyText(url, function (ok) { b.textContent = ok ? 'تم النسخ ✓' : 'انسخه يدوياً من الأعلى'; });
     };
-    d.querySelector('#updGo').onclick = function () {
+    var go = d.querySelector('#updGo'), bar = d.querySelector('#updBar'), fill = d.querySelector('#updFill'), alt = d.querySelector('#updAlt');
+    function idle() { go.disabled = false; go.textContent = 'تحديث الآن'; }
+    /* النسخ الجديدة من التطبيق تنزّل وتثبّت بنفسها وتبلّغ الصفحة بالتقدم */
+    window.__babylonUpd = function (st, pct) {
+      if (st === 'dl') {
+        bar.style.display = 'block'; fill.style.width = pct + '%'; go.disabled = true; go.textContent = 'جاري التنزيل ' + pct + '%';
+        msg.textContent = 'لا تطلع من التطبيق لحد ما يخلص التنزيل.';
+      } else if (st === 'ready') {
+        fill.style.width = '100%'; idle(); msg.textContent = 'اكتمل التنزيل. اضغط تثبيت بالنافذة اللي طلعت، وبعدها افتح التطبيق.';
+      } else if (st === 'perm') {
+        idle(); msg.textContent = 'فعّل خيار (السماح بالتثبيت من هذا المصدر) لبابل، وارجع واضغط تحديث الآن.';
+      } else {
+        bar.style.display = 'none'; idle(); msg.textContent = 'تعذر التنزيل داخل التطبيق. انسخ الرابط وافتحه بكروم.'; alt.style.display = 'block';
+      }
+    };
+    go.onclick = function () {
       var nb = window.BabylonAndroidNative, done = false;
+      try { if (nb && typeof nb.installUpdate === 'function') { nb.installUpdate(location.origin + DL); return; } } catch (e) {}
       try { if (nb && typeof nb.openExternal === 'function') { nb.openExternal(url); done = true; } } catch (e) {}
       if (!done) { try { window.open(url, '_blank'); } catch (e) {} }
       msg.textContent = 'بدأ التنزيل. بعد ما يخلص افتح الملف من إشعار التنزيلات وثبّته. إذا طلب السماح بالتثبيت من هذا المصدر فعّله.';
-      d.querySelector('#updAlt').style.display = 'block';
+      alt.style.display = 'block';
     };
     var later = d.querySelector('#updLater');
     if (later) later.onclick = function () { dismissed = true; hide(); };
