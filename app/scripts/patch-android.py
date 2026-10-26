@@ -120,6 +120,7 @@ public class MainActivity extends BridgeActivity {
 
         // تسجيل واجهة الحفظ فوراً (قبل تحميل الصفحة) ليعمل التنزيل إلى المعرض.
         registerNativeBridge();
+        BabylonCall.onIntent(this, getIntent());
 
         // طلب صلاحيات الوسائط/الإشعارات مرة واحدة عند أول تشغيل فقط.
         android.content.SharedPreferences prefs =
@@ -139,11 +140,18 @@ public class MainActivity extends BridgeActivity {
         try {
             WebView webView = getBridge().getWebView();
             webView.addJavascriptInterface(new BabylonAndroidBridge(), "BabylonAndroidNative");
+            webView.addJavascriptInterface(new BabylonCall.Bridge(getApplicationContext()), "BabylonCallNative");
             liveWebView = webView;
             nativeBridgeRegistered = true;
         } catch (Throwable t) {
             android.util.Log.e("BabylonChat", "registerNativeBridge failed", t);
         }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        BabylonCall.onIntent(this, intent);
     }
 
     @Override
@@ -890,6 +898,198 @@ if "BabylonUpdateProvider" not in m3:
     wr(mf, m3.replace("</application>", prov + "    </application>"))
     print("update provider registered in manifest")
 
+# 2.68) مكالمات صوتية واردة أصلية: إشعار بملء الشاشة + رنين والتطبيق مغلق
+CALL_JAVA = r"""package __PKG__;
+
+import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Build;
+import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
+import androidx.core.app.NotificationCompat;
+
+/** مكالمة صوتية واردة: إشعار بملء الشاشة + رنين متواصل (يعمل والتطبيق مغلق). */
+public class BabylonCall {
+    static final String CHANNEL = "babylon_calls";
+    static final int NOTIF_ID = 77001;
+    static final String X_ID = "bb_call_id";
+    static final String X_ACCEPT = "bb_call_accept";
+    private static String pendingId = "";
+    private static String pendingMode = "";
+
+    static void ensureChannel(Context ctx) {
+        if (Build.VERSION.SDK_INT < 26) return;
+        NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null || nm.getNotificationChannel(CHANNEL) != null) return;
+        NotificationChannel ch = new NotificationChannel(CHANNEL, "المكالمات", NotificationManager.IMPORTANCE_HIGH);
+        ch.setDescription("مكالمات صوتية واردة");
+        ch.enableVibration(true);
+        ch.setVibrationPattern(new long[]{0, 700, 400, 700, 400, 700});
+        ch.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+        AudioAttributes aa = new AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build();
+        ch.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE), aa);
+        nm.createNotificationChannel(ch);
+    }
+
+    public static void show(Context ctx, String title, String callId, String chatId) {
+        try {
+            ensureChannel(ctx);
+            Intent open = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
+            if (open == null) return;
+            open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            open.putExtra(X_ID, callId == null ? "" : callId);
+            open.putExtra(X_ACCEPT, false);
+            Intent acc = new Intent(open);
+            acc.putExtra(X_ACCEPT, true);
+            int imm = Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0;
+            PendingIntent full = PendingIntent.getActivity(ctx, 7701, open, PendingIntent.FLAG_UPDATE_CURRENT | imm);
+            PendingIntent ans = PendingIntent.getActivity(ctx, 7702, acc, PendingIntent.FLAG_UPDATE_CURRENT | imm);
+            Intent dec = new Intent(ctx, BabylonCallReceiver.class);
+            dec.setAction("__PKG__.CALL_DECLINE");
+            dec.putExtra(X_ID, callId == null ? "" : callId);
+            PendingIntent decPi = PendingIntent.getBroadcast(ctx, 7703, dec, PendingIntent.FLAG_UPDATE_CURRENT | imm);
+
+            int icon = ctx.getResources().getIdentifier("ic_stat_notify", "drawable", ctx.getPackageName());
+            if (icon == 0) icon = android.R.drawable.sym_call_incoming;
+            String t = (title == null || title.isEmpty()) ? "مكالمة واردة" : title;
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL)
+                .setSmallIcon(icon)
+                .setContentTitle(t)
+                .setContentText("مكالمة صوتية واردة")
+                .setCategory(NotificationCompat.CATEGORY_CALL)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setColor(Color.parseColor("#C9961F"))
+                .setOngoing(true)
+                .setAutoCancel(true)
+                .setTimeoutAfter(45000)
+                .setFullScreenIntent(full, true)
+                .setContentIntent(full)
+                .addAction(0, "رفض", decPi)
+                .addAction(0, "رد", ans);
+            if (Build.VERSION.SDK_INT < 26) {
+                Uri ring = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+                b.setSound(ring);
+                b.setVibrate(new long[]{0, 700, 400, 700, 400, 700});
+            }
+            Notification n = b.build();
+            n.flags |= Notification.FLAG_INSISTENT;   // رنين متكرر لين الرد أو انتهاء المهلة
+            NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.notify(NOTIF_ID, n);
+        } catch (Throwable t) {
+            android.util.Log.e("BabylonCall", "show failed", t);
+        }
+    }
+
+    public static void cancel(Context ctx) {
+        try {
+            NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.cancel(NOTIF_ID);
+        } catch (Throwable ignored) { }
+    }
+
+    /** تُستدعى من MainActivity عند فتحها من إشعار المكالمة. */
+    static void onIntent(Activity a, Intent i) {
+        try {
+            if (i == null || !i.hasExtra(X_ID)) return;
+            String id = i.getStringExtra(X_ID);
+            boolean acc = i.getBooleanExtra(X_ACCEPT, false);
+            pendingId = id == null ? "" : id;
+            pendingMode = acc ? "accept" : "show";
+            i.removeExtra(X_ID);
+            i.removeExtra(X_ACCEPT);
+            if (Build.VERSION.SDK_INT >= 27) {
+                a.setShowWhenLocked(true);
+                a.setTurnScreenOn(true);
+            } else {
+                a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+            }
+            cancel(a.getApplicationContext());
+        } catch (Throwable ignored) { }
+    }
+
+    /** جسر للصفحة: استلام المكالمة المعلّقة + التحكم بالسماعة. */
+    public static class Bridge {
+        private final Context ctx;
+        public Bridge(Context c) { ctx = c; }
+
+        @JavascriptInterface
+        public String takePending() {
+            String r = pendingId.isEmpty() ? "" : (pendingId + "|" + pendingMode);
+            pendingId = "";
+            pendingMode = "";
+            return r;
+        }
+
+        @JavascriptInterface
+        public void setSpeaker(boolean on) {
+            try {
+                AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+                if (am == null) return;
+                am.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                am.setSpeakerphoneOn(on);
+            } catch (Throwable ignored) { }
+        }
+
+        @JavascriptInterface
+        public void resetAudio() {
+            try {
+                AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+                if (am == null) return;
+                am.setSpeakerphoneOn(false);
+                am.setMode(AudioManager.MODE_NORMAL);
+            } catch (Throwable ignored) { }
+        }
+    }
+}
+"""
+CALL_RECV = r"""package __PKG__;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.webkit.WebView;
+
+/** زر (رفض) بإشعار المكالمة. */
+public class BabylonCallReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context ctx, Intent i) {
+        try {
+            final String id = i.getStringExtra("bb_call_id");
+            BabylonCall.cancel(ctx);
+            final WebView wv = MainActivity.liveWebView;
+            if (wv != null && id != null && !id.isEmpty()) {
+                final String js = "try{window.BabylonCalls&&window.BabylonCalls.decline(" + org.json.JSONObject.quote(id) + ")}catch(e){}";
+                wv.post(new Runnable() { public void run() { wv.evaluateJavascript(js, null); } });
+            }
+        } catch (Throwable ignored) { }
+    }
+}
+"""
+wr(ma.parent / "BabylonCall.java", CALL_JAVA.replace("__PKG__", NOTIF_PKG))
+wr(ma.parent / "BabylonCallReceiver.java", CALL_RECV.replace("__PKG__", NOTIF_PKG))
+mfc = rd(mf)
+if "USE_FULL_SCREEN_INTENT" not in mfc:
+    mfc = mfc.replace("</manifest>", '    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />\n</manifest>')
+if "BabylonCallReceiver" not in mfc:
+    mfc = mfc.replace("</application>", '        <receiver android:name="%s.BabylonCallReceiver" android:exported="false" />\n    </application>' % NOTIF_PKG)
+wr(mf, mfc)
+print("BabylonCall registered (incoming call full-screen notification)")
+
 # 2.66) خدمة FCM الأصلية: تعرض إشعار الرسالة (صورة + أزرار) والتطبيق مغلق
 NOTIF_SERVICE = r"""package __PKG__;
 
@@ -917,7 +1117,11 @@ public class BabylonMessagingService extends MessagingService {
     public void onMessageReceived(RemoteMessage message) {
         try {
             Map<String, String> d = message.getData();
-            if (d != null && "msg".equals(d.get("type")) && !appInForeground()) {
+            if (d != null && "call".equals(d.get("type"))) {
+                if (!appInForeground()) BabylonCall.show(getApplicationContext(), d.get("title"), d.get("callId"), d.get("chatId"));
+            } else if (d != null && "call_end".equals(d.get("type"))) {
+                BabylonCall.cancel(getApplicationContext());
+            } else if (d != null && "msg".equals(d.get("type")) && !appInForeground()) {
                 BabylonNotifications.cacheMyAvatar(getApplicationContext(), d.get("meAvatar"));
                 BabylonNotifications.showNow(getApplicationContext(), d.get("title"), d.get("body"),
                     d.get("avatar"), d.get("senderId"), d.get("chatId"));
