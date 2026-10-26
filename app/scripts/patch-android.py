@@ -155,6 +155,29 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+        keepWebAliveForCall();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        keepWebAliveForCall();
+    }
+
+    /** أثناء المكالمة لا نترك الصفحة تتجمد بالخلفية (وإلا ينقطع الصوت). */
+    private void keepWebAliveForCall() {
+        try {
+            if (BabylonCall.active && getBridge() != null && getBridge().getWebView() != null) {
+                WebView w = getBridge().getWebView();
+                w.onResume();
+                w.resumeTimers();
+            }
+        } catch (Throwable ignored) { }
+    }
+
+    @Override
     public void onStart() {
         super.onStart();
         registerNativeBridge();
@@ -915,6 +938,8 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.view.WindowManager;
+import android.os.PowerManager;
+import java.lang.ref.WeakReference;
 import android.webkit.JavascriptInterface;
 import androidx.core.app.NotificationCompat;
 
@@ -926,6 +951,9 @@ public class BabylonCall {
     static final String X_ACCEPT = "bb_call_accept";
     private static String pendingId = "";
     private static String pendingMode = "";
+    static volatile boolean active = false;          // مكالمة جارية الآن
+    static WeakReference<Activity> actRef = null;
+    private static PowerManager.WakeLock proxLock = null;
 
     static void ensureChannel(Context ctx) {
         if (Build.VERSION.SDK_INT < 26) return;
@@ -944,6 +972,7 @@ public class BabylonCall {
     }
 
     public static void show(Context ctx, String title, String callId, String chatId) {
+        if (active) return;   // أنت بمكالمة: الصفحة ترسل "مشغول" للمتصل
         try {
             ensureChannel(ctx);
             Intent open = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
@@ -1003,6 +1032,7 @@ public class BabylonCall {
     /** تُستدعى من MainActivity عند فتحها من إشعار المكالمة. */
     static void onIntent(Activity a, Intent i) {
         try {
+            actRef = new WeakReference<Activity>(a);
             if (i == null || !i.hasExtra(X_ID)) return;
             String id = i.getStringExtra(X_ID);
             boolean acc = i.getBooleanExtra(X_ACCEPT, false);
@@ -1046,6 +1076,54 @@ public class BabylonCall {
         }
 
         @JavascriptInterface
+        public void startService(String name) {
+            try {
+                active = true;
+                Intent i = new Intent(ctx, BabylonCallService.class);
+                i.putExtra("name", name == null ? "" : name);
+                if (Build.VERSION.SDK_INT >= 26) ctx.startForegroundService(i); else ctx.startService(i);
+            } catch (Throwable t) { android.util.Log.e("BabylonCall", "startService failed", t); }
+        }
+
+        @JavascriptInterface
+        public void stopService() {
+            try {
+                active = false;
+                ctx.stopService(new Intent(ctx, BabylonCallService.class));
+            } catch (Throwable ignored) { }
+        }
+
+        @JavascriptInterface
+        public void keepScreenOn(final boolean on) {
+            try {
+                final Activity a = actRef == null ? null : actRef.get();
+                if (a == null) return;
+                a.runOnUiThread(new Runnable() {
+                    public void run() {
+                        if (on) a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                        else a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                    }
+                });
+            } catch (Throwable ignored) { }
+        }
+
+        @JavascriptInterface
+        public void setProximity(boolean on) {
+            try {
+                PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
+                if (on) {
+                    if (proxLock == null && pm != null && pm.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
+                        proxLock = pm.newWakeLock(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "babylon:prox");
+                        proxLock.setReferenceCounted(false);
+                    }
+                    if (proxLock != null && !proxLock.isHeld()) proxLock.acquire(4L * 3600 * 1000);
+                } else if (proxLock != null && proxLock.isHeld()) {
+                    proxLock.release();
+                }
+            } catch (Throwable ignored) { }
+        }
+
+        @JavascriptInterface
         public void resetAudio() {
             try {
                 AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
@@ -1082,9 +1160,96 @@ public class BabylonCallReceiver extends BroadcastReceiver {
 """
 wr(ma.parent / "BabylonCall.java", CALL_JAVA.replace("__PKG__", NOTIF_PKG))
 wr(ma.parent / "BabylonCallReceiver.java", CALL_RECV.replace("__PKG__", NOTIF_PKG))
+CALL_SERVICE = r"""package __PKG__;
+
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ServiceInfo;
+import android.graphics.Color;
+import android.os.Build;
+import android.os.IBinder;
+import android.os.PowerManager;
+import androidx.core.app.NotificationCompat;
+
+/** خدمة أمامية: تبقي المايك والمكالمة شغالين لو خرجت من التطبيق أثناء المكالمة. */
+public class BabylonCallService extends Service {
+    static final String CH = "babylon_call_ongoing";
+    static final int ID = 77002;
+    private PowerManager.WakeLock wl;
+
+    @Override
+    public IBinder onBind(Intent i) { return null; }
+
+    @Override
+    public int onStartCommand(Intent i, int flags, int startId) {
+        try {
+            String name = i == null ? "" : i.getStringExtra("name");
+            if (Build.VERSION.SDK_INT >= 26) {
+                NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                if (nm != null && nm.getNotificationChannel(CH) == null) {
+                    NotificationChannel ch = new NotificationChannel(CH, "المكالمة الجارية", NotificationManager.IMPORTANCE_LOW);
+                    ch.setSound(null, null);
+                    nm.createNotificationChannel(ch);
+                }
+            }
+            Intent open = getPackageManager().getLaunchIntentForPackage(getPackageName());
+            PendingIntent pi = null;
+            if (open != null) {
+                open.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                pi = PendingIntent.getActivity(this, 7704, open,
+                    PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
+            }
+            int icon = getResources().getIdentifier("ic_stat_notify", "drawable", getPackageName());
+            if (icon == 0) icon = android.R.drawable.sym_action_call;
+            NotificationCompat.Builder b = new NotificationCompat.Builder(this, CH)
+                .setSmallIcon(icon)
+                .setContentTitle("مكالمة جارية")
+                .setContentText(name == null ? "" : name)
+                .setCategory(NotificationCompat.CATEGORY_CALL)
+                .setColor(Color.parseColor("#C9961F"))
+                .setOngoing(true)
+                .setUsesChronometer(true)
+                .setShowWhen(true)
+                .setWhen(System.currentTimeMillis());
+            if (pi != null) b.setContentIntent(pi);
+            Notification n = b.build();
+            if (Build.VERSION.SDK_INT >= 29) startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+            else startForeground(ID, n);
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (pm != null && wl == null) {
+                wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "babylon:call");
+                wl.setReferenceCounted(false);
+                wl.acquire(4L * 3600 * 1000);
+            }
+        } catch (Throwable t) {
+            android.util.Log.e("BabylonCall", "service start failed", t);
+            stopSelf();
+        }
+        return START_NOT_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        try { if (wl != null && wl.isHeld()) wl.release(); } catch (Throwable ignored) { }
+        wl = null;
+        super.onDestroy();
+    }
+}
+"""
+wr(ma.parent / "BabylonCallService.java", CALL_SERVICE.replace("__PKG__", NOTIF_PKG))
 mfc = rd(mf)
 if "USE_FULL_SCREEN_INTENT" not in mfc:
     mfc = mfc.replace("</manifest>", '    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />\n</manifest>')
+for _perm in ["FOREGROUND_SERVICE", "FOREGROUND_SERVICE_MICROPHONE", "WAKE_LOCK"]:
+    if 'android.permission.%s"' % _perm not in mfc:
+        mfc = mfc.replace("</manifest>", '    <uses-permission android:name="android.permission.%s" />\n</manifest>' % _perm)
+if "BabylonCallService" not in mfc:
+    mfc = mfc.replace("</application>", '        <service android:name="%s.BabylonCallService" android:exported="false" android:foregroundServiceType="microphone" />\n    </application>' % NOTIF_PKG)
 if "BabylonCallReceiver" not in mfc:
     mfc = mfc.replace("</application>", '        <receiver android:name="%s.BabylonCallReceiver" android:exported="false" />\n    </application>' % NOTIF_PKG)
 wr(mf, mfc)
