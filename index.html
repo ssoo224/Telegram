@@ -1958,7 +1958,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 .chat-item-sub .chat-media-preview-icon{width:15px;height:15px;flex:0 0 15px;display:inline-block;color:currentColor}
 .chat-item-sub .chat-media-preview-prefix{margin-inline-end:3px}
 </style>
-<link rel="stylesheet" href="gifts/gifts.css?v=12">
+<link rel="stylesheet" href="gifts/gifts.css?v=13">
 <style id="babylon-stars-gifts-theme">
 /* ===== صفحات النجوم والهدايا: ألوان الطور النهاري + رموز SVG بدل الإيموجي ===== */
 body:has(.app-container[data-app-theme="light"]) :is(.gp-ov,#giftSend){--cl-bg:#f4f6fa;--cl-card:#ffffff;--cl-text:#16202b;--cl-sub:#6b7a8c;--cl-sep:rgba(22,32,43,.08);--cl-chip:#e8edf4;--cl-gold:#c99a1c}
@@ -2415,7 +2415,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
 
         <div class="pf-actions pf-quick pf-quick-other">
           <button type="button" class="pf-btn pf-q primary" onclick="startChatFromProfile()"><i data-ic="chat"></i><span>رسالة</span></button>
-          <button type="button" class="pf-btn pf-q hidden" id="otherStarsBtn" onclick="devGiftStars()"><svg class="pf-action-icon pf-star-icon bs-btn-star" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#bbStar"/></svg><span>إهداء نجوم</span></button>
+          <button type="button" class="pf-btn pf-q hidden" id="otherStarsBtn" onclick="devGiftStars(window.__otherProfileId)"><svg class="pf-action-icon pf-star-icon bs-btn-star" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#bbStar"/></svg><span>إهداء نجوم</span></button>
           <button type="button" class="pf-btn pf-q hidden" id="otherGiftBtn" onclick="openSendGift()"><svg class="pf-action-icon pf-gift-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10h18v11H3zM2 6.5h20V10H2zM12 6.5V21M12 6.5H7.4a2.4 2.4 0 1 1 2.4-2.4c0 1.3 2.2 2.4 2.2 2.4Zm0 0h4.6a2.4 2.4 0 1 0-2.4-2.4C14.2 5.4 12 6.5 12 6.5Z"/></svg><span>إهداء هدية</span></button>
           <button type="button" class="pf-btn pf-q" id="otherBlockBtn" onclick="toggleBlockCurrent()"><i data-ic="ban"></i><span>حظر</span></button>
         </div>
@@ -4183,7 +4183,8 @@ function openUserProfileDirect(u) {
   showView("otherUserProfileView");
   loadOtherStories(u.id);
   try {
-    document.getElementById('otherStarsBtn').classList.toggle('hidden', !(isDevUser() && u.id && u.id !== currentUser.uid));
+    window.__otherProfileId = u.id;
+    document.getElementById('otherStarsBtn').classList.toggle('hidden', !(u.id && u.id !== currentUser.uid));
     document.getElementById('otherGiftBtn').classList.toggle('hidden', !(u.id && u.id !== currentUser.uid));
     document.getElementById('otherGiftsWrap').classList.add('hidden');
     if (u.id) loadGiftsGrid(u.id, 'otherGiftsGrid', 'otherGiftsWrap');
@@ -8250,8 +8251,9 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 <!-- الهدايا: كل شي بمجلد gifts/ -->
 <script src="gifts/models.js?v=1"></script>
 <script src="gifts/cat-models.js?v=1"></script>
-<script src="gifts/gifts.js?v=14"></script>
-<script src="gifts/star-gift.js?v=2"></script>
+<script src="gifts/gifts.js?v=15"></script>
+<script src="gifts/star-gift.js?v=3"></script>
+<script src="gifts/gift-link.js?v=1"></script>
 <script id="babylon-remove-visited-badge-fix-v2">
 (function(){
   const cleanVisitedBadge = () => {
