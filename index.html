@@ -2577,6 +2577,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
     <!-- غرفة المحادثة -->
     <div id="chatView" class="chat-room hidden">
       <div class="pattern-layer" id="chatPattern"></div>
+      <div id="chatNavBar" aria-hidden="true"></div>
 
       <header class="telegram-chat-header">
         <button class="icon-btn chat-back-btn" onclick="goHome()" title="العودة للمحادثات" aria-label="العودة للمحادثات"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
@@ -9731,6 +9732,23 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
   document.addEventListener('focusin',function(){ setTimeout(check,250); });
 })();
 </script>
+<style id="chat-nav-bar">
+/* ============================================================
+   شريط أزرار الهاتف السفلية داخل المحادثة
+   - يظهر فقط إذا كان للهاتف مساحة سفلية (أزرار/شريط إيماءات)، وإلا ارتفاعه 0
+   - لونه = لون المحادثة نفسه (نهاري / ليلي / ثيمات المحادثة) تلقائيًا
+   - يختفي عند ظهور الكيبورد
+   ============================================================ */
+#chatView #chatNavBar{
+  position:absolute;left:0;right:0;bottom:0;
+  height:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px));
+  background:var(--cr-surface,#17212b);
+  z-index:0;pointer-events:none;
+  transition:background-color .25s ease;
+}
+html.kb-open #chatView #chatNavBar,
+html.babylon-chat-keyboard-open #chatView #chatNavBar{display:none}
+</style>
 <style id="story-safe-bottom">
 /* مساحة سفلية آمنة في القصص حسب شريط التنقل/الحافة السفلية للهاتف */
 :root{--sv-sab:max(env(safe-area-inset-bottom,0px),var(--bb-nav-inset,0px))}
