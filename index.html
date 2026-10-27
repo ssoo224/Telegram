@@ -12666,7 +12666,9 @@ body.light #viewersModal .viewer-item {
 
 /* الحاوية: ملتصقة بالجانبين والأسفل بلا هوامش */
 #chatView .chat-input-container{
-  padding:0 0 env(safe-area-inset-bottom,0px)!important;
+  /* مسافة سفلية تمنع تداخل شريط الإيماءات/أزرار الهاتف مع الشريط:
+     تُستخدم القيمة التي يبلّغ عنها النظام، وإن كانت صفراً فحدّ أدنى 28px (غيّر --composer-min-bottom لتكبيرها أو تصغيرها) */
+  padding:0 0 max(var(--chat-nav-h,0px),var(--composer-min-bottom,28px))!important;
   margin:0!important;
   gap:0!important;
   width:100%!important;
@@ -12676,7 +12678,10 @@ body.light #viewersModal .viewer-item {
   border-radius:0!important;
   box-shadow:none!important;
 }
-html.kb-open #chatView .chat-input-container{padding-bottom:0!important}
+html.kb-open #chatView .chat-input-container,
+html.babylon-chat-keyboard-open #chatView .chat-input-container{padding-bottom:0!important}
+/* يملأ المنطقة السفلية بلون الشريط نفسه ليبدو متصلاً */
+#chatView #chatNavBar{background-color:var(--cr-card,#1e2a38)!important;height:max(var(--chat-nav-h,0px),var(--composer-min-bottom,28px))!important}
 
 /* الشريط نفسه: بلا إطار ولا ظل ولا انحناء، يملأ العرض كاملاً */
 #chatView #textInputBar.chat-input-bar{
