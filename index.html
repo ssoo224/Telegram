@@ -12902,3 +12902,127 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 .app-container .chat-more-menu button.danger:hover{background:rgba(229,72,77,.08)}
 @media (prefers-reduced-motion:reduce){.app-container .chat-more-menu:not(.hidden){animation:none}.app-container .chat-more-menu button{transition:none}}
 </style>
+
+<style id="babylon-responsive-layout">
+/* ============================================================
+   دعم الشاشات: هاتف / هاتف أفقي / تابلت / كمبيوتر
+   - الهاتف العمودي: كما هو (بدون أي تغيير)
+   - عرض 520–767: عمود واحد أوسع
+   - عرض 768 فأكثر: تقسيم (قائمة المحادثات على جانب + المحادثة المفتوحة بجانبها)
+   ============================================================ */
+
+/* التطبيق لا يتوسع إلا بعد تسجيل الدخول؛ شاشات الدخول والتحميل تبقى بعرض الهاتف */
+@media (min-width:520px){
+  .app-container:has(#mainPage:not(.hidden)){max-width:620px}
+}
+
+/* هاتف بوضع أفقي (ارتفاع قصير): شريط سفلي مضغوط */
+@media (max-height:480px){
+  .app-container #bottomNav.telegram-bottom-nav{
+    height:48px!important;min-height:calc(44px + var(--sab-real,0px))!important;
+    padding-top:3px!important;padding-bottom:max(3px,env(safe-area-inset-bottom,0px))!important}
+  .app-container #bottomNav .nav-item>span:last-child{display:none}
+}
+@media (min-width:768px) and (max-height:480px){
+  .app-container:has(#mainPage:not(.hidden)){max-width:820px}
+}
+
+/* ---------- تابلت وكمبيوتر: واجهة مقسومة ---------- */
+@media (min-width:768px) and (min-height:481px){
+  .app-container:has(#mainPage:not(.hidden)){max-width:min(100%,1500px)}
+
+  #mainPage:not(.hidden){
+    display:grid!important;position:relative;height:100%;
+    grid-template-columns:clamp(340px,33%,440px) minmax(0,1fr);
+    grid-template-rows:auto minmax(0,1fr) auto;
+  }
+  #mainPage:not(.hidden)>*{grid-column:1;min-width:0}
+  #mainPage>#selBar,#mainPage>#mainHeader{grid-row:1}
+  #mainPage>:is(#homeView,#searchView,#profileView,#otherUserProfileView,#settingsView,#privacySettingsView,#notificationSettingsView,#chatSettingsView,#editProfileView){grid-row:2;min-height:0}
+  #mainPage>#bottomNav{grid-row:3}
+  #mainPage>#newGroupFab{grid-row:2;bottom:18px!important}
+  #mainPage>#chatView{
+    grid-column:2;grid-row:1 / 4;min-height:0;
+    border-inline-start:1px solid var(--cl-sep,rgba(128,128,128,.2));
+  }
+
+  /* المحادثة مفتوحة: تبقى القائمة والهيدر والشريط ظاهرة بجانبها */
+  #mainPage:has(#chatView:not(.hidden))>#homeView.hidden{display:flex!important}
+  #mainPage:has(#chatView:not(.hidden))>#mainHeader.hidden{display:flex!important}
+  #mainPage:has(#chatView:not(.hidden))>#bottomNav.hidden{display:flex!important}
+  #mainPage:has(#chatView:not(.hidden))>#newGroupFab{display:flex!important}
+  #mainPage:has(#chatView:not(.hidden)) #mainSearchBtn.hidden{display:inline-flex!important}
+
+  /* اللوحة الفارغة عندما لا توجد محادثة مفتوحة */
+  #mainPage:not(.hidden)::after{
+    content:"اختر محادثة لبدء المراسلة";
+    grid-column:2;grid-row:1 / 4;display:flex;align-items:center;justify-content:center;
+    padding-top:84px;font-size:15px;font-weight:700;color:var(--cl-sub,#6b7a8c);
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%23c99a1c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' opacity='.65'%3E%3Cpath d='M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z'/%3E%3C/svg%3E") center calc(50% - 26px)/64px no-repeat,
+      var(--cl-bg,#f4f6fa);
+    border-inline-start:1px solid var(--cl-sep,rgba(128,128,128,.2));
+  }
+  #mainPage:has(#chatView:not(.hidden))::after{display:none}
+
+  /* فقاعات الرسائل لا تتمدد بلا حد في اللوحة العريضة */
+  #chatView .msg-bubble{max-width:min(82%,620px)}
+
+  /* الشاشات الكاملة (معلومات المجموعة، الاختيار...) تظهر كلوحة وسطية مع تعتيم الجوانب */
+  .gx-ov,.blk-ov{width:min(100%,620px);margin-inline:auto;box-shadow:0 0 0 100vmax rgba(0,0,0,.55)}
+}
+
+/* ---------- شاشات كبيرة جدًا: نافذة عائمة بحواف مدورة ---------- */
+@media (min-width:1100px) and (min-height:720px){
+  .app-container{height:min(calc(100dvh - 32px),1000px);border-radius:22px;border:1px solid rgba(128,128,128,.18)}
+}
+
+/* ---------- ماوس ولوحة مفاتيح ---------- */
+@media (hover:hover) and (pointer:fine){
+  #homeView,#messagesArea,#chatList,.search-results,.settings-view,.profile-view{scrollbar-width:thin;scrollbar-color:rgba(128,128,128,.4) transparent}
+  .app-container button,.app-container .chat-item,.app-container .nav-item,.app-container .set-row{cursor:pointer}
+  .app-container #homeView#homeView #chatList .chat-item:not(.is-active-chat):hover{background:var(--cl-chip,#e8edf4)!important}
+  #messagesArea .msg-bubble{user-select:text;-webkit-user-select:text}
+}
+.app-container :is(button,[role="button"],a,input,textarea):focus-visible{outline:2px solid var(--cl-gold,#c99a1c);outline-offset:2px}
+</style>
+
+<script id="babylon-responsive-js">
+(function(){
+  var mq=window.matchMedia('(min-width:768px) and (min-height:481px)');
+  function vis(id){var e=document.getElementById(id);return !!e&&!e.classList.contains('hidden');}
+  /* Escape: يغلق القوائم المفتوحة ثم المحادثة (للكمبيوتر) */
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Escape'||e.defaultPrevented)return;
+    if(document.querySelector('.cl-dlg-ov,.bb-dlg-ov,.babylon-confirm-overlay,.message-delete-modal,.gx-ov,#reactorsSheet,#storyViewer:not(.hidden),#msgModal:not(.hidden)'))return;
+    try{
+      if(vis('chatSearchPanel')&&typeof closeChatSearch==='function'){closeChatSearch();return;}
+      if(vis('chatMoreMenu')&&typeof closeChatMenus==='function'){closeChatMenus();return;}
+      if(vis('chatView')&&typeof goHome==='function'){goHome();}
+    }catch(err){}
+  });
+  /* زر البحث بجانب المحادثة المفتوحة: أغلق المحادثة أولًا ثم افتح البحث */
+  var _os=window.openSearch;
+  if(typeof _os==='function'){
+    window.openSearch=function(){
+      try{if(mq.matches&&vis('chatView')&&typeof goHome==='function')goHome();}catch(err){}
+      return _os.apply(this,arguments);
+    };
+  }
+})();
+</script>
+
+<style id="babylon-delete-dialog-gold-buttons">
+/* أزرار (حذف) و(إلغاء): ذهبي متدرج بنص أبيض، وعلامة ✓ بيضاء */
+.cl-dlg.cl-del .cl-btns button#clDelNo,
+.cl-dlg.cl-del .cl-btns button.cl-danger,
+.cl-dlg.cl-del .cl-btns button#clDelOk{
+  background:linear-gradient(135deg,#e0bd4a,#b8891a)!important;
+  color:#fff!important;
+  box-shadow:0 8px 18px rgba(184,137,26,.32)!important;
+}
+.cl-dlg.cl-del .cl-btns button:active{filter:brightness(.95)}
+.cl-dlg input:checked+.cl-box::after,
+.cl-dlg.cl-del input:checked+.cl-box::after{border-color:#fff!important}
+.cl-dlg.cl-del input:checked+.cl-box{background:linear-gradient(135deg,#e0bd4a,#b8891a)!important;border-color:#c99a1c!important}
+</style>
