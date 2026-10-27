@@ -13468,4 +13468,9 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 @keyframes bbGridOpen{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 @keyframes bbEmoPop{0%{opacity:0;transform:translateY(8px) scale(.4)}100%{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){#msgModal .emoji-full-grid:not(.hidden),#msgModal .emoji-full-grid:not(.hidden) span{animation:none;opacity:1}}
+/* السبب: قاعدة عامة تعطي كل input خلفية بيضاء بحواف حادة */
+.app-container #mainPage .cs-field input,.app-container #mainPage .search-field input,.cs-field input,.search-field input{background:transparent!important;background-color:transparent!important;border:0!important;border-radius:12px!important;box-shadow:none!important;-webkit-appearance:none;appearance:none}
+.cs-field,.search-field{border-radius:12px!important}
+.app-container[data-app-theme="light"] .cs-field,.app-container[data-app-theme="light"] .search-field{background:#fff!important;border:1.5px solid #dce4ee!important}
+.app-container[data-app-theme="light"] .cs-field:focus-within,.app-container[data-app-theme="light"] .search-field:focus-within{border-color:#dce4ee!important}
 </style>
