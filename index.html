@@ -9746,7 +9746,7 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 }
 #chatView #chatNavBar{
   position:absolute;left:0;right:0;bottom:0;
-  height:var(--chat-nav-h);
+  height:max(var(--chat-nav-h),var(--chat-gap,0px));
   background-color:var(--cr-surface,#17212b)!important;
   opacity:1!important;
   z-index:3;pointer-events:none;
@@ -9759,6 +9759,46 @@ html.babylon-chat-keyboard-open #chatView #chatNavBar{display:none}
 html.kb-open #chatView .chat-input-container,
 html.babylon-chat-keyboard-open #chatView .chat-input-container{padding-bottom:0!important}
 </style>
+<script id="chat-nav-bar-js">
+(function(){
+  /* يقيس الفراغ الفعلي تحت حقل الكتابة (مساحة أزرار/إيماءات الهاتف) ويملؤه بلون المحادثة،
+     حتى لو لم يُبلّغ النظام عن المساحة السفلية. */
+  var cv=document.getElementById('chatView'); if(!cv) return;
+  var box=cv.querySelector('.chat-input-container'); if(!box) return;
+  var raf=0;
+  function gap(){
+    if(cv.classList.contains('hidden')) return 0;
+    var cr=cv.getBoundingClientRect();
+    if(cr.height<100) return 0;
+    var bottomEdge=Math.min(cr.bottom,window.innerHeight||cr.bottom);
+    var low=0, kids=box.children;
+    for(var i=0;i<kids.length;i++){
+      var k=kids[i], cs=getComputedStyle(k);
+      if(cs.display==='none'||cs.visibility==='hidden'||cs.position==='absolute'||cs.position==='fixed') continue;
+      var r=k.getBoundingClientRect(); if(r.height<2) continue;
+      if(r.bottom>low) low=r.bottom;
+    }
+    if(!low) return 0;
+    var g=Math.round(bottomEdge-low);
+    return (g>0&&g<260)?g:0;
+  }
+  function upd(){
+    raf=0;
+    try{ cv.style.setProperty('--chat-gap',gap()+'px'); }catch(_){}
+  }
+  function sch(){ if(!raf) raf=requestAnimationFrame(upd); }
+  window.addEventListener('resize',sch);
+  window.addEventListener('orientationchange',function(){setTimeout(sch,200)});
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',sch);
+  try{
+    var mo=new MutationObserver(sch);
+    mo.observe(cv,{attributes:true,attributeFilter:['class']});
+    mo.observe(box,{subtree:true,attributes:true,attributeFilter:['class','style','hidden']});
+  }catch(_){}
+  setInterval(function(){ if(!cv.classList.contains('hidden')) sch(); },700);
+  sch();
+})();
+</script>
 <style id="story-safe-bottom">
 /* مساحة سفلية آمنة في القصص حسب شريط التنقل/الحافة السفلية للهاتف */
 :root{--sv-sab:max(env(safe-area-inset-bottom,0px),var(--bb-nav-inset,0px))}
