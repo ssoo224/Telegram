@@ -97,6 +97,20 @@
     el = null; mode = '';
     try { delete window.__babylonUpd; } catch (e) { window.__babylonUpd = null; }
   }
+  function why(code) {
+    var c = String(code || '').toLowerCase();
+    if (!c) return '';
+    var hint = '';
+    if (/^http 5/.test(c)) hint = 'السيرفر ما قدر يجيب الملف حالياً (جرّب بعد دقيقة).';
+    else if (/^http 4/.test(c)) hint = 'رابط التنزيل غير متاح.';
+    else if (/unknownhost|connectexception|sockettimeout|ioexception|ssl/.test(c)) hint = 'مشكلة بالاتصال بالإنترنت أثناء التنزيل.';
+    else if (/^truncated/.test(c)) hint = 'انقطع التنزيل قبل ما يكتمل، جرّب مرة ثانية.';
+    else if (/^small|corrupt|not apk/.test(c)) hint = 'الملف اللي نزل مو سليم.';
+    else if (/^wrong package/.test(c)) hint = 'الملف مو لنفس التطبيق.';
+    else if (/^fileprovider|^install/.test(c)) hint = 'ما قدر يفتح شاشة التثبيت.';
+    else if (/^url/.test(c)) hint = 'رابط التحديث غير مسموح.';
+    return (hint ? hint + '\n' : '') + '(' + code + ')';
+  }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
   function show(force, notes, url, latest) {
@@ -139,10 +153,12 @@
       copyText(url, function (ok) { b.textContent = ok ? 'تم النسخ ✓' : 'انسخه يدوياً من الأعلى'; });
     };
     function setRing(p) { ring.style.strokeDashoffset = (RING_C * (1 - Math.max(0, Math.min(100, p)) / 100)).toFixed(2); }
+    var gotState = false;
     function idle() { go.disabled = false; go.textContent = 'تحديث الآن'; }
 
     /* النسخ الجديدة من التطبيق تنزّل وتثبّت بنفسها وتبلّغ الصفحة بالتقدم */
-    window.__babylonUpd = function (st, pct) {
+    window.__babylonUpd = function (st, pct, detail) {
+      gotState = true;
       d.classList.remove('err');
       if (st === 'dl') {
         core.className = 'u-core'; core.innerHTML = '<span dir="ltr">' + Math.round(pct) + '<small style="font-size:15px;margin-left:2px">%</small></span>';
@@ -157,12 +173,19 @@
         msg.textContent = 'فعّل خيار (السماح بالتثبيت من هذا المصدر) لبابل، وارجع واضغط تحديث الآن.';
       } else {
         d.classList.add('err'); core.className = 'u-core'; core.innerHTML = ICON.warn; setRing(0); idle();
-        msg.textContent = 'تعذر التنزيل داخل التطبيق. انسخ الرابط وافتحه بكروم.'; alt.style.display = 'block';
+        msg.textContent = 'تعذر التنزيل داخل التطبيق. انسخ الرابط وافتحه بكروم.' + (detail ? '\n' + why(detail) : ''); alt.style.display = 'block';
       }
     };
     go.onclick = function () {
       var nb = window.BabylonAndroidNative, done = false;
-      try { if (nb && typeof nb.installUpdate === 'function') { nb.installUpdate(location.origin + DL); return; } } catch (e) {}
+      try {
+        if (nb && typeof nb.installUpdate === 'function') {
+          gotState = false; go.disabled = true; go.textContent = 'جاري التحضير…';
+          nb.installUpdate(location.origin + DL);
+          setTimeout(function () { if (!gotState) { idle(); msg.textContent = 'ما وصل رد من التطبيق. اضغط تحديث الآن مرة ثانية.'; } }, 8000);
+          return;
+        }
+      } catch (e) {}
       try { if (nb && typeof nb.openExternal === 'function') { nb.openExternal(url); done = true; } } catch (e) {}
       if (!done) { try { window.open(url, '_blank'); } catch (e) {} }
       msg.textContent = 'بدأ التنزيل. بعد ما يخلص افتح الملف من إشعار التنزيلات وثبّته. إذا طلب السماح بالتثبيت من هذا المصدر فعّله.';
