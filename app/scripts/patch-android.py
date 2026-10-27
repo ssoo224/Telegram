@@ -54,6 +54,22 @@ else:
 (res / "values").mkdir(parents=True, exist_ok=True)
 wr(res / "values" / "notif_colors.xml", '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="notif_gold">#C9961F</color>\n</resources>\n')
 
+# 2.55) ثيم التطبيق: شريط الحالة وشريط الأزرار شفافان من لحظة فتح التطبيق (قبل تحميل الجافا)
+sty = res / "values" / "styles.xml"
+if sty.exists():
+    def _fix_style(mo):
+        body = re.sub(r'\s*<item name="android:(statusBarColor|navigationBarColor|windowDrawsSystemBarBackgrounds)">[^<]*</item>', "", mo.group(2))
+        extra = ('\n        <item name="android:statusBarColor">@android:color/transparent</item>'
+                 '\n        <item name="android:navigationBarColor">@android:color/transparent</item>'
+                 '\n        <item name="android:windowDrawsSystemBarBackgrounds">true</item>')
+        return mo.group(1) + extra + body + mo.group(3)
+    st0 = rd(sty)
+    st1 = re.sub(r'(<style\s+name="AppTheme[^"]*"[^>]*>)(.*?)(</style>)', _fix_style, st0, flags=re.S)
+    if st1 != st0:
+        wr(sty, st1); print("styles.xml: transparent system bars")
+else:
+    print("::warning::styles.xml مفقود — الشفافية تعتمد على MainActivity فقط")
+
 # 2.6) Android 15+ يفرض edge-to-edge: المحتوى يطلع تحت شريط الحالة. نضيف حشوة (padding) بحجم الأشرطة.
 java_root = app / "src" / "main" / "java"
 mains = list(java_root.rglob("MainActivity.java"))
@@ -79,6 +95,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Toast;
 import androidx.core.content.FileProvider;
 import androidx.core.view.WindowCompat;
@@ -102,21 +119,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Window window = getWindow();
-        window.setStatusBarColor(Color.TRANSPARENT);
-        window.setNavigationBarColor(Color.TRANSPARENT);
-        WindowCompat.setDecorFitsSystemWindows(window, false);
-
-        View decor = window.getDecorView();
-        decor.setSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-        );
-        WindowInsetsControllerCompat controller =
-            WindowCompat.getInsetsController(window, decor);
-        controller.setAppearanceLightStatusBars(false);
-        controller.setAppearanceLightNavigationBars(false);
+        applyTransparentBars();
+        View decor = getWindow().getDecorView();
 
         // تسجيل واجهة الحفظ فوراً (قبل تحميل الصفحة) ليعمل التنزيل إلى المعرض.
         registerNativeBridge();
@@ -129,6 +133,42 @@ public class MainActivity extends BridgeActivity {
             prefs.edit().putBoolean("first_request_done", true).apply();
             decor.postDelayed(this::requestInitialPermissions, 700);
         }
+    }
+
+    /** شريط الإشعارات وشريط الأزرار السفلي: شفافان دائماً على كل الأجهزة والإصدارات. */
+    private void applyTransparentBars() {
+        try {
+            Window window = getWindow();
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+                | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            WindowCompat.setDecorFitsSystemWindows(window, false);
+            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setNavigationBarColor(Color.TRANSPARENT);
+            if (Build.VERSION.SDK_INT >= 28) window.setNavigationBarDividerColor(Color.TRANSPARENT);
+            if (Build.VERSION.SDK_INT >= 29) {
+                // بدونهما أندرويد 10+ يضيف طبقة رمادية/سوداء خلف شريط الأزرار (خصوصاً بنظام 3 أزرار)
+                window.setStatusBarContrastEnforced(false);
+                window.setNavigationBarContrastEnforced(false);
+            }
+            View decor = window.getDecorView();
+            decor.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            );
+            WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, decor);
+            controller.setAppearanceLightStatusBars(false);
+            controller.setAppearanceLightNavigationBars(false);
+        } catch (Throwable t) {
+            android.util.Log.w("BabylonChat", "applyTransparentBars failed", t);
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) applyTransparentBars();   // بعض الأجهزة تعيد اللون بعد نافذة التثبيت/الصلاحيات
     }
 
     // مرجع للصفحة الحيّة: تستخدمه أزرار الإشعار لإرسال (رد) و(مقروءة) إلى التطبيق.
@@ -187,6 +227,7 @@ public class MainActivity extends BridgeActivity {
     public void onResume() {
         super.onResume();
         registerNativeBridge();
+        applyTransparentBars();
         BabylonNotifications.dispatchPending(getApplicationContext(), liveWebView);
     }
 
@@ -298,7 +339,15 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
-    private void runUpdate(String url) {
+    private void runUpdate(final String url) {
+        // تُستدعى من خيط JavaBridge، وWebView.getUrl() لازم من خيط الواجهة، فننتقل له أولاً.
+        runOnUiThread(() -> {
+            try { runUpdateOnUi(url); }
+            catch (Throwable t) { updating = false; updJs("error", 0, updReason(t)); }
+        });
+    }
+
+    private void runUpdateOnUi(final String url) {
         if (!updUrlAllowed(url)) { updJs("error", 0, "url not allowed"); return; }
         if (updating) { updJs("dl", 0); return; }
         if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
