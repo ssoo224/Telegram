@@ -4943,6 +4943,21 @@ function openMsgModal(msgId, text, senderId, reactions, isAudioMessage, anchorEl
       shell.style.overflowY = "auto";
       shell.style.transformOrigin = "center center";
     }
+    // Keep the tapped message sharp: blur/dim layer with a cut-out exactly over the message.
+    try {
+      let layer = document.getElementById("msgBlurLayer");
+      if (!layer) { layer = document.createElement("div"); layer.id = "msgBlurLayer"; modal.insertBefore(layer, modal.firstChild); }
+      if (anchorElement) {
+        const a = anchorElement.getBoundingClientRect();
+        const W = window.innerWidth, H = window.innerHeight, r = 16;
+        const x = Math.max(0, a.left - 1), y = Math.max(0, a.top - 1);
+        const w = Math.min(W, a.right + 1) - x, h = Math.min(H, a.bottom + 1) - y;
+        const rr = Math.max(0, Math.min(r, w / 2, h / 2));
+        const d = `M0 0H${W}V${H}H0Z M${x+rr} ${y}H${x+w-rr}A${rr} ${rr} 0 0 1 ${x+w} ${y+rr}V${y+h-rr}A${rr} ${rr} 0 0 1 ${x+w-rr} ${y+h}H${x+rr}A${rr} ${rr} 0 0 1 ${x} ${y+h-rr}V${y+rr}A${rr} ${rr} 0 0 1 ${x+rr} ${y}Z`;
+        layer.style.clipPath = `path(evenodd, "${d}")`;
+        layer.style.webkitClipPath = layer.style.clipPath;
+      } else { layer.style.clipPath = "none"; layer.style.webkitClipPath = "none"; }
+    } catch (_) {}
     // Restart the entrance motion on every opening.
     modal.classList.remove("msg-modal-animate-in");
     void modal.offsetWidth;
@@ -13413,3 +13428,23 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
   });
 })();
 </script>
+
+<style id="babylon-message-menu-compact-final">
+/* القائمة: الرسالة المحددة بدون blur + تصميم أصغر وأرتب */
+#msgModal.msg-actions-modal,#msgModal.msg-actions-modal.msg-modal-animate-in{background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;animation:none!important}
+#msgBlurLayer{position:fixed;inset:0;z-index:0;pointer-events:none;background:rgba(5,12,22,.30);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);animation:bbMsgLayerIn .2s ease both}
+#msgModal.theme-light #msgBlurLayer{background:rgba(30,41,59,.16)}
+@keyframes bbMsgLayerIn{from{opacity:0}to{opacity:1}}
+#msgModal .msg-actions-shell{width:min(236px,calc(100vw - 24px))!important;gap:6px!important;z-index:2}
+#msgModal .emoji-picker-bar{padding:4px 6px!important;gap:2px!important;border-radius:14px!important;box-shadow:0 8px 22px rgba(0,0,0,.2)!important;flex-wrap:wrap}
+#msgModal .emoji-quick-row{gap:0!important;flex:1;justify-content:space-between;flex-wrap:nowrap}
+#msgModal .emoji-btn{min-width:32px!important;min-height:32px!important;width:32px;height:32px;font-size:20px!important;border-radius:50%!important;padding:0}
+#msgModal .emoji-btn.emoji-plus{background:rgba(128,128,128,.16)!important;width:28px;height:28px;min-width:28px!important;min-height:28px!important}
+#msgModal .emoji-btn svg{width:15px!important;height:15px!important}
+#msgModal .msg-actions-card{padding:4px!important;border-radius:14px!important;box-shadow:0 10px 26px rgba(0,0,0,.24)!important}
+#msgModal .msg-actions-card button{min-height:38px!important;padding:7px 10px!important;gap:10px!important;font-size:13px!important;font-weight:600!important;border:0!important;border-radius:9px!important;justify-content:flex-start;text-align:right}
+#msgModal .msg-actions-card button svg{flex:0 0 17px!important;width:17px!important;height:17px!important}
+#msgModal .msg-actions-card button.danger{margin-top:3px;box-shadow:inset 0 1px 0 rgba(128,128,128,.22);border-top-left-radius:9px;border-top-right-radius:9px}
+#msgModal .msg-actions-card button.msg-action-cancel{display:none!important}
+#msgModal .emoji-full-grid span{font-size:22px!important;min-width:32px!important;min-height:32px!important}
+</style>
