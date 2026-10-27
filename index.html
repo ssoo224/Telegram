@@ -12667,7 +12667,7 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
    2) خارج المحادثة: شريط التنقل السفلي أبيض مصفر (كريمي) بدل الأبيض المزرق
    ===================================================================== */
 .app-container[data-app-theme="light"] #bottomNav.telegram-bottom-nav{
-  background:#FFFFFF!important;background-color:#FFFFFF!important;
+  background:#FFFCF5!important;background-color:#FFFCF5!important;
   border-top-color:#efe5c3!important;box-shadow:none!important;
 }
 .app-container[data-app-theme="light"] #bottomNav.telegram-bottom-nav .nav-item{color:#8a8266!important}
@@ -12772,4 +12772,33 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
   border:0!important;border-radius:0!important;box-shadow:none!important;
   padding:0!important;margin:0!important;
 }
+</style>
+
+<style id="babylon-nav-slim4-single-select">
+/* شريط التنقل السفلي: أنحف بـ 4px (66 -> 62) مع الحفاظ على مساحة أزرار الهاتف */
+.app-container #bottomNav.telegram-bottom-nav{
+  height:62px!important;
+  min-height:calc(56px + var(--sab-real,0px))!important;
+}
+/* تحديد واحد خفيف فقط: خلفية ناعمة خلف الأيقونة، بدون خلفية على الزر كله وبدون حلقة */
+.app-container[data-app-theme] #bottomNav.telegram-bottom-nav .nav-item,
+.app-container[data-app-theme] #bottomNav.telegram-bottom-nav .nav-item.active{
+  background:transparent!important;background-color:transparent!important;
+  border:0!important;box-shadow:none!important;
+}
+.app-container[data-app-theme] #bottomNav.telegram-bottom-nav .nav-item.active .nav-icon{
+  background:rgba(212,175,55,.16)!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+.app-container[data-app-theme="dark"] #bottomNav.telegram-bottom-nav .nav-item.active .nav-icon{
+  background:rgba(228,196,91,.14)!important;
+}
+.app-container[data-app-theme] #bottomNav.telegram-bottom-nav .nav-item.active>span:last-child{font-weight:700!important}
+/* عند النقر: بدون وميض أو قفزة، فقط انتقال ناعم للتحديد */
+.app-container[data-app-theme] #bottomNav .nav-item.nav-tapped .nav-icon,
+.app-container[data-app-theme] #bottomNav .nav-item.nav-tapped .nav-icon::after,
+.app-container[data-app-theme] #bottomNav .nav-item.nav-tapped>span:last-child{animation:none!important}
+.app-container[data-app-theme] #bottomNav .nav-item .nav-icon::after{display:none!important}
+.app-container[data-app-theme] #bottomNav .nav-item:active{transform:none!important}
 </style>
