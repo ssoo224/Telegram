@@ -12660,3 +12660,127 @@ body.light #viewersModal .viewer-item {
 </script>
 <script src="calls/calls.js?v=8"></script>
 <script src="chat-enhance.js?v=1"></script>
+
+<style id="babylon-composer-final-fix">
+/* ===== الإصلاح النهائي لشريط الكتابة (يوضع في آخر الملف ليغلب كل التعديلات المتضاربة السابقة) ===== */
+
+/* الحاوية: ملتصقة بالجانبين والأسفل بلا هوامش */
+#chatView .chat-input-container{
+  padding:0 0 env(safe-area-inset-bottom,0px)!important;
+  margin:0!important;
+  gap:0!important;
+  width:100%!important;
+  background:var(--cr-card,#1e2a38)!important;
+  border:0!important;
+  border-top:1px solid var(--cr-line,rgba(127,140,160,.18))!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+html.kb-open #chatView .chat-input-container{padding-bottom:0!important}
+
+/* الشريط نفسه: بلا إطار ولا ظل ولا انحناء، يملأ العرض كاملاً */
+#chatView #textInputBar.chat-input-bar{
+  direction:rtl;
+  display:flex!important;
+  align-items:flex-end!important;
+  gap:6px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:6px 8px!important;
+  box-sizing:border-box!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  outline:none!important;
+}
+
+/* حقل الكتابة: أنحف بمقدار 2px (كان 42 والآن 40) */
+#chatView #textInputBar #messageInput.msg-editable{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  display:block!important;
+  height:auto!important;
+  min-height:40px!important;
+  max-height:130px!important;
+  padding:8px 14px!important;
+  margin:0!important;
+  line-height:22px!important;
+  font-size:15px!important;
+  border:1px solid transparent!important;
+  border-radius:20px!important;
+  background:rgba(127,140,160,.14)!important;
+  color:var(--cr-ink,#f1f5f9)!important;
+  outline:none!important;
+  box-shadow:none!important;
+  white-space:pre-wrap!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overflow-wrap:anywhere;
+  position:relative;
+}
+#chatView #textInputBar #messageInput.msg-editable:focus,
+#chatView #textInputBar #messageInput.msg-editable:focus-visible{
+  border-color:transparent!important;
+  outline:none!important;
+  box-shadow:none!important;
+  background:rgba(127,140,160,.20)!important;
+}
+.app-container[data-app-theme="light"] #chatView #textInputBar #messageInput.msg-editable{background:#f1f5fa!important;color:#17212b!important}
+.app-container[data-app-theme="light"] #chatView #textInputBar #messageInput.msg-editable:focus{background:#e9eff7!important}
+
+/* النص البديل: داخل الحقل فقط، لا يتراكب مع الأيقونات */
+#chatView #textInputBar #messageInput.msg-editable:empty::before{
+  content:attr(data-placeholder);
+  display:inline;
+  position:static;
+  float:none;
+  color:var(--cr-muted,#8b98a8);
+  pointer-events:none;
+}
+
+/* الأزرار الجانبية: حجم ثابت بنفس ارتفاع الحقل ولا تتراكب عليه */
+#chatView #textInputBar > .icon-btn,
+#chatView #textInputBar > label.icon-btn,
+#chatView #textInputBar > .mic-button{
+  flex:0 0 40px!important;
+  width:40px!important;
+  height:40px!important;
+  min-width:40px!important;
+  margin:0!important;
+  padding:0!important;
+  position:static!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  align-self:flex-end!important;
+  border-radius:12px!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  overflow:hidden;
+}
+#chatView #textInputBar > .icon-btn svg{width:22px;height:22px;display:block}
+
+/* زر الإرسال يظهر فقط عند وجود نص، وبنفس الحجم */
+#chatView #textInputBar > button[type="submit"]{
+  display:none!important;
+  flex:0 0 40px!important;
+  width:40px!important;
+  height:40px!important;
+  margin:0!important;
+  border-radius:15px 15px 7px 15px!important;
+  background:linear-gradient(145deg,#e9c957,#c59b24)!important;
+  color:#17212b!important;
+}
+#chatView #textInputBar.has-message > button[type="submit"]{display:inline-flex!important}
+#chatView #textInputBar.has-message > .mic-button,
+#chatView #textInputBar.has-message > label[for="chatImageInput"]{display:none!important}
+#chatView #textInputBar > #chatImageInput{display:none!important}
+
+/* شريط الرد يلتصق بالجانبين أيضاً */
+#chatView .reply-preview-bar{border-radius:0!important;margin:0!important;border-left:0!important;border-right:0!important;box-shadow:none!important}
+</style>
