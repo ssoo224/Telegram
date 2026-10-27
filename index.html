@@ -12709,3 +12709,14 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
   upd(); setTimeout(upd,300);
 })();
 </script>
+
+<style id="chat-input-slimmer-rounder">
+/* حقل الكتابة: حواف أكثر انحناءً قليلًا + أنحف بـ 2px (44 -> 42) */
+#chatView #messageInput.msg-editable{
+  border-radius:15px!important;
+  padding-top:9px!important;padding-bottom:9px!important;
+  min-height:40px!important;
+}
+/* الإطار الأبيض حوله ينحني بالتناسب ليبقى متناسقًا */
+#chatView #textInputBar{border-radius:19px!important}
+</style>
