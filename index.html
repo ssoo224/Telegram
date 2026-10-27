@@ -12764,5 +12764,12 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 
 <style id="reply-bar-rounder">
 /* حقل الرد فوق خانة الكتابة: حواف أكثر انحناءً */
-#chatView #replyPreviewBar.reply-preview-bar{border-radius:22px!important;padding:7px 12px!important}
+#chatView #replyPreviewBar.reply-preview-bar{border-radius:22px!important;padding:9px 14px!important}
+/* بدون حقل داخلي: لا خلفية ولا إطار ولا هامش حول نص الرد (الارتفاع الكلي أنحف بـ 4px) */
+#chatView #replyPreviewBar .reply-preview-content,
+.app-container[data-app-theme] #chatView #replyPreviewBar .reply-preview-content{
+  background:transparent!important;background-color:transparent!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important;
+  padding:0!important;margin:0!important;
+}
 </style>
