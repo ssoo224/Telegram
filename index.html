@@ -9734,20 +9734,30 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 </script>
 <style id="chat-nav-bar">
 /* ============================================================
-   شريط أزرار الهاتف السفلية داخل المحادثة
-   - يظهر فقط إذا كان للهاتف مساحة سفلية (أزرار/شريط إيماءات)، وإلا ارتفاعه 0
-   - لونه = لون المحادثة نفسه (نهاري / ليلي / ثيمات المحادثة) تلقائيًا
+   شريط الإيماءات / أزرار الهاتف السفلية داخل المحادثة فقط
+   - غير شفاف تمامًا وبلون المحادثة نفسه (نهاري / ليلي / ثيمات المحادثة)
+   - ارتفاعه = مساحة أزرار الهاتف الفعلية (env أو قيمة التطبيق الأصلي)، وصفر إن لم توجد
+   - خانة الكتابة تستخدم نفس الارتفاع فلا يتراكبان
    - يختفي عند ظهور الكيبورد
    ============================================================ */
+#chatView{
+  --chat-nav-h:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px),var(--bb-nav-inset,0px));
+  --sab-real:var(--chat-nav-h);
+}
 #chatView #chatNavBar{
   position:absolute;left:0;right:0;bottom:0;
-  height:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px));
-  background:var(--cr-surface,#17212b);
-  z-index:0;pointer-events:none;
+  height:var(--chat-nav-h);
+  background-color:var(--cr-surface,#17212b)!important;
+  opacity:1!important;
+  z-index:3;pointer-events:none;
   transition:background-color .25s ease;
 }
 html.kb-open #chatView #chatNavBar,
 html.babylon-chat-keyboard-open #chatView #chatNavBar{display:none}
+/* حقل كتابة الرسائل ملاصق لأقصى الأسفل: فوق شريط الإيماءات مباشرة بلا فراغ */
+#chatView .chat-input-container{padding-bottom:var(--chat-nav-h)!important}
+html.kb-open #chatView .chat-input-container,
+html.babylon-chat-keyboard-open #chatView .chat-input-container{padding-bottom:0!important}
 </style>
 <style id="story-safe-bottom">
 /* مساحة سفلية آمنة في القصص حسب شريط التنقل/الحافة السفلية للهاتف */
