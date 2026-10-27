@@ -12592,3 +12592,78 @@ body.light #viewersModal .viewer-item {
 </script>
 <script src="calls/calls.js?v=8"></script>
 <script src="chat-enhance.js?v=1"></script>
+
+<style id="chat-glass-composer-and-cream-nav">
+/* =====================================================================
+   1) داخل المحادثة فقط: شريط الكتابة + مساحة شريط إيماءات الهاتف
+      تصبح طبقة زجاجية شفافة بلون المحادثة مع blur خفيف جدًا،
+      والرسائل تمرّ من خلفها.
+   ===================================================================== */
+#chatView{--cr-glass-fallback:rgba(23,33,43,.34)}
+.app-container[data-app-theme="light"] #chatView{--cr-glass-fallback:rgba(238,242,248,.42)}
+
+#chatView .chat-input-container{
+  position:absolute!important;left:0!important;right:0!important;bottom:0!important;
+  z-index:6!important;
+  background:transparent!important;background-color:transparent!important;
+  border:0!important;box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+  isolation:isolate;
+}
+/* الطبقة الزجاجية: تغطي حقل الكتابة + المساحة خلف شريط الإيماءات حتى حافة الشاشة */
+#chatView .chat-input-container::before{
+  content:"";position:absolute;left:0;right:0;bottom:0;top:0;z-index:-1;pointer-events:none;
+  background:var(--cr-glass-fallback);
+  background:color-mix(in srgb,var(--cr-surface,#17212b) 38%,transparent);
+  -webkit-backdrop-filter:blur(4px) saturate(1.05);backdrop-filter:blur(4px) saturate(1.05);
+  /* حافة علوية ناعمة بدل خط حاد */
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 16px);
+          mask-image:linear-gradient(to bottom,transparent 0,#000 16px);
+}
+/* أثناء ظهور الكيبورد: نفس الشكل بدون مساحة إيماءات زائدة */
+html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
+/* حالة الحظر لها تصميمها الخاص */
+#chatView.bb-blk-on .chat-input-container::before{display:none!important}
+
+/* الرسائل تمتد حتى أسفل الشاشة وتترك مساحة بقدر ارتفاع الشريط الزجاجي */
+#chatView:not(.bb-blk-on) #messagesArea.messages-area{
+  padding-bottom:calc(var(--cr-comp-h,76px) + 10px)!important;
+  scroll-padding-bottom:calc(var(--cr-comp-h,76px) + 10px);
+}
+#chatView.msg-selecting:not(.bb-blk-on) #messagesArea.messages-area{padding-bottom:12px!important}
+
+/* =====================================================================
+   2) خارج المحادثة: شريط التنقل السفلي أبيض مصفر (كريمي) بدل الأبيض المزرق
+   ===================================================================== */
+.app-container[data-app-theme="light"] #bottomNav.telegram-bottom-nav{
+  background:#fdf9ec!important;background-color:#fdf9ec!important;
+  border-top-color:#efe5c3!important;box-shadow:none!important;
+}
+.app-container[data-app-theme="light"] #bottomNav.telegram-bottom-nav .nav-item{color:#8a8266!important}
+.app-container[data-app-theme="light"] #bottomNav.telegram-bottom-nav .nav-item.active{
+  color:#96720d!important;background:#f7eecb!important;border-color:#ecdca0!important;
+}
+</style>
+<script id="chat-glass-composer-js">
+(function(){
+  var view=document.getElementById('chatView');
+  var cont=view&&view.querySelector('.chat-input-container');
+  var area=document.getElementById('messagesArea');
+  if(!view||!cont||!area) return;
+  var near=true;
+  area.addEventListener('scroll',function(){
+    near=(area.scrollHeight-area.scrollTop-area.clientHeight)<160;
+  },{passive:true});
+  function upd(){
+    var h=cont.offsetHeight||0;
+    var cur=parseFloat(view.style.getPropertyValue('--cr-comp-h'))||0;
+    if(Math.abs(h-cur)<1) return;
+    view.style.setProperty('--cr-comp-h',h+'px');
+    if(near){ requestAnimationFrame(function(){ area.scrollTop=area.scrollHeight; }); }
+  }
+  if(window.ResizeObserver){ try{ new ResizeObserver(upd).observe(cont); }catch(_){} }
+  window.addEventListener('resize',upd);
+  window.addEventListener('orientationchange',function(){ setTimeout(upd,200); });
+  upd();
+})();
+</script>
