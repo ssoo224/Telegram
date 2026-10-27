@@ -260,13 +260,26 @@ public class MainActivity extends BridgeActivity {
     // BABYLON-UPD-BEGIN
     private volatile boolean updating = false;
 
-    private void updJs(String state, int pct) {
+    private void updJs(String state, int pct) { updJs(state, pct, ""); }
+
+    /** يبلّغ الصفحة بحالة التحديث. detail = سبب مختصر للفشل (أحرف وأرقام فقط) يعرضه التطبيق للمستخدم. */
+    private void updJs(final String state, final int pct, String detail) {
+        String d0 = detail == null ? "" : detail.replaceAll("[^A-Za-z0-9 _:.\\-]", "").trim();
+        final String d = d0.length() > 80 ? d0.substring(0, 80) : d0;
         runOnUiThread(() -> {
             try {
                 WebView w = liveWebView;
-                if (w != null) w.evaluateJavascript("window.__babylonUpd&&window.__babylonUpd('" + state + "'," + pct + ")", null);
+                if (w != null) w.evaluateJavascript("window.__babylonUpd&&window.__babylonUpd('" + state + "'," + pct + ",'" + d + "')", null);
             } catch (Throwable ignored) { }
         });
+    }
+
+    private String updReason(Throwable t) {
+        if (t == null) return "unknown";
+        String m = t.getMessage();
+        if (t instanceof java.io.IOException && !(m != null && m.startsWith("http"))) return t.getClass().getSimpleName();
+        if (m != null && !m.isEmpty()) return m;
+        return t.getClass().getSimpleName();
     }
 
     /** مسموح فقط رابط /api/apk من نفس موقع التطبيق (حتى ما تنفتح الدالة لروابط غريبة). */
@@ -286,8 +299,8 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void runUpdate(String url) {
-        if (!updUrlAllowed(url)) { updJs("error", 0); return; }
-        if (updating) return;
+        if (!updUrlAllowed(url)) { updJs("error", 0, "url not allowed"); return; }
+        if (updating) { updJs("dl", 0); return; }
         if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
             runOnUiThread(() -> {
                 try {
@@ -301,26 +314,60 @@ public class MainActivity extends BridgeActivity {
         }
         updating = true;
         new Thread(() -> {
+            Throwable last = null;
             try {
-                downloadAndInstall(url);
-            } catch (Throwable t) {
-                updJs("error", 0);
+                for (int attempt = 0; attempt < 2; attempt++) {
+                    try {
+                        downloadAndInstall(url);
+                        last = null;
+                        break;
+                    } catch (java.io.IOException e) {          // انقطاع شبكة: نعيد المحاولة مرة وحدة
+                        last = e;
+                        try { Thread.sleep(1500); } catch (Throwable ignored) { }
+                    } catch (Throwable t) {
+                        last = t;
+                        break;
+                    }
+                }
             } finally {
                 updating = false;
             }
+            if (last != null) updJs("error", 0, updReason(last));
         }).start();
+    }
+
+    /** يفتح الرابط ويتبع التحويلات يدوياً (https فقط) ويرجع الاتصال عند حالة 200. */
+    private HttpURLConnection updOpen(String source) throws Exception {
+        String u = source;
+        for (int hop = 0; hop < 6; hop++) {
+            if (!u.startsWith("https://")) throw new Exception("not https");
+            HttpURLConnection c = (HttpURLConnection) new URL(u).openConnection();
+            c.setConnectTimeout(20000);
+            c.setReadTimeout(30000);
+            c.setInstanceFollowRedirects(false);
+            c.setRequestProperty("User-Agent", "BabylonChat-Updater");
+            c.setRequestProperty("Accept-Encoding", "identity");
+            c.connect();
+            int code = c.getResponseCode();
+            if (code == 301 || code == 302 || code == 303 || code == 307 || code == 308) {
+                String loc = c.getHeaderField("Location");
+                c.disconnect();
+                if (loc == null || loc.isEmpty()) throw new Exception("redirect");
+                u = new URL(new URL(u), loc).toString();
+                continue;
+            }
+            if (code != 200) { c.disconnect(); throw new Exception("http " + code); }
+            return c;
+        }
+        throw new Exception("too many redirects");
     }
 
     private void downloadAndInstall(String source) throws Exception {
         File dir = new File(getCacheDir(), "updates");
         if (!dir.exists() && !dir.mkdirs()) throw new Exception("mkdir");
         File apk = new File(dir, "babylon-chat.apk");
-        HttpURLConnection c = (HttpURLConnection) new URL(source).openConnection();
-        c.setConnectTimeout(20000);
-        c.setReadTimeout(30000);
-        c.setInstanceFollowRedirects(true);
-        c.connect();
-        if (c.getResponseCode() != 200) throw new Exception("http " + c.getResponseCode());
+        if (apk.exists()) apk.delete();
+        HttpURLConnection c = updOpen(source);
         long total = c.getContentLengthLong();
         long done = 0;
         int last = -1;
@@ -339,12 +386,22 @@ public class MainActivity extends BridgeActivity {
         } finally {
             c.disconnect();
         }
-        if (apk.length() < 1000000L) throw new Exception("small");
+        if (total > 0 && done < total) throw new Exception("truncated " + done + " of " + total);
+        if (apk.length() < 1000000L) throw new Exception("small " + apk.length());
         try (InputStream chk = new java.io.FileInputStream(apk)) {
             if (chk.read() != 'P' || chk.read() != 'K') throw new Exception("not apk");
         }
+        // نتأكد أنه ملف تطبيق سليم ولنفس التطبيق قبل ما نفتح شاشة التثبيت
+        android.content.pm.PackageInfo pi = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), 0);
+        if (pi == null) throw new Exception("corrupt apk");
+        if (!getPackageName().equals(pi.packageName)) throw new Exception("wrong package " + pi.packageName);
         updJs("ready", 100);
-        final Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".updates", apk);
+        final Uri uri;
+        try {
+            uri = FileProvider.getUriForFile(this, getPackageName() + ".updates", apk);
+        } catch (Throwable t) {
+            throw new Exception("fileprovider " + t.getClass().getSimpleName());
+        }
         runOnUiThread(() -> {
             try {
                 Intent i = new Intent(Intent.ACTION_VIEW);
@@ -352,7 +409,7 @@ public class MainActivity extends BridgeActivity {
                 i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
             } catch (Throwable t) {
-                updJs("error", 0);
+                updJs("error", 0, "install " + t.getClass().getSimpleName());
             }
         });
     }
