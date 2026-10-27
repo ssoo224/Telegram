@@ -13513,3 +13513,52 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 #chatView #editPreviewBar .reply-preview-content,.app-container[data-app-theme] #chatView #editPreviewBar .reply-preview-content{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;margin:0!important}
 #chatView #editPreviewBar.hidden{display:none!important}
 </style>
+<style id="babylon-select-bar-round-2">
+#chatView#chatView#chatView#chatView #multiSelectBar.multi-select-bar{border-radius:18px!important}
+#chatView#chatView#chatView#chatView #multiSelectBar .msb-close,
+#chatView#chatView#chatView#chatView #multiSelectBar .msb-fwd,
+#chatView#chatView#chatView#chatView #multiSelectBar .msb-del{border-radius:13px!important}
+</style>
+<script id="babylon-msg-hole-sync">
+(function(){
+  var anchor=null,raf=0,last='';
+  function modal(){return document.getElementById('msgModal');}
+  function open(){var m=modal();return !!m&&!m.classList.contains('hidden');}
+  function target(){
+    if(anchor&&anchor.isConnected)return anchor;
+    var id=(typeof selectedMsgId!=='undefined')?selectedMsgId:null;
+    var el=id?document.getElementById('message_'+id):null;
+    if(el){anchor=el.classList.contains('msg-bubble')?el:(el.querySelector('.msg-bubble')||el);}
+    return anchor&&anchor.isConnected?anchor:null;
+  }
+  function sync(){
+    var layer=document.getElementById('msgBlurLayer'),el=target();
+    if(!layer||!el)return;
+    var a=el.getBoundingClientRect(),W=innerWidth,H=innerHeight;
+    var key=[a.left,a.top,a.width,a.height,W,H].join(',');
+    if(key===last)return;last=key;
+    var cs=getComputedStyle(el),w=a.width,h=a.height,x=a.left,y=a.top;
+    var cr=function(k){return Math.max(0,Math.min(parseFloat(cs[k])||0,w/2,h/2));};
+    var tl=cr('borderTopLeftRadius'),tr=cr('borderTopRightRadius'),br=cr('borderBottomRightRadius'),bl=cr('borderBottomLeftRadius');
+    var d='M0 0H'+W+'V'+H+'H0Z M'+(x+tl)+' '+y+'H'+(x+w-tr)+'A'+tr+' '+tr+' 0 0 1 '+(x+w)+' '+(y+tr)+'V'+(y+h-br)+'A'+br+' '+br+' 0 0 1 '+(x+w-br)+' '+(y+h)+'H'+(x+bl)+'A'+bl+' '+bl+' 0 0 1 '+x+' '+(y+h-bl)+'V'+(y+tl)+'A'+tl+' '+tl+' 0 0 1 '+(x+tl)+' '+y+'Z';
+    layer.style.clipPath=layer.style.webkitClipPath='path(evenodd, "'+d+'")';
+  }
+  function keepShellInView(){
+    var m=modal(),sh=m&&m.querySelector('.msg-actions-shell');if(!sh||sh.style.position!=='fixed')return;
+    var r=sh.getBoundingClientRect(),over=r.bottom-(innerHeight-8);
+    if(over>0){sh.style.top=Math.max(8,r.top-over)+'px';}
+  }
+  function tick(){
+    if(!open()){raf=0;return;}
+    sync();keepShellInView();
+    raf=requestAnimationFrame(tick);
+  }
+  var orig=window.openMsgModal;
+  window.openMsgModal=function(a,b,c,d,e,anc){
+    anchor=anc||null;last='';
+    var r=orig.apply(this,arguments);
+    if(!raf)raf=requestAnimationFrame(tick);
+    return r;
+  };
+})();
+</script>
