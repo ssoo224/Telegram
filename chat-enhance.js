@@ -84,6 +84,54 @@
     } catch (e) {}
   }, 60000);
 
+  /* ================= خصوصية: لا نكشف الإيميل بشاشة رمز التحقق ================= */
+  var loginUser = null, loginAt = 0;
+  function maskMail(e) {
+    var p = String(e || '').split('@');
+    if (p.length !== 2 || !p[0]) return '••••';
+    var d = p[1].split('.');
+    return p[0].charAt(0) + '•••@' + d[0].charAt(0) + '•••' + (d.length > 1 ? '.' + d.slice(1).join('.') : '');
+  }
+  function hookApi() {
+    if (typeof babylonApi !== 'function') return false;
+    if (babylonApi.__bbp) return true;
+    var o = babylonApi;
+    var w = function (path, body) {
+      try {
+        if (path === '/api/auth' && body && body.type === 'resolve-login') {
+          loginUser = String(body.username || '').trim().replace(/^@/, '').toLowerCase(); loginAt = Date.now();
+        }
+      } catch (e) {}
+      return o.apply(this, arguments);
+    };
+    w.__bbp = true; window.babylonApi = w;
+    return true;
+  }
+  var hkApi = setInterval(function () { if (hookApi()) clearInterval(hkApi); }, 300);
+  hookApi();
+
+  function fixOtp(root) {
+    var els = root.querySelectorAll ? root.querySelectorAll('.otp-mail') : [];
+    Array.prototype.forEach.call(els, function (b) {
+      var real = b.textContent || '';
+      if (b.dataset.bbDone === real) return;
+      var out;
+      if (loginUser && Date.now() - loginAt < 600000) { b.setAttribute('dir', 'rtl'); out = 'البريد المرتبط باليوزر @' + loginUser; }
+      else if (real.indexOf('@') > 0) out = maskMail(real);
+      else return;
+      b.dataset.bbDone = out; b.textContent = out;
+    });
+  }
+  try {
+    new MutationObserver(function (muts) {
+      for (var i = 0; i < muts.length; i++) {
+        var m = muts[i];
+        if (m.type === 'characterData' && m.target.parentNode && m.target.parentNode.classList && m.target.parentNode.classList.contains('otp-mail')) fixOtp(m.target.parentNode.parentNode || document);
+        for (var j = 0; j < m.addedNodes.length; j++) { var n = m.addedNodes[j]; if (n.nodeType === 1) fixOtp(n.matches && n.matches('.otp-mail') ? n.parentNode : n); }
+      }
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  } catch (e) {}
+
   /* ================= 2) الخانة فوق الكيبورد ================= */
   var atBottom = true, lastH = 0;
   function composer() { return document.querySelector('#chatView .chat-input-container'); }
