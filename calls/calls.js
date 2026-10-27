@@ -5,6 +5,7 @@
   var pc = null, localStream = null, callId = null, role = null, peerId = null, unsubs = [], ringTimer = null, tick = null;
   var startedAt = 0, muted = false, spkOn = false, ending = false, incoming = null;
   var seenCand = {}, candReady = false, candQueue = [], nativePending = null;
+  var logged = null, ringed = false, finalStatus = null;
   var restartN = 0, appliedAnswerN = 0, handledRestart = 0, restartTries = 0, discTimer = null, failTimer = null, wl = null;
 
   /* ---------- أيقونات SVG ---------- */
@@ -131,6 +132,72 @@
   window.addEventListener('online', netChanged);
   try { if (navigator.connection) navigator.connection.addEventListener('change', netChanged); } catch (e) {}
 
+  /* ---------- سجل المكالمات بالمحادثة + إشعار المكالمة الفائتة ---------- */
+  function fmtDur(sec) { sec = Math.max(0, sec | 0); return ('0' + Math.floor(sec / 60)).slice(-2) + ':' + ('0' + (sec % 60)).slice(-2); }
+  function neutralText(st, dur) {
+    if (st === 'ended') return '📞 مكالمة صوتية · ' + fmtDur(dur);
+    if (st === 'rejected') return '📞 مكالمة مرفوضة';
+    if (st === 'busy') return '📞 الخط مشغول';
+    return '📞 مكالمة فائتة';
+  }
+  /* النص حسب من يشوف الرسالة: المتصل أو المستقبِل */
+  window.callLogText = function (m, mine) {
+    var st = m.callStatus, d = m.duration || 0;
+    if (st === 'ended') return (mine ? '📞 مكالمة صادرة · ' : '📞 مكالمة واردة · ') + fmtDur(d);
+    if (st === 'rejected') return mine ? '📞 رفض المكالمة' : '📞 رفضت المكالمة';
+    if (st === 'busy') return mine ? '📞 الخط مشغول' : '📞 مكالمة فائتة';
+    if (st === 'cancelled') return mine ? '📞 مكالمة ملغاة' : '📞 مكالمة فائتة';
+    return mine ? '📞 لم يتم الرد' : '📞 مكالمة فائتة';
+  };
+  function logCall() {
+    try {
+      if (role !== 'caller' || !callId || !peerId || !ringed || logged === callId) return;
+      logged = callId;
+      var dur = startedAt ? Math.max(1, Math.round((Date.now() - startedAt) / 1000)) : 0;
+      var st = startedAt ? 'ended' : (finalStatus || 'missed');
+      var cid = [currentUser.uid, peerId].sort().join('__'), now = Date.now();
+      db.collection('chats').doc(cid).collection('messages').add({
+        senderId: currentUser.uid, type: 'call', callStatus: st, duration: dur,
+        text: neutralText(st, dur), read: false, createdAt: now
+      }).then(function () {
+        db.collection('chats').doc(cid).update({ updatedAt: now }).catch(function () {});
+      }).catch(function () {});
+      /* المستقبِل ما رد: إشعار عادي "مكالمة فائتة" (يظهر حتى والتطبيق مغلق) */
+      if (!startedAt && (st === 'missed' || st === 'cancelled')) {
+        setTimeout(function () {
+          babylonApi('/api/index', { recipientId: peerId, chatId: cid, senderName: myName(), messageText: '📞 مكالمة فائتة' }, currentUser).catch(function () {});
+        }, 600);
+      }
+    } catch (e) {}
+  }
+  /* عرض رسالة المكالمة كسطر وسطي بالمحادثة (بدون ما تعدّل index.html) */
+  function hookRender() {
+    if (typeof renderMsgDoc !== 'function' || renderMsgDoc.__bbCall) return !!(typeof renderMsgDoc === 'function' && renderMsgDoc.__bbCall);
+    var orig = renderMsgDoc;
+    var wrapped = function (doc, box, typing) {
+      try {
+        var m = doc.data();
+        if (m && m.type === 'call') {
+          if (typeof getLocalChatSet === 'function' && getLocalChatSet('babylon_hidden_messages_' + activeChatId).has(doc.id)) return;
+          if (typeof chatClearedAt === 'function') {
+            var cl = chatClearedAt(activeChatId, (typeof chatMetaCache !== 'undefined') ? chatMetaCache[activeChatId] : null);
+            if (cl && (Number(m.createdAt) || 0) <= cl) return;
+          }
+          var row = document.createElement('div');
+          row.className = 'sys-msg'; row.id = 'message_' + doc.id;
+          row.textContent = window.callLogText(m, m.senderId === currentUser.uid);
+          if (typing) box.insertBefore(row, typing); else box.appendChild(row);
+          return;
+        }
+      } catch (e) {}
+      return orig.apply(this, arguments);
+    };
+    wrapped.__bbCall = true;
+    window.renderMsgDoc = wrapped;
+    return true;
+  }
+  var hk = setInterval(function () { if (hookRender()) clearInterval(hk); }, 500);
+
   /* ---------- أدوات ---------- */
   function setUI(name, status, incomingMode, avatarUrl) {
     if (incomingMode && (pc || startedAt)) return;
@@ -207,6 +274,7 @@
     }, 500);
   }
   function cleanup() {
+    logCall();
     stopRing(); if (callId) endTone();
     clearTimeout(discTimer); clearTimeout(failTimer);
     clearTimeout(ringTimer); if (tick) clearInterval(tick); tick = null;
@@ -221,9 +289,11 @@
     callId = null; role = null; peerId = null; incoming = null; muted = false; spkOn = false; ending = false; startedAt = 0;
     seenCand = {}; candReady = false; candQueue = [];
     restartN = 0; appliedAnswerN = 0; handledRestart = 0; restartTries = 0; failTimer = null; discTimer = null;
+    ringed = false; finalStatus = null;
   }
   function endCall(status) {
     if (ending) return; ending = true;
+    finalStatus = (role === 'caller' && !startedAt && (status === 'ended' || !status)) ? 'cancelled' : status;
     var id = callId;
     if (id) db.collection('calls').doc(id).update({ status: status || 'ended', endedBy: currentUser.uid }).catch(function () {});
     if (role === 'caller' && !startedAt) pushCall(true);   /* ألغِ رنين الطرف الثاني */
@@ -250,6 +320,7 @@
         pc.setRemoteDescription(new RTCSessionDescription(c.answer)).catch(function () {});
       }
       if (['ended', 'rejected', 'missed', 'busy'].indexOf(c.status) > -1) {
+        finalStatus = (c.status === 'ended' && !startedAt) ? 'rejected' : c.status;
         if (role === 'caller' && c.status === 'busy') toast('الخط مشغول');
         if (role === 'caller' && c.status === 'rejected') toast('رفض المكالمة');
         if (role === 'caller' && c.status === 'missed') toast('ما رد على المكالمة');
@@ -277,7 +348,7 @@
         });
       });
     }).then(function () {
-      candReady = true;
+      candReady = true; ringed = true;
       candQueue.splice(0).forEach(function (q) { callRef().collection(q[0]).add(q[1]).catch(function () {}); });
       watchStatus(); listenCandidates('calleeCandidates');
       $('bbCallStt').textContent = 'يرن…'; startRing('out');
