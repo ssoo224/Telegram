@@ -14,6 +14,8 @@
     micOff: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"/><path d="M9 9v2a3 3 0 0 0 5.1 2.1M15 9.3V5a3 3 0 0 0-5.9-.8"/><path d="M5 10v1a7 7 0 0 0 11.3 5.5M19 10v1a7 7 0 0 1-.6 2.8M12 18v4M8 22h8"/></svg>',
     spk: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
     end: '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.956.956 0 0 1-.29-.7c0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28a11.27 11.27 0 0 0-2.67-1.85.996.996 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>',
+    chev: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+    phoneSm: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>',
     answer: '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>'
   };
 
@@ -33,10 +35,22 @@
     '#bbCallOv .acc{background:#22a559}#bbCallOv .rej{background:#e0443e}' +
     '#bbCallOv .tg{background:rgba(255,255,255,.14)}#bbCallOv .tg.on{background:#f5e6b8;color:#2a1d06}';
   document.head.appendChild(st);
+  var st2 = document.createElement('style');
+  st2.textContent =
+    '#bbCallOv.min{display:none!important}' +
+    '#bbCallMin{position:absolute;top:calc(var(--sat-real,env(safe-area-inset-top,0px)) + 14px);left:16px;width:42px!important;height:42px!important;background:rgba(255,255,255,.14)}' +
+    '#bbCallPill{position:fixed;top:calc(var(--sat-real,env(safe-area-inset-top,0px)) + 8px);left:50%;transform:translateX(-50%);z-index:99998;display:none;align-items:center;gap:10px;max-width:92vw;padding:7px 8px 7px 14px;border-radius:22px;background:#1f9d55;color:#fff;font-size:14px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.35);cursor:pointer;direction:rtl}' +
+    '#bbCallPill.on{display:flex}' +
+    '#bbCallPill .pi{display:flex;animation:bbPillPulse 1.6s ease-in-out infinite}' +
+    '#bbCallPill #bbPillTx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '#bbCallPill button{width:30px;height:30px;border-radius:50%;border:0;background:#e0443e;color:#fff;display:flex;align-items:center;justify-content:center;padding:0;flex:none}' +
+    '@keyframes bbPillPulse{0%,100%{opacity:1}50%{opacity:.45}}';
+  document.head.appendChild(st2);
 
   var ov = document.createElement('div');
   ov.id = 'bbCallOv';
   ov.innerHTML =
+    '<button class="tg" id="bbCallMin" aria-label="تصغير">' + IC.chev + '</button>' +
     '<div class="av" id="bbCallAv"></div><div class="nm" id="bbCallNm"></div><div class="stt" id="bbCallStt"></div>' +
     '<div class="row" id="bbRowActive">' +
       '<div class="cb"><button class="tg" id="bbCallMut" aria-label="كتم">' + IC.mic + '</button><span>كتم</span></div>' +
@@ -50,8 +64,26 @@
     '<audio id="bbCallAudio" autoplay playsinline></audio>';
   document.body.appendChild(ov);
   var $ = function (i) { return document.getElementById(i); };
+  var pill = document.createElement('div');
+  pill.id = 'bbCallPill';
+  pill.innerHTML = '<span class="pi">' + IC.phoneSm + '</span><span id="bbPillTx"></span><button id="bbPillEnd" aria-label="إنهاء">' + IC.end.replace('width="30" height="30"', 'width="16" height="16"') + '</button>';
+  document.body.appendChild(pill);
+  var pillIv = null;
+  function pillText() { $('bbPillTx').textContent = ($('bbCallNm').textContent || '') + ' · ' + ($('bbCallStt').textContent || ''); }
+  function minimizeCall() {
+    if (!callId) return;
+    ov.classList.add('min'); pill.classList.add('on'); pillText();
+    clearInterval(pillIv); pillIv = setInterval(pillText, 500);
+  }
+  function restoreCall() {
+    ov.classList.remove('min'); pill.classList.remove('on');
+    clearInterval(pillIv); pillIv = null;
+  }
   function nat() { return window.BabylonCallNative || null; }
 
+  $('bbCallMin').onclick = minimizeCall;
+  pill.onclick = function (e) { if (e.target.closest && e.target.closest('#bbPillEnd')) return; restoreCall(); };
+  $('bbPillEnd').onclick = function () { stopRing(); endCall('ended'); };
   $('bbCallEnd').onclick = function () { stopRing(); endCall('ended'); };
   $('bbCallRej').onclick = function () { stopRing(); endCall('rejected'); };
   $('bbCallAcc').onclick = acceptCall;
@@ -206,6 +238,7 @@
     $('bbRowIn').style.display = incomingMode ? 'flex' : 'none';
     $('bbRowActive').style.display = incomingMode ? 'none' : 'flex';
     $('bbSpkWrap').style.display = nat() ? '' : 'none';
+    $('bbCallMin').style.display = incomingMode ? 'none' : 'flex';
     $('bbCallMut').classList.remove('on'); $('bbCallMut').innerHTML = IC.mic;
     $('bbCallSpk').classList.toggle('on', spkOn);
     var av = $('bbCallAv'); av.innerHTML = '';
@@ -285,7 +318,7 @@
     try { if (nat() && nat().setProximity) nat().setProximity(false); } catch (e) {}
     awake(false);
     try { if (nat() && nat().stopService) nat().stopService(); } catch (e) {}
-    $('bbCallAudio').srcObject = null; ov.classList.remove('on');
+    $('bbCallAudio').srcObject = null; ov.classList.remove('on'); restoreCall();
     callId = null; role = null; peerId = null; incoming = null; muted = false; spkOn = false; ending = false; startedAt = 0;
     seenCand = {}; candReady = false; candQueue = [];
     restartN = 0; appliedAnswerN = 0; handledRestart = 0; restartTries = 0; failTimer = null; discTimer = null;
