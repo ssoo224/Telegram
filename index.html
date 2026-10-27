@@ -2591,7 +2591,6 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
             <div id="chatSub" class="telegram-user-status">غير متصل</div>
           </div>
         </div>
-        <button class="icon-btn chat-search-btn" onclick="openChatSearch()" title="بحث في المحادثة" aria-label="بحث في المحادثة"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg></button>
         <button class="icon-btn chat-more-btn" onclick="toggleChatMenu(event)" title="خيارات المحادثة" aria-label="خيارات المحادثة">⋮</button>
       </header>
       <div id="chatMoreMenu" class="chat-more-menu hidden" role="menu">
@@ -13057,7 +13056,7 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
    هاتف/تابلت: شريط علوي يحل محل الهيدر
    كمبيوتر (>= 1000px): لوحة جانبية ثابتة بجانب المحادثة مثل تيليجرام ديسكتوب */
 .chat-search-btn{margin-inline-start:auto}
-.telegram-chat-header .chat-more-btn{margin-inline-start:0!important}
+.telegram-chat-header .chat-more-btn{margin-inline-start:auto!important}
 
 .app-container .chat-search-panel{
   position:absolute;z-index:950;top:0!important;inset-inline:0!important;
@@ -13074,7 +13073,8 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 .cs-back{width:42px;height:42px;flex:0 0 42px;border:0;border-radius:14px;background:var(--cl-chip,#e8edf4);color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .cs-back svg{width:20px;height:20px}
 .cs-field{position:relative;flex:1;min-width:0;display:flex;align-items:center;background:var(--cl-chip,#e8edf4);border:1.5px solid transparent;border-radius:15px;transition:border-color .15s,background .15s}
-.cs-field:focus-within{border-color:var(--cl-gold,#c99a1c)}
+.cs-field,.cs-field:focus-within{border-color:transparent!important;box-shadow:none!important;outline:0!important}
+.cs-field input,.cs-field input:focus,.cs-field input:focus-visible{outline:0!important;box-shadow:none!important;border:0!important}
 .cs-ic{width:19px;height:19px;flex:0 0 19px;margin-inline-start:12px;color:var(--cl-sub,#6b7a8c)}
 .cs-field input{flex:1;min-width:0;height:42px;border:0;outline:0;background:transparent;color:inherit;font:inherit;font-size:15px;padding:0 10px;user-select:text;-webkit-user-select:text}
 .cs-field input::placeholder{color:var(--cl-sub,#6b7a8c);opacity:.85}
@@ -13117,6 +13117,7 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 .cs-chip:active{transform:scale(.96)}
 .cs-loading{padding:8px 12px;text-align:center;font-size:12px;color:var(--cl-sub,#6b7a8c)}
 @media (prefers-reduced-motion:reduce){.app-container .chat-search-panel{animation:none}}
+.chat-message-search-results:empty{display:none!important}
 
 /* ---------- كمبيوتر: لوحة جانبية احترافية ---------- */
 @media (min-width:1000px) and (min-height:481px){
@@ -13250,18 +13251,13 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
   }
 
   /* ---- العرض ---- */
-  function getR(){try{var a=JSON.parse(localStorage.getItem('babylon_chat_search_recent')||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
-  function addR(q){q=(q||'').trim();if(q.length<2)return;var a=getR().filter(function(x){return x!==q;});a.unshift(q);try{localStorage.setItem('babylon_chat_search_recent',JSON.stringify(a.slice(0,6)));}catch(e){}}
+  function getR(){try{localStorage.removeItem('babylon_chat_search_recent');}catch(e){}return [];try{var a=JSON.parse(localStorage.getItem('babylon_chat_search_recent')||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+  function addR(q){return;q=(q||'').trim();if(q.length<2)return;var a=getR().filter(function(x){return x!==q;});a.unshift(q);try{localStorage.setItem('babylon_chat_search_recent',JSON.stringify(a.slice(0,6)));}catch(e){}}
   function showStart(){
     var res=$('chatMessageSearchResults');if(!res)return;
     CS.hits=[];CS.idx=-1;updateNav();
-    CS.recent=getR();
-    if(CS.recent.length){
-      res.innerHTML='<div class="cs-recent-h"><span>عمليات بحث سابقة</span><button type="button" data-act="clr">مسح</button></div><div class="cs-chips">'+
-        CS.recent.map(function(x,i){return '<button type="button" class="cs-chip" data-r="'+i+'">'+esc(x)+'</button>';}).join('')+'</div>';
-    }else{
-      res.innerHTML='<div class="cs-empty">'+ICON_S+'<div>اكتب كلمة أو جزءًا منها<br>للبحث في رسائل هذه المحادثة</div></div>';
-    }
+    CS.recent=[];
+    res.innerHTML='';
   }
   function render(hits,tk,loading){
     var res=$('chatMessageSearchResults');if(!res)return;
