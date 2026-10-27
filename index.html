@@ -7379,7 +7379,8 @@ function selDelete(){if(selSet.size)openDeleteChatsDialog([...selSet]);}
 function openDeleteChatsDialog(ids){
   const one=ids.length===1,name=one?chatNameOf(ids[0]):'';
   const ov=document.createElement('div');ov.className='cl-dlg-ov';
-  ov.innerHTML=`<div class="cl-dlg" role="dialog" aria-modal="true">
+  ov.innerHTML=`<div class="cl-dlg cl-del" role="dialog" aria-modal="true">
+    <div class="cl-del-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></div>
     <h3>${one?'حذف المحادثة':'حذف '+ids.length+' محادثات'}</h3>
     <p>${one?'هل تريد حذف المحادثة مع <b>'+esc(name)+'</b>؟':'هل تريد حذف المحادثات المحددة؟'} لا يمكن التراجع عن هذا الإجراء.</p>
     <label class="cl-chk"><input type="checkbox" id="clDelBoth"><span class="cl-box"></span><span>${one?'حذف أيضاً عند '+esc(name):'حذف أيضاً عند الطرف الآخر'}</span></label>
@@ -12817,4 +12818,87 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
   padding:7px 12px!important;
   min-height:66px!important;
 }
+</style>
+
+<style id="babylon-delete-dialog-redesign">
+/* نوافذ الحوار: لمسة موحدة مع تصميم التطبيق (حد ناعم + خط ذهبي علوي + ضبابية خفيفة) */
+.cl-dlg-ov{background:rgba(8,12,18,.52)!important;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.cl-dlg{border-radius:26px!important;border:1px solid var(--cl-sep,rgba(128,128,128,.14));position:relative;overflow:hidden;
+  box-shadow:0 22px 60px rgba(10,18,30,.34),0 2px 6px rgba(10,18,30,.08)!important}
+.cl-dlg::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;
+  background:linear-gradient(90deg,transparent,var(--cl-gold,#c99a1c) 22%,var(--cl-gold,#c99a1c) 78%,transparent);opacity:.85}
+
+/* نافذة حذف المحادثة */
+.cl-dlg.cl-del{padding:26px 20px 18px;text-align:center}
+.cl-dlg.cl-del .cl-del-ic{width:62px;height:62px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:#e5484d;background:rgba(229,72,77,.11);box-shadow:0 0 0 8px rgba(229,72,77,.05)}
+.cl-dlg.cl-del .cl-del-ic svg{width:28px;height:28px}
+.cl-dlg.cl-del h3{margin:0 0 8px;font-size:19px;font-weight:800;color:var(--cl-text,#16202b);text-align:center}
+.cl-dlg.cl-del p{margin:0 0 16px;font-size:14.5px;line-height:1.85;color:var(--cl-sub,#6b7a8c);text-align:center}
+.cl-dlg.cl-del p b{color:var(--cl-gold,#c99a1c);font-weight:800}
+.cl-dlg.cl-del label.cl-chk{display:flex;align-items:center;justify-content:flex-start;gap:12px;margin:0 0 18px;padding:12px 14px;
+  background:var(--cl-chip,#e8edf4);border-radius:16px;font-size:14.5px;font-weight:600;color:var(--cl-text,#16202b);text-align:right;
+  transition:background .15s}
+.cl-dlg.cl-del label.cl-chk:active{transform:scale(.99)}
+.cl-dlg.cl-del .cl-box{width:24px;height:24px;flex:0 0 24px;border-radius:8px;border:2px solid var(--cl-sub,#6b7a8c);background:transparent;transition:.15s}
+.cl-dlg.cl-del input:checked+.cl-box{background:var(--cl-gold,#c99a1c);border-color:var(--cl-gold,#c99a1c);box-shadow:0 3px 10px rgba(201,154,28,.35)}
+.cl-dlg.cl-del .cl-btns{display:flex;flex-wrap:nowrap;gap:10px;margin:0;justify-content:stretch}
+.cl-dlg.cl-del .cl-btns button{flex:1 1 0;padding:13px 10px;font-size:15.5px;font-weight:800;border-radius:16px;
+  transition:transform .12s,filter .12s}
+.cl-dlg.cl-del .cl-btns button:active{transform:scale(.97)}
+.cl-dlg.cl-del .cl-btns button#clDelNo{background:var(--cl-chip,#e8edf4);color:var(--cl-text,#16202b)}
+.cl-dlg.cl-del .cl-btns button.cl-danger{background:linear-gradient(135deg,#f0605d,#d94545);color:#fff;
+  box-shadow:0 8px 18px rgba(217,69,69,.30)}
+.app-container[data-app-theme="dark"] .cl-dlg.cl-del .cl-del-ic{background:rgba(240,96,93,.14);color:#f0605d}
+.app-container[data-app-theme="dark"] .cl-dlg.cl-del p b{color:var(--cl-gold,#e4c45b)}
+.app-container[data-app-theme="dark"] .cl-dlg.cl-del .cl-box{border-color:var(--cl-sub,#8798aa)}
+.app-container[data-app-theme="dark"] .cl-dlg.cl-del input:checked+.cl-box{box-shadow:0 3px 10px rgba(228,196,91,.25)}
+</style>
+
+<style id="babylon-chat-more-menu-pro">
+/* قائمة الثلاث نقاط داخل المحادثة: بطاقة عصرية بأيقونات داخل مربعات ذهبية ناعمة */
+.app-container .chat-more-menu{
+  width:min(254px,calc(100% - 24px));padding:8px;border-radius:22px;
+  border:1px solid var(--babylon-border,#dce4ee);
+  background:var(--cl-card,#ffffff);color:var(--cl-text,#16202b);
+  box-shadow:0 20px 48px rgba(10,18,30,.24),0 2px 6px rgba(10,18,30,.07);
+  transform-origin:top left;
+}
+.app-container[data-app-theme="light"] .chat-more-menu{background:#ffffff;color:#16202b;border-color:#dce4ee}
+.app-container[data-app-theme="dark"] .chat-more-menu{background:#17212b;color:#f1f5f9;border-color:#2b3a4c}
+.app-container .chat-more-menu:not(.hidden){animation:babMenuIn .16s cubic-bezier(.2,.8,.3,1)}
+@keyframes babMenuIn{from{opacity:0;transform:translateY(-6px) scale(.94)}to{opacity:1;transform:none}}
+
+.app-container .chat-more-menu button{
+  display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:8px 10px;
+  border:0;border-radius:15px;background:transparent;color:inherit;
+  font-size:15px;font-weight:600;text-align:right;letter-spacing:0;
+  transition:background .15s,transform .1s;
+}
+.app-container .chat-more-menu button+button{margin-top:2px}
+.app-container .chat-more-menu button span{flex:1;min-width:0;text-align:right}
+.app-container .chat-more-menu button:hover{background:rgba(201,154,28,.09)}
+.app-container .chat-more-menu button:active{background:rgba(201,154,28,.15);transform:scale(.98)}
+
+/* الأيقونة داخل مربع ناعم */
+.app-container .chat-more-menu button .chat-action-icon{
+  box-sizing:content-box;width:20px;height:20px;flex:0 0 20px;padding:8px;border-radius:13px;
+  color:var(--cl-gold,#c99a1c);background:rgba(201,154,28,.13);
+  stroke-width:1.9;opacity:1;transform:none;
+}
+.app-container[data-app-theme="dark"] .chat-more-menu button .chat-action-icon{background:rgba(228,196,91,.14);color:#e4c45b}
+.app-container[data-app-theme="dark"] .chat-more-menu button:hover{background:rgba(228,196,91,.08)}
+
+/* سهم صغير في نهاية كل خيار مثل صفوف الإعدادات */
+.app-container .chat-more-menu button::after{
+  content:"";flex:0 0 16px;width:16px;height:16px;margin-inline-start:auto;opacity:.32;background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 6 8.5 12l6 6'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.5 6 8.5 12l6 6'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+
+/* خيارات الخطر (إن وجدت) */
+.app-container .chat-more-menu button.danger{color:#e5484d}
+.app-container .chat-more-menu button.danger .chat-action-icon{color:#e5484d;background:rgba(229,72,77,.12)}
+.app-container .chat-more-menu button.danger:hover{background:rgba(229,72,77,.08)}
+@media (prefers-reduced-motion:reduce){.app-container .chat-more-menu:not(.hidden){animation:none}.app-container .chat-more-menu button{transition:none}}
 </style>
