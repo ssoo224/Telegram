@@ -2624,7 +2624,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
           </div>
         </div>
         <div id="chatMessageSearchResults" class="chat-message-search-results"></div>
-        <div class="cs-foot"><span><kbd>↑</kbd><kbd>↓</kbd> تنقّل</span><span><kbd>Enter</kbd> التالي</span><span><kbd>Esc</kbd> إغلاق</span></div>
+        <div class="cs-foot"><span><kbd><svg class="cs-kic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></kbd><kbd><svg class="cs-kic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></kbd> تنقّل</span><span><kbd>Enter</kbd> التالي</span><span><kbd>Esc</kbd> إغلاق</span></div>
       </div>
 
       <div id="pinnedBar" class="pinned-bar hidden" role="button" aria-label="الرسالة المثبتة"></div>
@@ -13118,6 +13118,11 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 .cs-loading{padding:8px 12px;text-align:center;font-size:12px;color:var(--cl-sub,#6b7a8c)}
 @media (prefers-reduced-motion:reduce){.app-container .chat-search-panel{animation:none}}
 .chat-message-search-results:empty{display:none!important}
+.cs-arrows button,.cs-arrows button svg,.cs-filters button.on,.cs-av{color:#fff!important}
+.cs-arrows button svg{stroke:#fff!important}
+.cs-meta b,.cs-empty svg,.cs-ic{color:#fff!important}
+.cs-kic{display:block;width:12px;height:12px;margin:2px auto}
+.cs-foot kbd{line-height:1}
 
 /* ---------- كمبيوتر: لوحة جانبية احترافية ---------- */
 @media (min-width:1000px) and (min-height:481px){
