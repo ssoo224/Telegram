@@ -2579,7 +2579,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
       <div class="pattern-layer" id="chatPattern"></div>
 
       <header class="telegram-chat-header">
-        <button class="icon-btn" onclick="goHome()" title="العودة للمحادثات">‹</button>
+        <button class="icon-btn chat-back-btn" onclick="goHome()" title="العودة للمحادثات" aria-label="العودة للمحادثات"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
         
         <div class="telegram-user-info" onclick="openCurrentChatUserProfile()">
           <div id="chatAvatar" class="telegram-avatar">؟</div>
@@ -12396,6 +12396,20 @@ body.light #viewersModal .viewer-item {
 #otherTopMenu{top:calc(60px + var(--sat))}
 </style>
 
+
+<style id="chat-header-slim">
+/* شريط الاسم والصورة داخل المحادثة: أنحف قليلًا */
+.app-container #chatView .telegram-chat-header{padding:calc(4px + var(--sat)) 10px 3px!important;gap:7px!important}
+#chatView#chatView .telegram-chat-header .telegram-user-info{padding:3px 12px 3px 6px!important;border-radius:22px!important;gap:10px}
+#chatView#chatView .telegram-chat-header .telegram-avatar{width:36px!important;height:36px!important;min-width:36px;font-size:15px}
+#chatView#chatView .telegram-chat-header .telegram-user-name{font-size:15.5px!important;line-height:1.25}
+#chatView#chatView .telegram-chat-header .telegram-user-status{font-size:11.5px!important;margin-top:0!important;line-height:1.2}
+#chatView#chatView .telegram-chat-header .icon-btn{width:38px!important;height:38px!important;min-width:38px!important}
+#chatView .telegram-chat-header .chat-back-btn svg{display:block}
+/* شريط أيقونات الهاتف داخل المحادثة: بلون المحادثة (نهاري/ليلي/ثيم المحادثة) وأيقونات تتبدل حسب لونه */
+#chatView::before{content:"";position:absolute;top:0;left:0;right:0;height:var(--sat);background:var(--cr-surface);z-index:13;pointer-events:none}
+.app-container .chat-more-menu,.app-container .chat-search-panel{top:calc(54px + var(--sat))!important}
+</style>
 <script id="status-bar-color-sync">
 /* مزامنة لون شريط الإشعارات (theme-color + Capacitor StatusBar) مع لون رأس القسم الظاهر حاليًا.
    الملف الشخصي يُترك لمنطق الغلاف الموجود أصلًا. */
