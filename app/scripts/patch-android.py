@@ -674,7 +674,7 @@ public class BabylonNotifications {
         return new java.io.File(dir, otherId.replaceAll("[^A-Za-z0-9_-]", "_") + ".jpg");
     }
 
-    private static void saveAvatar(Context ctx, String otherId, Bitmap b) {
+    static void saveAvatar(Context ctx, String otherId, Bitmap b) {
         try {
             java.io.File f = avatarFile(ctx, otherId);
             if (f == null) return;
@@ -684,7 +684,7 @@ public class BabylonNotifications {
         } catch (Throwable ignored) { }
     }
 
-    private static Bitmap readAvatar(Context ctx, String otherId) {
+    static Bitmap readAvatar(Context ctx, String otherId) {
         try {
             java.io.File f = avatarFile(ctx, otherId);
             return (f != null && f.exists()) ? BitmapFactory.decodeFile(f.getAbsolutePath()) : null;
@@ -801,7 +801,7 @@ public class BabylonNotifications {
 
     private static Bitmap loadBitmap(String src) { return loadBitmap(src, 10000, 15000); }
 
-    private static Bitmap loadBitmap(String src, int connectMs, int readMs) {
+    static Bitmap loadBitmap(String src, int connectMs, int readMs) {
         if (src == null || src.isEmpty()) return null;
         try {
             byte[] bytes;
@@ -832,7 +832,7 @@ public class BabylonNotifications {
     }
 
     /** قصّ الصورة على شكل دائرة. */
-    private static Bitmap circle(Bitmap src) {
+    static Bitmap circle(Bitmap src) {
         if (src == null) return null;
         int w = src.getWidth(), h = src.getHeight(), s = Math.min(w, h);
         Bitmap out = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888);
@@ -846,7 +846,7 @@ public class BabylonNotifications {
     }
 
     /** إذا ما عنده صورة: دائرة ذهبية فيها أول حرف من اسمه. */
-    private static Bitmap letterAvatar(String name) {
+    static Bitmap letterAvatar(String name) {
         int size = 192;
         Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         Canvas cv = new Canvas(out);
@@ -931,6 +931,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
@@ -971,8 +972,32 @@ public class BabylonCall {
         nm.createNotificationChannel(ch);
     }
 
-    public static void show(Context ctx, String title, String callId, String chatId) {
+    public static void show(final Context ctx, String title, String callId, String chatId, final String avatarUrl, final String senderId) {
         if (active) return;   // أنت بمكالمة: الصفحة ترسل "مشغول" للمتصل
+        Bitmap av = null;
+        try {
+            Bitmap raw = BabylonNotifications.readAvatar(ctx, senderId);
+            boolean hasUrl = avatarUrl != null && avatarUrl.startsWith("http");
+            if (raw == null && hasUrl) {
+                raw = BabylonNotifications.loadBitmap(avatarUrl, 2000, 2500);      // أول مرة: مهلة قصيرة
+                if (raw != null) BabylonNotifications.saveAvatar(ctx, senderId, raw);
+            } else if (raw != null && hasUrl) {
+                new Thread(new Runnable() {                                         // عندنا صورة: نحدّثها بالخلفية للمرة الجاية
+                    public void run() {
+                        try {
+                            Bitmap nb = BabylonNotifications.loadBitmap(avatarUrl, 3000, 4000);
+                            if (nb != null) BabylonNotifications.saveAvatar(ctx, senderId, nb);
+                        } catch (Throwable ignored) { }
+                    }
+                }).start();
+            }
+            av = BabylonNotifications.circle(raw);
+        } catch (Throwable ignored) { }
+        if (av == null) av = BabylonNotifications.letterAvatar(title);
+        showWith(ctx, title, callId, av);
+    }
+
+    private static void showWith(Context ctx, String title, String callId, Bitmap av) {
         try {
             ensureChannel(ctx);
             Intent open = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
@@ -997,6 +1022,7 @@ public class BabylonCall {
                 .setSmallIcon(icon)
                 .setContentTitle(t)
                 .setContentText("مكالمة صوتية واردة")
+                .setLargeIcon(av)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -1283,7 +1309,7 @@ public class BabylonMessagingService extends MessagingService {
         try {
             Map<String, String> d = message.getData();
             if (d != null && "call".equals(d.get("type"))) {
-                if (!appInForeground()) BabylonCall.show(getApplicationContext(), d.get("title"), d.get("callId"), d.get("chatId"));
+                if (!appInForeground()) BabylonCall.show(getApplicationContext(), d.get("title"), d.get("callId"), d.get("chatId"), d.get("avatar"), d.get("senderId"));
             } else if (d != null && "call_end".equals(d.get("type"))) {
                 BabylonCall.cancel(getApplicationContext());
             } else if (d != null && "msg".equals(d.get("type")) && !appInForeground()) {
