@@ -12802,3 +12802,19 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 .app-container[data-app-theme] #bottomNav .nav-item .nav-icon::after{display:none!important}
 .app-container[data-app-theme] #bottomNav .nav-item:active{transform:none!important}
 </style>
+
+<style id="babylon-nav-white-bg">
+/* خلفية شريط التنقل السفلي: أبيض في الوضع النهاري */
+.app-container[data-app-theme="light"] #bottomNav.telegram-bottom-nav{
+  background:#ffffff!important;background-color:#ffffff!important;
+  border-top-color:#e5eaf1!important;box-shadow:none!important;
+}
+</style>
+
+<style id="babylon-chat-rows-slim4">
+/* صفوف المحادثات في قسم المحادثات: أنحف بـ 4px (70 -> 66) */
+.app-container #homeView#homeView #chatList .chat-item{
+  padding:7px 12px!important;
+  min-height:66px!important;
+}
+</style>
