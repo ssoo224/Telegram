@@ -12667,3 +12667,15 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
   upd();
 })();
 </script>
+
+<style id="chat-header-fields-transparent">
+/* داخل المحادثة: الحقول خلف الاسم والصورة وأزرار الرجوع/الاتصال/القائمة شفافة تمامًا */
+#chatView#chatView header.telegram-chat-header .telegram-user-info,
+#chatView#chatView header.telegram-chat-header .icon-btn{
+  background:transparent!important;background-color:transparent!important;background-image:none!important;
+  border:0!important;box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+#chatView#chatView header.telegram-chat-header .icon-btn:active,
+#chatView#chatView header.telegram-chat-header .telegram-user-info:active{background:rgba(127,140,160,.16)!important}
+</style>
