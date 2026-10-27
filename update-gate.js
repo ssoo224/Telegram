@@ -5,7 +5,7 @@
   'use strict';
   var KEY = 'babylon_update_gate';
   var DL = '/api/apk';
-  var cur = 0, el = null, mode = '', dismissed = false, tries = 0;
+  var cur = 0, el = null, mode = '', dismissed = false, tries = 0, rebuild = false;
   var RING_C = 2 * Math.PI * 62;                 /* محيط حلقة التقدم */
 
   var ICON = {
@@ -90,7 +90,12 @@
     }
     try { navigator.clipboard.writeText(t).then(function () { done(true); }, fallback); } catch (e) { fallback(); }
   }
+  /* يخلّي خلفية الواجهة تمتد خلف شريط الإشعارات بدل ما يظهر بلونه الفاتح */
+  function cover(on) {
+    try { var nb = window.BabylonAndroidNative; if (nb && typeof nb.coverBars === 'function') nb.coverBars(!!on); } catch (e) {}
+  }
   function hide() {
+    if (!rebuild) cover(false);
     if (el) { try { el.remove(); } catch (e) {} }
     el = null; mode = '';
     try { delete window.__babylonUpd; } catch (e) { window.__babylonUpd = null; }
@@ -114,7 +119,8 @@
   function show(force, notes, url, latest) {
     var m = force ? 'force' : 'soft';
     if (el && mode === m && el.__u === url) return;
-    hide(); mode = m;
+    rebuild = true; hide(); rebuild = false; mode = m;
+    cover(true);
 
     if (!document.getElementById('updStyle')) {
       var st = document.createElement('style'); st.id = 'updStyle'; st.textContent = CSS;
