@@ -38,10 +38,9 @@
     '#updPage .u-orb svg.u-ring{position:absolute;inset:0;width:150px;height:150px;transform:rotate(-90deg)}' +
     '#updPage .u-track{fill:none;stroke:rgba(255,255,255,.09);stroke-width:5}' +
     '#updPage .u-fill{fill:none;stroke:url(#updGrad);stroke-width:5;stroke-linecap:round;stroke-dasharray:' + RING_C.toFixed(2) + ';stroke-dashoffset:' + RING_C.toFixed(2) + ';transition:stroke-dashoffset .25s ease;filter:drop-shadow(0 0 6px rgba(232,200,93,.7))}' +
-    '#updPage .u-core{position:relative;width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#2a1d06;' +
-    'background:linear-gradient(145deg,#f3d97a,#cba843 55%,#a8821f);box-shadow:0 10px 34px rgba(203,168,67,.45),inset 0 2px 0 rgba(255,255,255,.45);font-weight:900;font-size:26px}' +
-    '#updPage .u-core.float{animation:updFloat 3s ease-in-out infinite}' +
-    '#updPage.err .u-core{background:linear-gradient(145deg,#ff9a8f,#e0443e 60%,#a42a26);color:#fff;box-shadow:0 10px 34px rgba(224,68,62,.4),inset 0 2px 0 rgba(255,255,255,.35)}' +
+    '#updPage .u-core{position:relative;width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;' +
+    'background:linear-gradient(145deg,#e6bf4a,#c29428 55%,#96700f);box-shadow:0 10px 34px rgba(203,168,67,.45),inset 0 2px 0 rgba(255,255,255,.35);font-weight:900;font-size:26px;text-shadow:0 1px 3px rgba(0,0,0,.25)}' +
+        '#updPage.err .u-core{background:linear-gradient(145deg,#ff9a8f,#e0443e 60%,#a42a26);color:#fff;box-shadow:0 10px 34px rgba(224,68,62,.4),inset 0 2px 0 rgba(255,255,255,.35)}' +
 
     /* النصوص */
     '#updPage .u-chip{display:inline-flex;align-items:center;gap:7px;direction:ltr;padding:5px 13px;border-radius:999px;font-size:12.5px;font-weight:800;letter-spacing:.4px;' +
@@ -70,10 +69,9 @@
     '#updPage .u-copy{width:100%;border:1px solid rgba(232,200,93,.4);background:none;color:#e8c85d;border-radius:14px;min-height:46px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer}' +
 
     '@keyframes updRing{0%{transform:scale(.72);opacity:.8}100%{transform:scale(1.32);opacity:0}}' +
-    '@keyframes updFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}' +
     '@keyframes updBreath{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}' +
-    '@keyframes updShine{0%{left:-80px}55%,100%{left:120%}}' +
     '@keyframes updTw{0%{opacity:.35}100%{opacity:.7}}' +
+    '@keyframes updShine{0%{left:-80px}55%,100%{left:120%}}' +
     '@media (prefers-reduced-motion:reduce){#updPage *,#updPage:before{animation:none!important}}';
 
   function save(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} }
@@ -131,7 +129,7 @@
         '<div class="u-orb">' +
           '<svg class="u-ring" viewBox="0 0 150 150"><defs><linearGradient id="updGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset="1" stop-color="#cba843"/></linearGradient></defs>' +
           '<circle class="u-track" cx="75" cy="75" r="62"/><circle class="u-fill" id="updRing" cx="75" cy="75" r="62"/></svg>' +
-          '<div class="u-core float" id="updCore">' + ICON.up + '</div>' +
+          '<div class="u-core" id="updCore">' + ICON.up + '</div>' +
         '</div>' +
         '<div class="u-chip">' + (cur ? 'v' + cur + ' <i>→</i> ' : '') + 'v' + (latest || '') + '</div>' +
         '<h1 id="updTitle">' + (force ? 'تحديث مطلوب' : 'يوجد تحديث جديد') + '</h1>' +
@@ -161,7 +159,10 @@
       gotState = true;
       d.classList.remove('err');
       if (st === 'dl') {
-        core.className = 'u-core'; core.innerHTML = '<span dir="ltr">' + Math.round(pct) + '<small style="font-size:15px;margin-left:2px">%</small></span>';
+        core.className = 'u-core';
+        var pc = core.querySelector('#updPct');
+        if (!pc) { core.innerHTML = '<span dir="ltr"><span id="updPct"></span><small style="font-size:15px;margin-left:2px">%</small></span>'; pc = core.querySelector('#updPct'); }
+        pc.textContent = Math.round(pct);
         setRing(pct); go.disabled = true; go.textContent = 'جاري التنزيل…';
         msg.textContent = 'لا تطلع من التطبيق لحد ما يخلص التنزيل.';
       } else if (st === 'ready') {
@@ -169,7 +170,7 @@
         go.textContent = 'تثبيت التحديث';
         msg.textContent = 'اكتمل التنزيل. اضغط تثبيت بالنافذة اللي طلعت، وبعدها افتح التطبيق.';
       } else if (st === 'perm') {
-        core.className = 'u-core float'; core.innerHTML = ICON.up; idle();
+        core.className = 'u-core'; core.innerHTML = ICON.up; idle();
         msg.textContent = 'فعّل خيار (السماح بالتثبيت من هذا المصدر) لبابل، وارجع واضغط تحديث الآن.';
       } else {
         d.classList.add('err'); core.className = 'u-core'; core.innerHTML = ICON.warn; setRing(0); idle();
@@ -193,6 +194,7 @@
     };
     var later = d.querySelector('#updLater');
     if (later) later.onclick = function () { dismissed = true; hide(); };
+    el = d;                                      /* مهم: بدونها تتكرر الصفحة مع كل فحص وتتراكم فوق بعض */
     (document.body || document.documentElement).appendChild(d);
   }
 
