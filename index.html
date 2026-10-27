@@ -2324,7 +2324,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
         <div class="search-field">
           <svg class="search-field-icon" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.5 4.5"></path></svg>
           <input id="searchInput" class="search-input" type="search" autocomplete="off" spellcheck="false" placeholder="ابحث بـ @username" oninput="searchUsers()">
-          <button id="searchClearBtn" class="search-clear-btn hidden" type="button" onclick="clearSearchInput()" aria-label="مسح البحث">×</button>
+          <button id="searchClearBtn" class="search-clear-btn hidden" type="button" onclick="clearSearchInput()" aria-label="مسح البحث"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
         </div>
         <div id="searchHint" class="search-hint">اكتب 3 أحرف على الأقل</div>
       </div>
@@ -13447,4 +13447,16 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 #msgModal .msg-actions-card button.danger{margin-top:3px;box-shadow:inset 0 1px 0 rgba(128,128,128,.22);border-top-left-radius:9px;border-top-right-radius:9px}
 #msgModal .msg-actions-card button.msg-action-cancel{display:none!important}
 #msgModal .emoji-full-grid span{font-size:22px!important;min-width:32px!important;min-height:32px!important}
+/* حقل البحث منحني + أيقونات × SVG متناسقة */
+.cs-field{border-radius:999px!important;overflow:hidden}
+.cs-back{border-radius:50%!important}
+.cs-clear,.search-clear-btn{display:flex!important;align-items:center;justify-content:center;width:26px!important;height:26px!important;flex:0 0 26px!important;border-radius:50%!important;padding:0!important;font-size:0!important;line-height:0!important}
+.cs-clear.hidden,.search-clear-btn.hidden{display:none!important}
+.cs-clear svg,.search-clear-btn svg{width:13px;height:13px;stroke:currentColor;stroke-width:2.6;fill:none}
+.search-field{border-radius:999px!important}
+/* حواف منحنية قليلًا + لون العدسة */
+.cs-field,.search-field{border-radius:12px!important}
+.cs-back{border-radius:12px!important}
+.cs-ic,.search-field-icon{color:#000!important;stroke:#000!important}
+.app-container[data-app-theme="dark"] .cs-ic,.app-container[data-app-theme="dark"] .search-field-icon{color:#d4af37!important;stroke:#d4af37!important}
 </style>
