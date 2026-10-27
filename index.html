@@ -9181,7 +9181,7 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
       }
       nativeBridge.saveMedia(String(source || ''), String(filename || ''), String(mimeType || 'application/octet-stream'));
     },
-    setTheme: function (t) { try { if (SB) { SB.setStyle({ style: t === 'dark' ? 'DARK' : 'LIGHT' }); SB.setBackgroundColor({ color: t === 'dark' ? '#0b1220' : '#ffffff' }); } } catch (e) {} },
+    setTheme: function (t) { try { if (SB) { SB.setStyle({ style: t === 'dark' ? 'DARK' : 'LIGHT' }); SB.setOverlaysWebView({ overlay: true }); SB.setBackgroundColor({ color: '#00000000' }); } } catch (e) {} },
     requestNativeNotificationPermission: function () {
       if (!PN) return;
       PN.requestPermissions().then(function (r) {
@@ -12451,8 +12451,9 @@ body.light #viewersModal .viewer-item {
       if(meta) meta.setAttribute('content',h);
       var lum=(0.299*c[0]+0.587*c[1]+0.114*c[2])/255;
       var SB=window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
-      if(SB && !ovOn){
-        try{ var p=SB.setBackgroundColor({color:h}); if(p&&p.catch) p.catch(function(){}); }catch(_){}
+      if(SB){
+        /* شريط شفاف دائمًا: لا نلوّن الشريط، فقط نضبط لون الأيقونات حسب خلفية الرأس */
+        try{ var p=SB.setBackgroundColor({color:'#00000000'}); if(p&&p.catch) p.catch(function(){}); }catch(_){}
         try{ var q=SB.setStyle({style: lum>0.55?'LIGHT':'DARK'}); if(q&&q.catch) q.catch(function(){}); }catch(_){}
       }
     }catch(_){}
@@ -12484,10 +12485,32 @@ body.light #viewersModal .viewer-item {
       },220);
     }else{
       root.style.removeProperty('--sat-fb');
-      go(SBp.setOverlaysWebView,{overlay:false});
+      /* يبقى الشريط شفافًا (overlay) دائمًا — لا نعيده لوضع الشريط الملوّن */
       last=''; schedule();
     }
   }
+  /* تفعيل الشريط الشفاف دائمًا عند بدء التطبيق (Capacitor/Android) */
+  function initTransparent(){
+    var SBp=window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar;
+    if(!SBp) return;
+    var root=document.documentElement;
+    function go(fn,a){ try{ var r=fn&&fn.call(SBp,a); if(r&&r.catch) r.catch(function(){}); }catch(_){} }
+    var st=0; try{ st=parseFloat(localStorage.getItem('babylon_sb_inset'))||0; }catch(_){}
+    if(probe()<=0) root.style.setProperty('--sat-fb',(st||28)+'px');
+    go(SBp.setOverlaysWebView,{overlay:true});
+    go(SBp.setBackgroundColor,{color:'#00000000'});
+    setTimeout(function(){
+      var h=probe();
+      if(h>0){ root.style.removeProperty('--sat-fb'); try{ localStorage.setItem('babylon_sb_inset',String(h)); }catch(_){} }
+    },250);
+    ovOn=false; last=''; schedule();
+  }
+  try{
+    if(window.Capacitor && typeof window.Capacitor.isNativePlatform==='function' && window.Capacitor.isNativePlatform()){
+      if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initTransparent,{once:true}); else initTransparent();
+    }
+  }catch(_){}
+
   try{
     var B=window.BabylonAndroid;
     if(window.babylonNative && B){
