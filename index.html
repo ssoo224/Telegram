@@ -2599,7 +2599,11 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
         <button type="button" onclick="toggleChatMute()" id="chatMuteAction"><svg class="chat-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/><path d="m3 3 18 18"/></svg><span>كتم المحادثة</span></button>
         <button type="button" onclick="openChatSearch()"><svg class="chat-action-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><span>البحث عن رسالة</span></button>
       </div>
-      <div id="chatSearchPanel" class="chat-search-panel hidden" role="search">
+      <div id="chatSearchPanel" class="chat-search-panel hidden" role="search" aria-label="البحث في المحادثة">
+        <div class="cs-head">
+          <span class="cs-title">البحث في المحادثة</span>
+          <button type="button" id="csX" class="cs-x" aria-label="إغلاق البحث" title="إغلاق (Esc)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </div>
         <div class="cs-bar">
           <button type="button" id="csBack" class="cs-back" aria-label="إغلاق البحث"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
           <label class="cs-field">
@@ -2608,14 +2612,20 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
             <button type="button" id="csClear" class="cs-clear hidden" aria-label="مسح"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
           </label>
         </div>
+        <div id="csFilters" class="cs-filters" role="tablist">
+          <button type="button" class="on" data-f="all">الكل</button>
+          <button type="button" data-f="me">رسائلي</button>
+          <button type="button" data-f="other">من الآخرين</button>
+        </div>
         <div id="csNav" class="cs-nav hidden">
           <span id="csCount" class="cs-count"></span>
           <div class="cs-arrows">
-            <button type="button" id="csUp" aria-label="الرسالة الأقدم"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 14 6-6 6 6"/></svg></button>
-            <button type="button" id="csDown" aria-label="الرسالة الأحدث"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 10 6 6 6-6"/></svg></button>
+            <button type="button" id="csUp" aria-label="الرسالة الأقدم" title="الأقدم (↓)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 14 6-6 6 6"/></svg></button>
+            <button type="button" id="csDown" aria-label="الرسالة الأحدث" title="الأحدث (↑)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 10 6 6 6-6"/></svg></button>
           </div>
         </div>
         <div id="chatMessageSearchResults" class="chat-message-search-results"></div>
+        <div class="cs-foot"><span><kbd>↑</kbd><kbd>↓</kbd> تنقّل</span><span><kbd>Enter</kbd> التالي</span><span><kbd>Esc</kbd> إغلاق</span></div>
       </div>
 
       <div id="pinnedBar" class="pinned-bar hidden" role="button" aria-label="الرسالة المثبتة"></div>
@@ -13043,23 +13053,23 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 </style>
 
 <style id="babylon-chat-search-pro">
-/* ===== البحث داخل المحادثة: شريط يحل محل الهيدر + نتائج مظللة + تنقل بين النتائج ===== */
+/* ===== البحث داخل المحادثة =====
+   هاتف/تابلت: شريط علوي يحل محل الهيدر
+   كمبيوتر (>= 1000px): لوحة جانبية ثابتة بجانب المحادثة مثل تيليجرام ديسكتوب */
 .chat-search-btn{margin-inline-start:auto}
 .telegram-chat-header .chat-more-btn{margin-inline-start:0!important}
 
 .app-container .chat-search-panel{
   position:absolute;z-index:950;top:0!important;inset-inline:0!important;
   padding:calc(var(--sat,0px) + 8px) 10px 8px;
-  border:0;border-bottom:1px solid var(--cl-sep,rgba(128,128,128,.18));
-  border-radius:0 0 24px 24px;
-  background:var(--cl-card,#fff);color:var(--cl-text,#16202b);
-  box-shadow:0 18px 40px rgba(10,18,30,.22);
-  animation:csIn .18s ease;
+  border:0;border-bottom:1px solid var(--cl-sep,rgba(128,128,128,.18));border-radius:0 0 24px 24px;
+  background:#fff;color:#16202b;box-shadow:0 18px 40px rgba(10,18,30,.22);animation:csIn .18s ease;
 }
-.app-container[data-app-theme="light"] .chat-search-panel{background:#fff;color:#16202b}
 .app-container[data-app-theme="dark"] .chat-search-panel{background:#17212b;color:#f1f5f9}
 @keyframes csIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes csSlide{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
 
+.cs-head,.cs-foot,.cs-filters{display:none}
 .cs-bar{display:flex;align-items:center;gap:8px}
 .cs-back{width:42px;height:42px;flex:0 0 42px;border:0;border-radius:14px;background:var(--cl-chip,#e8edf4);color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .cs-back svg{width:20px;height:20px}
@@ -13078,17 +13088,22 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 .cs-arrows button:active{transform:scale(.93)}
 .cs-arrows button:disabled{opacity:.32;box-shadow:none;cursor:default}
 
-.app-container .chat-message-search-results{max-height:min(54vh,460px);overflow-y:auto;margin-top:8px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.app-container .chat-message-search-results{max-height:min(54vh,460px);overflow-y:auto;margin-top:8px;background:inherit;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .chat-search-panel.compact .chat-message-search-results{display:none}
 .chat-search-panel.compact{border-radius:0 0 20px 20px}
 
 .cs-sum{padding:2px 12px 6px;font-size:12.5px;font-weight:800;color:var(--cl-sub,#6b7a8c)}
-.cs-item{display:block;width:100%;text-align:right;border:0;background:transparent;color:inherit;font:inherit;padding:10px 12px;border-radius:15px;cursor:pointer;transition:background .12s}
+.cs-day{position:sticky;top:0;z-index:1;padding:7px 12px 5px;font-size:12px;font-weight:800;color:var(--cl-sub,#6b7a8c);background:inherit}
+.cs-item{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:right;border:0;border-inline-start:3px solid transparent;background:transparent;color:inherit;font:inherit;padding:9px 10px;border-radius:14px;cursor:pointer;transition:background .12s}
 .cs-item+.cs-item{margin-top:2px}
-.cs-item:hover,.cs-item:active{background:var(--cl-chip,#e8edf4)}
-.cs-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:3px;font-size:12px}
-.cs-meta b{color:var(--cl-gold,#c99a1c);font-weight:800}
-.cs-meta span{color:var(--cl-sub,#6b7a8c)}
+.cs-item:hover{background:var(--cl-chip,#e8edf4)}
+.cs-item:active{background:var(--cl-chip,#e8edf4)}
+.cs-item.active{background:rgba(201,154,28,.13);border-inline-start-color:var(--cl-gold,#c99a1c)}
+.cs-av{width:36px;height:36px;flex:0 0 36px;border-radius:50%;background:linear-gradient(135deg,#e0bd4a,#b8891a);color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.cs-body{flex:1;min-width:0}
+.cs-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px;font-size:12px}
+.cs-meta b{color:var(--cl-gold,#c99a1c);font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-meta span{color:var(--cl-sub,#6b7a8c);flex:0 0 auto}
 .cs-text{font-size:14.5px;line-height:1.65;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;padding:0 2px}
 
@@ -13102,16 +13117,49 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 .cs-chip:active{transform:scale(.96)}
 .cs-loading{padding:8px 12px;text-align:center;font-size:12px;color:var(--cl-sub,#6b7a8c)}
 @media (prefers-reduced-motion:reduce){.app-container .chat-search-panel{animation:none}}
+
+/* ---------- كمبيوتر: لوحة جانبية احترافية ---------- */
+@media (min-width:1000px) and (min-height:481px){
+  #chatView>:is(.telegram-chat-header,#pinnedBar,#messagesArea,#multiSelectBar,.chat-input-container){transition:margin-inline-end .2s ease}
+  #chatView:has(#chatSearchPanel:not(.hidden))>:is(.telegram-chat-header,#pinnedBar,#messagesArea,#multiSelectBar,.chat-input-container){margin-inline-end:380px}
+  #chatView:has(#chatSearchPanel:not(.hidden)) .chat-more-menu{inset-inline-end:392px}
+
+  .app-container .chat-search-panel{
+    top:0!important;bottom:0;inset-inline:auto 0!important;width:380px;display:flex;flex-direction:column;
+    padding:0;border:0;border-inline-start:1px solid var(--cl-sep,rgba(128,128,128,.2));border-radius:0;
+    box-shadow:6px 0 28px rgba(10,18,30,.07);animation:csSlide .2s ease;
+  }
+  .app-container .chat-search-panel.hidden{display:none!important}
+  .cs-head{display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;height:58px;padding:0 14px 0 10px;padding-inline:18px 10px;border-bottom:1px solid var(--cl-sep,rgba(128,128,128,.18))}
+  .cs-title{font-size:15.5px;font-weight:800}
+  .cs-x{width:36px;height:36px;border:0;border-radius:11px;background:transparent;color:var(--cl-sub,#6b7a8c);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s,color .12s}
+  .cs-x:hover{background:var(--cl-chip,#e8edf4);color:inherit}
+  .cs-back{display:none}
+  .cs-bar{flex:0 0 auto;padding:14px 14px 8px}
+  .cs-field input{height:40px}
+  .cs-filters{display:flex;flex:0 0 auto;gap:8px;padding:2px 14px 10px}
+  .cs-filters button{border:0;border-radius:999px;padding:6px 14px;background:var(--cl-chip,#e8edf4);color:inherit;font:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background .12s,color .12s}
+  .cs-filters button:hover{background:rgba(201,154,28,.18)}
+  .cs-filters button.on{background:linear-gradient(135deg,#e0bd4a,#b8891a);color:#fff}
+  .cs-nav{flex:0 0 auto;padding:6px 18px 8px;border-top:1px solid var(--cl-sep,rgba(128,128,128,.14))}
+  .cs-arrows button{width:32px;height:32px;border-radius:10px;box-shadow:none}
+  .app-container .chat-message-search-results,
+  .chat-search-panel.compact .chat-message-search-results{display:block!important;flex:1 1 auto;min-height:0;max-height:none;margin:0;padding:2px 8px 8px;scrollbar-width:thin}
+  .cs-foot{display:flex;flex:0 0 auto;justify-content:center;gap:16px;padding:10px 12px;border-top:1px solid var(--cl-sep,rgba(128,128,128,.18));font-size:12px;color:var(--cl-sub,#6b7a8c)}
+  .cs-foot kbd{display:inline-block;min-width:20px;padding:1px 6px;margin-inline-end:4px;border:1px solid var(--cl-sep,rgba(128,128,128,.35));border-bottom-width:2px;border-radius:6px;background:var(--cl-chip,#e8edf4);color:inherit;font:inherit;font-size:11px;text-align:center}
+}
 </style>
 
 <script id="babylon-chat-search-pro-js">
 (function(){
   'use strict';
-  var CS={cache:null,p:null,pid:null,hits:[],idx:-1,tokens:[],t:null,recent:[],errAt:0};
+  var CS={cache:null,p:null,pid:null,hits:[],idx:-1,tokens:[],t:null,recent:[],errAt:0,filter:'all',tok:0,openFor:null,watch:null};
   function $(id){return document.getElementById(id);}
   function N(x){try{return Number(x).toLocaleString('ar-EG');}catch(e){return String(x);}}
   function toMs(v){if(typeof v==='number')return v;if(v&&typeof v.toMillis==='function')return v.toMillis();if(v&&typeof v.seconds==='number')return v.seconds*1000;return Number(v)||0;}
   function curChat(){try{return typeof activeChatId!=='undefined'?activeChatId:null;}catch(e){return null;}}
+  function me(){try{return (typeof currentUser!=='undefined'&&currentUser)?currentUser.uid:null;}catch(e){return null;}}
+  function DESK(){return window.matchMedia('(min-width:1000px) and (min-height:481px)').matches;}
 
   /* توحيد النص العربي: حذف التشكيل والتطويل، توحيد الألف والياء والتاء المربوطة والأرقام */
   function mapChar(c){
@@ -13155,36 +13203,49 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
       return d.toLocaleDateString('ar-EG',o);
     }catch(e){return '';}
   }
+  function dayLabel(at){
+    if(!at)return '';
+    try{
+      var d=new Date(at),n=new Date(),y=new Date(n.getTime()-864e5);
+      if(d.toDateString()===n.toDateString())return 'اليوم';
+      if(d.toDateString()===y.toDateString())return 'أمس';
+      var o={day:'numeric',month:'long'};if(d.getFullYear()!==n.getFullYear())o.year='numeric';
+      return d.toLocaleDateString('ar-EG',o);
+    }catch(e){return '';}
+  }
   function otherName(){var h=document.querySelector('#chatView .telegram-user-name');return h?h.textContent.trim():'';}
+  function myName(){try{return (typeof currentUserData!=='undefined'&&currentUserData&&currentUserData.displayName)||'';}catch(e){return '';}}
+  function initial(s){s=(s||'').trim();return s?Array.from(s)[0]:'؟';}
 
   var ICON_S='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>';
   var ICON_X='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5M8.6 8.6l4.4 4.4M13 8.6l-4.4 4.4"/></svg>';
   var LOADING='<div class="cs-loading">جارٍ تحميل باقي الرسائل…</div>';
 
-  /* ---- المصدر: كاش واحد للرسائل بدل استعلام عند كل ضغطة ---- */
+  /* ---- مصدر البيانات: كاش واحد بدل استعلام عند كل ضغطة ---- */
   function fresh(){return CS.cache&&CS.cache.chatId===curChat()&&Date.now()-CS.cache.at<45000;}
   function domItems(){
     return Array.prototype.slice.call(document.querySelectorAll('#messagesArea .msg-bubble[id^="message_"]')).map(function(b){
       var t=b.dataset.messageText||'';return t?{id:b.id.slice(8),text:t,n:norm(t),from:null,name:'',at:0}:null;
     }).filter(Boolean).reverse();
   }
+  function panelOpen(){var pn=$('chatSearchPanel');return !!pn&&!pn.classList.contains('hidden');}
   function ensure(cid){
     if(CS.p&&CS.pid===cid)return CS.p;
     CS.pid=cid;
     CS.p=db.collection('chats').doc(cid).collection('messages').orderBy('createdAt','desc').limit(1500).get().then(function(snap){
       var cl=0;try{cl=Number((getCleared()||{})[cid])||0;}catch(e){}
-      var me=(typeof currentUser!=='undefined'&&currentUser)?currentUser.uid:null,arr=[];
+      var uid=me(),arr=[];
       snap.docs.forEach(function(d){
         var m=d.data();if(!m||m.sys||m.system||m.deleted||!m.text)return;
         var at=toMs(m.createdAt);if(cl&&at<=cl)return;
-        if(me&&Array.isArray(m.deletedFor)&&m.deletedFor.indexOf(me)>=0)return;
+        if(uid&&Array.isArray(m.deletedFor)&&m.deletedFor.indexOf(uid)>=0)return;
         var t=String(m.text);arr.push({id:d.id,text:t,n:norm(t),from:m.senderId||null,name:m.senderName||'',at:at});
       });
       CS.cache={chatId:cid,items:arr,at:Date.now()};CS.p=null;
       var pn=$('chatSearchPanel'),inp=$('chatMessageSearchInput');
-      if(pn&&inp&&!pn.classList.contains('hidden')&&!pn.classList.contains('compact')&&inp.value.trim()&&curChat()===cid)run();
+      if(panelOpen()&&!pn.classList.contains('compact')&&inp.value.trim()&&curChat()===cid)run(true);
     }).catch(function(e){CS.p=null;CS.errAt=Date.now();try{console.error(e);}catch(x){}
-      var pn=$('chatSearchPanel');if(pn&&!pn.classList.contains('hidden')&&!pn.classList.contains('compact'))run();});
+      if(panelOpen()&&!$('chatSearchPanel').classList.contains('compact'))run(true);});
     return CS.p;
   }
 
@@ -13205,11 +13266,14 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
   function render(hits,tk,loading){
     var res=$('chatMessageSearchResults');if(!res)return;
     if(!hits.length){res.innerHTML='<div class="cs-empty">'+ICON_X+'<div>لا توجد نتائج مطابقة</div><small>جرّب كلمة أخرى أو جزءًا أقصر منها</small></div>'+(loading?LOADING:'');return;}
-    var me=(typeof currentUser!=='undefined'&&currentUser)?currentUser.uid:null,other=otherName(),cap=Math.min(hits.length,80),h='<div class="cs-sum">'+N(hits.length)+' نتيجة</div>';
+    var uid=me(),other=otherName(),mine=myName(),limit=DESK()?200:80,cap=Math.min(hits.length,limit),h='',lastDay='';
+    h+='<div class="cs-sum">'+N(hits.length)+' نتيجة</div>';
     for(var i=0;i<cap;i++){
-      var x=hits[i],who=x.from&&x.from===me?'أنت':(x.name||(x.from?other:''));
-      h+='<button type="button" class="cs-item" data-i="'+i+'"><div class="cs-meta"><b>'+esc(who)+'</b><span>'+esc(fmt(x.at))+'</span></div><div class="cs-text">'+snippetHtml(x.text,tk)+'</div></button>';
+      var x=hits[i],isMe=!!(x.from&&x.from===uid),who=isMe?'أنت':(x.name||(x.from?other:''));
+      var dl=dayLabel(x.at);if(dl&&dl!==lastDay){lastDay=dl;h+='<div class="cs-day">'+esc(dl)+'</div>';}
+      h+='<button type="button" class="cs-item'+(i===CS.idx?' active':'')+'" data-i="'+i+'"><span class="cs-av">'+esc(initial(isMe?(mine||'أ'):(x.name||other)))+'</span><span class="cs-body"><span class="cs-meta"><b>'+esc(who)+'</b><span>'+esc(fmt(x.at))+'</span></span><span class="cs-text" style="display:-webkit-box">'+snippetHtml(x.text,tk)+'</span></span></button>';
     }
+    if(hits.length>cap)h+='<div class="cs-loading">يتم عرض أول '+N(cap)+' نتيجة، حدّد البحث أكثر لتضييق النتائج</div>';
     res.innerHTML=h+(loading?LOADING:'');
   }
   function updateNav(){
@@ -13218,77 +13282,127 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
     cnt.textContent=CS.idx<0?(N(n)+' نتيجة'):(N(CS.idx+1)+' من '+N(n));
     up.disabled=CS.idx>=n-1;dn.disabled=CS.idx<=0;
   }
-  function run(){
+  function markActive(){
+    var res=$('chatMessageSearchResults');if(!res)return;
+    var old=res.querySelector('.cs-item.active');if(old)old.classList.remove('active');
+    var cur=res.querySelector('.cs-item[data-i="'+CS.idx+'"]');
+    if(cur){cur.classList.add('active');try{cur.scrollIntoView({block:'nearest'});}catch(e){}}
+  }
+  function run(keep){
     var inp=$('chatMessageSearchInput'),pn=$('chatSearchPanel');if(!inp||!pn)return;
     var q=inp.value.trim(),clr=$('csClear');if(clr)clr.classList.toggle('hidden',!inp.value);
-    pn.classList.remove('compact');CS.idx=-1;
+    pn.classList.remove('compact');if(!keep)CS.idx=-1;
     if(!q){showStart();return;}
     var cid=curChat();if(!cid)return;
     var tk=tokensOf(q);CS.tokens=tk;
-    var ready=CS.cache&&CS.cache.chatId===cid,src=ready?CS.cache.items:domItems(),hits=[];
-    for(var i=0;i<src.length;i++)if(matches(src[i].n,tk))hits.push(src[i]);
-    CS.hits=hits;
-    render(hits,tk,!ready&&Date.now()-CS.errAt>10000);
-    updateNav();
-    if(!ready&&Date.now()-CS.errAt>10000)ensure(cid);
+    var uid=me(),ready=CS.cache&&CS.cache.chatId===cid,src=ready?CS.cache.items:domItems(),hits=[],f=CS.filter;
+    for(var i=0;i<src.length;i++){
+      var x=src[i];
+      if(f==='me'&&x.from!==uid)continue;
+      if(f==='other'&&(!x.from||x.from===uid))continue;
+      if(matches(x.n,tk))hits.push(x);
+    }
+    CS.hits=hits;if(CS.idx>=hits.length)CS.idx=-1;
+    var canLoad=!ready&&Date.now()-CS.errAt>10000;
+    render(hits,tk,canLoad);updateNav();
+    if(canLoad)ensure(cid);
   }
 
   /* ---- التنقل بين النتائج ---- */
+  function clearTarget(){CS.tok++;document.querySelectorAll('.msg-bubble.search-match').forEach(function(x){x.classList.remove('search-match');});}
+  function markTarget(id){
+    clearTarget();var tok=CS.tok,n=0;
+    (function f(){
+      if(tok!==CS.tok)return;
+      var el=document.getElementById('message_'+id);
+      if(el){var b=el.classList.contains('msg-bubble')?el:(el.querySelector('.msg-bubble')||el);b.classList.add('search-match');return;}
+      if(++n<25)setTimeout(f,150);
+    })();
+  }
   function jump(x){
     if(typeof goToReplied==='function')goToReplied(x.id,x.text,null);
     else if(typeof jumpToMessage==='function')jumpToMessage(x.id);
+    markTarget(x.id);
   }
   function select(i){
     if(i<0||i>=CS.hits.length)return;
-    CS.idx=i;addR($('chatMessageSearchInput').value);
-    var pn=$('chatSearchPanel');if(pn)pn.classList.add('compact');
-    var inp=$('chatMessageSearchInput');if(inp)inp.blur();
-    updateNav();jump(CS.hits[i]);
+    var inp=$('chatMessageSearchInput'),pn=$('chatSearchPanel');
+    CS.idx=i;addR(inp.value);
+    if(!DESK()){if(pn)pn.classList.add('compact');inp.blur();}
+    updateNav();markActive();jump(CS.hits[i]);
   }
   function step(d){
     if(!CS.hits.length)return;
-    var i=CS.idx<0?0:Math.max(0,Math.min(CS.hits.length-1,CS.idx+d));
-    select(i);
+    select(CS.idx<0?0:Math.max(0,Math.min(CS.hits.length-1,CS.idx+d)));
+  }
+
+  /* ---- مراقبة تبديل المحادثة أو إغلاقها أثناء فتح البحث ---- */
+  function stopWatch(){if(CS.watch){clearInterval(CS.watch);CS.watch=null;}}
+  function startWatch(){
+    stopWatch();CS.openFor=curChat();
+    CS.watch=setInterval(function(){
+      if(!panelOpen()){stopWatch();return;}
+      var cv=$('chatView');
+      if(!cv||cv.classList.contains('hidden')||!curChat()){window.closeChatSearch();return;}
+      if(curChat()!==CS.openFor){
+        CS.openFor=curChat();clearTarget();
+        var inp=$('chatMessageSearchInput'),c=$('csClear');inp.value='';if(c)c.classList.add('hidden');
+        $('chatSearchPanel').classList.remove('compact');showStart();ensure(curChat());
+      }
+    },400);
   }
 
   /* ---- استبدال الدوال القديمة (نفس الأسماء المستخدمة في الأزرار) ---- */
   window.searchChatMessages=function(){clearTimeout(CS.t);CS.t=setTimeout(run,60);};
   window.runChatMessageSearch=run;
   window.openChatSearch=function(){
-    try{closeChatMenus();}catch(e){}
     var pn=$('chatSearchPanel'),inp=$('chatMessageSearchInput');if(!pn||!inp)return;
-    pn.classList.remove('hidden','compact');inp.value='';
+    try{closeChatMenus();}catch(e){}
+    if(panelOpen()&&CS.openFor===curChat()){pn.classList.remove('compact');inp.focus();inp.select();return;}
+    pn.classList.remove('hidden','compact');inp.value='';CS.filter='all';
+    Array.prototype.forEach.call(document.querySelectorAll('#csFilters button'),function(b){b.classList.toggle('on',b.getAttribute('data-f')==='all');});
     var c=$('csClear');if(c)c.classList.add('hidden');
     showStart();
     var cid=curChat();if(cid&&!fresh())ensure(cid);
+    startWatch();
     setTimeout(function(){inp.focus();},40);
   };
   window.closeChatSearch=function(){
     var pn=$('chatSearchPanel');if(pn){pn.classList.add('hidden');pn.classList.remove('compact');}
-    document.querySelectorAll('.msg-bubble.search-match').forEach(function(x){x.classList.remove('search-match');});
-    CS.hits=[];CS.idx=-1;
+    clearTarget();CS.hits=[];CS.idx=-1;stopWatch();
     var i=$('chatMessageSearchInput');if(i)i.blur();
   };
+  /* إغلاق قائمة الثلاث نقاط لا يجب أن يغلق لوحة البحث */
+  window.closeChatMenus=function(){var m=$('chatMoreMenu');if(m)m.classList.add('hidden');};
 
   /* ---- ربط الأحداث ---- */
   var inp=$('chatMessageSearchInput'),res=$('chatMessageSearchResults');
   if(inp&&res){
     inp.addEventListener('keydown',function(e){
-      if(e.key!=='Enter')return;e.preventDefault();
-      if(e.shiftKey)step(-1);else if(CS.idx<0&&CS.hits.length)select(0);else step(1);
+      if(e.key==='Enter'){e.preventDefault();if(e.shiftKey)step(-1);else if(CS.idx<0&&CS.hits.length)select(0);else step(1);}
+      else if(e.key==='ArrowDown'){e.preventDefault();step(1);}
+      else if(e.key==='ArrowUp'){e.preventDefault();step(-1);}
     });
     inp.addEventListener('focus',function(){var pn=$('chatSearchPanel');if(pn&&pn.classList.contains('compact'))pn.classList.remove('compact');});
     res.addEventListener('click',function(e){
       var t=e.target.closest('[data-i],[data-r],[data-act]');if(!t)return;
       if(t.hasAttribute('data-i')){select(parseInt(t.getAttribute('data-i'),10));return;}
-      if(t.hasAttribute('data-r')){var q=CS.recent[parseInt(t.getAttribute('data-r'),10)];if(q){inp.value=q;run();}return;}
+      if(t.hasAttribute('data-r')){var q=CS.recent[parseInt(t.getAttribute('data-r'),10)];if(q){inp.value=q;run();inp.focus();}return;}
       if(t.getAttribute('data-act')==='clr'){try{localStorage.removeItem('babylon_chat_search_recent');}catch(x){}showStart();}
     });
     var b;
     if((b=$('csBack')))b.addEventListener('click',function(){window.closeChatSearch();});
+    if((b=$('csX')))b.addEventListener('click',function(){window.closeChatSearch();});
     if((b=$('csClear')))b.addEventListener('click',function(){inp.value='';run();inp.focus();});
     if((b=$('csUp')))b.addEventListener('click',function(){step(1);});
     if((b=$('csDown')))b.addEventListener('click',function(){step(-1);});
+    var fl=$('csFilters');
+    if(fl)fl.addEventListener('click',function(e){
+      var t=e.target.closest('button[data-f]');if(!t)return;
+      CS.filter=t.getAttribute('data-f');
+      Array.prototype.forEach.call(fl.querySelectorAll('button'),function(x){x.classList.toggle('on',x===t);});
+      if(inp.value.trim())run();inp.focus();
+    });
   }
   /* Ctrl/⌘ + F داخل المحادثة */
   document.addEventListener('keydown',function(e){
