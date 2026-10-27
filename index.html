@@ -12426,7 +12426,26 @@ body.light #viewersModal .viewer-item {
   function hex(c){ return '#'+[0,1,2].map(function(i){ var v=Math.max(0,Math.min(255,Math.round(c[i]))).toString(16); return v.length<2?'0'+v:v; }).join(''); }
   function vis(id){ var e=document.getElementById(id); return (e && !e.classList.contains('hidden')) ? e : null; }
 
+  /* شاشة الاتصال (واردة/صادرة/جارية): تُنشأ من calls/calls.js — نكتشفها بالاسم والحجم */
+  function callOn(){
+    try{
+      var els=document.querySelectorAll('[id*="call" i],[class*="call" i]'), W=innerWidth, H=innerHeight;
+      for(var i=0;i<els.length;i++){
+        var e=els[i]; if(e.closest('.hidden')) continue;
+        var cs=getComputedStyle(e);
+        if(cs.display==='none'||cs.visibility==='hidden'||+cs.opacity===0) continue;
+        if(cs.position!=='fixed'&&cs.position!=='absolute') continue;
+        var r=e.getBoundingClientRect();
+        if(r.width>=W*.9&&r.height>=H*.6&&r.top<H*.2&&r.bottom>H*.6) return true;
+      }
+    }catch(_){}
+    return false;
+  }
+  var callWas=false;
+  setInterval(function(){ var c=callOn(); if(c!==callWas){ callWas=c; last=''; schedule(); } },500);
+
   function target(){
+    if(callWas||callOn()) return 'black';   /* أثناء الاتصال: أيقونات الشريط بيضاء (نهاري وليلي) */
     if(document.querySelector('.babylon-media-viewer')) return 'black';
     if(vis('storyViewer')||vis('avatarGalleryModal')) return 'black';
     var ov=document.getElementById('blkOverlay'); if(ov) return ov.querySelector('.sx-top')||ov;
