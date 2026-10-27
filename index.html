@@ -2889,7 +2889,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
 <div id="msgModal" class="msg-actions-modal hidden" onclick="closeMsgModal(event)" role="dialog" aria-modal="true" aria-label="خيارات الرسالة">
   <div class="msg-actions-shell" onclick="event.stopPropagation()">
     <div class="emoji-picker-bar" id="msgEmojiPicker">
-      <button type="button" class="emoji-btn emoji-plus" onclick="toggleFullEmojiPicker(event)" aria-label="عرض جميع التفاعلات"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button type="button" class="emoji-btn emoji-plus" onclick="toggleFullEmojiPicker(event)" aria-label="عرض جميع التفاعلات"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
       <div class="emoji-quick-row"><button type="button" class="emoji-btn" onclick="addReaction('😂')" aria-label="ضحك">😂</button><button type="button" class="emoji-btn" onclick="addReaction('❤️')" aria-label="قلب">❤️</button><button type="button" class="emoji-btn" onclick="addReaction('👍🏻')" aria-label="إعجاب">👍🏻</button><button type="button" class="emoji-btn" onclick="addReaction('😭')" aria-label="حزن">😭</button><button type="button" class="emoji-btn" onclick="addReaction('✨')" aria-label="نجوم">✨</button></div>
       <div class="emoji-full-grid hidden" id="fullEmojiGrid" aria-label="اختر تفاعلاً"></div>
     </div>
@@ -4949,11 +4949,12 @@ function openMsgModal(msgId, text, senderId, reactions, isAudioMessage, anchorEl
       if (!layer) { layer = document.createElement("div"); layer.id = "msgBlurLayer"; modal.insertBefore(layer, modal.firstChild); }
       if (anchorElement) {
         const a = anchorElement.getBoundingClientRect();
-        const W = window.innerWidth, H = window.innerHeight, r = 16;
-        const x = Math.max(0, a.left - 1), y = Math.max(0, a.top - 1);
-        const w = Math.min(W, a.right + 1) - x, h = Math.min(H, a.bottom + 1) - y;
-        const rr = Math.max(0, Math.min(r, w / 2, h / 2));
-        const d = `M0 0H${W}V${H}H0Z M${x+rr} ${y}H${x+w-rr}A${rr} ${rr} 0 0 1 ${x+w} ${y+rr}V${y+h-rr}A${rr} ${rr} 0 0 1 ${x+w-rr} ${y+h}H${x+rr}A${rr} ${rr} 0 0 1 ${x} ${y+h-rr}V${y+rr}A${rr} ${rr} 0 0 1 ${x+rr} ${y}Z`;
+        const cs = getComputedStyle(anchorElement);
+        const W = window.innerWidth, H = window.innerHeight;
+        const x = a.left, y = a.top, w = a.width, h = a.height;
+        const cr = k => Math.max(0, Math.min(parseFloat(cs[k]) || 0, w / 2, h / 2));
+        const tl = cr("borderTopLeftRadius"), tr = cr("borderTopRightRadius"), br = cr("borderBottomRightRadius"), bl = cr("borderBottomLeftRadius");
+        const d = `M0 0H${W}V${H}H0Z M${x+tl} ${y}H${x+w-tr}A${tr} ${tr} 0 0 1 ${x+w} ${y+tr}V${y+h-br}A${br} ${br} 0 0 1 ${x+w-br} ${y+h}H${x+bl}A${bl} ${bl} 0 0 1 ${x} ${y+h-bl}V${y+tl}A${tl} ${tl} 0 0 1 ${x+tl} ${y}Z`;
         layer.style.clipPath = `path(evenodd, "${d}")`;
         layer.style.webkitClipPath = layer.style.clipPath;
       } else { layer.style.clipPath = "none"; layer.style.webkitClipPath = "none"; }
@@ -10003,7 +10004,7 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 .app-container[data-app-theme="light"] .emoji-picker-bar{background:#fff;color:#17212b;border-color:#e1e7ef}
 </style>
 <script id="babylon-full-emoji-picker">
-function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.getElementById('fullEmojiGrid');if(!grid)return;if(!grid.dataset.ready){var items=['😂','😭','😉','😌','🫠','😡','🥵','🤢','💩','🤡','😎','🤧','☠️','🌚','🙈','🙉','🙊','✨','⚡','💢','💤','🔥','💯','🎉','💥','❤️','🤍','❤️‍🔥','❤️‍🩹','💔','🫦','👀','🫶🏻','👍🏻','🖕🏻','✍🏻','🙏🏻','💅🏻'];grid.textContent='';items.forEach(function(ch){var span=document.createElement('span');span.textContent=ch;span.setAttribute('role','button');span.setAttribute('tabindex','0');span.setAttribute('aria-label',ch);span.onclick=function(e){e.stopPropagation();addReaction(ch)};span.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();addReaction(ch)}};grid.appendChild(span)});grid.dataset.ready='1';}grid.classList.toggle('hidden');}
+function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.getElementById('fullEmojiGrid');if(!grid)return;if(!grid.dataset.ready){var items=['😂','😭','😉','😌','🫠','😡','🥵','🤢','💩','🤡','😎','🤧','☠️','🌚','🙈','🙉','🙊','✨','⚡','💢','💤','🔥','💯','🎉','💥','❤️','🤍','❤️‍🔥','❤️‍🩹','💔','🫦','👀','🫶🏻','👍🏻','🖕🏻','✍🏻','🙏🏻','💅🏻'];grid.textContent='';items.forEach(function(ch,idx){var span=document.createElement('span');span.style.setProperty('--i',idx);span.textContent=ch;span.setAttribute('role','button');span.setAttribute('tabindex','0');span.setAttribute('aria-label',ch);span.onclick=function(e){e.stopPropagation();addReaction(ch)};span.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();addReaction(ch)}};grid.appendChild(span)});grid.dataset.ready='1';}grid.classList.toggle('hidden');}
 </script>
 
 <style id="babylon-reaction-modal-theme-fix">
@@ -13459,4 +13460,12 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 .cs-back{border-radius:12px!important}
 .cs-ic,.search-field-icon{color:#000!important;stroke:#000!important}
 .app-container[data-app-theme="dark"] .cs-ic,.app-container[data-app-theme="dark"] .search-field-icon{color:#d4af37!important;stroke:#d4af37!important}
+/* + بشكل SVG يدور عند الفتح، والإيموجيات تظهر تباعًا */
+#msgModal .emoji-btn.emoji-plus svg{transition:transform .28s cubic-bezier(.2,.9,.3,1.2)}
+#msgModal .emoji-picker-bar:has(.emoji-full-grid:not(.hidden)) .emoji-plus svg{transform:rotate(45deg)}
+#msgModal .emoji-full-grid:not(.hidden){animation:bbGridOpen .26s ease both}
+#msgModal .emoji-full-grid:not(.hidden) span{opacity:0;animation:bbEmoPop .34s cubic-bezier(.2,.9,.3,1.35) both;animation-delay:calc(var(--i,0)*16ms + 60ms)}
+@keyframes bbGridOpen{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes bbEmoPop{0%{opacity:0;transform:translateY(8px) scale(.4)}100%{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#msgModal .emoji-full-grid:not(.hidden),#msgModal .emoji-full-grid:not(.hidden) span{animation:none;opacity:1}}
 </style>
