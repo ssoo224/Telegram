@@ -7,6 +7,7 @@
 //  - الويب: يبقى إشعار المتصفح عبر webpush.notification.
 //  - المجموعات: يُقبل chatId القادم من التطبيق بعد التحقق أن المرسل والمستلم من المشاركين.
 const admin = require('firebase-admin');
+const { signedUrl } = require('./_avatar');
 
 if (!admin.apps.length) {
   admin.initializeApp({ credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
@@ -58,12 +59,20 @@ module.exports = async (req, res) => {
     const title = String((isGroup && senderName) ? senderName : (mine.displayName || 'رسالة جديدة')).slice(0, 40);
     const body = String(messageText || (isCall ? 'مكالمة صوتية واردة' : '')).slice(0, 150);
     // صورة المرسل: تُرسل فقط إذا كانت رابطاً قصيراً وغير مخفية. غير ذلك يستخدم التطبيق الصورة المحفوظة عنده.
+    // الصور محفوظة غالباً كـ data-URL (أكبر من حد FCM)، فنرسل رابطاً موقّعاً قصيراً يحمّله التطبيق من /api/avatar
+    const host = String(req.headers['x-forwarded-host'] || req.headers.host || '');
     const av = String(mine.avatarUrl || '');
-    const avatar = (!mine.hideAvatar && /^https?:\/\//.test(av) && av.length < 1000) ? av : '';
+    let avatar = '';
+    if (!mine.hideAvatar) {
+      if (/^https?:\/\//.test(av) && av.length < 1000) avatar = av;
+      else if (av.startsWith('data:image/') && host) avatar = signedUrl(host, decoded.uid);
+    }
 
     // صورة المستلم نفسه (أنا): تُستعمل في الإشعار عند الرد حتى يظهر ردّي بصورتي لا بصورة المرسل.
     const mav = String(o.avatarUrl || '');
-    const meAvatar = (/^https?:\/\//.test(mav) && mav.length < 1000) ? mav : '';
+    let meAvatar = '';
+    if (/^https?:\/\//.test(mav) && mav.length < 1000) meAvatar = mav;
+    else if (mav.startsWith('data:image/') && host) meAvatar = signedUrl(host, recipientId);
 
     const r = await admin.messaging().sendEachForMulticast({
       tokens,
@@ -75,8 +84,8 @@ module.exports = async (req, res) => {
       webpush: (isCall && callEnd)
         ? { headers: { Urgency: 'high' } }
         : {
-            headers: { Urgency: 'high' },
-            notification: { title, body, icon: '/icon-512.png', badge: '/badge-96.png', tag: chatId, renotify: true },
+            headers: isCall ? { Urgency: 'high', TTL: '45' } : { Urgency: 'high' },
+            notification: { title, body, icon: avatar || '/icon-512.png', badge: '/badge-96.png', tag: chatId, renotify: true },
             fcmOptions: { link: '/' }
           }
     });
