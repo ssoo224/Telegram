@@ -2640,6 +2640,13 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
           <button class="reply-preview-cancel" type="button" onclick="cancelReply()" aria-label="إلغاء الرد" title="إلغاء الرد"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
         </div>
         
+        <div id="editPreviewBar" class="reply-preview-bar hidden" role="status" aria-live="polite">
+          <div class="reply-preview-content">
+            <div class="reply-preview-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 16.5-.8 4.3 4.3-.8L19.8 7.7a2.1 2.1 0 0 0-3-3Z"/><path d="m15.5 6 3 3"/></svg><span>تعديل الرسالة</span></div>
+            <div id="editPreviewText" class="reply-preview-message">...</div>
+          </div>
+          <button class="reply-preview-cancel" type="button" onclick="cancelEdit()" aria-label="إلغاء التعديل" title="إلغاء التعديل"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        </div>
         <div id="blockBanner" class="block-banner hidden"></div>
         <div id="recordingBar" class="recording-bar hidden" aria-live="polite">
           <button type="button" class="record-cancel-btn" onclick="cancelRecording()" title="إلغاء التسجيل" aria-label="إلغاء التسجيل">×</button>
@@ -5175,6 +5182,7 @@ function sendMessage(e) {
       text: text
     }).then(() => {
       editingMsgId = null;
+      try { hideEditBar(); } catch (_) {}
       input.value = "";
       keepChatKeyboardOpen();
       showToast("تم تعديل الرسالة بنجاح");
@@ -10554,6 +10562,7 @@ function toggleFullEmojiPicker(ev){if(ev)ev.stopPropagation();var grid=document.
     // Close the top-most transient panel before leaving its underlying section.
     if (visible('viewersModal')) { if(typeof closeViewersList==='function') closeViewersList(); else document.getElementById('viewersModal').classList.add('hidden'); return true; }
     if (visible('msgModal')) { if(typeof closeMsgModal==='function') closeMsgModal({target:document.getElementById('msgModal')}); else document.getElementById('msgModal').classList.add('hidden'); return true; }
+    if (typeof editingMsgId!=='undefined' && editingMsgId && typeof cancelEdit==='function') { cancelEdit(); return true; }
     if (visible('coverModal')) { if(typeof closeCoverModalDirect==='function') closeCoverModalDirect(); else document.getElementById('coverModal').classList.add('hidden'); return true; }
     if (visible('editModal')) { if(typeof closeEditModalDirect==='function') closeEditModalDirect(); else document.getElementById('editModal').classList.add('hidden'); return true; }
     if (visible('storyComposer')) { if (typeof closeComposer==='function') closeComposer(); else document.getElementById('storyComposer').classList.add('hidden'); return true; }
@@ -13473,4 +13482,34 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 .cs-field,.search-field{border-radius:12px!important}
 .app-container[data-app-theme="light"] .cs-field,.app-container[data-app-theme="light"] .search-field{background:#fff!important;border:1.5px solid #dce4ee!important}
 .app-container[data-app-theme="light"] .cs-field:focus-within,.app-container[data-app-theme="light"] .search-field:focus-within{border-color:#dce4ee!important}
+/* شريط تحديد الرسائل: حواف منحنية قليلًا */
+#chatView#chatView#chatView #multiSelectBar.multi-select-bar{border-radius:14px!important}
+#chatView#chatView#chatView #multiSelectBar .msb-close,
+#chatView#chatView#chatView #multiSelectBar .msb-fwd,
+#chatView#chatView#chatView #multiSelectBar .msb-del{border-radius:10px!important}
+</style>
+<script id="babylon-edit-cancel">
+(function(){
+  function bar(){return document.getElementById('editPreviewBar');}
+  window.hideEditBar=function(){var b=bar();if(b)b.classList.add('hidden');};
+  window.cancelEdit=function(){
+    editingMsgId=null;
+    var inp=document.getElementById('messageInput');
+    if(inp){try{inp.value='';}catch(e){}if(inp.isContentEditable)inp.textContent='';try{inp.dispatchEvent(new Event('input',{bubbles:true}));}catch(e){}}
+    hideEditBar();
+  };
+  var orig=window.actionEdit;
+  window.actionEdit=function(){
+    if(typeof orig==='function')orig.apply(this,arguments);
+    var t=document.getElementById('editPreviewText');
+    if(t)t.textContent=(typeof selectedMsgText==='string'&&selectedMsgText)||'رسالة';
+    var b=bar();if(b)b.classList.remove('hidden');
+  };
+})();
+</script>
+<style id="babylon-send-edit-final">
+#chatView #textInputBar.chat-input-bar>button[type="submit"]{align-self:flex-start!important}
+#chatView #editPreviewBar.reply-preview-bar{border-radius:22px!important;padding:9px 14px!important}
+#chatView #editPreviewBar .reply-preview-content,.app-container[data-app-theme] #chatView #editPreviewBar .reply-preview-content{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;margin:0!important}
+#chatView #editPreviewBar.hidden{display:none!important}
 </style>
