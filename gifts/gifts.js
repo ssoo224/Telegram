@@ -486,7 +486,7 @@ async function openSendGift(){
   btn.onclick=async()=>{
     if(!sel||sending)return;
     const K=gk(sel.k);
-    const r=await clAsk({title:'إرسال الهدية 🎁',body:'إرسال <b>'+esc(K.name)+' #'+sel.number+'</b> إلى <b>'+esc(toName)+'</b>؟ تصير ملكه ولا ترجع إلك.',buttons:[{text:'إرسال'},{text:'إلغاء',cls:'cl-cancel'}]});
+    const r=await clAsk({title:'إرسال الهدية',icon:'gift',body:'إرسال <b>'+esc(K.name)+' #'+sel.number+'</b> إلى <b>'+esc(toName)+'</b>؟ تصير ملكه ولا ترجع إلك.',buttons:[{text:'إرسال'},{text:'إلغاء',cls:'cl-cancel'}]});
     if(!r||r.i!==0)return;
     sending=true;btn.disabled=true;btn.textContent='جاري الإرسال…';
     try{await transferGift(sel,to);showToast('🎁 وصلت الهدية إلى '+toName);closeSend();}
@@ -553,7 +553,7 @@ async function buyListing(ov,l){
   const K=gk(l.k),me=meId(),dev=isDevUser();
   if(l.sellerId===me)return;
   if(!dev&&myStars<l.price)return showToast('رصيدك غير كافٍ ⭐');
-  const r=await clAsk({title:'شراء الهدية 🛒',body:'شراء <b>'+esc(K.name)+' #'+l.number+'</b> بـ <b>'+fmtN(l.price)+' ⭐</b>؟ النجوم تروح لصاحبها وتصير الهدية إلك.',buttons:[{text:'شراء'},{text:'إلغاء',cls:'cl-cancel'}]});
+  const r=await clAsk({title:'شراء الهدية',icon:'cart',body:'شراء <b>'+esc(K.name)+' #'+l.number+'</b> بـ <b>'+fmtN(l.price)+' ⭐</b>؟ النجوم تروح لصاحبها وتصير الهدية إلك.',buttons:[{text:'شراء'},{text:'إلغاء',cls:'cl-cancel'}]});
   if(!r||r.i!==0)return;
   buying=true;
   const btn=document.getElementById('gpBuy');if(btn){btn.disabled=true;btn.textContent='جاري الشراء…';}
