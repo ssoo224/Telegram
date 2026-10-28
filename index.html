@@ -8398,7 +8398,7 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 <script src="gifts/models.js?v=1"></script>
 <script src="gifts/cat-models.js?v=1"></script>
 <script src="gifts/gifts.js?v=17"></script>
-<script src="gifts/star-gift.js?v=4"></script>
+<script src="gifts/star-gift.js?v=5"></script>
 <script src="gifts/gift-link.js?v=2"></script>
 <script id="babylon-remove-visited-badge-fix-v2">
 (function(){
@@ -12982,7 +12982,7 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 .cl-dlg.cl-del .cl-btns button.cl-cancel{background:var(--cl-chip,#e8edf4);color:var(--cl-text,#16202b)}
 .cl-dlg.cl-del .cl-btns button:not(.cl-cancel):not(.cl-danger){background:linear-gradient(135deg,#e4b93f,#c99a1c);color:#16202b;box-shadow:0 8px 18px rgba(201,154,28,.30)}
 .cl-dlg.cl-del.cl-tone-gold .cl-del-ic{color:#c99a1c;background:rgba(201,154,28,.13);box-shadow:0 0 0 8px rgba(201,154,28,.06)}
-.cl-dlg.cl-del .cl-in{display:block;width:100%;text-align:center;font-size:22px;font-weight:800;letter-spacing:1px;padding:13px 14px;border-radius:16px;margin:0 0 18px}
+.cl-dlg.cl-del .cl-in{display:block;width:100%;text-align:center;font-size:22px;font-weight:800;letter-spacing:1px;padding:12px 14px;border-radius:16px;margin:0 0 18px}
 .cl-dlg.cl-del p small{display:block;margin-top:6px;font-size:12.5px}
 .app-container[data-app-theme="dark"] .cl-dlg.cl-del.cl-tone-gold .cl-del-ic{color:#e4c45b;background:rgba(228,196,91,.14)}
 .app-container[data-app-theme="dark"] .cl-dlg.cl-del .cl-btns button.cl-cancel{background:var(--cl-chip,#243243);color:var(--cl-text,#f1f5f9)}
@@ -12996,6 +12996,8 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 /* حقول كتابة النجوم/الأسعار: بدون إطار ذهبي */
 .cl-dlg.cl-del .cl-in,.cl-dlg.cl-del .cl-in:focus,.cl-dlg.cl-del .cl-in:focus-visible{border:1.5px solid transparent!important;box-shadow:none!important;outline:none!important}
 .cl-dlg.cl-del .cl-in.cl-ta{text-align:right;font-size:15.5px;font-weight:600;letter-spacing:0;min-height:90px}
+/* placeholder خافت */
+.cl-dlg.cl-del .cl-in::placeholder{color:currentColor;opacity:.28}
 /* بدون ظل خلف أزرار نوافذ النجوم/الهدايا */
 .cl-dlg.cl-del.cl-tone-gold .cl-btns button{box-shadow:none!important}
 /* الطور النهاري: كلمة (إلغاء/رجوع) وزر تعديل السعر بالأسود */
