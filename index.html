@@ -15404,9 +15404,11 @@ return R("index");})();
     '.bbq-btn.gold{background:linear-gradient(135deg,#d9b44a,#a97f16);border-color:transparent;color:#1a1305}' +
     '.bbq-btn:active{transform:scale(.97)}' +
 
-    '.bbs-ov{position:fixed;inset:0;z-index:2810;display:none;background:#000;direction:rtl;overflow:hidden}' +
+    '.bbs-ov{position:fixed;inset:0;z-index:2810;display:none;background:#05080f;direction:rtl;overflow:hidden}' +
     '.bbs-ov.on{display:block}' +
-    '.bbs-ov video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}' +
+    '.bbs-ov video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:transparent;opacity:0;transition:opacity .25s;pointer-events:none}' +
+    '.bbs-ov video.live{opacity:1}' +
+    '.bbs-ov video::-webkit-media-controls,.bbs-ov video::-webkit-media-controls-panel,.bbs-ov video::-webkit-media-controls-start-playback-button,.bbs-ov video::-webkit-media-controls-overlay-play-button{display:none!important;-webkit-appearance:none;opacity:0!important}' +
     '.bbs-top{position:absolute;top:0;left:0;right:0;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top,0px)) 14px 0;color:#fff}' +
     '.bbs-top h3{margin:0;font-size:17px;font-weight:800;text-shadow:0 1px 8px rgba(0,0,0,.6)}' +
     '.bbs-top .bbq-x{position:static}' +
@@ -15536,7 +15538,7 @@ return R("index");})();
     function on(r, k) { return r >= 0 && k >= 0 && r < n && k < n && q.isDark(r, k) && !inFinder(r, k); }
 
     c.fillStyle = ink; c.beginPath();
-    var pad = cell * 0.015;
+    var pad = cell * 0.14;
     for (var r = 0; r < n; r++) {
       var k = 0;
       while (k < n) {
@@ -15557,7 +15559,10 @@ return R("index");})();
       rr(c, fx, fy, cell * 7, cell * 7, cell * 2.4);
       rr(c, fx + cell, fy + cell, cell * 5, cell * 5, cell * 1.4);
       c.fill('evenodd');
-      c.beginPath(); rr(c, fx + cell * 2, fy + cell * 2, cell * 3, cell * 3, cell * 1.3); c.fillStyle = goldInk; c.fill();
+      var cx0 = fx + cell * 2, cy0 = fy + cell * 2, cs = cell * 3;
+      var gg = c.createLinearGradient(cx0, cy0, cx0 + cs, cy0 + cs);
+      gg.addColorStop(0, '#f7dc7a'); gg.addColorStop(0.5, '#e0b53c'); gg.addColorStop(1, '#b8860b');
+      c.beginPath(); rr(c, cx0, cy0, cs, cs, cell * 1.3); c.fillStyle = gg; c.fill();
     });
 
     /* ===== الاسم والمعرّف ===== */
@@ -15698,7 +15703,7 @@ return R("index");})();
     scanOv = document.createElement('div');
     scanOv.id = 'bbScanOv'; scanOv.className = 'bbs-ov';
     scanOv.innerHTML =
-      '<video playsinline muted autoplay></video>' +
+      '<video playsinline webkit-playsinline muted autoplay disablepictureinpicture controlslist="nodownload nofullscreen noplaybackrate" poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"></video>' +
       '<div class="bbs-top"><h3>مسح رمز QR</h3><button type="button" class="bbq-x" data-a="close" aria-label="إغلاق">' + IC.close + '</button></div>' +
       '<div class="bbs-frame"><i></i><i></i><i></i><i></i><b></b></div>' +
       '<div class="bbs-bottom"><p class="bbs-status" id="bbsStatus">وجّه الكاميرا نحو رمز QR لحساب في بابيلون شات</p>' +
@@ -15709,6 +15714,7 @@ return R("index");})();
       '<input type="file" accept="image/*" id="bbsFile" style="display:none">';
     document.body.appendChild(scanOv);
     vid = scanOv.querySelector('video');
+    vid.addEventListener('playing', function () { if (S.on && S.stream) vid.classList.add('live'); });
     S.cv = document.createElement('canvas');
     scanOv.addEventListener('click', function (e) {
       var b = e.target.closest('[data-a]'); if (!b) return;
@@ -15783,7 +15789,7 @@ return R("index");})();
   function closeScan() {
     S.on = false; cancelAnimationFrame(S.raf);
     if (S.stream) { S.stream.getTracks().forEach(function (t) { t.stop(); }); S.stream = null; }
-    if (vid) vid.srcObject = null;
+    if (vid) { vid.classList.remove('live'); vid.srcObject = null; }
     if (scanOv) scanOv.classList.remove('on');
   }
   function unlockSoon() { setTimeout(function () { S.locked = false; if (S.on) status('وجّه الكاميرا نحو رمز QR لحساب في بابيلون شات'); }, 1600); }
