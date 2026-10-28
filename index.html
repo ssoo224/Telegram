@@ -13574,3 +13574,32 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 .pf-hero .pf-hero-ext::before{filter:blur(14px) brightness(.9)!important;transform:scale(1.1)!important;inset:-30px!important}
 .pf-hero .pf-hero-ext{transition:none!important}
 </style>
+<script id="babylon-keyboard-scroll-last">
+(function(){
+  var inp=document.getElementById('messageInput');if(!inp)return;
+  var until=0,timers=[];
+  function toEnd(){var a=document.getElementById('messagesArea');if(a)a.scrollTop=a.scrollHeight;}
+  function burst(){
+    until=Date.now()+1500;
+    timers.forEach(clearTimeout);timers=[];
+    [0,60,150,260,400,600,850,1150].forEach(function(t){timers.push(setTimeout(toEnd,t));});
+  }
+  function onResize(){if(Date.now()<until){toEnd();requestAnimationFrame(toEnd);}}
+  inp.addEventListener('focus',burst);
+  inp.addEventListener('click',burst);
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',onResize);
+  window.addEventListener('resize',onResize);
+})();
+</script>
+<style id="babylon-delete-chat-simple">
+.cl-dlg.cl-del{padding:20px 18px 16px!important}
+.cl-dlg.cl-del .cl-del-ic{display:none!important}
+.cl-dlg.cl-del h3{font-size:17px!important;margin:0 0 6px!important}
+.cl-dlg.cl-del p{font-size:13.5px!important;line-height:1.7!important;margin:0 0 12px!important}
+.cl-dlg.cl-del label.cl-chk{background:transparent!important;border:0!important;box-shadow:none!important;padding:4px 0!important;margin:0 0 14px!important;font-size:13.5px!important;gap:10px!important}
+.cl-dlg.cl-del .cl-box{width:20px!important;height:20px!important;flex:0 0 20px!important;border-radius:6px!important}
+.cl-dlg.cl-del .cl-btns{gap:8px!important}
+.app-container .cl-dlg.cl-del .cl-btns button{padding:11px 8px!important;font-size:14.5px!important;font-weight:800!important;border:0!important;border-radius:12px!important;box-shadow:none!important;color:#4a3500!important}
+.app-container .cl-dlg.cl-del .cl-btns button.cl-danger,.app-container .cl-dlg.cl-del .cl-btns button#clDelOk{background:linear-gradient(135deg,#f8e8ad,#e6c860)!important}
+.app-container .cl-dlg.cl-del .cl-btns button#clDelNo{background:linear-gradient(135deg,#fcf4d8,#f3e0a0)!important}
+</style>
