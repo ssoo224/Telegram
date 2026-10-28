@@ -13722,11 +13722,17 @@ html{overflow:hidden!important;overscroll-behavior:none}
 #searchView#searchView#searchView .search-field input:focus-visible{outline:0!important;box-shadow:none!important;border:0!important}
 </style>
 <style id="babylon-pinned-bar-fix">
-#chatView#chatView #pinnedBar.pinned-bar:not(.hidden){position:absolute!important;top:var(--cr-head-h,110px)!important;left:10px!important;right:10px!important;margin:0!important;z-index:11!important;isolation:isolate;overflow:hidden;
-  background:var(--cr-glass-fallback,rgba(23,33,43,.45))!important;
-  background:color-mix(in srgb,var(--cr-card,#1e2a38) 55%,transparent)!important;
-  -webkit-backdrop-filter:blur(10px) saturate(1.1)!important;backdrop-filter:blur(10px) saturate(1.1)!important;
-  border:1px solid var(--cr-line,rgba(255,255,255,.08))!important;box-shadow:none!important}
+#chatView#chatView #pinnedBar.pinned-bar:not(.hidden){position:absolute!important;top:var(--cr-head-h,110px)!important;left:10px!important;right:10px!important;margin:0!important;z-index:11!important;isolation:isolate;overflow:visible;
+  background:transparent!important;border:0!important;box-shadow:none!important;border-radius:18px}
+/* الشريط الزجاجي الممتد خلف الرسالة المثبتة (مثل الذي خلف الاسم والصورة) */
+#chatView#chatView #pinnedBar.pinned-bar:not(.hidden)::before{content:"";position:absolute;left:-10px;right:-10px;top:-6px;bottom:-10px;z-index:-2;pointer-events:none;
+  background:var(--cr-glass-fallback,rgba(23,33,43,.34));
+  background:color-mix(in srgb,var(--cr-surface,#17212b) 38%,transparent);
+  -webkit-backdrop-filter:blur(4px) saturate(1.05);backdrop-filter:blur(4px) saturate(1.05);
+  -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 16px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 16px),transparent)}
+/* بطاقة الرسالة المثبتة نفسها تبقى صلبة */
+#chatView#chatView #pinnedBar.pinned-bar:not(.hidden)::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:18px;
+  background:var(--cr-card,#1e2a38);border:1px solid var(--cr-line,rgba(255,255,255,.08));box-shadow:var(--cr-shadow,none)}
 #chatView#chatView #pinnedBar:not(.hidden) ~ #messagesArea.messages-area{padding-top:calc(var(--cr-head-h,110px) + 62px)!important}
 #chatView #pinnedBar.pinned-bar>*{position:relative;z-index:1}
 #chatView #pinnedBar.pinned-bar.hidden{display:none!important}
