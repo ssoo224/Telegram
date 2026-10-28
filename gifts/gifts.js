@@ -236,7 +236,7 @@ function renderGiftPage(ov,uid,g,issued,reveal,lst){
     +gpRow('الكمية',(issued!=null?issued:'—')+'/'+K.max+' صادرة')
     +(lst?gpRow('السعر','<span class="gp-price">⭐ '+fmtN(lst.price)+'</span>'):'')
     +'</div>'
-    +(mine&&up&&!lst?'<button type="button" class="gp-cta" id="gpSell">🏷️ بيع بنجوم</button><div class="gp-note">حدّد سعراً وتنعرض للبيع بالمتجر. تگدر تلغي العرض أو تغيّر السعر بأي وقت.</div>':'')
+    +(mine&&up&&!lst?'<button type="button" class="gp-cta" id="gpSell">بيع بنجوم</button><div class="gp-note">حدّد سعراً وتنعرض للبيع بالمتجر. تگدر تلغي العرض أو تغيّر السعر بأي وقت.</div>':'')
     +(mine&&lst?'<div class="gp-listed">معروضة للبيع بـ ⭐ '+fmtN(lst.price)+'</div><div class="gp-btns"><button type="button" class="gp-cta alt" id="gpEdit">تعديل السعر</button><button type="button" class="gp-cta danger" id="gpUnlist">إلغاء العرض</button></div>':'')
     +(!mine&&lst?'<button type="button" class="gp-cta" id="gpBuy">🛒 شراء بـ ⭐ '+fmtN(lst.price)+'</button><div class="gp-note">النجوم تروح لصاحب الهدية وتنتقل الهدية إلك مباشرة.</div>':'')
     +(mine&&!up?'<button type="button" class="gp-cta" id="gpUp">✨ ترقية الهدية مجاناً</button><div class="gp-note">ستحصل على نموذج وخلفية ورمز عشوائي، وبعضها نادر جداً.</div>':'')
