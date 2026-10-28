@@ -8777,7 +8777,7 @@ html,body{overscroll-behavior-y:none}
       moveOriginalAvatarIntoHero();
       var size=g.size+(g.S-g.size)*v;
       hero.style.display='block'; hero.style.willChange='width,height,top,left';
-      var e=g.ext*clamp((v-0.5)*2);
+      var e=g.ext*clamp(v*2);
       hero.style.width=size+'px'; hero.style.height=(size+e)+'px';
       hImg.style.setProperty('width',size+'px','important');
       hImg.style.setProperty('height',size+'px','important');
@@ -8820,7 +8820,7 @@ html,body{overscroll-behavior-y:none}
         var heroBottom=g.top*(1-v)+size+e;
         quick.style.transform='translateY('+((heroBottom-14-nat)*v)+'px)';
         quick.style.setProperty('margin-bottom',(12+((heroBottom+10-nat)-12)*v)+'px','important');
-        var pvq=e>0?Math.round(clamp((v-0.5)*2)*8)/8:0;
+        var pvq=v>0.001?Math.max(0.125,Math.round(clamp(v*2)*8)/8):0;
         if(g.pvq!==pvq){ g.pvq=pvq; view.style.setProperty('--pv',pvq); }
         hInfo.style.bottom=(16+e)+'px';
       }
