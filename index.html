@@ -15465,7 +15465,7 @@ return R("index");})();
   }
 
   function drawCard(cv, text, user) {
-    var q = new QRCode(-1, 3); q.addData(text); q.make();
+    var q = new QRCode(-1, 1); q.addData(text); q.make();
     var n = q.getModuleCount(), quiet = 3;
     var W = 1000, tilePad = 96, T = W - tilePad * 2;
     var cell = Math.floor(T / (n + quiet * 2));
