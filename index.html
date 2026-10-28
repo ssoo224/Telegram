@@ -13599,7 +13599,44 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 .cl-dlg.cl-del label.cl-chk{background:transparent!important;border:0!important;box-shadow:none!important;padding:4px 0!important;margin:0 0 14px!important;font-size:13.5px!important;gap:10px!important}
 .cl-dlg.cl-del .cl-box{width:20px!important;height:20px!important;flex:0 0 20px!important;border-radius:6px!important}
 .cl-dlg.cl-del .cl-btns{gap:8px!important}
-.app-container .cl-dlg.cl-del .cl-btns button{padding:11px 8px!important;font-size:14.5px!important;font-weight:800!important;border:0!important;border-radius:12px!important;box-shadow:none!important;color:#4a3500!important}
-.app-container .cl-dlg.cl-del .cl-btns button.cl-danger,.app-container .cl-dlg.cl-del .cl-btns button#clDelOk{background:linear-gradient(135deg,#f8e8ad,#e6c860)!important}
-.app-container .cl-dlg.cl-del .cl-btns button#clDelNo{background:linear-gradient(135deg,#fcf4d8,#f3e0a0)!important}
+.app-container .cl-dlg.cl-del .cl-btns button{padding:11px 8px!important;font-size:14.5px!important;font-weight:800!important;border:0!important;border-radius:12px!important;box-shadow:none!important;color:#3a2800!important}
+.app-container .cl-dlg.cl-del .cl-btns button.cl-danger,.app-container .cl-dlg.cl-del .cl-btns button#clDelOk{background:linear-gradient(135deg,#e3bd47,#c0901a)!important}
+.app-container .cl-dlg.cl-del .cl-btns button#clDelNo{background:linear-gradient(135deg,#eed584,#d9b445)!important}
+.app-container .cl-dlg.cl-del .cl-btns button.cl-danger,.app-container .cl-dlg.cl-del .cl-btns button#clDelOk{color:#fff!important}
 </style>
+<style id="babylon-viewport-lock">
+/* تثبيت التطبيق على حجم الشاشة المرئية: الكيبورد لا يغطي الرسائل ولا يدفع الصفحة للأعلى */
+html{overflow:hidden!important;overscroll-behavior:none}
+@media (max-width:1099px){
+  body{position:fixed!important;left:0;right:0;top:var(--vv-top,0px);height:var(--vv-h,100dvh)!important;min-height:0!important;overflow:hidden!important;align-items:stretch!important}
+  .app-container{height:var(--vv-h,100dvh)!important;max-height:var(--vv-h,100dvh)!important}
+}
+#chatView #messagesArea{overscroll-behavior:contain}
+</style>
+<script id="babylon-viewport-lock-js">
+(function(){
+  var vv=window.visualViewport,root=document.documentElement,raf=0,until=0;
+  function apply(){
+    try{
+      if(window.innerWidth>=1100){root.style.removeProperty('--vv-h');root.style.removeProperty('--vv-top');return;}
+      var h=vv?vv.height:window.innerHeight,t=vv?vv.offsetTop:0;
+      root.style.setProperty('--vv-h',Math.round(h)+'px');
+      root.style.setProperty('--vv-top',Math.round(t)+'px');
+      if(window.scrollX||window.scrollY)window.scrollTo(0,0);
+      var se=document.scrollingElement;if(se&&se.scrollTop)se.scrollTop=0;
+      if(document.body.scrollTop)document.body.scrollTop=0;
+    }catch(e){}
+  }
+  function track(ms){
+    until=Date.now()+(ms||1200);
+    if(raf)return;
+    (function loop(){apply();if(Date.now()<until)raf=requestAnimationFrame(loop);else raf=0;})();
+  }
+  if(vv){vv.addEventListener('resize',function(){track(900);});vv.addEventListener('scroll',apply);}
+  window.addEventListener('resize',function(){track(900);});
+  window.addEventListener('scroll',function(){if(window.scrollY||window.scrollX)apply();},{passive:true});
+  document.addEventListener('focusin',function(){track(1400);});
+  document.addEventListener('focusout',function(){track(900);});
+  apply();
+})();
+</script>
