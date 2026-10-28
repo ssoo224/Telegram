@@ -6643,9 +6643,14 @@ function openStories(uid) {
   };
   mine ? go(myStories) : loadStories(uid).then(go).catch(() => { clearStoryLaunchLoading(); showToast('تعذر تحميل القصة، حاول مرة أخرى'); });
 }
+let svHist = false;
+function svOnBack() { svHist = false; closeStoryViewer(true); }
 function startViewer(uid, list, i, mine) {
   if (!Array.isArray(list) || !list.length) return;
   try { if (window.BabylonAndroid && typeof window.BabylonAndroid.setStorySystemBars === 'function') window.BabylonAndroid.setStorySystemBars(true); } catch (_) {}
+  if (!svHist) {
+    try { history.pushState({ babylonStory: true }, ''); svHist = true; window.__babylonMediaViewerOpen = true; window.addEventListener('popstate', svOnBack); } catch (_) {}
+  }
   // Clear the previous timer BEFORE replacing SV, otherwise its interval reference is lost.
   if (SV && SV.iv) clearInterval(SV.iv);
   const safeIndex = Math.max(0, Math.min(Number.isFinite(i) ? i : 0, list.length - 1));
@@ -6860,8 +6865,12 @@ let svSwipe = { active: false, startY: 0, startX: 0, lastY: 0, lastAt: 0, draggi
   viewer.addEventListener('pointercancel', finish, true);
 })();
 
-function closeStoryViewer() {
+function closeStoryViewer(fromBack) {
   try { if (window.BabylonAndroid && typeof window.BabylonAndroid.setStorySystemBars === 'function') window.BabylonAndroid.setStorySystemBars(false); } catch (_) {}
+  window.removeEventListener('popstate', svOnBack);
+  if (svHist || fromBack === true) window.__babylonMediaViewerOpen = false;
+  if (svHist && fromBack !== true) { svHist = false; window.__babylonIgnoreNextBack = true; try { history.back(); } catch (_) {} }
+  svHist = false;
   clearInterval(SV.iv);
   $('storyViewer').classList.remove('story-opening');
   $('storyViewer').classList.add('hidden');
@@ -9870,7 +9879,7 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 </script>
 <style id="story-safe-bottom">
 /* مساحة سفلية آمنة في القصص حسب شريط التنقل/الحافة السفلية للهاتف */
-:root{--sv-sab:max(env(safe-area-inset-bottom,0px),var(--bb-nav-inset,0px))}
+:root{--sv-sab:max(env(safe-area-inset-bottom,0px),var(--bb-nav-inset,0px),24px)}
 #storyViewer .sv-foot{padding-bottom:calc(16px + var(--sv-sab))!important}
 </style>
 <script>
@@ -13965,14 +13974,7 @@ html{overflow:hidden!important;overscroll-behavior:none}
 #profileView#profileView#profileView.pf-expanded #otherStarsBtn svg.pf-gift-yellow,
 #otherUserProfileView#otherUserProfileView#otherUserProfileView.pf-expanded #otherStarsBtn svg.pf-gift-yellow,#profileView#profileView#profileView.pf-expanded #otherStarsBtn svg.pf-gift-yellow *,
 #otherUserProfileView#otherUserProfileView#otherUserProfileView.pf-expanded #otherStarsBtn svg.pf-gift-yellow *{fill:#eab624!important;stroke:#eab624!important;stroke-width:1.4!important;stroke-linejoin:round!important}
-#profileView#profileView#profileView.pf-expanded .pf-topbar .pf-round:not(.pf-more) i svg,
-#otherUserProfileView#otherUserProfileView#otherUserProfileView.pf-expanded .pf-topbar .pf-round:not(.pf-more) i svg{display:none!important}
-#profileView#profileView#profileView.pf-expanded .pf-topbar .pf-round:not(.pf-more) i,
-#otherUserProfileView#otherUserProfileView#otherUserProfileView.pf-expanded .pf-topbar .pf-round:not(.pf-more) i{display:flex!important;align-items:center;justify-content:center}
-#profileView#profileView#profileView.pf-expanded .pf-topbar .pf-round:not(.pf-more) i::before,
-#otherUserProfileView#otherUserProfileView#otherUserProfileView.pf-expanded .pf-topbar .pf-round:not(.pf-more) i::before{content:"";display:block;width:22px;height:22px;background:currentColor;
-  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 6l7 6-7 6z' fill='black' stroke='black' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
-          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 6l7 6-7 6z' fill='black' stroke='black' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
+/* رمز الرجوع في الأعلى يبقى تخطيطياً (غير ممتلئ) حتى عند تكبير الصورة */
 </style>
 <style id="babylon-expanded-image-icon">
 #profileView#profileView#profileView.pf-expanded .pf-quick .pf-q svg circle[r="2"],
