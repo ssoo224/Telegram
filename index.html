@@ -13721,6 +13721,104 @@ html{overflow:hidden!important;overscroll-behavior:none}
 #searchView#searchView#searchView .search-field input:focus,
 #searchView#searchView#searchView .search-field input:focus-visible{outline:0!important;box-shadow:none!important;border:0!important}
 </style>
+<style id="babylon-pinned-bar-fix">
+#chatView #pinnedBar.pinned-bar{position:relative!important;z-index:6!important;isolation:isolate;background:var(--cr-card,var(--cl-card,#17212b))!important;opacity:1!important;overflow:hidden}
+#chatView #pinnedBar.pinned-bar>*{position:relative;z-index:1}
+#chatView #pinnedBar.pinned-bar.hidden{display:none!important}
+</style>
+<script id="babylon-pinned-bar-js">
+(function(){
+  var pinUnsub=null;
+  function isGrp(){try{return isGroupChat();}catch(e){return false;}}
+  function canPin(){return isGrp()?gRight('pin'):true;}
+  function saveCache(pins){var m=chatMetaCache[activeChatId]=chatMetaCache[activeChatId]||{};m.pins=pins;}
+  window.renderPinnedBar=function(){
+    var bar=document.getElementById('pinnedBar');if(!bar)return;
+    var cv=document.getElementById('chatView');
+    var d=activeChatId&&chatMetaCache[activeChatId],pins=(d&&d.pins)||[];
+    if(!activeChatId||(cv&&cv.classList.contains('hidden'))||!pins.length){bar.classList.add('hidden');pinIdx=-1;return;}
+    if(pinIdx<0||pinIdx>=pins.length)pinIdx=pins.length-1;
+    var p=pins[pinIdx],cp=canPin();
+    bar.classList.remove('hidden');
+    bar.innerHTML='<div class="pb-line">'+pins.map(function(_,i){return '<i class="'+(i===pinIdx?'on':'')+'"></i>';}).join('')+'</div>'
+      +'<div class="pb-t"><b>رسالة مثبتة'+(pins.length>1?' #'+(pinIdx+1):'')+'</b><span>'+esc(p.text||'')+'</span></div>'
+      +(cp?'<button type="button" class="pb-x" aria-label="إلغاء التثبيت"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M8 3h8l-1 6 3 3.5V14H6v-1.5L9 9z"/><path d="m3 3 18 18"/></svg></button>':'');
+    bar.querySelector('.pb-t').onclick=function(){
+      jumpToMessage(p.id);
+      if(pins.length>1){pinIdx=(pinIdx-1+pins.length)%pins.length;window.renderPinnedBar();}
+    };
+    var x=bar.querySelector('.pb-x');
+    if(x)x.onclick=async function(e){
+      e.stopPropagation();
+      var r=await clAsk({title:'إلغاء التثبيت',body:'هل تريد إلغاء تثبيت هذه الرسالة؟',buttons:[{text:'إلغاء التثبيت',cls:'cl-danger'},{text:'تراجع',cls:'cl-cancel'}]});
+      if(!r||r.i!==0)return;
+      var np=pins.filter(function(_,i){return i!==pinIdx;});pinIdx=-1;
+      try{await db.collection('chats').doc(activeChatId).set({pins:np},{merge:true});saveCache(np);window.renderPinnedBar();}
+      catch(err){console.error(err);showToast('تعذر إلغاء التثبيت');}
+    };
+  };
+  window.actionPinMsg=async function(){
+    var md=document.getElementById('msgModal');if(md)md.classList.add('hidden');
+    if(!activeChatId||!selectedMsgId||!canPin())return;
+    var cid=activeChatId,d=chatMetaCache[cid]||{},pins=(d.pins||[]).slice(),id=selectedMsgId,ex=pins.findIndex(function(p){return p.id===id;});
+    try{
+      if(ex>=0){
+        pins.splice(ex,1);pinIdx=-1;
+        await db.collection('chats').doc(cid).set({pins:pins},{merge:true});
+        saveCache(pins);window.renderPinnedBar();showToast('تم إلغاء تثبيت الرسالة');return;
+      }
+      if(pins.length>=10)return showToast('الحد الأقصى 10 رسائل مثبتة');
+      var txt=String(selectedMsgText||'').trim();
+      pins.push({id:id,text:txt?txt.slice(0,90):(selectedMsgIsAudio?'♬ بصمة صوتية':'▧ صورة'),by:meId(),at:Date.now()});
+      pinIdx=pins.length-1;
+      if(isGrp()){
+        var u=await addGroupSystem(cid,{k:'pin',by:meId(),ref:id});
+        await gUpdate({pins:pins,updatedAt:u.updatedAt,lastMsg:u.lastMsg});
+      }else{
+        await db.collection('chats').doc(cid).set({pins:pins},{merge:true});
+      }
+      saveCache(pins);window.renderPinnedBar();showToast('تم تثبيت الرسالة');
+    }catch(e){console.error(e);showToast('تعذر تثبيت الرسالة');}
+  };
+  var _omm=window.openMsgModal;
+  window.openMsgModal=function(msgId){
+    var r=_omm.apply(this,arguments);
+    try{
+      var b=document.getElementById('btnPinMsg');
+      if(b){
+        var ok=canPin();
+        var pinned=ok&&(((chatMetaCache[activeChatId]||{}).pins||[]).some(function(p){return p.id===msgId;}));
+        b.classList.toggle('hidden',!ok);
+        b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5M8 3h8l-1 6 3 3.5V14H6v-1.5L9 9z"/>'+(pinned?'<path d="m3 3 18 18"/>':'')+'</svg><span>'+(pinned?'إلغاء تثبيت الرسالة':'تثبيت الرسالة')+'</span>';
+        b.onclick=function(){window.actionPinMsg();};
+      }
+    }catch(e){console.error(e);}
+    return r;
+  };
+  var _oc=window.openChatRoom;
+  window.openChatRoom=function(otherId,keep){
+    var r=_oc.apply(this,arguments);
+    try{
+      if(pinUnsub){pinUnsub();pinUnsub=null;}
+      var cid=activeChatId;if(!keep)pinIdx=-1;
+      window.renderPinnedBar();
+      if(cid){pinUnsub=db.collection('chats').doc(cid).onSnapshot(function(doc){
+        if(activeChatId!==cid||isGroupChat(cid))return;
+        if(doc.exists)chatMetaCache[cid]=Object.assign(chatMetaCache[cid]||{},doc.data());
+        window.renderPinnedBar();
+      },function(){});}
+    }catch(e){console.error(e);}
+    return r;
+  };
+  var _gh=window.goHome;
+  window.goHome=function(){
+    if(pinUnsub){pinUnsub();pinUnsub=null;}
+    var r=_gh.apply(this,arguments);
+    try{var b=document.getElementById('pinnedBar');if(b)b.classList.add('hidden');}catch(e){}
+    return r;
+  };
+})();
+</script>
 <style id="babylon-search-btn-chatlist-size">
 .app-container #mainHeader#mainHeader#mainHeader .header-search-btn{border:0!important;width:40px!important;height:40px!important;min-width:40px!important;box-shadow:var(--cl-shadow)!important}
 .app-container #mainHeader#mainHeader#mainHeader .header-search-btn svg{width:20px!important;height:20px!important}
