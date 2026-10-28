@@ -15381,7 +15381,9 @@ return R("index");})();
   /* ---------- الأنماط ---------- */
   var css = '' +
     '.bb-pf-bar{position:sticky;top:0;height:0;z-index:8;direction:ltr;pointer-events:none}' +
-    '.bb-pf-bar .pf-round{position:absolute;top:calc(10px + var(--sat,0px));width:44px;height:44px;padding:0;pointer-events:auto;color:#fff;background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;filter:drop-shadow(0 1px 3px rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(0,0,0,.35));-webkit-tap-highlight-color:transparent}' +
+    '.bb-pf-bar .pf-round{position:absolute;top:calc(10px + var(--sat,0px));width:44px;height:44px;padding:0;pointer-events:auto;color:#fff!important;background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;filter:none!important;-webkit-tap-highlight-color:transparent}' +
+    '.bb-pf-bar .pf-round,.bb-pf-bar .pf-round svg{color:#fff!important;filter:none!important;box-shadow:none!important;text-shadow:none!important}' +
+    '.bb-pf-bar .pf-round svg *{filter:none!important}' +
     '.bb-pf-bar .pf-round:active{opacity:.6}' +
     '.bb-pf-bar .bb-pf-qr{left:10px}.bb-pf-bar .bb-pf-more{right:10px}' +
     '#profileView.pf-expanded .bb-pf-bar,#profileView.pf-ring-off .bb-pf-bar{opacity:0;pointer-events:none!important}' +
@@ -15586,10 +15588,8 @@ return R("index");})();
     qrOv.innerHTML =
       '<button type="button" class="bbq-x" data-a="close" aria-label="إغلاق">' + IC.close + '</button>' +
       '<canvas id="bbqCanvas" aria-label="رمز QR لحسابك"></canvas>' +
-      '<p class="bbq-hint">اطلب من صديقك مسح الرمز من داخل بابل شات ليفتح حسابك مباشرة</p>' +
       '<div class="bbq-actions">' +
-      '<button type="button" class="bbq-btn" data-a="save">' + IC.save + '<span>تنزيل</span></button>' +
-      '<button type="button" class="bbq-btn gold" data-a="share">' + IC.share + '<span>مشاركة</span></button>' +
+      '<button type="button" class="bbq-btn gold" data-a="save">' + IC.save + '<span>تنزيل</span></button>' +
       '</div>';
     document.body.appendChild(qrOv);
     qrOv.addEventListener('click', function (e) {
@@ -15598,7 +15598,6 @@ return R("index");})();
       var a = b.getAttribute('data-a');
       if (a === 'close') closeQr();
       else if (a === 'save') exportCard(false);
-      else if (a === 'share') exportCard(true);
     });
   }
   function openQr() {
