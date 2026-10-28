@@ -9858,10 +9858,6 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
   input.setAttribute('data-1p-ignore','true');
   input.addEventListener('focus', function(){
     document.documentElement.classList.add('babylon-chat-keyboard-open');
-    setTimeout(function(){
-      var area = document.getElementById('messagesArea');
-      if (area) area.scrollTop = area.scrollHeight;
-    }, 120);
   });
   input.addEventListener('blur', function(){ document.documentElement.classList.remove('babylon-chat-keyboard-open'); });
   var sendButton = document.querySelector('#textInputBar button[type="submit"]');
@@ -13577,16 +13573,22 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 <script id="babylon-keyboard-scroll-last">
 (function(){
   var inp=document.getElementById('messageInput');if(!inp)return;
-  var until=0,timers=[];
-  function toEnd(){var a=document.getElementById('messagesArea');if(a)a.scrollTop=a.scrollHeight;}
+  var until=0,timers=[],stick=false;
+  function area(){return document.getElementById('messagesArea');}
+  function toEnd(){var a=area();if(a)a.scrollTop=a.scrollHeight;}
+  function nearEnd(){var a=area();return !a||(a.scrollHeight-a.scrollTop-a.clientHeight)<220;}
+  function capture(){if(Date.now()>until)stick=nearEnd();}
   function burst(){
+    if(Date.now()>until)stick=nearEnd();
+    if(!stick)return;
     until=Date.now()+1500;
     timers.forEach(clearTimeout);timers=[];
     [0,60,150,260,400,600,850,1150].forEach(function(t){timers.push(setTimeout(toEnd,t));});
   }
-  function onResize(){if(Date.now()<until){toEnd();requestAnimationFrame(toEnd);}}
+  function onResize(){if(stick&&Date.now()<until){toEnd();requestAnimationFrame(toEnd);}}
+  inp.addEventListener('pointerdown',capture,true);
+  inp.addEventListener('touchstart',capture,{capture:true,passive:true});
   inp.addEventListener('focus',burst);
-  inp.addEventListener('click',burst);
   if(window.visualViewport)window.visualViewport.addEventListener('resize',onResize);
   window.addEventListener('resize',onResize);
 })();
@@ -13600,8 +13602,8 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 .cl-dlg.cl-del .cl-box{width:20px!important;height:20px!important;flex:0 0 20px!important;border-radius:6px!important}
 .cl-dlg.cl-del .cl-btns{gap:8px!important}
 .app-container .cl-dlg.cl-del .cl-btns button{padding:11px 8px!important;font-size:14.5px!important;font-weight:800!important;border:0!important;border-radius:12px!important;box-shadow:none!important;color:#3a2800!important}
-.app-container .cl-dlg.cl-del .cl-btns button.cl-danger,.app-container .cl-dlg.cl-del .cl-btns button#clDelOk{background:linear-gradient(135deg,#e3bd47,#c0901a)!important}
-.app-container .cl-dlg.cl-del .cl-btns button#clDelNo{background:linear-gradient(135deg,#eed584,#d9b445)!important}
+.app-container .cl-dlg.cl-del .cl-btns button.cl-danger,.app-container .cl-dlg.cl-del .cl-btns button#clDelOk{background:linear-gradient(135deg,#f3c94f 0%,#e0a02a 55%,#c9781a 100%)!important}
+.app-container .cl-dlg.cl-del .cl-btns button#clDelNo{background:linear-gradient(135deg,#fbf0c6 0%,#ecd58a 55%,#d9bb5c 100%)!important}
 .app-container .cl-dlg.cl-del .cl-btns button.cl-danger,.app-container .cl-dlg.cl-del .cl-btns button#clDelOk{color:#fff!important}
 </style>
 <style id="babylon-viewport-lock">
