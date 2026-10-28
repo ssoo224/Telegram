@@ -13602,9 +13602,10 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 .cl-dlg.cl-del .cl-box{width:20px!important;height:20px!important;flex:0 0 20px!important;border-radius:6px!important}
 .cl-dlg.cl-del .cl-btns{gap:8px!important}
 .app-container .cl-dlg.cl-del .cl-btns button{padding:11px 8px!important;font-size:14.5px!important;font-weight:800!important;border:0!important;border-radius:12px!important;box-shadow:none!important;color:#3a2800!important}
-.app-container .cl-dlg.cl-del .cl-btns button.cl-danger,.app-container .cl-dlg.cl-del .cl-btns button#clDelOk{background:linear-gradient(135deg,#f3c94f 0%,#e0a02a 55%,#c9781a 100%)!important}
-.app-container .cl-dlg.cl-del .cl-btns button#clDelNo{background:linear-gradient(135deg,#fbf0c6 0%,#ecd58a 55%,#d9bb5c 100%)!important}
+.app-container .cl-dlg.cl-del .cl-btns button.cl-danger,.app-container .cl-dlg.cl-del .cl-btns button#clDelOk{background:linear-gradient(135deg,#e6c566 0%,#d3a93b 45%,#bc8e24 100%)!important}
+.app-container .cl-dlg.cl-del .cl-btns button#clDelNo{background:linear-gradient(135deg,#f8e08a 0%,#eac24d 45%,#d7a52f 100%)!important}
 .app-container .cl-dlg.cl-del .cl-btns button.cl-danger,.app-container .cl-dlg.cl-del .cl-btns button#clDelOk{color:#fff!important}
+.app-container .cl-dlg.cl-del .cl-btns button,.app-container .cl-dlg.cl-del .cl-btns button.cl-danger,.app-container .cl-dlg.cl-del .cl-btns button#clDelOk,.app-container .cl-dlg.cl-del .cl-btns button#clDelNo{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 2px rgba(110,72,0,.45)!important;box-shadow:0 6px 16px rgba(190,150,40,.32),inset 0 1px 0 rgba(255,255,255,.5)!important}
 </style>
 <style id="babylon-viewport-lock">
 /* تثبيت التطبيق على حجم الشاشة المرئية: الكيبورد لا يغطي الرسائل ولا يدفع الصفحة للأعلى */
@@ -13640,5 +13641,48 @@ html{overflow:hidden!important;overscroll-behavior:none}
   document.addEventListener('focusin',function(){track(1400);});
   document.addEventListener('focusout',function(){track(900);});
   apply();
+})();
+</script>
+<style id="babylon-scroll-down-btn">
+#chatScrollDownBtn{position:absolute;right:14px;bottom:80px;z-index:9;width:42px;height:42px;border-radius:50%;background:#fff;border:1.5px solid #d4af37;color:#b8891a;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.22);opacity:0;transform:translateY(10px) scale(.85);pointer-events:none;transition:opacity .2s ease,transform .2s ease}
+#chatScrollDownBtn.show{opacity:1;transform:none;pointer-events:auto}
+#chatScrollDownBtn:active{transform:scale(.93)}
+#chatScrollDownBtn svg{width:20px;height:20px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+</style>
+<script id="babylon-scroll-down-btn-js">
+(function(){
+  var cv=document.getElementById('chatView');if(!cv)return;
+  var btn=document.createElement('button');
+  btn.id='chatScrollDownBtn';btn.type='button';btn.setAttribute('aria-label','الانتقال إلى آخر المحادثة');
+  btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
+  cv.appendChild(btn);
+  var area=null;
+  function place(){
+    var ic=cv.querySelector('.chat-input-container');
+    var cr=cv.getBoundingClientRect(),ir=ic?ic.getBoundingClientRect():null;
+    var bottom=ir&&ir.height?(cr.bottom-ir.top+12):80;
+    btn.style.bottom=Math.round(bottom)+'px';
+  }
+  function update(){
+    if(!area)return;
+    var far=(area.scrollHeight-area.scrollTop-area.clientHeight)>320;
+    if(far)place();
+    btn.classList.toggle('show',far);
+  }
+  function bind(){
+    var a=document.getElementById('messagesArea');
+    if(a&&a!==area){area=a;a.addEventListener('scroll',update,{passive:true});}
+    update();
+  }
+  btn.addEventListener('click',function(e){
+    e.preventDefault();e.stopPropagation();
+    if(area)area.scrollTo({top:area.scrollHeight,behavior:'smooth'});
+  });
+  btn.addEventListener('pointerdown',function(e){e.preventDefault();});
+  bind();
+  var mo=new MutationObserver(function(){bind();});
+  mo.observe(cv,{childList:true,subtree:true});
+  window.addEventListener('resize',update);
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',update);
 })();
 </script>
