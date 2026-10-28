@@ -5,7 +5,7 @@
   'use strict';
   var KEY = 'babylon_update_gate';
   var DL = '/api/apk';
-  var cur = 0, el = null, mode = '', dismissed = false, tries = 0, rebuild = false;
+  var cur = 0, el = null, mode = '', dismissed = false, tries = 0;
   var RING_C = 2 * Math.PI * 62;                 /* محيط حلقة التقدم */
 
   var ICON = {
@@ -90,12 +90,7 @@
     }
     try { navigator.clipboard.writeText(t).then(function () { done(true); }, fallback); } catch (e) { fallback(); }
   }
-  /* يخلّي خلفية الواجهة تمتد خلف شريط الإشعارات بدل ما يظهر بلونه الفاتح */
-  function cover(on) {
-    try { var nb = window.BabylonAndroidNative; if (nb && typeof nb.coverBars === 'function') nb.coverBars(!!on); } catch (e) {}
-  }
   function hide() {
-    if (!rebuild) cover(false);
     if (el) { try { el.remove(); } catch (e) {} }
     el = null; mode = '';
     try { delete window.__babylonUpd; } catch (e) { window.__babylonUpd = null; }
@@ -119,8 +114,7 @@
   function show(force, notes, url, latest) {
     var m = force ? 'force' : 'soft';
     if (el && mode === m && el.__u === url) return;
-    rebuild = true; hide(); rebuild = false; mode = m;
-    cover(true);
+    hide(); mode = m;
 
     if (!document.getElementById('updStyle')) {
       var st = document.createElement('style'); st.id = 'updStyle'; st.textContent = CSS;
@@ -177,7 +171,8 @@
         msg.textContent = 'اكتمل التنزيل. اضغط تثبيت بالنافذة اللي طلعت، وبعدها افتح التطبيق.';
       } else if (st === 'perm') {
         core.className = 'u-core'; core.innerHTML = ICON.up; idle();
-        msg.textContent = 'فعّل خيار (السماح بالتثبيت من هذا المصدر) لبابل، وارجع واضغط تحديث الآن.';
+        msg.textContent = 'فعّل خيار (السماح بالتثبيت من هذا المصدر) لبابل ثم ارجع للتطبيق، وسيبدأ التنزيل تلقائياً.';
+        go.disabled = true; go.textContent = 'بانتظار السماح…';
       } else {
         d.classList.add('err'); core.className = 'u-core'; core.innerHTML = ICON.warn; setRing(0); idle();
         msg.textContent = 'تعذر التنزيل داخل التطبيق. انسخ الرابط وافتحه بكروم.' + (detail ? '\n' + why(detail) : ''); alt.style.display = 'block';
@@ -189,13 +184,14 @@
         if (nb && typeof nb.installUpdate === 'function') {
           gotState = false; go.disabled = true; go.textContent = 'جاري التحضير…';
           nb.installUpdate(location.origin + DL);
-          setTimeout(function () { if (!gotState) { idle(); msg.textContent = 'ما وصل رد من التطبيق. اضغط تحديث الآن مرة ثانية.'; } }, 8000);
+          setTimeout(function () { if (!gotState) { idle(); msg.textContent = 'ما وصل رد من التطبيق. اضغط تحديث الآن مرة ثانية.'; } }, 15000);
           return;
         }
       } catch (e) {}
+      msg.textContent = 'نسخة التطبيق عندك قديمة ولا تدعم التحديث الداخلي. ثبّت هذا التحديث يدوياً مرة واحدة، وبعدها يصير التحديث داخل التطبيق.';
       try { if (nb && typeof nb.openExternal === 'function') { nb.openExternal(url); done = true; } } catch (e) {}
       if (!done) { try { window.open(url, '_blank'); } catch (e) {} }
-      msg.textContent = 'بدأ التنزيل. بعد ما يخلص افتح الملف من إشعار التنزيلات وثبّته. إذا طلب السماح بالتثبيت من هذا المصدر فعّله.';
+      msg.textContent = (nb && nb.openExternal ? 'نسخة التطبيق قديمة ولا تدعم التحديث الداخلي. ' : '') + 'بدأ التنزيل. بعد ما يخلص افتح الملف من إشعار التنزيلات وثبّته. إذا طلب السماح بالتثبيت من هذا المصدر فعّله.';
       alt.style.display = 'block';
     };
     var later = d.querySelector('#updLater');
