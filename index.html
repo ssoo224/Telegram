@@ -5269,7 +5269,7 @@ function loadChats() {
         container.innerHTML = `
           <div class="empty-chats">
             <div class="empty-chats-icon">⌂</div>
-            <div style="font-weight: 600; font-size:16px; margin-bottom: 6px; color: var(--babylon-gold);">لا توجد محادثات في بابل بعد</div>
+            <div style="font-weight: 600; font-size:16px; margin-bottom: 6px; color: var(--babylon-gold);">لا توجد محادثات في بابيلون بعد</div>
             <div style="font-size: 13px; color: var(--text-muted);">اضغط على أيقونة البحث (⌕) في الأعلى وابحث عن مستخدم بيوزر صالح</div>
           </div>`;
         return;
@@ -7497,7 +7497,7 @@ async function deleteChats(ids,both){
   exitSel();
   try{updateUnreadChip();}catch(e){}
   const list=document.getElementById('chatList');
-  if(list&&!chatItems().length&&!list.querySelector('.empty-chats'))list.innerHTML='<div class="empty-chats"><div class="empty-chats-icon">⌂</div><div style="font-weight:600;font-size:16px;margin-bottom:6px;color:var(--babylon-gold);">لا توجد محادثات في بابل بعد</div><div style="font-size:13px;color:var(--text-muted);">اضغط على أيقونة البحث (⌕) في الأعلى وابحث عن مستخدم بيوزر صالح</div></div>';
+  if(list&&!chatItems().length&&!list.querySelector('.empty-chats'))list.innerHTML='<div class="empty-chats"><div class="empty-chats-icon">⌂</div><div style="font-weight:600;font-size:16px;margin-bottom:6px;color:var(--babylon-gold);">لا توجد محادثات في بابيلون بعد</div><div style="font-size:13px;color:var(--text-muted);">اضغط على أيقونة البحث (⌕) في الأعلى وابحث عن مستخدم بيوزر صالح</div></div>';
   if(activeChatId&&ids.includes(activeChatId)){try{activeChatId=null;}catch(e){}}
   showToast(ids.length>1?'تم حذف المحادثات':'تم حذف المحادثة');
   if(!both)return;
@@ -15397,9 +15397,9 @@ return R("index");})();
     '.bbq-ov{position:fixed;inset:0;z-index:2800;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px));background:radial-gradient(120% 70% at 50% 0%,rgba(217,180,74,.12),rgba(5,9,20,0) 60%),rgba(5,9,20,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);direction:rtl;overflow-y:auto}' +
     '.bbq-ov.on{display:flex}' +
     '.bbq-x{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:14px;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}' +
-    '#bbqCanvas{width:min(86vw,360px);max-height:calc(100vh - 230px);width:auto;max-width:min(86vw,360px);height:auto;border-radius:22px;box-shadow:0 24px 64px rgba(0,0,0,.6)}' +
+    '#bbqCanvas{width:min(94vw,440px);max-height:calc(100vh - 150px);width:auto;max-width:min(94vw,440px);height:auto;border-radius:22px;box-shadow:0 24px 64px rgba(0,0,0,.6)}' +
     '.bbq-hint{margin:0;max-width:300px;text-align:center;font-size:13px;line-height:1.7;color:#9fb0c6}' +
-    '.bbq-actions{display:flex;gap:10px;width:min(84vw,340px)}' +
+    '.bbq-actions{display:flex;gap:10px;width:min(90vw,420px)}' +
     '.bbq-btn{flex:1;min-height:46px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:#fff;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;padding:0 8px}' +
     '.bbq-btn.gold{background:linear-gradient(135deg,#d9b44a,#a97f16);border-color:transparent;color:#1a1305}' +
     '.bbq-btn:active{transform:scale(.97)}' +
@@ -15466,8 +15466,8 @@ return R("index");})();
 
   function drawCard(cv, text, user) {
     var q = new QRCode(-1, 3); q.addData(text); q.make();
-    var n = q.getModuleCount(), quiet = 3;
-    var W = 1000, tilePad = 96, T = W - tilePad * 2;
+    var n = q.getModuleCount(), quiet = 1;
+    var W = 1000, tilePad = 64, T = W - tilePad * 2;
     var cell = Math.floor(T / (n + quiet * 2));
     var qrSize = cell * n;
     var tileX = tilePad, tileY = 226;
@@ -15494,8 +15494,8 @@ return R("index");})();
     /* ===== الترويسة ===== */
     c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillStyle = '#a97f16'; c.font = '800 50px ' + FONT;
-    c.fillText('بابل شات', W / 2, 98);
-    var tw = c.measureText('بابل شات').width / 2;
+    c.fillText('بابيلون شات', W / 2, 98);
+    var tw = c.measureText('بابيلون شات').width / 2;
     [[-1], [1]].forEach(function (s) {
       var x1 = W / 2 + s[0] * (tw + 34), x2 = W / 2 + s[0] * (tw + 34 + 150);
       var lg = c.createLinearGradient(x1, 0, x2, 0);
@@ -15576,7 +15576,7 @@ return R("index");})();
     c.fillStyle = '#8f6a0e'; c.fillText(handle, W / 2, py + ph / 2 + 2);
 
     c.fillStyle = '#7b8aa3'; c.font = '600 26px ' + FONT;
-    c.fillText('امسح الرمز من بابل شات لفتح الحساب مباشرة', W / 2, H - 62);
+    c.fillText('امسح الرمز من بابيلون شات لفتح الحساب مباشرة', W / 2, H - 62);
   }
 
   /* ---------- نافذة QR ---------- */
@@ -15640,7 +15640,7 @@ return R("index");})();
       var blob = dataUrlToBlob(dataUrl), file = null;
       try { file = new File([blob], name, { type: 'image/png' }); } catch (e) {}
       if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        return navigator.share({ files: [file], title: 'حسابي في بابل شات' }).catch(function (err) { if (err && err.name === 'AbortError') return; throw err; });
+        return navigator.share({ files: [file], title: 'حسابي في بابيلون شات' }).catch(function (err) { if (err && err.name === 'AbortError') return; throw err; });
       }
       return Promise.reject(new Error('no-web-share'));
     }
@@ -15652,7 +15652,7 @@ return R("index");})();
     var P = (window.Capacitor && Capacitor.Plugins) || {};
     if (P.Share && P.Filesystem) {
       P.Filesystem.writeFile({ path: name, data: dataUrl.split(',')[1], directory: 'CACHE' })
-        .then(function (r) { return P.Share.share({ title: 'حسابي في بابل شات', files: [r.uri], dialogTitle: 'مشاركة' }); })
+        .then(function (r) { return P.Share.share({ title: 'حسابي في بابيلون شات', files: [r.uri], dialogTitle: 'مشاركة' }); })
         .catch(function (err) { if (!(err && /cancel/i.test(String(err.message || err)))) webShare().catch(fallback); });
       return;
     }
@@ -15701,7 +15701,7 @@ return R("index");})();
       '<video playsinline muted autoplay></video>' +
       '<div class="bbs-top"><h3>مسح رمز QR</h3><button type="button" class="bbq-x" data-a="close" aria-label="إغلاق">' + IC.close + '</button></div>' +
       '<div class="bbs-frame"><i></i><i></i><i></i><i></i><b></b></div>' +
-      '<div class="bbs-bottom"><p class="bbs-status" id="bbsStatus">وجّه الكاميرا نحو رمز QR لحساب في بابل شات</p>' +
+      '<div class="bbs-bottom"><p class="bbs-status" id="bbsStatus">وجّه الكاميرا نحو رمز QR لحساب في بابيلون شات</p>' +
       '<div class="bbs-row">' +
       '<button type="button" class="bbq-btn" data-a="gallery">' + IC.image + '<span>من المعرض</span></button>' +
       '<button type="button" class="bbq-btn gold" data-a="search">' + IC.search + '<span>بحث عن مستخدم</span></button>' +
@@ -15759,7 +15759,7 @@ return R("index");})();
     mountScan();
     S.on = true; S.locked = false;
     scanOv.classList.add('on');
-    status('وجّه الكاميرا نحو رمز QR لحساب في بابل شات');
+    status('وجّه الكاميرا نحو رمز QR لحساب في بابيلون شات');
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       status('الكاميرا غير متاحة هنا، استخدم الصورة من المعرض'); return;
     }
@@ -15786,12 +15786,12 @@ return R("index");})();
     if (vid) vid.srcObject = null;
     if (scanOv) scanOv.classList.remove('on');
   }
-  function unlockSoon() { setTimeout(function () { S.locked = false; if (S.on) status('وجّه الكاميرا نحو رمز QR لحساب في بابل شات'); }, 1600); }
+  function unlockSoon() { setTimeout(function () { S.locked = false; if (S.on) status('وجّه الكاميرا نحو رمز QR لحساب في بابيلون شات'); }, 1600); }
   function onScanned(raw) {
     if (S.locked) return; S.locked = true;
     try { navigator.vibrate && navigator.vibrate(40); } catch (e) {}
     var name = parseUser(raw);
-    if (!name) { status('هذا الرمز ليس لحساب في بابل شات'); unlockSoon(); return; }
+    if (!name) { status('هذا الرمز ليس لحساب في بابيلون شات'); unlockSoon(); return; }
     status('جارٍ فتح الحساب…');
     openByUsername(name).then(function (ok) {
       if (ok) { closeScan(); closeQr(); }
