@@ -13701,5 +13701,9 @@ html{overflow:hidden!important;overscroll-behavior:none}
 @keyframes bbBadgeShine{0%,55%{background-position:-160% 0}100%{background-position:260% 0}}
 @media (prefers-reduced-motion:reduce){.verified-badge::after{animation:none}}
 /* في الملف الشخصي: تنزل قليلًا لتتناسق مع الاسم */
-#profileView .verified-badge,#otherUserProfileView .verified-badge{top:2px}
+#profileView .pf-name,#otherUserProfileView .pf-name{align-items:center!important}
+#pBadgeBox,#otherBadgeBox{display:flex!important;align-items:center;justify-content:center;line-height:0!important;align-self:center}
+#pBadgeBox.hidden,#otherBadgeBox.hidden{display:none!important}
+#profileView .verified-badge,#otherUserProfileView .verified-badge{top:0!important;margin:0!important;vertical-align:middle}
+#profileView .pf-name .verified-badge,#otherUserProfileView .pf-name .verified-badge{width:23px!important;height:23px!important;transform:translateY(-1px)}
 </style>
