@@ -13744,6 +13744,27 @@ html{overflow:hidden!important;overscroll-behavior:none}
 .cl-dlg.pins-dlg .ps-n{flex:0 0 26px;height:26px;border-radius:50%;background:rgba(228,196,91,.16);color:var(--cl-gold,#e4c45b);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .cl-dlg.pins-dlg .ps-t{flex:1;min-width:0;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
+<style id="babylon-pinned-blur-continuous">
+/* blur واحد ممتد: طبقة الهيدر نفسها تنزل خلف الرسالة المثبتة بدل طبقة ثانية */
+#chatView#chatView #pinnedBar.pinned-bar:not(.hidden)::before{content:none!important;display:none!important}
+#chatView#chatView:has(#pinnedBar:not(.hidden)) header.telegram-chat-header::before{
+  bottom:calc(-1 * var(--cr-pin-h,52px) - 10px)!important;
+  -webkit-mask-image:linear-gradient(to top,transparent 0,#000 16px)!important;
+          mask-image:linear-gradient(to top,transparent 0,#000 16px)!important;
+}
+/* بطاقة الرسالة المثبتة فوق طبقة الـ blur */
+#chatView#chatView #pinnedBar.pinned-bar:not(.hidden){z-index:13!important}
+</style>
+<script id="babylon-pinned-blur-continuous-js">
+(function(){
+  var view=document.getElementById('chatView'),bar=document.getElementById('pinnedBar');
+  if(!view||!bar)return;
+  function upd(){var h=bar.offsetHeight||0;if(h)view.style.setProperty('--cr-pin-h',h+'px');}
+  if(window.ResizeObserver){try{new ResizeObserver(upd).observe(bar);}catch(e){}}
+  try{new MutationObserver(upd).observe(bar,{childList:true,attributes:true,attributeFilter:['class']});}catch(e){}
+  window.addEventListener('resize',upd);upd();
+})();
+</script>
 <script id="babylon-pinned-bar-js">
 (function(){
   var pinUnsub=null;
