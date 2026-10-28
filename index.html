@@ -13888,3 +13888,32 @@ html{overflow:hidden!important;overscroll-behavior:none}
 .app-container #homeView#homeView#homeView #chatList .chat-item{min-height:68px!important}
 .app-container #homeView#homeView#homeView #chatList .chat-item .avatar{width:50px!important;height:50px!important;flex:0 0 50px!important;font-size:19px}
 </style>
+<style id="babylon-profile-filled-icons">
+/* في صفحة الملف الشخصي (عادي ومكبّر): رموز الأزرار تصبح ممتلئة بدل التخطيطية */
+#profileView#profileView#profileView .pf-quick .pf-q svg,
+#otherUserProfileView#otherUserProfileView#otherUserProfileView .pf-quick .pf-q svg{fill:currentColor!important;stroke:currentColor!important;stroke-width:1.4!important;stroke-linejoin:round!important}
+#profileView#profileView#profileView .pf-quick .pf-q svg *,
+#otherUserProfileView#otherUserProfileView#otherUserProfileView .pf-quick .pf-q svg *{fill:currentColor!important;stroke:currentColor!important}
+#profileView#profileView#profileView .pf-quick .pf-q svg circle[r="3"],
+#otherUserProfileView#otherUserProfileView#otherUserProfileView .pf-quick .pf-q svg circle[r="3"]{fill:rgba(0,0,0,.5)!important;stroke:rgba(0,0,0,.5)!important}
+#profileView#profileView#profileView .pf-quick .pf-q svg circle[r=".6"],
+#otherUserProfileView#otherUserProfileView#otherUserProfileView .pf-quick .pf-q svg circle[r=".6"]{fill:rgba(0,0,0,.55)!important;stroke:rgba(0,0,0,.55)!important;stroke-width:1.6!important}
+#profileView#profileView#profileView .pf-quick .pf-q svg path[d^="m5.6 5.6"],
+#otherUserProfileView#otherUserProfileView#otherUserProfileView .pf-quick .pf-q svg path[d^="m5.6 5.6"]{fill:none!important;stroke:rgba(0,0,0,.6)!important;stroke-width:2.2!important}
+#profileView#profileView#profileView .pf-quick .pf-q svg path[d="M12 20h9"],
+#otherUserProfileView#otherUserProfileView#otherUserProfileView .pf-quick .pf-q svg path[d="M12 20h9"]{fill:none!important;stroke:currentColor!important;stroke-width:1.9!important}
+#profileView#profileView#profileView #otherGiftBtn svg.pf-gift-icon,
+#otherUserProfileView#otherUserProfileView#otherUserProfileView #otherGiftBtn svg.pf-gift-icon,#profileView#profileView#profileView #otherGiftBtn svg.pf-gift-icon *,
+#otherUserProfileView#otherUserProfileView#otherUserProfileView #otherGiftBtn svg.pf-gift-icon *{fill:#22b35e!important;stroke:rgba(0,0,0,.4)!important;stroke-width:1.1!important;stroke-linejoin:round!important}
+#profileView#profileView#profileView #otherStarsBtn svg.pf-gift-yellow,
+#otherUserProfileView#otherUserProfileView#otherUserProfileView #otherStarsBtn svg.pf-gift-yellow,#profileView#profileView#profileView #otherStarsBtn svg.pf-gift-yellow *,
+#otherUserProfileView#otherUserProfileView#otherUserProfileView #otherStarsBtn svg.pf-gift-yellow *{fill:#eab624!important;stroke:#eab624!important;stroke-width:1.4!important;stroke-linejoin:round!important}
+#profileView#profileView#profileView .pf-topbar .pf-round:not(.pf-more) i svg,
+#otherUserProfileView#otherUserProfileView#otherUserProfileView .pf-topbar .pf-round:not(.pf-more) i svg{display:none!important}
+#profileView#profileView#profileView .pf-topbar .pf-round:not(.pf-more) i,
+#otherUserProfileView#otherUserProfileView#otherUserProfileView .pf-topbar .pf-round:not(.pf-more) i{display:flex!important;align-items:center;justify-content:center}
+#profileView#profileView#profileView .pf-topbar .pf-round:not(.pf-more) i::before,
+#otherUserProfileView#otherUserProfileView#otherUserProfileView .pf-topbar .pf-round:not(.pf-more) i::before{content:"";display:block;width:22px;height:22px;background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 6l7 6-7 6z' fill='black' stroke='black' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 6l7 6-7 6z' fill='black' stroke='black' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
+</style>
