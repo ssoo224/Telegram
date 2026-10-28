@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """يعدّل مشروع أندرويد المولَّد بـ Capacitor: الصلاحيات، الإشعارات، رقم النسخة، والتوقيع."""
 import os, re, sys, shutil, pathlib
-
+ 
 root = pathlib.Path(__file__).resolve().parent.parent      # app/
 app = root / "android" / "app"
 run = os.environ.get("RUN_NUMBER", "1")
