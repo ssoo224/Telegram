@@ -9742,7 +9742,7 @@ button:focus, button:focus-visible, a:focus, a:focus-visible, [role="button"]:fo
       var ov=document.createElement('div');
       ov.className='cl-dlg-ov'; ov.style.zIndex='2147483000'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
       var dg=!!o.danger;
-      var d=document.createElement('div'); d.className='cl-dlg cl-del'+(dg?'':' cl-tone-gold');
+      var d=document.createElement('div'); d.className='cl-dlg cl-del'+(dg?'':' cl-tone-gold')+(single?' cl-single':'');
       var ic=document.createElement('div'); ic.className='cl-del-ic'; ic.innerHTML=ICONS[o.icon||(dg?'block':'info')]||ICONS.info;
       var t=document.createElement('h3'); t.className=''; t.textContent=o.title||'Babylon Chat';
       var m=document.createElement('p'); m.className=''; m.textContent=String(msg==null?'':msg);
@@ -13006,6 +13006,20 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 .app-container[data-app-theme="light"] .cl-dlg.cl-del .cl-btns button.cl-cancel,
 .app-container[data-app-theme="light"] .cl-dlg.cl-del .cl-btns button.babylon-confirm-cancel,
 .app-container[data-app-theme="light"] #giftPage .gp-cta.alt{color:#000!important}
+/* ثبات ألوان النوافذ في الطور النهاري/الليلي بغض النظر عن مكان تركيبها */
+body:has(.app-container[data-app-theme="light"]) .cl-dlg-ov{--cl-card:#ffffff;--cl-text:#16202b;--cl-sub:#6b7a8c;--cl-chip:#e8edf4;--cl-sep:rgba(22,32,43,.08);--cl-gold:#c99a1c}
+body:has(.app-container[data-app-theme="dark"]) .cl-dlg-ov{--cl-card:#17212b;--cl-text:#f1f5f9;--cl-sub:#8798aa;--cl-chip:#243243;--cl-sep:rgba(255,255,255,.08);--cl-gold:#e4c45b}
+body:has(.app-container[data-app-theme="light"]) .cl-dlg.cl-del{background:#ffffff;color:#16202b}
+body:has(.app-container[data-app-theme="light"]) .cl-dlg.cl-del .cl-btns button.cl-cancel,
+body:has(.app-container[data-app-theme="light"]) .cl-dlg.cl-del .cl-btns button.babylon-confirm-cancel,
+body:has(.app-container[data-app-theme="light"]) .cl-dlg.cl-del .cl-btns button#clDelNo{background:#e8edf4!important;color:#000!important;-webkit-text-fill-color:#000!important}
+body:has(.app-container[data-app-theme="dark"]) .cl-dlg.cl-del .cl-btns button.cl-cancel,
+body:has(.app-container[data-app-theme="dark"]) .cl-dlg.cl-del .cl-btns button.babylon-confirm-cancel,
+body:has(.app-container[data-app-theme="dark"]) .cl-dlg.cl-del .cl-btns button#clDelNo{background:#243243!important;color:#f1f5f9!important}
+/* زر (حسناً) في نافذة التنبيه: أصغر بـ 8px وذهبي متدرج مثل أزرار تسجيل الدخول */
+.cl-dlg.cl-del.cl-single .cl-btns button{padding-top:9px!important;padding-bottom:9px!important;
+  background:linear-gradient(135deg,#f8e08a 0%,#eac24d 45%,#d7a52f 100%)!important;
+  color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 2px rgba(110,72,0,.5);box-shadow:none!important}
 /* زرّا تعديل السعر / إلغاء العرض أصغر بـ 6px */
 #giftPage .gp-btns .gp-cta{padding:13px 16px!important}
 </style>
