@@ -38,11 +38,9 @@ jobs:
         working-directory: app
         run: |
           npx cap add android
-          mkdir -p assets
-          pip install pillow
-          python3 -c "from PIL import Image; im=Image.open('../icon-512.png').convert('RGBA'); w,h=im.size; im=im.resize((int(w*1.35),int(h*1.35)), Image.LANCZOS); x=(im.width-1024)//2; y=(im.height-1024)//2; im.crop((x,y,x+1024,y+1024)).save('assets/icon-only.png')"
-          npx @capacitor/assets generate --android --iconBackgroundColor '#0b1220' --iconBackgroundColorDark '#0b1220'
-          rm -rf android/app/src/main/res/mipmap-anydpi-v26
+          pip install pillow numpy
+          python3 scripts/make-icons.py
+          npx @capacitor/assets generate --android
           npx cap sync android
 
       - name: Patch Android project
