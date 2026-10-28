@@ -15381,8 +15381,9 @@ return R("index");})();
   /* ---------- الأنماط ---------- */
   var css = '' +
     '.bb-pf-bar{position:sticky;top:0;height:0;z-index:8;direction:ltr;pointer-events:none}' +
-    '.bb-pf-bar .pf-round{position:absolute;top:calc(12px + var(--sat,0px));pointer-events:auto;color:#fff}' +
-    '.bb-pf-bar .bb-pf-qr{left:12px}.bb-pf-bar .bb-pf-more{right:12px}' +
+    '.bb-pf-bar .pf-round{position:absolute;top:calc(10px + var(--sat,0px));width:44px;height:44px;padding:0;pointer-events:auto;color:#fff;background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;filter:drop-shadow(0 1px 3px rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(0,0,0,.35));-webkit-tap-highlight-color:transparent}' +
+    '.bb-pf-bar .pf-round:active{opacity:.6}' +
+    '.bb-pf-bar .bb-pf-qr{left:10px}.bb-pf-bar .bb-pf-more{right:10px}' +
     '#profileView.pf-expanded .bb-pf-bar,#profileView.pf-ring-off .bb-pf-bar{opacity:0;pointer-events:none!important}' +
     '.bb-pf-menu{position:absolute;right:12px;top:calc(60px + var(--sat,0px));min-width:226px;padding:6px;border-radius:16px;background:var(--babylon-surface-card);border:1px solid var(--babylon-border);box-shadow:0 14px 38px rgba(0,0,0,.38);direction:rtl;pointer-events:auto;display:none;transform-origin:top right}' +
     '.bb-pf-menu.on{display:block;animation:bbpop .16s ease-out}' +
@@ -15391,10 +15392,10 @@ return R("index");})();
     '.bb-pf-menu button:active{background:var(--babylon-surface-hover)}' +
     '.bb-pf-menu button svg{color:var(--babylon-gold);flex:0 0 20px}' +
 
-    '.bbq-ov{position:fixed;inset:0;z-index:2800;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px));background:rgba(5,9,20,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);direction:rtl;overflow-y:auto}' +
+    '.bbq-ov{position:fixed;inset:0;z-index:2800;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px));background:radial-gradient(120% 70% at 50% 0%,rgba(217,180,74,.12),rgba(5,9,20,0) 60%),rgba(5,9,20,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);direction:rtl;overflow-y:auto}' +
     '.bbq-ov.on{display:flex}' +
     '.bbq-x{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:14px;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}' +
-    '#bbqCanvas{width:min(84vw,340px);height:auto;border-radius:22px;box-shadow:0 22px 60px rgba(0,0,0,.55),0 0 0 1px rgba(194,157,48,.35)}' +
+    '#bbqCanvas{width:min(86vw,360px);max-height:calc(100vh - 230px);width:auto;max-width:min(86vw,360px);height:auto;border-radius:22px;box-shadow:0 24px 64px rgba(0,0,0,.6)}' +
     '.bbq-hint{margin:0;max-width:300px;text-align:center;font-size:13px;line-height:1.7;color:#9fb0c6}' +
     '.bbq-actions{display:flex;gap:10px;width:min(84vw,340px)}' +
     '.bbq-btn{flex:1;min-height:46px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:#fff;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;padding:0 8px}' +
@@ -15461,51 +15462,86 @@ return R("index");})();
     c.lineTo(x, y + r); c.quadraticCurveTo(x, y, x + r, y); c.closePath();
   }
 
-  function drawCard(cv, text, user, avatarImg) {
-    var q = new QRCode(-1, 2); q.addData(text); q.make();
+  function drawCard(cv, text, user) {
+    var q = new QRCode(-1, 3); q.addData(text); q.make();
     var n = q.getModuleCount(), quiet = 3;
-    var W = 1000, tilePad = 70, T = W - tilePad * 2;
-    var cell = Math.floor(T / (n + quiet * 2)), qrSize = cell * n;
-    var tileX = tilePad, tileY = 170;
-    var H = tileY + T + 250;
+    var W = 1000, tilePad = 96, T = W - tilePad * 2;
+    var cell = Math.floor(T / (n + quiet * 2));
+    var qrSize = cell * n;
+    var tileX = tilePad, tileY = 226;
+    var H = tileY + T + 330;
     cv.width = W; cv.height = H;
     var c = cv.getContext('2d');
+    var FONT = 'Tahoma, "Segoe UI", Arial, sans-serif';
 
-    /* البطاقة الخارجية */
-    var bg = c.createLinearGradient(0, 0, W, H);
-    bg.addColorStop(0, '#22345e'); bg.addColorStop(.55, '#142040'); bg.addColorStop(1, '#0b1226');
-    c.beginPath(); rr(c, 0, 0, W, H, 64); c.fillStyle = bg; c.fill();
-    c.lineWidth = 3; c.strokeStyle = 'rgba(217,180,74,.55)';
+    /* ===== خلفية البطاقة ===== */
+    c.save();
+    c.beginPath(); rr(c, 0, 0, W, H, 64); c.clip();
+    var bg = c.createLinearGradient(0, 0, W * .6, H);
+    bg.addColorStop(0, '#1d2f58'); bg.addColorStop(.5, '#121c3a'); bg.addColorStop(1, '#0a1124');
+    c.fillStyle = bg; c.fillRect(0, 0, W, H);
+    var glow = c.createRadialGradient(W / 2, 40, 10, W / 2, 40, 620);
+    glow.addColorStop(0, 'rgba(217,180,74,.26)'); glow.addColorStop(1, 'rgba(217,180,74,0)');
+    c.fillStyle = glow; c.fillRect(0, 0, W, H);
+    var glow2 = c.createRadialGradient(W / 2, H + 40, 10, W / 2, H + 40, 560);
+    glow2.addColorStop(0, 'rgba(60,98,190,.30)'); glow2.addColorStop(1, 'rgba(60,98,190,0)');
+    c.fillStyle = glow2; c.fillRect(0, 0, W, H);
+    c.fillStyle = 'rgba(255,255,255,.045)';
+    for (var gy = 30; gy < H; gy += 44) for (var gx = 30; gx < W; gx += 44) { c.beginPath(); c.arc(gx, gy, 2.2, 0, 6.2832); c.fill(); }
+    c.restore();
+    c.lineWidth = 3; c.strokeStyle = 'rgba(217,180,74,.6)';
     c.beginPath(); rr(c, 14, 14, W - 28, H - 28, 52); c.stroke();
+    c.lineWidth = 1.5; c.strokeStyle = 'rgba(217,180,74,.22)';
+    c.beginPath(); rr(c, 30, 30, W - 60, H - 60, 40); c.stroke();
 
-    /* الترويسة */
+    /* ===== الترويسة ===== */
     c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillStyle = '#e1bd55'; c.font = '800 44px Tahoma, "Segoe UI", Arial, sans-serif';
-    c.fillText('بابل شات', W / 2, 92);
-    var ln = c.createLinearGradient(W / 2 - 220, 0, W / 2 + 220, 0);
-    ln.addColorStop(0, 'rgba(217,180,74,0)'); ln.addColorStop(.5, 'rgba(217,180,74,.8)'); ln.addColorStop(1, 'rgba(217,180,74,0)');
-    c.fillStyle = ln; c.fillRect(W / 2 - 220, 134, 440, 3);
+    c.fillStyle = '#e6c25a'; c.font = '800 50px ' + FONT;
+    c.fillText('بابل شات', W / 2, 98);
+    var tw = c.measureText('بابل شات').width / 2;
+    [[-1], [1]].forEach(function (s) {
+      var x1 = W / 2 + s[0] * (tw + 34), x2 = W / 2 + s[0] * (tw + 34 + 150);
+      var lg = c.createLinearGradient(x1, 0, x2, 0);
+      lg.addColorStop(0, 'rgba(217,180,74,.85)'); lg.addColorStop(1, 'rgba(217,180,74,0)');
+      c.fillStyle = lg; c.fillRect(Math.min(x1, x2), 96, 150, 3);
+      c.fillStyle = '#e6c25a'; c.beginPath(); c.arc(x1, 97.5, 6, 0, 6.2832); c.fill();
+    });
+    c.fillStyle = '#8fa3c4'; c.font = '600 27px ' + FONT;
+    c.fillText('رمز الحساب الشخصي', W / 2, 152);
 
-    /* لوح عاجي خلف الرمز (يحافظ على التباين لضمان القراءة) */
+    /* ===== اللوح الأبيض خلف الرمز ===== */
+    c.save();
+    c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 44; c.shadowOffsetY = 16;
     var tile = c.createLinearGradient(0, tileY, 0, tileY + T);
-    tile.addColorStop(0, '#fbf6e6'); tile.addColorStop(1, '#f1e8cb');
-    c.beginPath(); rr(c, tileX, tileY, T, T, 44); c.fillStyle = tile; c.fill();
+    tile.addColorStop(0, '#fffdf6'); tile.addColorStop(1, '#f3ecd6');
+    c.beginPath(); rr(c, tileX, tileY, T, T, 46); c.fillStyle = tile; c.fill();
+    c.restore();
+    c.lineWidth = 2; c.strokeStyle = 'rgba(169,127,22,.28)';
+    c.beginPath(); rr(c, tileX + 12, tileY + 12, T - 24, T - 24, 36); c.stroke();
 
-    var ox = tileX + Math.round((T - cell * (n + quiet * 2)) / 2) + quiet * cell;
-    var oy = tileY + Math.round((T - cell * (n + quiet * 2)) / 2) + quiet * cell;
+    /* أقواس المسح الذهبية حول اللوح (نفس أسلوب شاشة المسح) */
+    var bx = tileX - 24, by = tileY - 24, bw = T + 48, bh = T + 48, br = 64, bl = 100;
+    var bg2 = c.createLinearGradient(bx, by, bx + bw, by + bh);
+    bg2.addColorStop(0, '#f0d377'); bg2.addColorStop(1, '#b98a1c');
+    c.lineWidth = 8; c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = bg2;
+    c.beginPath(); c.moveTo(bx, by + bl); c.lineTo(bx, by + br); c.quadraticCurveTo(bx, by, bx + br, by); c.lineTo(bx + bl, by); c.stroke();
+    c.beginPath(); c.moveTo(bx + bw - bl, by); c.lineTo(bx + bw - br, by); c.quadraticCurveTo(bx + bw, by, bx + bw, by + br); c.lineTo(bx + bw, by + bl); c.stroke();
+    c.beginPath(); c.moveTo(bx, by + bh - bl); c.lineTo(bx, by + bh - br); c.quadraticCurveTo(bx, by + bh, bx + br, by + bh); c.lineTo(bx + bl, by + bh); c.stroke();
+    c.beginPath(); c.moveTo(bx + bw - bl, by + bh); c.lineTo(bx + bw - br, by + bh); c.quadraticCurveTo(bx + bw, by + bh, bx + bw, by + bh - br); c.lineTo(bx + bw, by + bh - bl); c.stroke();
+
+    /* ===== وحدات الرمز ===== */
+    var ox = tileX + Math.round((T - cell * n) / 2);
+    var oy = tileY + Math.round((T - cell * n) / 2);
     var ink = c.createLinearGradient(ox, oy, ox + qrSize, oy + qrSize);
-    ink.addColorStop(0, '#26407a'); ink.addColorStop(1, '#0d1731');
-    var gold = c.createLinearGradient(ox, oy, ox + qrSize, oy + qrSize);
-    gold.addColorStop(0, '#c9a02c'); gold.addColorStop(1, '#7d5c0c');
+    ink.addColorStop(0, '#2a4684'); ink.addColorStop(1, '#0c1530');
+    var goldInk = c.createLinearGradient(ox, oy, ox + qrSize, oy + qrSize);
+    goldInk.addColorStop(0, '#a87d12'); goldInk.addColorStop(1, '#63460a');
 
     function inFinder(r, k) { return (r < 8 && k < 8) || (r < 8 && k >= n - 8) || (r >= n - 8 && k < 8); }
-    var cx = ox + qrSize / 2, cy = oy + qrSize / 2, logoR = qrSize * 0.115;
-    function inLogo(r, k) { return Math.hypot(ox + (k + .5) * cell - cx, oy + (r + .5) * cell - cy) < logoR + cell * 1.1; }
-    function on(r, k) { return r >= 0 && k >= 0 && r < n && k < n && q.isDark(r, k) && !inFinder(r, k) && !inLogo(r, k); }
+    function on(r, k) { return r >= 0 && k >= 0 && r < n && k < n && q.isDark(r, k) && !inFinder(r, k); }
 
-    /* وحدات على شكل أقراص مستديرة متصلة أفقياً */
     c.fillStyle = ink; c.beginPath();
-    var pad = cell * 0.07;
+    var pad = cell * 0.08;
     for (var r = 0; r < n; r++) {
       var k = 0;
       while (k < n) {
@@ -15519,58 +15555,37 @@ return R("index");})();
     }
     c.fill();
 
-    /* عيون التحديد الثلاث: إطار ذهبي بزوايا مستديرة وقلب مستدير */
+    /* عيون التحديد: إطار كحلي مستدير + قلب ذهبي */
     [[0, 0], [0, n - 7], [n - 7, 0]].forEach(function (p) {
       var fx = ox + p[1] * cell, fy = oy + p[0] * cell;
-      c.fillStyle = gold; c.beginPath();
-      rr(c, fx, fy, cell * 7, cell * 7, cell * 2.3);
-      rr(c, fx + cell, fy + cell, cell * 5, cell * 5, cell * 1.4);
+      c.fillStyle = ink; c.beginPath();
+      rr(c, fx, fy, cell * 7, cell * 7, cell * 0.4);
+      rr(c, fx + cell, fy + cell, cell * 5, cell * 5, cell * 0.2);
       c.fill('evenodd');
-      c.beginPath(); rr(c, fx + cell * 2, fy + cell * 2, cell * 3, cell * 3, cell * 1.1); c.fillStyle = ink; c.fill();
+      c.beginPath(); rr(c, fx + cell * 2, fy + cell * 2, cell * 3, cell * 3, cell * 1.1); c.fillStyle = goldInk; c.fill();
     });
 
-    /* الشعار في المنتصف */
-    c.beginPath(); c.arc(cx, cy, logoR + cell * 0.55, 0, Math.PI * 2); c.fillStyle = tile; c.fill();
-    c.beginPath(); c.arc(cx, cy, logoR, 0, Math.PI * 2); c.fillStyle = '#142040'; c.fill();
-    var drawn = false;
-    if (avatarImg) {
-      try {
-        c.save(); c.beginPath(); c.arc(cx, cy, logoR - cell * 0.35, 0, Math.PI * 2); c.clip();
-        var iw = avatarImg.naturalWidth, ih = avatarImg.naturalHeight, s2 = Math.min(iw, ih);
-        var d = (logoR - cell * 0.35) * 2;
-        c.drawImage(avatarImg, (iw - s2) / 2, (ih - s2) / 2, s2, s2, cx - d / 2, cy - d / 2, d, d);
-        c.restore(); drawn = true;
-      } catch (e) { c.restore(); }
-    }
-    if (!drawn) {
-      c.fillStyle = '#e1bd55'; c.font = '800 ' + Math.round(logoR * 1.25) + 'px Georgia, "Times New Roman", serif';
-      c.fillText('B', cx, cy + logoR * 0.06);
-    }
-    c.lineWidth = cell * 0.42; c.strokeStyle = gold;
-    c.beginPath(); c.arc(cx, cy, logoR, 0, Math.PI * 2); c.stroke();
-
-    /* الاسم والمعرّف */
+    /* ===== الاسم والمعرّف ===== */
+    var baseY = tileY + T;
     var name = (user && user.displayName) || 'مستخدم';
-    c.fillStyle = '#ffffff'; c.font = '800 54px Tahoma, "Segoe UI", Arial, sans-serif';
-    while (c.measureText(name).width > W - 160 && name.length > 3) name = name.slice(0, -2);
-    c.fillText(name, W / 2, tileY + T + 82);
-    c.fillStyle = '#e1bd55'; c.font = '700 40px Tahoma, "Segoe UI", Arial, sans-serif';
-    c.fillText('@' + ((user && user.username) || ''), W / 2, tileY + T + 150);
-  }
+    c.fillStyle = '#ffffff'; c.font = '800 58px ' + FONT;
+    while (c.measureText(name).width > W - 180 && name.length > 3) name = name.slice(0, -2);
+    c.fillText(name, W / 2, baseY + 96);
 
-  function loadAvatar(url) {
-    return new Promise(function (res) {
-      if (!url) return res(null);
-      var im = new Image();
-      if (url.slice(0, 5) !== 'data:') im.crossOrigin = 'anonymous';
-      im.onload = function () { res(im); };
-      im.onerror = function () { res(null); };
-      im.src = url;
-    });
+    var handle = '@' + ((user && user.username) || '');
+    c.font = '700 38px ' + FONT;
+    var pw = Math.min(W - 200, c.measureText(handle).width + 90), ph = 74, py = baseY + 150;
+    c.beginPath(); rr(c, (W - pw) / 2, py, pw, ph, ph / 2);
+    c.fillStyle = 'rgba(217,180,74,.12)'; c.fill();
+    c.lineWidth = 2; c.strokeStyle = 'rgba(217,180,74,.55)'; c.stroke();
+    c.fillStyle = '#e6c25a'; c.fillText(handle, W / 2, py + ph / 2 + 2);
+
+    c.fillStyle = '#7f93b6'; c.font = '600 26px ' + FONT;
+    c.fillText('امسح الرمز من بابل شات لفتح الحساب مباشرة', W / 2, H - 62);
   }
 
   /* ---------- نافذة QR ---------- */
-  var qrOv = null, qrState = { link: '', user: null, avatar: null };
+  var qrOv = null, qrState = { link: '', user: null };
   function mountQr() {
     if (qrOv) return;
     qrOv = document.createElement('div');
@@ -15601,11 +15616,7 @@ return R("index");})();
     mountQr();
     qrState.user = u; qrState.link = profileLink(u.username);
     qrOv.classList.add('on');
-    drawCard($('bbqCanvas'), qrState.link, u, null);
-    loadAvatar(u.avatarUrl).then(function (im) {
-      qrState.avatar = im;
-      if (im && qrOv.classList.contains('on')) drawCard($('bbqCanvas'), qrState.link, u, im);
-    });
+    drawCard($('bbqCanvas'), qrState.link, u);
   }
   function closeQr() { if (qrOv) qrOv.classList.remove('on'); }
 
@@ -15629,11 +15640,7 @@ return R("index");})();
       setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
       toast('تم حفظ الصورة');
     }
-    try { cv.toBlob(go, 'image/png'); }
-    catch (e) { /* صورة خارجية تمنع التصدير: أعد الرسم بدون الصورة الشخصية */
-      drawCard(cv, qrState.link, qrState.user, null);
-      cv.toBlob(go, 'image/png');
-    }
+    cv.toBlob(go, 'image/png');
   }
 
   /* ---------- فتح حساب من اسم المستخدم ---------- */
