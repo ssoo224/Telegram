@@ -13725,6 +13725,16 @@ html{overflow:hidden!important;overscroll-behavior:none}
 #chatView #pinnedBar.pinned-bar{position:relative!important;z-index:6!important;isolation:isolate;background:var(--cr-card,var(--cl-card,#17212b))!important;opacity:1!important;overflow:hidden}
 #chatView #pinnedBar.pinned-bar>*{position:relative;z-index:1}
 #chatView #pinnedBar.pinned-bar.hidden{display:none!important}
+.pins-sheet-ov{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;direction:rtl}
+.pins-sheet{width:100%;max-width:520px;max-height:70vh;display:flex;flex-direction:column;background:var(--cr-card,var(--cl-card,#17212b));color:var(--cl-text,#f1f5f9);border-radius:20px 20px 0 0;padding:12px 14px 16px;box-shadow:0 -6px 30px rgba(0,0,0,.35)}
+.pins-sheet .ps-head{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 10px}
+.pins-sheet .ps-head b{font-size:15px;color:var(--cl-gold,#e4c45b)}
+.pins-sheet .ps-close{background:none;border:0;color:inherit;font-size:18px;width:34px;height:34px;border-radius:50%;cursor:pointer}
+.pins-sheet .ps-list{overflow:auto;display:flex;flex-direction:column;gap:6px}
+.pins-sheet .ps-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.12);cursor:pointer}
+.pins-sheet .ps-n{flex:0 0 24px;height:24px;border-radius:50%;background:var(--cl-gold,#e4c45b);color:#000;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.pins-sheet .ps-t{flex:1;min-width:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pins-sheet .ps-all{margin-top:12px;padding:12px;border:0;border-radius:12px;background:#e5484d;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
 </style>
 <script id="babylon-pinned-bar-js">
 (function(){
@@ -13742,12 +13752,14 @@ html{overflow:hidden!important;overscroll-behavior:none}
     bar.classList.remove('hidden');
     bar.innerHTML='<div class="pb-line">'+pins.map(function(_,i){return '<i class="'+(i===pinIdx?'on':'')+'"></i>';}).join('')+'</div>'
       +'<div class="pb-t"><b>رسالة مثبتة'+(pins.length>1?' #'+(pinIdx+1):'')+'</b><span>'+esc(p.text||'')+'</span></div>'
-      +(cp?'<button type="button" class="pb-x" aria-label="إلغاء التثبيت"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M8 3h8l-1 6 3 3.5V14H6v-1.5L9 9z"/><path d="m3 3 18 18"/></svg></button>':'');
+      +(pins.length>1?'<button type="button" class="pb-x pb-list" aria-label="الرسائل المثبتة"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>':(cp?'<button type="button" class="pb-x pb-one" aria-label="إلغاء التثبيت"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M8 3h8l-1 6 3 3.5V14H6v-1.5L9 9z"/><path d="m3 3 18 18"/></svg></button>':''));
     bar.querySelector('.pb-t').onclick=function(){
       jumpToMessage(p.id);
       if(pins.length>1){pinIdx=(pinIdx-1+pins.length)%pins.length;window.renderPinnedBar();}
     };
-    var x=bar.querySelector('.pb-x');
+    var lb=bar.querySelector('.pb-list');
+    if(lb)lb.onclick=function(e){e.stopPropagation();openPinsSheet();};
+    var x=bar.querySelector('.pb-one');
     if(x)x.onclick=async function(e){
       e.stopPropagation();
       var r=await clAsk({title:'إلغاء التثبيت',body:'هل تريد إلغاء تثبيت هذه الرسالة؟',buttons:[{text:'إلغاء التثبيت',cls:'cl-danger'},{text:'تراجع',cls:'cl-cancel'}]});
@@ -13757,6 +13769,28 @@ html{overflow:hidden!important;overscroll-behavior:none}
       catch(err){console.error(err);showToast('تعذر إلغاء التثبيت');}
     };
   };
+  function openPinsSheet(){
+    var old=document.getElementById('pinsSheet');if(old)old.remove();
+    var pins=((chatMetaCache[activeChatId]||{}).pins||[]).slice();if(!pins.length)return;
+    var cp=canPin();
+    var ov=document.createElement('div');ov.id='pinsSheet';ov.className='pins-sheet-ov';
+    ov.innerHTML='<div class="pins-sheet"><div class="ps-head"><b>الرسائل المثبتة ('+pins.length+')</b><button type="button" class="ps-close" aria-label="إغلاق">✕</button></div><div class="ps-list">'
+      +pins.map(function(p,i){return '<div class="ps-item" data-i="'+i+'"><span class="ps-n">'+(i+1)+'</span><span class="ps-t">'+esc(p.text||'')+'</span></div>';}).join('')
+      +'</div>'+(cp?'<button type="button" class="ps-all">إلغاء تثبيت الكل</button>':'')+'</div>';
+    document.body.appendChild(ov);
+    function close(){ov.remove();}
+    ov.addEventListener('click',function(e){if(e.target===ov)close();});
+    ov.querySelector('.ps-close').onclick=close;
+    ov.querySelectorAll('.ps-item').forEach(function(el){el.onclick=function(){
+      var i=+el.dataset.i;pinIdx=i;close();window.renderPinnedBar();jumpToMessage(pins[i].id);};});
+    var all=ov.querySelector('.ps-all');
+    if(all)all.onclick=async function(){
+      var r=await clAsk({title:'إلغاء تثبيت الكل',body:'هل تريد إلغاء تثبيت جميع الرسائل المثبتة؟',buttons:[{text:'إلغاء الكل',cls:'cl-danger'},{text:'تراجع',cls:'cl-cancel'}]});
+      if(!r||r.i!==0)return;
+      try{await db.collection('chats').doc(activeChatId).set({pins:[]},{merge:true});pinIdx=-1;saveCache([]);close();window.renderPinnedBar();showToast('تم إلغاء تثبيت جميع الرسائل');}
+      catch(err){console.error(err);showToast('تعذر إلغاء التثبيت');}
+    };
+  }
   window.actionPinMsg=async function(){
     var md=document.getElementById('msgModal');if(md)md.classList.add('hidden');
     if(!activeChatId||!selectedMsgId||!canPin())return;
