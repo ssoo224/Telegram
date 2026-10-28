@@ -13568,3 +13568,9 @@ mark.cs-mark{background:rgba(201,154,28,.30);color:inherit;border-radius:5px;pad
 .app-container[data-app-theme="light"] #chatView#chatView#chatView#chatView#chatView #multiSelectBar .msb-close{color:#b8891a!important}
 #chatView #multiSelectBar .msb-close svg{width:22px!important;height:22px!important;stroke:currentColor!important;stroke-width:2.6!important;fill:none!important;stroke-linecap:round}
 </style>
+<style id="babylon-profile-blur-always">
+/* كان الـ blur يُلغى أثناء السحب (pf-dragging) فيتأخر؛ الآن يبقى ظاهرًا طوال السحب والتصغير */
+.pf-dragging .pf-hero .pf-hero-ext::before,
+.pf-hero .pf-hero-ext::before{filter:blur(14px) brightness(.9)!important;transform:scale(1.1)!important;inset:-30px!important}
+.pf-hero .pf-hero-ext{transition:none!important}
+</style>
