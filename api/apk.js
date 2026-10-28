@@ -30,11 +30,12 @@ module.exports = async (req, res) => {
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    res.setHeader('Content-Encoding', 'identity');
     res.setHeader('Content-Disposition', 'attachment; filename="babylon-chat.apk"');
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     const len = up.headers.get('content-length');
-    if (len) res.setHeader('Content-Length', len);
+    if (len) { res.setHeader('Content-Length', len); res.setHeader('X-Apk-Size', len); res.setHeader('Access-Control-Expose-Headers', 'X-Apk-Size'); }
     if (req.method === 'HEAD') { up.body.cancel().catch(() => {}); return res.end(); }
     Readable.fromWeb(up.body).on('error', () => res.destroy()).pipe(res);
   } catch (e) {
