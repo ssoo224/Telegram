@@ -7770,6 +7770,7 @@ function clAsk(o){
     const _dng=(o.buttons||[]).some(b=>/cl-danger/.test(b.cls||''));
     const _ic=o.stack?'':(CL_ICONS[o.icon]||CL_ICONS[_dng?'warn':(o.input?'edit':'info')]);
     if(o.input&&o.input.numeric)inp=inp.replace('<input class="cl-in"','<input class="cl-in" inputmode="numeric" autocomplete="off" dir="ltr"');
+    if(o.input&&o.input.phSmall)inp=inp.replace('<input class="cl-in"','<input class="cl-in cl-ph-sm"');
     ov.innerHTML='<div class="cl-dlg'+(o.stack?' stack':'')+(_ic?' cl-del'+(_dng?'':' cl-tone-gold'):'')+'" role="dialog" aria-modal="true">'+(_ic?'<div class="cl-del-ic">'+_ic+'</div>':'')+'<h3>'+o.title+'</h3>'+(o.body?'<p>'+o.body+'</p>':'')+inp
       +'<div class="cl-btns">'+(o.buttons||[]).map((b,i)=>'<button type="button" class="'+(b.cls||'')+'" data-i="'+i+'">'+b.text+'</button>').join('')+'</div></div>';
     uiRoot().appendChild(ov);
@@ -8397,7 +8398,7 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 <!-- الهدايا: كل شي بمجلد gifts/ -->
 <script src="gifts/models.js?v=1"></script>
 <script src="gifts/cat-models.js?v=1"></script>
-<script src="gifts/gifts.js?v=17"></script>
+<script src="gifts/gifts.js?v=18"></script>
 <script src="gifts/star-gift.js?v=5"></script>
 <script src="gifts/gift-link.js?v=2"></script>
 <script id="babylon-remove-visited-badge-fix-v2">
@@ -12997,6 +12998,7 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 .cl-dlg.cl-del .cl-in,.cl-dlg.cl-del .cl-in:focus,.cl-dlg.cl-del .cl-in:focus-visible{border:1.5px solid transparent!important;box-shadow:none!important;outline:none!important}
 .cl-dlg.cl-del .cl-in.cl-ta{text-align:right;font-size:15.5px;font-weight:600;letter-spacing:0;min-height:90px}
 /* placeholder خافت */
+.cl-dlg.cl-del .cl-in.cl-ph-sm::placeholder{font-size:13px;font-weight:600;letter-spacing:0;opacity:.3}
 .cl-dlg.cl-del .cl-in::placeholder{color:currentColor;opacity:.28}
 /* بدون ظل خلف أزرار نوافذ النجوم/الهدايا */
 .cl-dlg.cl-del.cl-tone-gold .cl-btns button{box-shadow:none!important}
