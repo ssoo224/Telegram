@@ -8398,7 +8398,7 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 <!-- الهدايا: كل شي بمجلد gifts/ -->
 <script src="gifts/models.js?v=1"></script>
 <script src="gifts/cat-models.js?v=1"></script>
-<script src="gifts/gifts.js?v=18"></script>
+<script src="gifts/gifts.js?v=19"></script>
 <script src="gifts/star-gift.js?v=5"></script>
 <script src="gifts/gift-link.js?v=2"></script>
 <script id="babylon-remove-visited-badge-fix-v2">
@@ -13021,10 +13021,15 @@ body:has(.app-container[data-app-theme="dark"]) .cl-dlg.cl-del .cl-btns button#c
   background:linear-gradient(135deg,#f8e08a 0%,#eac24d 45%,#d7a52f 100%)!important;
   color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 2px rgba(110,72,0,.5);box-shadow:none!important}
 /* زر (حسنًا) في صفحة الهدية: أصغر بـ 8px وذهبي متدرج مثل أزرار تسجيل الدخول */
-#giftPage #gpOk,body:has(.app-container[data-app-theme="light"]) #giftPage #gpOk,body:has(.app-container[data-app-theme="dark"]) #giftPage #gpOk{
+#giftPage #gpOk,body:has(.app-container[data-app-theme="light"]) #giftPage #gpOk,body:has(.app-container[data-app-theme="dark"]) #giftPage #gpOk,
+#giftPage #gpSell,body:has(.app-container[data-app-theme="light"]) #giftPage #gpSell,body:has(.app-container[data-app-theme="dark"]) #giftPage #gpSell{
   padding:12px 16px!important;
   background:linear-gradient(135deg,#f8e08a 0%,#eac24d 45%,#d7a52f 100%)!important;
   color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 2px rgba(110,72,0,.5);box-shadow:none!important}
+/* صفحة الهدية: إزالة الحواف العلوية المنحنية */
+#giftPage.gp-ov{border-radius:0!important;box-shadow:none!important;border:0!important;outline:0!important;
+  background:linear-gradient(to bottom,transparent 0,transparent 160px,var(--cl-bg,#f4f6fa) 160px)!important}
+#giftPage .gp-hero{border-radius:0 0 30px 30px!important;margin-top:-1px!important;border:0!important;outline:0!important}
 /* زرّا تعديل السعر / إلغاء العرض أصغر بـ 6px */
 #giftPage .gp-btns .gp-cta{padding:13px 16px!important}
 </style>
