@@ -226,6 +226,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
+        resumePendingUpdate();
         registerNativeBridge();
         applyTransparentBars();
         BabylonNotifications.dispatchPending(getApplicationContext(), liveWebView);
@@ -300,6 +301,15 @@ public class MainActivity extends BridgeActivity {
 
     // BABYLON-UPD-BEGIN
     private volatile boolean updating = false;
+    private volatile String pendingUpdateUrl = null;
+
+    private void resumePendingUpdate() {
+        final String u = pendingUpdateUrl;
+        if (u == null) return;
+        if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) return;
+        pendingUpdateUrl = null;
+        try { runUpdateOnUi(u); } catch (Throwable t) { updating = false; updJs("error", 0, updReason(t)); }
+    }
 
     private void updJs(String state, int pct) { updJs(state, pct, ""); }
 
@@ -327,13 +337,15 @@ public class MainActivity extends BridgeActivity {
     private boolean updUrlAllowed(String url) {
         try {
             if (url == null || !url.startsWith("https://")) return false;
-            WebView w = liveWebView;
-            String cur = (w == null) ? null : w.getUrl();
-            if (cur == null) return false;
             Uri u = Uri.parse(url);
             String host = u.getHost();
             String path = u.getPath();
-            return host != null && host.equals(Uri.parse(cur).getHost()) && "/api/apk".equals(path);
+            if (host == null || path == null || !path.equals("/api/apk")) return false;
+            WebView w = liveWebView;
+            String cur = (w == null) ? null : w.getUrl();
+            if (cur != null && host.equals(Uri.parse(cur).getHost())) return true;
+            // احتياط: الموقع المضبوط في إعدادات التطبيق (server.url)
+            return host.equals("telegram-pi-rouge.vercel.app");
         } catch (Throwable t) {
             return false;
         }
@@ -351,6 +363,7 @@ public class MainActivity extends BridgeActivity {
         if (!updUrlAllowed(url)) { updJs("error", 0, "url not allowed"); return; }
         if (updating) { updJs("dl", 0); return; }
         if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
+            pendingUpdateUrl = url;
             runOnUiThread(() -> {
                 try {
                     Intent i = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()));
@@ -418,6 +431,9 @@ public class MainActivity extends BridgeActivity {
         if (apk.exists()) apk.delete();
         HttpURLConnection c = updOpen(source);
         long total = c.getContentLengthLong();
+        if (total <= 0) {
+            try { total = Long.parseLong(c.getHeaderField("X-Apk-Size")); } catch (Throwable ignored) { }
+        }
         long done = 0;
         int last = -1;
         updJs("dl", 0);
