@@ -15474,55 +15474,48 @@ return R("index");})();
     var c = cv.getContext('2d');
     var FONT = 'Tahoma, "Segoe UI", Arial, sans-serif';
 
-    /* ===== خلفية البطاقة ===== */
+    /* ===== خلفية البطاقة البيضاء ===== */
     c.save();
     c.beginPath(); rr(c, 0, 0, W, H, 64); c.clip();
-    var bg = c.createLinearGradient(0, 0, W * .6, H);
-    bg.addColorStop(0, '#1d2f58'); bg.addColorStop(.5, '#121c3a'); bg.addColorStop(1, '#0a1124');
-    c.fillStyle = bg; c.fillRect(0, 0, W, H);
-    var glow = c.createRadialGradient(W / 2, 40, 10, W / 2, 40, 620);
-    glow.addColorStop(0, 'rgba(217,180,74,.26)'); glow.addColorStop(1, 'rgba(217,180,74,0)');
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
+    var glow = c.createRadialGradient(W / 2, 20, 10, W / 2, 20, 560);
+    glow.addColorStop(0, 'rgba(217,180,74,.16)'); glow.addColorStop(1, 'rgba(217,180,74,0)');
     c.fillStyle = glow; c.fillRect(0, 0, W, H);
-    var glow2 = c.createRadialGradient(W / 2, H + 40, 10, W / 2, H + 40, 560);
-    glow2.addColorStop(0, 'rgba(60,98,190,.30)'); glow2.addColorStop(1, 'rgba(60,98,190,0)');
-    c.fillStyle = glow2; c.fillRect(0, 0, W, H);
-    c.fillStyle = 'rgba(255,255,255,.045)';
+    c.fillStyle = 'rgba(20,32,64,.05)';
     for (var gy = 30; gy < H; gy += 44) for (var gx = 30; gx < W; gx += 44) { c.beginPath(); c.arc(gx, gy, 2.2, 0, 6.2832); c.fill(); }
     c.restore();
-    c.lineWidth = 3; c.strokeStyle = 'rgba(217,180,74,.6)';
+    c.lineWidth = 3; c.strokeStyle = 'rgba(184,138,28,.65)';
     c.beginPath(); rr(c, 14, 14, W - 28, H - 28, 52); c.stroke();
-    c.lineWidth = 1.5; c.strokeStyle = 'rgba(217,180,74,.22)';
+    c.lineWidth = 1.5; c.strokeStyle = 'rgba(184,138,28,.25)';
     c.beginPath(); rr(c, 30, 30, W - 60, H - 60, 40); c.stroke();
 
     /* ===== الترويسة ===== */
     c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillStyle = '#e6c25a'; c.font = '800 50px ' + FONT;
+    c.fillStyle = '#a97f16'; c.font = '800 50px ' + FONT;
     c.fillText('بابل شات', W / 2, 98);
     var tw = c.measureText('بابل شات').width / 2;
     [[-1], [1]].forEach(function (s) {
       var x1 = W / 2 + s[0] * (tw + 34), x2 = W / 2 + s[0] * (tw + 34 + 150);
       var lg = c.createLinearGradient(x1, 0, x2, 0);
-      lg.addColorStop(0, 'rgba(217,180,74,.85)'); lg.addColorStop(1, 'rgba(217,180,74,0)');
+      lg.addColorStop(0, 'rgba(184,138,28,.9)'); lg.addColorStop(1, 'rgba(184,138,28,0)');
       c.fillStyle = lg; c.fillRect(Math.min(x1, x2), 96, 150, 3);
-      c.fillStyle = '#e6c25a'; c.beginPath(); c.arc(x1, 97.5, 6, 0, 6.2832); c.fill();
+      c.fillStyle = '#b98a1c'; c.beginPath(); c.arc(x1, 97.5, 6, 0, 6.2832); c.fill();
     });
-    c.fillStyle = '#8fa3c4'; c.font = '600 27px ' + FONT;
+    c.fillStyle = '#6b7a93'; c.font = '600 27px ' + FONT;
     c.fillText('رمز الحساب الشخصي', W / 2, 152);
 
     /* ===== اللوح الأبيض خلف الرمز ===== */
     c.save();
-    c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 44; c.shadowOffsetY = 16;
-    var tile = c.createLinearGradient(0, tileY, 0, tileY + T);
-    tile.addColorStop(0, '#fffdf6'); tile.addColorStop(1, '#f3ecd6');
-    c.beginPath(); rr(c, tileX, tileY, T, T, 46); c.fillStyle = tile; c.fill();
+    c.shadowColor = 'rgba(20,32,64,.16)'; c.shadowBlur = 40; c.shadowOffsetY = 12;
+    c.beginPath(); rr(c, tileX, tileY, T, T, 46); c.fillStyle = '#ffffff'; c.fill();
     c.restore();
-    c.lineWidth = 2; c.strokeStyle = 'rgba(169,127,22,.28)';
-    c.beginPath(); rr(c, tileX + 12, tileY + 12, T - 24, T - 24, 36); c.stroke();
+    c.lineWidth = 2; c.strokeStyle = 'rgba(20,32,64,.10)';
+    c.beginPath(); rr(c, tileX, tileY, T, T, 46); c.stroke();
 
     /* أقواس المسح الذهبية حول اللوح (نفس أسلوب شاشة المسح) */
     var bx = tileX - 24, by = tileY - 24, bw = T + 48, bh = T + 48, br = 64, bl = 100;
     var bg2 = c.createLinearGradient(bx, by, bx + bw, by + bh);
-    bg2.addColorStop(0, '#f0d377'); bg2.addColorStop(1, '#b98a1c');
+    bg2.addColorStop(0, '#e2bd54'); bg2.addColorStop(1, '#a97f16');
     c.lineWidth = 8; c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = bg2;
     c.beginPath(); c.moveTo(bx, by + bl); c.lineTo(bx, by + br); c.quadraticCurveTo(bx, by, bx + br, by); c.lineTo(bx + bl, by); c.stroke();
     c.beginPath(); c.moveTo(bx + bw - bl, by); c.lineTo(bx + bw - br, by); c.quadraticCurveTo(bx + bw, by, bx + bw, by + br); c.lineTo(bx + bw, by + bl); c.stroke();
@@ -15555,7 +15548,7 @@ return R("index");})();
     }
     c.fill();
 
-    /* عيون التحديد: إطار كحلي مستدير + قلب ذهبي */
+    /* عيون التحديد: إطار كحلي شبه مربع + قلب ذهبي مستدير */
     [[0, 0], [0, n - 7], [n - 7, 0]].forEach(function (p) {
       var fx = ox + p[1] * cell, fy = oy + p[0] * cell;
       c.fillStyle = ink; c.beginPath();
@@ -15568,7 +15561,7 @@ return R("index");})();
     /* ===== الاسم والمعرّف ===== */
     var baseY = tileY + T;
     var name = (user && user.displayName) || 'مستخدم';
-    c.fillStyle = '#ffffff'; c.font = '800 58px ' + FONT;
+    c.fillStyle = '#0f1b3a'; c.font = '800 58px ' + FONT;
     while (c.measureText(name).width > W - 180 && name.length > 3) name = name.slice(0, -2);
     c.fillText(name, W / 2, baseY + 96);
 
@@ -15576,11 +15569,11 @@ return R("index");})();
     c.font = '700 38px ' + FONT;
     var pw = Math.min(W - 200, c.measureText(handle).width + 90), ph = 74, py = baseY + 150;
     c.beginPath(); rr(c, (W - pw) / 2, py, pw, ph, ph / 2);
-    c.fillStyle = 'rgba(217,180,74,.12)'; c.fill();
-    c.lineWidth = 2; c.strokeStyle = 'rgba(217,180,74,.55)'; c.stroke();
-    c.fillStyle = '#e6c25a'; c.fillText(handle, W / 2, py + ph / 2 + 2);
+    c.fillStyle = 'rgba(217,180,74,.14)'; c.fill();
+    c.lineWidth = 2; c.strokeStyle = 'rgba(184,138,28,.6)'; c.stroke();
+    c.fillStyle = '#8f6a0e'; c.fillText(handle, W / 2, py + ph / 2 + 2);
 
-    c.fillStyle = '#7f93b6'; c.font = '600 26px ' + FONT;
+    c.fillStyle = '#7b8aa3'; c.font = '600 26px ' + FONT;
     c.fillText('امسح الرمز من بابل شات لفتح الحساب مباشرة', W / 2, H - 62);
   }
 
@@ -15595,9 +15588,8 @@ return R("index");})();
       '<canvas id="bbqCanvas" aria-label="رمز QR لحسابك"></canvas>' +
       '<p class="bbq-hint">اطلب من صديقك مسح الرمز من داخل بابل شات ليفتح حسابك مباشرة</p>' +
       '<div class="bbq-actions">' +
-      '<button type="button" class="bbq-btn gold" data-a="scan">' + IC.scan + '<span>مسح رمز</span></button>' +
-      '<button type="button" class="bbq-btn" data-a="save">' + IC.save + '<span>حفظ</span></button>' +
-      '<button type="button" class="bbq-btn" data-a="share">' + IC.share + '<span>مشاركة</span></button>' +
+      '<button type="button" class="bbq-btn" data-a="save">' + IC.save + '<span>تنزيل</span></button>' +
+      '<button type="button" class="bbq-btn gold" data-a="share">' + IC.share + '<span>مشاركة</span></button>' +
       '</div>';
     document.body.appendChild(qrOv);
     qrOv.addEventListener('click', function (e) {
@@ -15605,7 +15597,6 @@ return R("index");})();
       if (!b) { if (e.target === qrOv) closeQr(); return; }
       var a = b.getAttribute('data-a');
       if (a === 'close') closeQr();
-      else if (a === 'scan') openScan();
       else if (a === 'save') exportCard(false);
       else if (a === 'share') exportCard(true);
     });
@@ -15620,27 +15611,67 @@ return R("index");})();
   }
   function closeQr() { if (qrOv) qrOv.classList.remove('on'); }
 
-  function exportCard(share) {
-    var cv = $('bbqCanvas'), name = 'babylon-qr-' + (qrState.user.username || 'me') + '.png';
-    function go(blob) {
-      if (!blob) { toast('تعذر إنشاء الصورة'); return; }
-      var file = null;
-      try { file = new File([blob], name, { type: 'image/png' }); } catch (e) {}
-      if (share) {
-        if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-          navigator.share({ files: [file], title: 'حسابي في بابل شات', text: qrState.link }).catch(function () {});
-        } else if (navigator.share) {
-          navigator.share({ title: 'حسابي في بابل شات', text: qrState.link, url: qrState.link }).catch(function () {});
-        } else { try { copyText(qrState.link, 'تم نسخ رابط الملف الشخصي'); } catch (e) {} }
-        return;
-      }
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(blob); a.download = name;
-      document.body.appendChild(a); a.click();
-      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
-      toast('تم حفظ الصورة');
+  function dataUrlToBlob(du) {
+    var p = du.split(','), mime = (p[0].match(/:(.*?);/) || [, 'image/png'])[1];
+    var bin = atob(p[1]), len = bin.length, arr = new Uint8Array(len);
+    for (var i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+  function isNativeApp() { try { return !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()); } catch (e) { return false; } }
+
+  /* تنزيل: يُحفظ في معرض الهاتف عبر الجسر الأصلي، وفي المتصفح كملف عادي */
+  function downloadCard(dataUrl, name) {
+    if (window.BabylonAndroid && typeof window.BabylonAndroid.saveMedia === 'function') {
+      try { window.BabylonAndroid.saveMedia(dataUrl, name, 'image/png'); }
+      catch (e) { toast('تعذر الحفظ في المعرض'); }
+      return;
     }
-    cv.toBlob(go, 'image/png');
+    var blob = dataUrlToBlob(dataUrl);
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    toast('تم حفظ الصورة');
+  }
+
+  /* مشاركة كصورة إلى باقي التطبيقات */
+  function shareCard(dataUrl, name) {
+    var done = false;
+    function webShare() {
+      var blob = dataUrlToBlob(dataUrl), file = null;
+      try { file = new File([blob], name, { type: 'image/png' }); } catch (e) {}
+      if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        return navigator.share({ files: [file], title: 'حسابي في بابل شات' }).catch(function (err) { if (err && err.name === 'AbortError') return; throw err; });
+      }
+      return Promise.reject(new Error('no-web-share'));
+    }
+    /* 1) الجسر الأصلي (إن وُجدت الدالة في MainActivity) */
+    if (window.BabylonAndroid && typeof window.BabylonAndroid.shareImage === 'function') {
+      try { window.BabylonAndroid.shareImage(dataUrl, name, 'image/png'); return; } catch (e) {}
+    }
+    /* 2) إضافات Capacitor (Filesystem + Share) إن كانت مثبّتة */
+    var P = (window.Capacitor && Capacitor.Plugins) || {};
+    if (P.Share && P.Filesystem) {
+      P.Filesystem.writeFile({ path: name, data: dataUrl.split(',')[1], directory: 'CACHE' })
+        .then(function (r) { return P.Share.share({ title: 'حسابي في بابل شات', files: [r.uri], dialogTitle: 'مشاركة' }); })
+        .catch(function (err) { if (!(err && /cancel/i.test(String(err.message || err)))) webShare().catch(fallback); });
+      return;
+    }
+    /* 3) مشاركة الويب كصورة */
+    webShare().catch(fallback);
+    function fallback() {
+      if (done) return; done = true;
+      downloadCard(dataUrl, name);
+      toast('حُفظت الصورة في المعرض، شاركها من هناك');
+    }
+  }
+
+  function exportCard(share) {
+    var cv = $('bbqCanvas');
+    var name = 'babylon-qr-' + ((qrState.user && qrState.user.username) || 'me') + '-' + Date.now() + '.png';
+    var dataUrl;
+    try { dataUrl = cv.toDataURL('image/png'); } catch (e) { toast('تعذر إنشاء الصورة'); return; }
+    if (share) shareCard(dataUrl, name); else downloadCard(dataUrl, name);
   }
 
   /* ---------- فتح حساب من اسم المستخدم ---------- */
