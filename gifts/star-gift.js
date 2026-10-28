@@ -9,7 +9,7 @@ async function devGiftStars(target){
   const toName=(typeof GU!=='undefined'&&GU[to]&&GU[to].displayName)||(document.getElementById('otherHeaderNameText')||{}).textContent||'مستخدم';
   const body=dev?('كم نجمة تريد إهداءها إلى <b>'+esc(toName)+'</b>؟')
     :('رصيدك: <b>'+fmtN(myStars)+'</b> ⭐<br>كم نجمة تريد إهداءها إلى <b>'+esc(toName)+'</b>؟<br><small>ينخصم المبلغ من رصيدك، ويستلم 95% منه (عمولة '+FEE_PCT+'%).</small>');
-  const r=await clAsk({title:'إهداء نجوم ⭐',body:body,input:{value:'',placeholder:dev?'عدد النجوم':('حتى '+fmtN(myStars)),max:9},buttons:[{text:'إهداء'},{text:'إلغاء',cls:'cl-cancel'}]});
+  const r=await clAsk({title:'إهداء نجوم',icon:'star',body:body,input:{value:'',placeholder:dev?'عدد النجوم':('حتى '+fmtN(myStars)),max:9,numeric:true},buttons:[{text:'إهداء'},{text:'إلغاء',cls:'cl-cancel'}]});
   if(!r||r.i!==0)return;
   const n=parseInt(String(r.value).replace(/[^\d]/g,''),10);
   if(!n||n<2||n>1000000)return showToast('اكتب عدداً بين 2 و 1,000,000');
