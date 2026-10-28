@@ -547,9 +547,9 @@ public class MainActivity extends BridgeActivity {
                 try (FileOutputStream out = new FileOutputStream(file)) { out.write(bytes); }
                 android.media.MediaScannerConnection.scanFile(this, new String[]{file.getAbsolutePath()}, new String[]{mime}, null);
             }
-            runOnUiThread(() -> Toast.makeText(this, "تم تحميل الصورة او الفيديو في المعرض", Toast.LENGTH_LONG).show());
+            runOnUiThread(() -> Toast.makeText(this, "تم التحميل في المعرض", Toast.LENGTH_LONG).show());
         } catch (Exception e) {
-            runOnUiThread(() -> Toast.makeText(this, "تعذر تنزيل الصورة أو الفيديو", Toast.LENGTH_LONG).show());
+            runOnUiThread(() -> Toast.makeText(this, "تعذر التحميل", Toast.LENGTH_LONG).show());
         }
     }
 }
