@@ -1524,6 +1524,16 @@ i[data-ic]{display:inline-flex;font-style:normal}
 
 .pinned-stories-heading-icon{width:19px;height:19px;display:inline-block;vertical-align:-4px;margin-inline-end:5px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 
+
+/* إخفاء أيقونة التشغيل الافتراضية لعنصر الفيديو (WebView) */
+#storyVid::-webkit-media-controls,#storyVid::-webkit-media-controls-panel,#storyVid::-webkit-media-controls-start-playback-button,#storyVid::-webkit-media-controls-overlay-play-button,#storyVid::-webkit-media-controls-enclosure{display:none!important;opacity:0!important;-webkit-appearance:none}
+#storyVid{pointer-events:none}
+/* دبوس التثبيت فوق القصص المثبتة */
+.story-pin-mark{position:absolute;top:6px;right:6px;z-index:3;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.62);color:#f5c542;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.story-pin-mark svg{width:13px;height:13px;fill:currentColor;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.story-pin-mark svg path:first-child{fill:none}
+.pinned-stories-heading-icon path{fill:none}
+
 /* SVG badge for pinned stories */
 .pinned-story-icon{width:15px;height:15px;display:inline-block;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .post-grid-item .st-badge{display:flex;align-items:center;gap:4px}
@@ -2439,7 +2449,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
           <div class="pf-row-body"><div id="otherJoinDisplay" class="pf-val"></div><div class="pf-lbl">تاريخ الانضمام</div></div>
         </div>
       </div>
-      <div id="otherPinnedWrap" class="hidden"><div class="posts-grid-header"><svg class="pinned-stories-heading-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg> القصص المثبتة</div><div id="otherPinnedGrid" class="posts-grid"></div></div>
+      <div id="otherPinnedWrap" class="hidden"><div class="posts-grid-header"><svg class="pinned-stories-heading-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg> القصص</div><div id="otherPinnedGrid" class="posts-grid"></div></div>
       <div id="otherGiftsWrap" class="hidden"><div class="posts-grid-header"><svg class="gift-svg-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18v11H3zM2 6.5h20V10H2zM12 6.5V21M12 6.5H7.4a2.4 2.4 0 1 1 2.4-2.4c0 1.3 2.2 2.4 2.2 2.4Zm0 0h4.6a2.4 2.4 0 1 0-2.4-2.4C14.2 5.4 12 6.5 12 6.5Z"/></svg><span>الهدايا</span></div><div id="otherGiftsGrid" class="posts-grid gifts-grid"></div></div>
     </div>
 
@@ -2869,7 +2879,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
       </div>
       <button class="icon-btn" onclick="closeStoryViewer()" style="color:white;" aria-label="إغلاق القصة"><svg class="story-ui-icon close-story-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
     </div>
-    <div class="sv-img"><img id="storyImg" src="" alt="Story"><video id="storyVid" class="hidden" playsinline preload="auto"></video></div>
+    <div class="sv-img"><img id="storyImg" src="" alt="Story"><video id="storyVid" class="hidden" playsinline webkit-playsinline preload="auto" controlslist="nodownload nofullscreen noplaybackrate" disablepictureinpicture poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"></video></div>
     <div class="sv-tap n" onpointerdown="svDown()" onpointerup="svUp(1)" onpointerleave="svCancel()"></div>
     <div class="sv-tap p" onpointerdown="svDown()" onpointerup="svUp(-1)" onpointerleave="svCancel()"></div>
     <div id="svCap" class="sv-cap hidden"></div>
@@ -6473,6 +6483,11 @@ function checkUserStories(forceSync) {
     // Keep the last valid stories and UI instead of letting a failed request break the screen.
   });
 }
+
+const PIN_SVG_PATH='<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>';
+function pinMarkHTML(){return '<span class="story-pin-mark" aria-label="قصة مثبتة" role="img"><svg viewBox="0 0 24 24" aria-hidden="true">'+PIN_SVG_PATH+'</svg></span>';}
+function pinIconSVG(cls,label){return '<svg class="'+cls+'" viewBox="0 0 24 24" '+(label?'aria-label="'+label+'" role="img"':'aria-hidden="true"')+'>'+PIN_SVG_PATH+'</svg>';}
+function svIsOwner(s){return !!(currentUser && s && s.userId===currentUser.uid);}
 function renderTiles(grid, list, mine) {
   if (!grid) return;
   grid.innerHTML = '';
@@ -6480,8 +6495,8 @@ function renderTiles(grid, list, mine) {
     const act = isActive(s);
     const d = document.createElement('div');
     d.className = 'post-grid-item' + (!act && !s.pinned ? ' st-old' : '');
-    const badge = s.pinned ? '<svg class="pinned-story-icon" viewBox="0 0 24 24" aria-label="قصة مثبتة" role="img"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg><span>مثبتة</span>' : act ? '<svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>' + esc(leftTxt(s.expiresAt)) + '</span>' : 'أرشيف';
-    d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (s.videoUrl ? '<div class="vid-badge"><svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 10 6-10 6Z"/></svg></div>' : '') + (mine ? `<div class="st-badge">${badge}</div>` : '');
+    const badge = s.pinned ? '<span>مثبتة</span>' : act ? '<svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>' + esc(leftTxt(s.expiresAt)) + '</span>' : 'أرشيف';
+    d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (s.pinned ? pinMarkHTML() : '') + (s.videoUrl ? '<div class="vid-badge"><svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 10 6-10 6Z"/></svg></div>' : '') + (mine ? `<div class="st-badge">${badge}</div>` : '');
     d.onclick = () => {
       const play = list.slice().reverse();
       startViewer(s.userId, play, play.findIndex(x => x.id === s.id), mine);
@@ -6581,7 +6596,7 @@ function loadOtherStories(uid) {
     pins.forEach(s => {
       const d = document.createElement('div');
       d.className = 'post-grid-item';
-      d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (s.videoUrl ? '<div class="vid-badge">▻</div>' : '');
+      d.innerHTML = `<img src="${esc(s.imageUrl)}">` + pinMarkHTML() + (s.videoUrl ? '<div class="vid-badge"><svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 10 6-10 6Z"/></svg></div>' : '');
       d.onclick = () => { const play = pins.slice().reverse(); startViewer(uid, play, play.findIndex(x => x.id === s.id), false); };
       grid.appendChild(d);
     });
@@ -6607,6 +6622,7 @@ function startViewer(uid, list, i, mine) {
   // Clear the previous timer BEFORE replacing SV, otherwise its interval reference is lost.
   if (SV && SV.iv) clearInterval(SV.iv);
   const safeIndex = Math.max(0, Math.min(Number.isFinite(i) ? i : 0, list.length - 1));
+  mine = !!(currentUser && uid === currentUser.uid);
   SV = { uid, list, i: safeIndex, mine, paused: false, hold: false, t: 0, iv: null, react: null, views: [] };
   const viewer = $('storyViewer');
   viewer.classList.remove('hidden');
@@ -6669,7 +6685,7 @@ function showStory() {
     SV.dur = Math.min(30, s.duration || 30) * 1000;
     $('storyImg').classList.add('hidden'); vEl.classList.remove('hidden');
     vEl.onloadedmetadata = () => { if (isFinite(vEl.duration) && vEl.duration > 0) SV.dur = Math.min(30, vEl.duration) * 1000; };
-    vEl.src = s.videoUrl; vEl.currentTime = 0; vEl.muted = false;
+    vEl.poster = s.imageUrl || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; vEl.src = s.videoUrl; vEl.currentTime = 0; vEl.muted = false;
     const pl = vEl.play(); if (pl && pl.catch) pl.catch(() => { vEl.muted = true; vEl.play().catch(() => {}); });
   } else {
     vEl.pause(); vEl.removeAttribute('src'); vEl.classList.add('hidden');
@@ -6679,7 +6695,7 @@ function showStory() {
   cap.textContent = s.caption || '';
   cap.classList.toggle('hidden', !s.caption);
   $('svBars').innerHTML = SV.list.map(() => '<div class="sv-bar"><i></i></div>').join('');
-  $('svTime').innerHTML = esc(ago(s.createdAt)) + (SV.mine ? (s.pinned ? ' · <svg class="pinned-story-icon" viewBox="0 0 24 24" aria-label="قصة مثبتة" role="img"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/><path d="m12 7 1.1 2.2 2.4.3-1.8 1.7.4 2.4-2.1-1.2-2.1 1.2.4-2.4-1.8-1.7 2.4-.3Z"/></svg> مثبتة' : isActive(s) ? ' · تنتهي بعد ' + esc(leftTxt(s.expiresAt)) : ' · أرشيف') : '');
+  $('svTime').innerHTML = esc(ago(s.createdAt)) + (SV.mine ? (s.pinned ? ' · ' + pinIconSVG('pinned-story-icon','قصة مثبتة') + ' مثبتة' : isActive(s) ? ' · تنتهي بعد ' + esc(leftTxt(s.expiresAt)) : ' · أرشيف') : '');
   svFooter(s);
   markSeen(SV.uid, s.createdAt);
   if (!SV.mine && currentUser) {
@@ -6696,8 +6712,8 @@ function showStory() {
 }
 function svFooter(s) {
   const f = $('svFoot');
-  if (SV.mine) {
-    f.innerHTML = `<div class="sv-own"><button type="button" class="sv-action sv-action-views" onclick="openViewersList()" aria-label="المشاهدات والتفاعلات"><span class="sv-eye-wrap"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg></span><span id="svViews">${svStatsHTML(0, 0)}</span></button><button type="button" class="sv-action sv-action-edit" onclick="svEdit()" aria-label="تعديل القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"/><path d="M13 20h7"/></svg></button><button type="button" class="sv-action sv-action-pin" onclick="svPin()" aria-label="${s.pinned ? 'إلغاء التثبيت' : 'تثبيت'}"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1Z"/></svg></button><button type="button" class="sv-action sv-action-delete" onclick="svDelete()" aria-label="حذف القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-10 0 1 14h10l1-14M10 10v6m4-6v6"/></svg></button></div>`;
+  if (SV.mine && svIsOwner(s)) {
+    f.innerHTML = `<div class="sv-own"><button type="button" class="sv-action sv-action-views" onclick="openViewersList()" aria-label="المشاهدات والتفاعلات"><span class="sv-eye-wrap"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg></span><span id="svViews">${svStatsHTML(0, 0)}</span></button><button type="button" class="sv-action sv-action-edit" onclick="svEdit()" aria-label="تعديل القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.12 2.12 0 0 0-3-3l-11 11L4 20Z"/><path d="M13 20h7"/></svg></button><button type="button" class="sv-action sv-action-pin" onclick="svPin()" aria-label="${s.pinned ? 'إلغاء التثبيت' : 'تثبيت'}"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true">${PIN_SVG_PATH}</svg></button><button type="button" class="sv-action sv-action-delete" onclick="svDelete()" aria-label="حذف القصة"><svg class="story-ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-10 0 1 14h10l1-14M10 10v6m4-6v6"/></svg></button></div>`;
     db.collection('stories').doc(s.id).collection('views').get().then(q => {
       if (SV.list[SV.i] !== s) return;
       SV.views = q.docs.map(d => d.data());
@@ -6890,6 +6906,7 @@ function sendStoryReply() {
 
 /* ---------- إدارة قصتي: تثبيت / حذف / مشاهدون ---------- */
 function svEdit() {
+  if (!svIsOwner(SV.list[SV.i])) return;
   const s = SV.list[SV.i];
   if (!s || !currentUser || s.userId !== currentUser.uid) return;
   const modal = document.getElementById('storyManageModal');
@@ -6964,7 +6981,7 @@ async function saveStoryEdit() {
 }
 
 function svPin() {
-  const s = SV.list[SV.i]; if (!s) return;
+  const s = SV.list[SV.i]; if (!s || !svIsOwner(s)) return;
   db.collection('stories').doc(s.id).update({ pinned: !s.pinned }).then(() => {
     s.pinned = !s.pinned;
     showToast(s.pinned ? 'تم التثبيت بالملف الشخصي ⌖' : 'تم إلغاء التثبيت');
