@@ -1534,6 +1534,23 @@ i[data-ic]{display:inline-flex;font-style:normal}
 .story-pin-mark svg path:first-child{fill:none}
 .pinned-stories-heading-icon path{fill:none}
 
+
+/* رموز القصص بيضاء في الطور النهاري */
+.app-container[data-app-theme="light"] .post-grid-item .story-pin-mark,
+.app-container[data-app-theme="light"] .post-grid-item .story-pin-mark svg,
+.app-container[data-app-theme="light"] .post-grid-item .st-badge,
+.app-container[data-app-theme="light"] .post-grid-item .st-badge span,
+.app-container[data-app-theme="light"] .post-grid-item .st-badge svg,
+.app-container[data-app-theme="light"] .post-grid-item .vid-badge,
+.app-container[data-app-theme="light"] .post-grid-item .vid-badge svg{color:#fff!important}
+.app-container[data-app-theme="light"] .post-grid-item .story-pin-mark svg{fill:#fff!important;stroke:#fff!important}
+.app-container[data-app-theme="light"] .post-grid-item .story-pin-mark svg path:first-child{fill:none!important}
+.app-container[data-app-theme="light"] .post-grid-item .st-badge svg,
+.app-container[data-app-theme="light"] .post-grid-item .vid-badge svg{stroke:#fff!important}
+.app-container[data-app-theme="light"] .post-grid-item .vid-badge svg{fill:#fff!important}
+.app-container[data-app-theme="light"] #storyViewer .pinned-story-icon{color:#fff!important;stroke:#fff!important;fill:#fff!important}
+.app-container[data-app-theme="light"] #storyViewer .pinned-story-icon path:first-child{fill:none!important}
+
 /* SVG badge for pinned stories */
 .pinned-story-icon{width:15px;height:15px;display:inline-block;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .post-grid-item .st-badge{display:flex;align-items:center;gap:4px}
@@ -2449,8 +2466,17 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
           <div class="pf-row-body"><div id="otherJoinDisplay" class="pf-val"></div><div class="pf-lbl">تاريخ الانضمام</div></div>
         </div>
       </div>
-      <div id="otherPinnedWrap" class="hidden"><div class="posts-grid-header"><svg class="pinned-stories-heading-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg> القصص</div><div id="otherPinnedGrid" class="posts-grid"></div></div>
-      <div id="otherGiftsWrap" class="hidden"><div class="posts-grid-header"><svg class="gift-svg-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18v11H3zM2 6.5h20V10H2zM12 6.5V21M12 6.5H7.4a2.4 2.4 0 1 1 2.4-2.4c0 1.3 2.2 2.4 2.2 2.4Zm0 0h4.6a2.4 2.4 0 1 0-2.4-2.4C14.2 5.4 12 6.5 12 6.5Z"/></svg><span>الهدايا</span></div><div id="otherGiftsGrid" class="posts-grid gifts-grid"></div></div>
+      <div class="pf-tabs" id="otherPfTabs">
+        <button type="button" class="pf-tab active" data-tab="stories"><i data-ic="clock"></i><span>القصص</span></button>
+        <button type="button" class="pf-tab" data-tab="gifts"><svg class="gift-svg-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18v11H3zM2 6.5h20V10H2zM12 6.5V21M12 6.5H7.4a2.4 2.4 0 1 1 2.4-2.4c0 1.3 2.2 2.4 2.2 2.4Zm0 0h4.6a2.4 2.4 0 1 0-2.4-2.4C14.2 5.4 12 6.5 12 6.5Z"/></svg><span>الهدايا</span></button>
+      </div>
+      <div id="otherTabStories" class="pf-pane">
+        <div id="otherPinnedWrap" class="hidden"><div id="otherPinnedGrid" class="posts-grid"></div></div>
+        <div id="otherStoriesEmpty" class="hidden" style="padding:14px 16px;color:var(--text-muted);font-size:13px;text-align:center">لا توجد قصص مثبتة</div>
+      </div>
+      <div id="otherTabGifts" class="pf-pane" style="display:none">
+        <div id="otherGiftsWrap" class="hidden"><div id="otherGiftsGrid" class="posts-grid gifts-grid"></div></div>
+      </div>
     </div>
 
     <!-- شاشة الإعدادات العامة -->
@@ -4222,6 +4248,7 @@ function openUserProfileDirect(u) {
   }
 
   showView("otherUserProfileView");
+  try { otherPfShowTab('stories'); } catch (e) {}
   loadOtherStories(u.id);
   try {
     window.__otherProfileId = u.id;
@@ -6495,8 +6522,8 @@ function renderTiles(grid, list, mine) {
     const act = isActive(s);
     const d = document.createElement('div');
     d.className = 'post-grid-item' + (!act && !s.pinned ? ' st-old' : '');
-    const badge = s.pinned ? '<span>مثبتة</span>' : act ? '<svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>' + esc(leftTxt(s.expiresAt)) + '</span>' : 'أرشيف';
-    d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (s.pinned ? pinMarkHTML() : '') + (s.videoUrl ? '<div class="vid-badge"><svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 10 6-10 6Z"/></svg></div>' : '') + (mine ? `<div class="st-badge">${badge}</div>` : '');
+    const badge = s.pinned ? '' : act ? '<svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>' + esc(leftTxt(s.expiresAt)) + '</span>' : 'أرشيف';
+    d.innerHTML = `<img src="${esc(s.imageUrl)}">` + (s.pinned ? pinMarkHTML() : '') + (s.videoUrl ? '<div class="vid-badge"><svg class="pinned-story-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 10 6-10 6Z"/></svg></div>' : '') + (mine && badge ? `<div class="st-badge">${badge}</div>` : '');
     d.onclick = () => {
       const play = list.slice().reverse();
       startViewer(s.userId, play, play.findIndex(x => x.id === s.id), mine);
@@ -6591,7 +6618,7 @@ function loadOtherStories(uid) {
     $('otherStoryRing').classList.toggle('has-story', act.length > 0);
     $('otherStoryRing').classList.toggle('seen', act.length > 0 && isSeenUser(uid, Math.max(...act.map(s => s.createdAt))));
     const pins = list.filter(s => s.pinned);
-    $('otherPinnedWrap').classList.toggle('hidden', !pins.length);
+    $('otherPinnedWrap').classList.toggle('hidden', !pins.length); { const oe = $('otherStoriesEmpty'); if (oe) oe.classList.toggle('hidden', pins.length > 0); }
     const grid = $('otherPinnedGrid'); grid.innerHTML = '';
     pins.forEach(s => {
       const d = document.createElement('div');
@@ -6695,7 +6722,7 @@ function showStory() {
   cap.textContent = s.caption || '';
   cap.classList.toggle('hidden', !s.caption);
   $('svBars').innerHTML = SV.list.map(() => '<div class="sv-bar"><i></i></div>').join('');
-  $('svTime').innerHTML = esc(ago(s.createdAt)) + (SV.mine ? (s.pinned ? ' · ' + pinIconSVG('pinned-story-icon','قصة مثبتة') + ' مثبتة' : isActive(s) ? ' · تنتهي بعد ' + esc(leftTxt(s.expiresAt)) : ' · أرشيف') : '');
+  $('svTime').innerHTML = esc(ago(s.createdAt)) + (SV.mine ? (s.pinned ? ' · ' + pinIconSVG('pinned-story-icon','قصة مثبتة') : isActive(s) ? ' · تنتهي بعد ' + esc(leftTxt(s.expiresAt)) : ' · أرشيف') : '');
   svFooter(s);
   markSeen(SV.uid, s.createdAt);
   if (!SV.mine && currentUser) {
@@ -9137,6 +9164,19 @@ body:has(.app-container[data-app-theme="dark"]){background:#000000!important;bac
 #otherUserProfileView .pf-actions.pf-quick-other{grid-template-columns:repeat(auto-fit,minmax(90px,1fr))!important}
 #profileView .posts-grid{padding:2px!important;gap:2px!important}
 </style>
+
+<script id="babylon-other-profile-tabs">
+(function(){
+ function $(i){return document.getElementById(i)}
+ function show(name){
+  var a=$('otherTabStories'),b=$('otherTabGifts'); if(a)a.style.display=name==='gifts'?'none':''; if(b)b.style.display=name==='gifts'?'':'none';
+  var t=$('otherPfTabs'); if(t)t.querySelectorAll('.pf-tab').forEach(function(x){x.classList.toggle('active',x.dataset.tab===name)});
+ }
+ window.otherPfShowTab=show;
+ function bind(){var t=$('otherPfTabs');if(!t||t.__b)return;t.__b=1;t.addEventListener('click',function(e){var b=e.target.closest('.pf-tab');if(b)show(b.dataset.tab)});}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+})();
+</script>
 <script id="babylon-profile-v2-js">
 (function(){
  function $(i){return document.getElementById(i)}
