@@ -528,7 +528,7 @@ async function refreshGP(ov){
 async function sellGift(ov,g,old){
   const K=gk(g.k),me=meId();
   const fl=await floorFor(K);
-  const r=await clAsk({title:old?'تعديل السعر':'بيع الهدية',icon:'tag',body:'اكتب السعر بالنجوم لـ <b>'+esc(K.name)+' #'+g.number+'</b><br><small>عمولة السوق '+FEE_PCT+'% · تستلم '+(100-FEE_PCT)+'% من السعر'+(fl!=null?'<br>أرخص عرض حالياً لهذا النوع: ⭐ '+fmtN(fl):'')+'</small>',input:{value:old?String(old.price):'',placeholder:'السعر بالنجوم',max:7,numeric:true},buttons:[{text:old?'حفظ':'عرض للبيع'},{text:'إلغاء',cls:'cl-cancel'}]});
+  const r=await clAsk({title:old?'تعديل السعر':'بيع الهدية',icon:'tag',body:'اكتب السعر بالنجوم لـ <b>'+esc(K.name)+' #'+g.number+'</b><br><small>عمولة السوق '+FEE_PCT+'% · تستلم '+(100-FEE_PCT)+'% من السعر'+(fl!=null?'<br>أرخص عرض حالياً لهذا النوع: ⭐ '+fmtN(fl):'')+'</small>',input:{value:old?String(old.price):'',placeholder:'السعر بالنجوم',max:7,numeric:true,phSmall:true},buttons:[{text:old?'حفظ':'عرض للبيع'},{text:'إلغاء',cls:'cl-cancel'}]});
   if(!r||r.i!==0)return;
   const price=parseInt(String(r.value).replace(/[^\d]/g,''),10);
   if(!price||price<1||price>1000000)return showToast('اكتب سعراً بين 1 و 1,000,000');
