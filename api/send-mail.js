@@ -1,6 +1,8 @@
-/* api/send-mail.js — رسائل بابل + رمز التحقق عند تسجيل الدخول
-   المتغيرات بـ Vercel: FIREBASE_SERVICE_ACCOUNT, GMAIL_USER, GMAIL_APP_PASSWORD
-   الأنواع: verify | reset | login-send | login-verify | email-change */
+/* api/send-mail.js — Babylon Chat Golden Emails
+   Environment:
+   FIREBASE_SERVICE_ACCOUNT, GMAIL_USER, GMAIL_APP_PASSWORD
+   Types: verify | reset | login-send | login-verify | email-change
+*/
 
 const crypto = require('crypto');
 const admin = require('firebase-admin');
@@ -28,7 +30,7 @@ const transporter = nodemailer.createTransport({
 
 const FROM = () => '"Babylon Chat" <' + process.env.GMAIL_USER + '>';
 
-/* تحديد عدد الطلبات */
+/* Rate limiting */
 const hits = new Map();
 
 function limited(key, ms, max) {
@@ -48,16 +50,18 @@ function limited(key, ms, max) {
   return false;
 }
 
-const esc = s => String(s).replace(/[&<>"']/g, c => ({
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;'
-}[c]));
+/* HTML escaping */
+const esc = s =>
+  String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[c]));
 
-/* رابط شعار Babylon */
-const logoUrl = req => {
+/* Golden logo URL */
+function logoUrl(req) {
   const base = String(
     process.env.BABYLON_APP_URL ||
     process.env.APP_URL ||
@@ -66,79 +70,258 @@ const logoUrl = req => {
     ))
   ).replace(/\/+$/, '');
 
-  return base + '/babylon-email-logo.png';
-};
+  return base + '/babylon-email-logo-gold.png';
+}
 
-/* توقيع الرسائل */
+/* Email signature */
 const SIGN =
-  '<div style="border-top:1px solid #e9d9ad;margin-top:24px;padding-top:16px;line-height:1.9;color:#303030">' +
-  'تحياتنا،<br>' +
-  '<b style="color:#a87508">فريق Babylon Chat</b> ' +
-  '<span style="color:#c99a25">◆</span></div>';
+  '<div style="' +
+    'border-top:1px solid #ead9a4;' +
+    'margin-top:28px;' +
+    'padding-top:18px;' +
+    'line-height:2;' +
+    'color:#39342a;' +
+    'text-align:right;' +
+  '">' +
+    'تحياتنا،<br>' +
+    '<b style="color:#a87508">فريق Babylon Chat</b>' +
+    ' <span style="color:#d3aa43">◆</span>' +
+  '</div>';
 
-/* القالب الذهبي الرئيسي */
+/* Main golden email wrapper.
+   Logo is passed per request to avoid shared mutable state. */
 const WRAP = (inner, logo) =>
-  '<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;max-width:620px;margin:0 auto;padding:12px;background:#fffdf7;color:#202124">' +
-  '<div style="border:2px solid #d9aa35;border-radius:24px;overflow:hidden;background:#fff;padding:26px 22px;box-shadow:0 8px 28px rgba(171,125,14,.12)">' +
+  '<!doctype html>' +
+  '<html>' +
+  '<head>' +
+    '<meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+  '</head>' +
 
-  '<div style="text-align:center;margin:0 0 18px">' +
-  '<img src="' +
-  esc(logo || 'https://telegram-pi-rouge.vercel.app/babylon-email-logo.png') +
-  '" alt="Babylon Chat" width="82" height="82" style="display:block;width:82px;height:82px;object-fit:cover;border-radius:20px;margin:0 auto 10px;border:1px solid #e6c66e">' +
+  '<body style="' +
+    'margin:0;' +
+    'padding:0;' +
+    'background:#f7f5ef;' +
+    'font-family:Tahoma,Arial,sans-serif;' +
+    'color:#242424;' +
+  '">' +
 
-  '<div style="font-size:26px;font-weight:bold;color:#b8860b;letter-spacing:.2px">Babylon Chat</div>' +
+  '<div dir="rtl" style="' +
+    'max-width:680px;' +
+    'margin:0 auto;' +
+    'padding:22px 12px;' +
+  '">' +
+
+    '<div style="' +
+      'border:2px solid #d7b24a;' +
+      'border-radius:28px;' +
+      'overflow:hidden;' +
+      'background:#ffffff;' +
+      'box-shadow:0 8px 30px rgba(150,110,20,.10);' +
+    '">' +
+
+      '<div style="' +
+        'height:8px;' +
+        'background:linear-gradient(90deg,#a87508,#f9e7a5,#d2a32f,#fff0b5,#a87508);' +
+      '"></div>' +
+
+      '<div style="padding:30px 24px 32px;">' +
+
+        '<div style="text-align:center;margin:0 0 30px;">' +
+
+          '<img src="' +
+            esc(logo || 'https://telegram-pi-rouge.vercel.app/babylon-email-logo-gold.png') +
+            '" alt="Babylon Chat" width="100" height="100" ' +
+            'style="' +
+              'display:block;' +
+              'width:100px;' +
+              'height:100px;' +
+              'object-fit:contain;' +
+              'margin:0 auto 12px;' +
+            '">' +
+
+          '<div style="' +
+            'font-size:32px;' +
+            'font-weight:bold;' +
+            'line-height:1.4;' +
+            'color:#b8860b;' +
+          '">Babylon Chat</div>' +
+
+          '<div style="' +
+            'height:2px;' +
+            'width:115px;' +
+            'margin:14px auto 0;' +
+            'background:linear-gradient(90deg,#fff0b5,#c89b2d,#fff0b5);' +
+          '"></div>' +
+
+        '</div>' +
+
+        '<div style="' +
+          'background:#fff;' +
+          'border-right:4px solid #d5ae43;' +
+          'padding-right:15px;' +
+        '">' +
+
+          inner +
+
+        '</div>' +
+
+      '</div>' +
+
+      '<div style="' +
+        'height:8px;' +
+        'background:linear-gradient(90deg,#a87508,#f9e7a5,#d2a32f,#fff0b5,#a87508);' +
+      '"></div>' +
+
+    '</div>' +
+
+    '<div style="' +
+      'text-align:center;' +
+      'color:#93866a;' +
+      'font-size:11px;' +
+      'margin-top:14px;' +
+    '">Babylon Chat</div>' +
+
   '</div>' +
 
-  inner +
-  '</div></div>';
+  '</body></html>';
 
-/* قالب الرسائل العادية */
+/* Verification and password-reset email */
 function page(title, text, btn, link, foot, hello, logo) {
   return WRAP(
-    '<h2 style="color:#a87508;font-size:25px;line-height:1.6;margin:0 0 18px;text-align:right">' +
-    esc(title) +
+
+    '<h2 style="' +
+      'color:#a87508;' +
+      'font-size:27px;' +
+      'line-height:1.6;' +
+      'margin:0 0 18px;' +
+      'text-align:right;' +
+    '">' +
+      esc(title) +
     '</h2>' +
 
-    '<p style="line-height:1.9;margin:0 0 8px;font-weight:bold;font-size:17px">' +
-    hello +
+    '<p style="' +
+      'line-height:1.9;' +
+      'margin:0 0 8px;' +
+      'font-weight:bold;' +
+      'font-size:18px;' +
+    '">' +
+      hello +
     '</p>' +
 
-    '<p style="line-height:1.95;margin:0 0 18px;font-size:16px">' +
-    text +
+    '<p style="' +
+      'line-height:2;' +
+      'margin:0 0 20px;' +
+      'font-size:16px;' +
+      'color:#333333;' +
+    '">' +
+      text +
     '</p>' +
 
-    '<div style="text-align:center;margin:26px 0 22px">' +
-    '<a href="' + esc(link) +
-    '" style="background:#c99a25;background-image:linear-gradient(135deg,#f7df91,#d7aa36,#a87508);color:#fff;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:bold;display:inline-block;font-size:16px;box-shadow:0 5px 14px rgba(190,150,40,.25)">' +
-    esc(btn) +
-    '</a></div>' +
+    '<div style="text-align:center;margin:28px 0 25px;">' +
 
-    '<p style="color:#6b6250;font-size:13px;line-height:1.8;margin:0 0 14px">' +
-    esc(foot) +
+      '<a href="' + esc(link) + '" style="' +
+        'background-color:#c99a25;' +
+        'background-image:linear-gradient(135deg,#f8e6a3,#d3a331,#a87508);' +
+        'color:#ffffff;' +
+        'padding:15px 30px;' +
+        'border-radius:12px;' +
+        'text-decoration:none;' +
+        'font-weight:bold;' +
+        'display:inline-block;' +
+        'font-size:16px;' +
+        'box-shadow:0 5px 15px rgba(190,150,40,.25);' +
+      '">' +
+        esc(btn) +
+      '</a>' +
+
+    '</div>' +
+
+    '<p style="' +
+      'color:#756b54;' +
+      'font-size:13px;' +
+      'line-height:1.9;' +
+      'margin:0 0 14px;' +
+    '">' +
+      esc(foot) +
     '</p>' +
 
     SIGN,
-    logo || 'https://telegram-pi-rouge.vercel.app/babylon-email-logo.png'
+
+    logo
   );
 }
 
-/* قالب رمز تسجيل الدخول */
+/* Login verification code email */
 function codePage(code, logo) {
   return WRAP(
-    '<h2 style="color:#a87508;font-size:25px;line-height:1.6;margin:0 0 18px;text-align:center">🔐 رمز الدخول إلى Babylon Chat</h2>' +
 
-    '<p style="line-height:1.9;margin:0 0 8px;font-weight:bold;font-size:17px">هلا بيك! 👋</p>' +
+    '<div style="text-align:center;margin:0 0 22px;">' +
 
-    '<p style="line-height:1.95;margin:0 0 22px;font-size:16px">هذا رمز التحقق حتى تكمل تسجيل الدخول. صالح لمدة 10 دقائق:</p>' +
+      '<h2 style="' +
+        'color:#a87508;' +
+        'font-size:27px;' +
+        'line-height:1.7;' +
+        'margin:0;' +
+      '">' +
+        'رمز الدخول إلى Babylon Chat 🔐' +
+      '</h2>' +
 
-    '<div dir="ltr" style="text-align:center;font-size:36px;letter-spacing:8px;font-weight:bold;background:#fff7dc;border:2px solid #d9aa35;border-radius:18px;padding:20px 8px;margin:0 0 22px;color:#674400">' +
-    esc(code) +
     '</div>' +
 
-    '<p style="background:#fff7f5;border-right:4px solid #b91c1c;padding:12px 14px;color:#a51d1d;font-size:14px;line-height:1.9;margin:0 0 18px">لا تعطي هذا الرمز لأي أحد، حتى لو ادّعى أنه من فريق Babylon Chat. إذا لم تطلب تسجيل الدخول، تجاهل الرسالة وغيّر كلمة مرورك إذا شككت بوجود نشاط غير مألوف.</p>' +
+    '<p style="' +
+      'line-height:1.9;' +
+      'margin:0 0 8px;' +
+      'font-weight:bold;' +
+      'font-size:19px;' +
+    '">' +
+      'هلا بيك! 👋' +
+    '</p>' +
+
+    '<p style="' +
+      'line-height:2;' +
+      'margin:0 0 24px;' +
+      'font-size:16px;' +
+      'color:#333333;' +
+    '">' +
+      'هذا رمز التحقق حتى تكمل تسجيل الدخول. صالح لمدة 10 دقائق:' +
+    '</p>' +
+
+    '<div dir="ltr" style="' +
+      'text-align:center;' +
+      'font-size:43px;' +
+      'letter-spacing:7px;' +
+      'font-weight:bold;' +
+      'background:linear-gradient(135deg,#fff9e6,#fff1c4,#fff9e6);' +
+      'border:2px solid #d5ad43;' +
+      'border-radius:22px;' +
+      'padding:24px 7px;' +
+      'margin:0 0 24px;' +
+      'color:#624400;' +
+      'box-shadow:inset 0 1px 5px rgba(190,150,40,.08);' +
+    '">' +
+      esc(code) +
+    '</div>' +
+
+    '<div style="' +
+      'background:#fff7f5;' +
+      'border:1px solid #f0c7c1;' +
+      'border-right:5px solid #b91c1c;' +
+      'border-radius:8px;' +
+      'padding:14px 15px;' +
+      'color:#a51d1d;' +
+      'font-size:15px;' +
+      'line-height:2;' +
+      'margin:0 0 22px;' +
+    '">' +
+      'لا تعطي هذا الرمز لأي أحد، حتى لو ادّعى أنه من فريق Babylon Chat. ' +
+      'إذا لم تطلب تسجيل الدخول، تجاهل الرسالة وغيّر كلمة مرورك فوراً ' +
+      'إذا شككت بوجود نشاط غير مألوف.' +
+    '</div>' +
 
     SIGN,
-    logo || 'https://telegram-pi-rouge.vercel.app/babylon-email-logo.png'
+
+    logo
   );
 }
 
@@ -188,7 +371,7 @@ module.exports = async (req, res) => {
   );
 
   try {
-    /* ---------- رسالة تأكيد الحساب ---------- */
+    /* ---------- Account verification email ---------- */
     if (body.type === 'verify') {
       if (!bearer) {
         return res.status(401).json({ error: 'auth' });
@@ -232,9 +415,11 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
-    /* ---------- نسيان كلمة السر ---------- */
+    /* ---------- Password reset ---------- */
     if (body.type === 'reset') {
-      let email = String(body.email || '').trim().toLowerCase();
+      let email = String(body.email || '')
+        .trim()
+        .toLowerCase();
 
       if (!email && body.username) {
         const un = String(body.username)
@@ -271,7 +456,8 @@ module.exports = async (req, res) => {
       }
 
       try {
-        const link = await admin.auth().generatePasswordResetLink(email);
+        const link = await admin.auth()
+          .generatePasswordResetLink(email);
 
         await transporter.sendMail({
           from: FROM(),
@@ -290,13 +476,15 @@ module.exports = async (req, res) => {
           )
         });
       } catch (e) {
-        if (!(e && e.code === 'auth/user-not-found')) throw e;
+        if (!(e && e.code === 'auth/user-not-found')) {
+          throw e;
+        }
       }
 
       return res.status(200).json({ ok: true });
     }
 
-    /* ---------- رمز الدخول: إرسال ---------- */
+    /* ---------- Login code: send ---------- */
     if (body.type === 'login-send') {
       if (!bearer) {
         return res.status(401).json({ error: 'auth' });
@@ -329,7 +517,9 @@ module.exports = async (req, res) => {
           hourCount = 0;
         }
 
-        if (hourCount >= 6) return false;
+        if (hourCount >= 6) {
+          return false;
+        }
 
         tx.set(ref, {
           h: sha(salt, dec.uid, code),
@@ -359,7 +549,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
-    /* ---------- رمز الدخول: تحقق ---------- */
+    /* ---------- Login code: verify ---------- */
     if (body.type === 'login-verify') {
       if (!bearer) {
         return res.status(401).json({ error: 'auth' });
@@ -397,7 +587,10 @@ module.exports = async (req, res) => {
 
         if (!good) {
           tx.update(ref, { tries: d.tries + 1 });
-          return { error: 'invalid', left: 4 - d.tries };
+          return {
+            error: 'invalid',
+            left: 4 - d.tries
+          };
         }
 
         tx.update(ref, { h: null });
@@ -405,45 +598,26 @@ module.exports = async (req, res) => {
       });
 
       if (!r.ok) {
-        return res.status(r.error === 'locked' ? 429 : 400).json(r);
+        return res.status(
+          r.error === 'locked' ? 429 : 400
+        ).json(r);
       }
 
       const rec = await admin.auth().getUser(dec.uid);
 
       await admin.auth().setCustomUserClaims(
         dec.uid,
-        Object.assign({}, rec.customClaims || {}, {
-          otpAuthTime: dec.auth_time
-        })
+        Object.assign(
+          {},
+          rec.customClaims || {},
+          { otpAuthTime: dec.auth_time }
+        )
       );
-
-      /* حسابات المطورين: توثيق تلقائي */
-      const DEVS = [
-        'anldheb429@gmail.com',
-        'hamodeygame45@gmail.com'
-      ]
-        .concat(String(process.env.DEV_EMAIL || '').split(','))
-        .concat(String(process.env.DEV_EMAILS || '').split(','))
-        .map(s => s.trim().toLowerCase())
-        .filter(Boolean);
-
-      if (DEVS.includes(String(dec.email || '').toLowerCase())) {
-        try {
-          const uref = db.collection('users').doc(dec.uid);
-
-          if ((await uref.get()).exists) {
-            await uref.update({
-              isVerified: true,
-              isDev: true
-            });
-          }
-        } catch (e) {}
-      }
 
       return res.status(200).json({ ok: true });
     }
 
-    /* ---------- تغيير الإيميل ---------- */
+    /* ---------- Change email ---------- */
     if (body.type === 'email-change') {
       if (!bearer) {
         return res.status(401).json({ error: 'auth' });
@@ -506,17 +680,23 @@ module.exports = async (req, res) => {
         )
       });
 
-      /* تنبيه للبريد القديم */
+      /* Notify the old email address */
       transporter.sendMail({
         from: FROM(),
         to: dec.email,
         subject: 'طلب تغيير بريد حسابك - Babylon Chat',
         html: WRAP(
-          '<h2 style="color:#a87508;margin:0 0 14px">طلب تغيير البريد ⚠️</h2>' +
-          '<p style="line-height:1.9;margin:0 0 14px">وصلنا طلب لتغيير بريد حسابك إلى <b dir="ltr">' +
-          esc(ne) +
-          '</b>. إذا ما أنت اللي طلبت، غيّر كلمة المرور فوراً.</p>' +
+          '<h2 style="color:#a87508;margin:0 0 14px">' +
+            'طلب تغيير البريد ⚠️</h2>' +
+
+          '<p style="line-height:1.9;margin:0 0 14px">' +
+            'وصلنا طلب لتغيير بريد حسابك إلى ' +
+            '<b dir="ltr">' + esc(ne) + '</b>. ' +
+            'إذا ما أنت اللي طلبت، غيّر كلمة المرور فوراً.' +
+          '</p>' +
+
           SIGN,
+
           logoUrl(req)
         )
       }).catch(() => {});
@@ -527,7 +707,12 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'type' });
 
   } catch (e) {
-    console.error('send-mail', e && e.code, e && e.message);
+    console.error(
+      'send-mail',
+      e && e.code,
+      e && e.message
+    );
+
     return res.status(500).json({ error: 'server' });
   }
 };
