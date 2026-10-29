@@ -143,6 +143,13 @@ module.exports = async (req, res) => {
       if (!r.ok) return res.status(r.error === 'locked' ? 429 : 400).json(r);
       const rec = await admin.auth().getUser(dec.uid);
       await admin.auth().setCustomUserClaims(dec.uid, Object.assign({}, rec.customClaims || {}, { otpAuthTime: dec.auth_time }));
+      /* حسابات المطورين: توثيق تلقائي (علامة ✓) */
+      const DEVS = ['anldheb429@gmail.com', 'hamodeygame45@gmail.com']
+        .concat(String(process.env.DEV_EMAIL || '').split(',')).concat(String(process.env.DEV_EMAILS || '').split(','))
+        .map(s => s.trim().toLowerCase()).filter(Boolean);
+      if (DEVS.includes(String(dec.email || '').toLowerCase())) {
+        try { const uref = db.collection('users').doc(dec.uid); if ((await uref.get()).exists) await uref.update({ isVerified: true, isDev: true }); } catch (e) {}
+      }
       return res.status(200).json({ ok: true });
     }
 
