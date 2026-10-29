@@ -66,6 +66,24 @@ jobs:
             git push
           fi
 
+      - name: Generate assetlinks.json (so links open the app directly)
+        env:
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+        run: |
+          FP=$(keytool -list -v -keystore "$RUNNER_TEMP/release.jks" -storepass "$KEYSTORE_PASS" 2>/dev/null | grep -m1 "SHA256:" | sed 's/.*SHA256:[[:space:]]*//' | tr -d '[:space:]')
+          if [ -z "$FP" ]; then echo "::warning::ما قدرت أقرأ بصمة التوقيع"; exit 0; fi
+          echo "Signing SHA-256: $FP"
+          mkdir -p .well-known
+          python3 - "$FP" <<'PY'
+          import json, sys
+          data = [{"relation": ["delegate_permission/common.handle_all_urls"],
+                   "target": {"namespace": "android_app", "package_name": "com.babylon.chat",
+                              "sha256_cert_fingerprints": [sys.argv[1]]}}]
+          with open(".well-known/assetlinks.json", "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2)
+              f.write("\n")
+          PY
+
       - name: Build release APK
         working-directory: app/android
         env:
@@ -114,6 +132,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add version.json
+          git add .well-known/assetlinks.json || true
           if git diff --cached --quiet; then echo "version.json unchanged"; exit 0; fi
           git commit -m "Release v1.0.${BUILD}: version.json"
           for i in 1 2 3; do
