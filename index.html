@@ -154,9 +154,9 @@
     clearTimeout(timer); shownDone = true;
     page.className = '';
     page.innerHTML = orb(ICON.lock) + '<div class="u-chip">Babylon Chat</div>' +
-      '<h1>الموقع يعمل داخل التطبيق فقط</h1>' +
-      '<p class="u-msg">لا يمكن استخدام بابيلون شات من المتصفح.\nحمّل التطبيق على هاتفك وافتحه من هناك.</p>' +
-      '<button id="bbGo" class="u-go" type="button">تحميل التطبيق</button>' +
+      '<h1>يرجى تحميل التطبيق </h1>' +
+      '<p class="u-msg"></p>' +
+      '<button id="bbGo" class="u-go" type="button">تحميل الان</button>' +
       (canOpen ? '<button id="bbRetry" class="u-later" type="button">التطبيق مثبّت عندي؟ جرّب فتحه</button>' : '') + '</div>';
     page.querySelector('#bbGo').onclick = function () { showDownload(true); };
     var r = page.querySelector('#bbRetry');
@@ -4011,6 +4011,7 @@ function openProfile() {
   if (currentUserData) {
     updateProfileUI(currentUserData);
     checkUserStories();
+    try { var _mg = document.getElementById('myGiftsGrid'); if (_mg) _mg.innerHTML = ''; } catch (e) {}
     try { loadGiftsGrid(currentUser.uid, 'myGiftsGrid', 'myGiftsWrap'); } catch (e) {}
   }
 }
@@ -4555,6 +4556,7 @@ function openUserProfileDirect(u) {
     document.getElementById('otherStarsBtn').classList.toggle('hidden', !(u.id && u.id !== currentUser.uid));
     document.getElementById('otherGiftBtn').classList.toggle('hidden', !(u.id && u.id !== currentUser.uid));
     document.getElementById('otherGiftsWrap').classList.add('hidden');
+    try { var _og = document.getElementById('otherGiftsGrid'); if (_og) _og.innerHTML = ''; } catch (e) {}
     if (u.id) loadGiftsGrid(u.id, 'otherGiftsGrid', 'otherGiftsWrap');
   } catch (e) {}
 }
@@ -8695,6 +8697,33 @@ document.addEventListener('click',function(e){const menu=document.getElementById
   color:#fff !important; fill:#fff !important; stroke:#fff !important;
 }
 </style>
+<style id="babylon-hide-empty-gifts">
+.pf-tab.no-gifts-hidden{display:none!important}
+</style>
+<script id="babylon-hide-empty-gifts-js">
+/* إخفاء تبويب الهدايا إذا لا توجد أي هدية في الحساب (بروفايلي وبروفايل غيري) */
+(function(){
+ function $(i){return document.getElementById(i)}
+ function setup(gridId, tabsId, paneIds, showFn){
+  var grid=$(gridId), tabs=$(tabsId);
+  if(!grid||!tabs) return;
+  var btn=tabs.querySelector('.pf-tab[data-tab="gifts"]');
+  if(!btn) return;
+  function sync(){
+   var has=grid.children.length>0;
+   btn.classList.toggle('no-gifts-hidden',!has);
+   if(!has && btn.classList.contains('active')){ try{ window[showFn]('stories'); }catch(e){} }
+  }
+  sync();
+  if(window.MutationObserver) new MutationObserver(sync).observe(grid,{childList:true});
+ }
+ function init(){
+  setup('myGiftsGrid','pfTabs',null,'pfShowTab');
+  setup('otherGiftsGrid','otherPfTabs',null,'otherPfShowTab');
+ }
+ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
 <!-- الهدايا: كل شي بمجلد gifts/ -->
 <script src="gifts/models.js?v=1"></script>
 <script src="gifts/cat-models.js?v=1"></script>
