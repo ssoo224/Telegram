@@ -48,6 +48,9 @@
       ]
     }
   ],
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
   "redirects": [
     { "source": "/nft/:slug", "destination": "/?nft=:slug", "permanent": false }
   ],
