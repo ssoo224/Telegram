@@ -3,10 +3,10 @@
   "appName": "Babylon Chat",
   "webDir": "www",
   "server": {
-    "url": "https://telegram-pi-rouge.vercel.app",
+    "url": "https://babyllon.vercel.app",
     "cleartext": false,
     "allowNavigation": [
-      "telegram-pi-rouge.vercel.app",
+      "babyllon.vercel.app",
       "*.firebaseapp.com",
       "*.googleapis.com"
     ]
