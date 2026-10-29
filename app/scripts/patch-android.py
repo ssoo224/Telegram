@@ -54,6 +54,12 @@ if "babylon-applink" not in m:
             '            <category android:name="android.intent.category.DEFAULT" />\n'
             '            <category android:name="android.intent.category.BROWSABLE" />\n'
             '            <data android:scheme="https" android:host="%s" />\n'
+            '        </intent-filter>\n'
+            '        <intent-filter>  <!-- babylon-applink-scheme: لباقي المتصفحات -->\n'
+            '            <action android:name="android.intent.action.VIEW" />\n'
+            '            <category android:name="android.intent.category.DEFAULT" />\n'
+            '            <category android:name="android.intent.category.BROWSABLE" />\n'
+            '            <data android:scheme="babylonchat" android:host="open" />\n'
             '        </intent-filter>\n') % _host
     m, _n = re.subn(r"</activity>", _flt + "        </activity>", m, count=1)
     if _n != 1: die("ما لقيت نهاية activity لإضافة intent-filter", mf)
@@ -224,7 +230,7 @@ public class MainActivity extends BridgeActivity {
             Uri d = intent.getData();
             if (d == null) return;
             String s = d.toString();
-            if (!s.startsWith("https://")) return;
+            if (!s.startsWith("https://") && !s.startsWith("babylonchat://")) return;
             pendingLink = s;
             dispatchLink();
         } catch (Throwable ignored) { }
