@@ -3,7 +3,7 @@
    - مستودع خاص: ضع GH_TOKEN (صلاحية Contents: read لهذا المستودع فقط) بمتغيرات Vercel. */
 const { Readable } = require('stream');
 
-const REPO = process.env.GH_REPO || 'ssoo224/Telegram';
+const REPO = process.env.GH_REPO || 'ssoo224/Babylon';
 const ASSET = 'babylon-chat.apk';
 const TOKEN = process.env.GH_TOKEN || '';
 const UA = 'babylon-chat-download';
