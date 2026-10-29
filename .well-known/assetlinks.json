@@ -5,9 +5,9 @@
     ],
     "target": {
       "namespace": "android_app",
-      "package_name": "app.vercel.telegram_pi_rouge.twa",
+      "package_name": "com.babylon.chat",
       "sha256_cert_fingerprints": [
-        "10:C3:72:E1:A0:7F:C2:9E:71:6E:1A:00:80:08:20:BA:7C:F2:C9:E7:16:E1:A0:FE:84:C3:72:E1:A0:7F:C2:9E"
+        "48:D1:63:9D:07:75:D8:40:D0:B7:51:B4:1A:0C:FB:4F:C9:06:62:D3:3C:BF:34:50:AD:F6:29:F7:55:7F:6F:4D"
       ]
     }
   }
