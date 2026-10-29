@@ -3,6 +3,306 @@
 <head>
 <meta charset="UTF-8">
 <meta name="referrer" content="no-referrer">
+<noscript><style>body{display:none!important}html{background:#07090f}</style></noscript>
+<script id="babylon-app-only-guard">
+/* حارس «التطبيق فقط»: الموقع لا يعمل إطلاقاً خارج تطبيق الأندرويد (متصفح، PWA مثبّت، تبويب عادي).
+   - داخل التطبيق: جسر Capacitor أو BabylonAndroidNative موجود → لا يتغيّر شيء.
+   - خارجه: نوقف تحميل الصفحة فوراً (window.stop) فلا يُنفَّذ أي سكربت آخر ولا يتصل بـ Firebase،
+     ونعرض شاشة «حمّل التطبيق» بنفس تصميم نافذة التحديث الداخلية (update-gate.js).
+   - WebView بدون جسر بعد (لحظة الإقلاع): نمهله 4 ثوانٍ ثم نحجب. */
+(function () {
+  'use strict';
+  var APP_PKG = window.BB_APP_PACKAGE || 'com.babylon.chat';
+  var DL = '/api/apk';
+  var UN_RE = /^[A-Za-z0-9_.]{3,32}$/;
+  var RING_C = 2 * Math.PI * 62;
+  var ua = navigator.userAgent || '';
+  var isAndroid = /Android/i.test(ua);
+  var isWv = isAndroid && /;\s*wv\)/.test(ua);
+
+  function hasBridge() {
+    try {
+      if (window.BabylonAndroidNative || window.BabylonAndroid) return true;
+      var C = window.Capacitor;
+      return !!(C && typeof C.isNativePlatform === 'function' && C.isNativePlatform());
+    } catch (e) { return false; }
+  }
+
+  var ICON = {
+    up: '<svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>',
+    ok: '<svg viewBox="0 0 24 24" width="50" height="50" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    warn: '<svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5"/><circle cx="12" cy="16.5" r=".6" fill="currentColor"/><path d="M10.3 3.9L2.4 17.6a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9.5" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+    chat: '<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/></svg>',
+    spark: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg>'
+  };
+
+  /* نفس تنسيق update-gate.js حرفياً + حركة دوران للحالة «جارٍ فتح التطبيق» */
+  var CSS =
+    'html,body{margin:0;height:100%;background:#07090f}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Arabic",Tahoma,sans-serif;-webkit-tap-highlight-color:transparent}' +
+    '#updPage{position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+    'padding:calc(env(safe-area-inset-top,0px) + 20px) 22px calc(env(safe-area-inset-bottom,0px) + 22px);box-sizing:border-box;' +
+    'font-family:inherit;text-align:center;color:#f4efe0;overflow:hidden;overflow-y:auto;' +
+    'background:radial-gradient(120% 80% at 50% -10%,#2b2110 0%,#120e08 46%,#07090f 100%)}' +
+    '#updPage:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.55;' +
+    'background-image:radial-gradient(1.2px 1.2px at 12% 18%,#e8c85d,transparent 60%),radial-gradient(1px 1px at 78% 12%,#fff,transparent 60%),' +
+    'radial-gradient(1.4px 1.4px at 88% 42%,#e8c85d,transparent 60%),radial-gradient(1px 1px at 22% 62%,#fff,transparent 60%),' +
+    'radial-gradient(1.2px 1.2px at 66% 78%,#e8c85d,transparent 60%),radial-gradient(1px 1px at 9% 88%,#fff,transparent 60%),' +
+    'radial-gradient(1px 1px at 50% 30%,#fff,transparent 60%);animation:updTw 5s ease-in-out infinite alternate}' +
+    '#updPage .u-glow{position:absolute;top:18%;left:50%;width:340px;height:340px;margin-left:-170px;border-radius:50%;pointer-events:none;' +
+    'background:radial-gradient(circle,rgba(232,200,93,.28),rgba(232,200,93,0) 68%);filter:blur(6px);animation:updBreath 4.2s ease-in-out infinite}' +
+    '#updPage .u-wrap{position:relative;z-index:1;width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center}' +
+    '#updPage .u-orb{position:relative;width:150px;height:150px;margin-bottom:22px;display:flex;align-items:center;justify-content:center}' +
+    '#updPage .u-orb:before,#updPage .u-orb:after{content:"";position:absolute;inset:6px;border-radius:50%;border:1.5px solid rgba(232,200,93,.55);animation:updRing 2.8s ease-out infinite}' +
+    '#updPage .u-orb:after{animation-delay:1.4s}' +
+    '#updPage .u-orb svg.u-ring{position:absolute;inset:0;width:150px;height:150px;transform:rotate(-90deg)}' +
+    '#updPage .u-track{fill:none;stroke:rgba(255,255,255,.09);stroke-width:5}' +
+    '#updPage .u-fill{fill:none;stroke:url(#updGrad);stroke-width:5;stroke-linecap:round;stroke-dasharray:' + RING_C.toFixed(2) + ';stroke-dashoffset:' + RING_C.toFixed(2) + ';transition:stroke-dashoffset .25s ease;filter:drop-shadow(0 0 6px rgba(232,200,93,.7))}' +
+    '#updPage.ind .u-fill{stroke-dashoffset:' + (RING_C * 0.72).toFixed(2) + ';transform-origin:75px 75px;animation:updSpin 1.1s linear infinite}' +
+    '#updPage .u-core{position:relative;width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;' +
+    'background:linear-gradient(145deg,#e6bf4a,#c29428 55%,#96700f);box-shadow:0 10px 34px rgba(203,168,67,.45),inset 0 2px 0 rgba(255,255,255,.35);font-weight:900;font-size:26px;text-shadow:0 1px 3px rgba(0,0,0,.25)}' +
+    '#updPage.err .u-core{background:linear-gradient(145deg,#ff9a8f,#e0443e 60%,#a42a26);color:#fff;box-shadow:0 10px 34px rgba(224,68,62,.4),inset 0 2px 0 rgba(255,255,255,.35)}' +
+    '#updPage .u-chip{display:inline-flex;align-items:center;gap:7px;direction:ltr;padding:5px 13px;border-radius:999px;font-size:12.5px;font-weight:800;letter-spacing:.4px;' +
+    'color:#e8c85d;background:rgba(232,200,93,.10);border:1px solid rgba(232,200,93,.35);margin-bottom:14px}' +
+    '#updPage h1{margin:0 0 10px;font-size:27px;font-weight:900;line-height:1.25;background:linear-gradient(180deg,#fff3c4,#e8c85d 60%,#cba843);-webkit-background-clip:text;background-clip:text;color:transparent}' +
+    '#updPage .u-msg{margin:0 0 20px;font-size:14.5px;line-height:1.95;color:#cdc6b0;max-width:320px;white-space:pre-line}' +
+    '#updPage .u-card{width:100%;box-sizing:border-box;margin:0 0 20px;padding:13px 15px;border-radius:18px;text-align:right;' +
+    'background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);' +
+    '-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}' +
+    '#updPage .u-card b{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#e8c85d;margin-bottom:8px}' +
+    '#updPage .u-card div{font-size:13.5px;line-height:1.9;color:#e3dcc6;white-space:pre-line}' +
+    '#updPage .u-go{position:relative;overflow:hidden;width:100%;border:0;border-radius:18px;min-height:58px;font-size:17px;font-weight:900;font-family:inherit;cursor:pointer;' +
+    'color:#2a1d06;background:linear-gradient(135deg,#f6dd83,#cba843 60%,#b38a22);box-shadow:0 12px 30px rgba(203,168,67,.38),inset 0 1px 0 rgba(255,255,255,.5);transition:transform .12s,opacity .2s}' +
+    '#updPage .u-go:active{transform:scale(.97)}' +
+    '#updPage #bbGo{color:#fff;text-shadow:0 1px 3px rgba(80,55,5,.55)}' +
+    '#updPage .u-go[disabled]{opacity:.7}' +
+    '#updPage .u-go:after{content:"";position:absolute;top:0;bottom:0;width:60px;left:-80px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-18deg);animation:updShine 3.2s ease-in-out infinite}' +
+    '#updPage .u-go[disabled]:after{display:none}' +
+    '#updPage .u-later{width:100%;border:0;background:none;color:#9b9484;font-size:14.5px;font-family:inherit;margin-top:10px;padding:12px;cursor:pointer}' +
+    '#updPage .u-alt{display:none;width:100%;margin-top:18px;font-size:12.5px;line-height:1.8;color:#9b9484}' +
+    '#updPage .u-link{direction:ltr;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;margin:8px 0;color:#d9d2bc;word-break:break-all;user-select:all;font-size:12px}' +
+    '#updPage .u-copy{width:100%;border:1px solid rgba(232,200,93,.4);background:none;color:#e8c85d;border-radius:14px;min-height:46px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer}' +
+    '@keyframes updRing{0%{transform:scale(.72);opacity:.8}100%{transform:scale(1.32);opacity:0}}' +
+    '@keyframes updBreath{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}' +
+    '@keyframes updTw{0%{opacity:.35}100%{opacity:.7}}' +
+    '@keyframes updShine{0%{left:-80px}55%,100%{left:120%}}' +
+    '@keyframes updSpin{to{transform:rotate(360deg)}}' +
+    '@media (prefers-reduced-motion:reduce){#updPage *,#updPage:before{animation:none!important}}';
+
+  var page = null, mounted = false;
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function param(k) { try { return new URLSearchParams(location.search).get(k); } catch (e) { return null; } }
+
+  /* إيقاف الصفحة الأصلية بالكامل واستبدالها بصفحة الحجب.
+     - أثناء قراءة الملف: نكتب صفحة الحجب ثم <plaintext> مخفي يبتلع بقية الملف كنص، فلا يُنفَّذ أي سكربت بعدها
+       (window.stop() لا تصلح: تترك المتصفح بلا رسم).
+     - بعد اكتمال التحميل (مهلة WebView): نستبدل المستند بالكامل. */
+  var HEAD = '<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">' +
+    '<meta name="theme-color" content="#07090f"><meta name="robots" content="noindex"><title>Babylon Chat</title>' +
+    '<style>' + CSS + '</style>';
+  var BODY = '<div id="updPage" dir="rtl"></div>';
+  function mount() {
+    if (mounted) return;
+    mounted = true;
+    window.__BB_BLOCKED = true;
+    if (document.readyState === 'loading') {
+      document.write(HEAD + BODY + '<plaintext hidden style="display:none">');
+    } else {
+      document.open('text/html', 'replace');
+      document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">' + HEAD + '</head><body>' + BODY + '</body></html>');
+      document.close();
+    }
+  }
+  function onReady(fn) {
+    function go() { page = document.getElementById('updPage'); if (page) fn(); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+  }
+
+  function orb(inner) {
+    return '<div class="u-glow"></div><div class="u-wrap"><div class="u-orb">' +
+      '<svg class="u-ring" viewBox="0 0 150 150"><defs><linearGradient id="updGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset="1" stop-color="#cba843"/></linearGradient></defs>' +
+      '<circle class="u-track" cx="75" cy="75" r="62"/><circle class="u-fill" id="updRing" cx="75" cy="75" r="62"/></svg>' +
+      '<div class="u-core" id="updCore">' + inner + '</div></div>';
+  }
+
+  /* ---------- 1) فتح التطبيق من رابط حساب (?u=) ---------- */
+  var linkName = param('u');
+  var canOpen = isAndroid && linkName && UN_RE.test(linkName) && param('noapp') !== '1';
+  var openUrl = '';
+  if (canOpen) {
+    var proto = location.protocol.replace(':', '');
+    var fallback = location.origin + '/?u=' + encodeURIComponent(linkName) + '&noapp=1';
+    var intentUrl = 'intent://' + location.host + '/?u=' + encodeURIComponent(linkName) +
+      '#Intent;scheme=' + proto + ';package=' + APP_PKG + ';S.browser_fallback_url=' + encodeURIComponent(fallback) + ';end';
+    var schemeUrl = 'babylonchat://open?u=' + encodeURIComponent(linkName);
+    var chromeFamily = /(Chrome|CriOS|SamsungBrowser|EdgA|OPR|Brave|Vivaldi|UCBrowser|MiuiBrowser)/i.test(ua) && !/Firefox/i.test(ua);
+    openUrl = chromeFamily ? intentUrl : schemeUrl;
+  }
+  var left = false, timer = 0, shownDone = false;
+
+  function showOpening() {
+    page.className = 'ind';
+    page.innerHTML = orb(ICON.chat) + '<div class="u-chip">@' + esc(linkName) + '</div>' +
+      '<h1>جارٍ فتح التطبيق…</h1><p class="u-msg">الحساب على بابيلون شات</p></div>';
+    setTimeout(function () { try { location.href = openUrl; } catch (e) {} }, 250);
+    timer = setTimeout(function () { if (!left && document.visibilityState === 'visible') showBlock(); }, 2600);
+  }
+
+  /* ---------- 2) شاشة الحجب ---------- */
+  function showBlock() {
+    clearTimeout(timer); shownDone = true;
+    page.className = '';
+    page.innerHTML = orb(ICON.lock) + '<div class="u-chip">Babylon Chat</div>' +
+      '<h1>الموقع يعمل داخل التطبيق فقط</h1>' +
+      '<p class="u-msg">لا يمكن استخدام بابيلون شات من المتصفح.\nحمّل التطبيق على هاتفك وافتحه من هناك.</p>' +
+      '<button id="bbGo" class="u-go" type="button">تحميل التطبيق</button>' +
+      (canOpen ? '<button id="bbRetry" class="u-later" type="button">التطبيق مثبّت عندي؟ جرّب فتحه</button>' : '') + '</div>';
+    page.querySelector('#bbGo').onclick = function () { showDownload(true); };
+    var r = page.querySelector('#bbRetry');
+    if (r) r.onclick = function () { left = false; shownDone = false; showOpening(); };
+  }
+
+  /* ---------- 3) واجهة التحميل (نفس واجهة التحديث الداخلية) ---------- */
+  var blob = null, busy = false, info = { latest: 0, notes: '' };
+
+  function why(code) {
+    var c = String(code || '').toLowerCase(), hint = '';
+    if (!c) return '';
+    if (/^http 5/.test(c)) hint = 'السيرفر ما قدر يجيب الملف حالياً (جرّب بعد دقيقة).';
+    else if (/^http 4/.test(c)) hint = 'رابط التنزيل غير متاح.';
+    else if (/^truncated/.test(c)) hint = 'انقطع التنزيل قبل ما يكتمل، جرّب مرة ثانية.';
+    else if (/failed to fetch|network|load failed/.test(c)) hint = 'مشكلة بالاتصال بالإنترنت أثناء التنزيل.';
+    return (hint ? hint + '\n' : '') + '(' + code + ')';
+  }
+  function copyText(t, done) {
+    function fb() {
+      try {
+        var a = document.createElement('textarea'); a.value = t; a.setAttribute('readonly', '');
+        a.style.cssText = 'position:fixed;opacity:0;top:0;left:0'; document.body.appendChild(a); a.select();
+        document.execCommand('copy'); a.remove(); done(true);
+      } catch (e) { done(false); }
+    }
+    try { navigator.clipboard.writeText(t).then(function () { done(true); }, fb); } catch (e) { fb(); }
+  }
+  function saveBlob(b) {
+    var u = URL.createObjectURL(b), a = document.createElement('a');
+    a.href = u; a.download = 'babylon-chat.apk'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { try { URL.revokeObjectURL(u); } catch (e) {} }, 120000);
+  }
+
+  function showDownload(auto) {
+    clearTimeout(timer);
+    var url = location.origin + DL, notes = String(info.notes || '').trim();
+    page.className = '';
+    page.innerHTML = orb(ICON.up) +
+      '<div class="u-chip" id="bbChip">' + (info.latest ? 'v' + esc(info.latest) : 'Babylon Chat') + '</div>' +
+      '<h1 id="updTitle">تحميل بابيلون شات</h1>' +
+      '<p class="u-msg" id="updMsg"></p>' +
+      (notes ? '<div class="u-card"><b>' + ICON.spark + ' شنو الجديد</b><div>' + esc(notes) + '</div></div>' : '') +
+      '<button id="updGo" class="u-go" type="button">تحميل الآن</button>' +
+      '<div id="updAlt" class="u-alt">إذا ما بدأ التنزيل، انسخ الرابط وافتحه بكروم:' +
+        '<div id="updLink" class="u-link"></div><button id="updCopy" class="u-copy" type="button">نسخ الرابط</button></div>' +
+      '<button id="updLater" class="u-later" type="button">رجوع</button></div>';
+
+    var msg = page.querySelector('#updMsg'), core = page.querySelector('#updCore'), ring = page.querySelector('#updRing');
+    var go = page.querySelector('#updGo'), alt = page.querySelector('#updAlt');
+    var baseMsg = isAndroid ? 'حمّل آخر نسخة من Babylon Chat وثبّتها على هاتفك.' : 'التطبيق متوفر لهواتف أندرويد فقط (ملف APK).';
+    msg.textContent = baseMsg;
+    page.querySelector('#updLink').textContent = url;
+    page.querySelector('#updCopy').onclick = function () {
+      var b = this; copyText(url, function (ok) { b.textContent = ok ? 'تم النسخ ✓' : 'انسخه يدوياً من الأعلى'; });
+    };
+    page.querySelector('#updLater').onclick = function () { if (!busy) showBlock(); };
+    function setRing(p) { ring.style.strokeDashoffset = (RING_C * (1 - Math.max(0, Math.min(100, p)) / 100)).toFixed(2); }
+    function idle(label) { busy = false; go.disabled = false; go.textContent = label || 'تحميل الآن'; }
+    function progress(p) {
+      page.classList.remove('err', 'ind');
+      go.disabled = true; go.textContent = 'جاري التنزيل…';
+      msg.textContent = 'لا تطلع من الصفحة لحد ما يخلص التنزيل.';
+      if (p < 0) { core.innerHTML = '…'; page.classList.add('ind'); return; }
+      var pc = core.querySelector('#updPct');
+      if (!pc) { core.innerHTML = '<span dir="ltr"><span id="updPct"></span><small style="font-size:15px;margin-left:2px">%</small></span>'; pc = core.querySelector('#updPct'); }
+      pc.textContent = Math.round(p); setRing(p);
+    }
+    function ready() {
+      page.classList.remove('err', 'ind'); core.innerHTML = ICON.ok; setRing(100); idle('تحميل مرة ثانية');
+      msg.textContent = 'اكتمل التنزيل. افتح الملف من إشعار التنزيلات وثبّته، وإذا طلب السماح بالتثبيت من هذا المصدر فعّله.';
+    }
+    function fail(detail) {
+      page.classList.remove('ind'); page.classList.add('err'); core.innerHTML = ICON.warn; setRing(0); idle('إعادة المحاولة');
+      msg.textContent = 'تعذر التنزيل. جرّب مرة ثانية، أو انسخ الرابط وافتحه بكروم.' + (detail ? '\n' + why(detail) : '');
+      alt.style.display = 'block';
+    }
+    function start() {
+      if (busy) return;
+      if (blob) { saveBlob(blob); return; }
+      busy = true; alt.style.display = 'none'; progress(0); setRing(0);
+      fetch(DL, { cache: 'no-store' }).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var total = parseInt(r.headers.get('content-length') || r.headers.get('x-apk-size'), 10) || 0;
+        var type = 'application/vnd.android.package-archive';
+        if (!r.body || !r.body.getReader) {
+          progress(-1);
+          return r.blob().then(function (b) { return new Blob([b], { type: type }); });
+        }
+        var rd = r.body.getReader(), parts = [], got = 0;
+        if (!total) progress(-1);
+        function pump() {
+          return rd.read().then(function (x) {
+            if (x.done) return;
+            parts.push(x.value); got += x.value.length;
+            if (total) progress(got / total * 100);
+            return pump();
+          });
+        }
+        return pump().then(function () {
+          if (total && got < total) throw new Error('truncated');
+          return new Blob(parts, { type: type });
+        });
+      }).then(function (b) {
+        if (b.size < 100000) throw new Error('small file');
+        blob = b; saveBlob(b); ready();
+      }).catch(function (e) { fail(String((e && e.message) || e)); });
+    }
+    go.onclick = start;
+    if (auto) start();
+  }
+
+  /* ---------- تشغيل ---------- */
+  function block() {
+    mount();
+    onReady(function () {
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') { left = true; clearTimeout(timer); }
+        else if (left && !busy && !shownDone) showBlock();      /* رجع للمتصفح بعد محاولة فتح التطبيق */
+      });
+      window.addEventListener('pagehide', function () { left = true; clearTimeout(timer); });
+      try {
+        fetch('/version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+          if (!j) return;
+          info.latest = j.latest || j.minVersion || 0; info.notes = j.notes || '';
+          var chip = page && page.querySelector('#bbChip');
+          if (chip && info.latest) chip.textContent = 'v' + info.latest;
+        }).catch(function () {});
+      } catch (e) {}
+      if (canOpen) showOpening(); else showBlock();
+    });
+  }
+
+  if (hasBridge()) { window.__BB_APP = true; return; }   /* داخل التطبيق: لا شيء يتغيّر */
+  if (isWv) {
+    /* WebView لكن الجسر لم يُحقن بعد: مهلة قصيرة ثم الحجب */
+    var t0 = Date.now(), iv = setInterval(function () {
+      if (hasBridge()) { clearInterval(iv); window.__BB_APP = true; }
+      else if (Date.now() - t0 > 4000) { clearInterval(iv); block(); }
+    }, 100);
+    return;
+  }
+  block();
+})();
+</script>
 <style id="babylon-splash">
 .splash-page{position:absolute;inset:0;z-index:5000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
   background:radial-gradient(circle at center,#1e293b 0%,#090d16 100%);transition:opacity .35s ease,visibility .35s ease}
