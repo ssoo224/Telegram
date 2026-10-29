@@ -376,7 +376,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <script src="/update-gate.js?v=3"></script>
-<title>Babylon Chat - تليجرام البابلي</title>
+<title>Babylon Chat</title>
 
 <!-- ربط ملف الـ Manifest الخارجي -->
 <link rel="manifest" href="/manifest.json">
@@ -3425,10 +3425,12 @@ function playNotificationSound() {
   } catch(e) {}
 }
 
-const DEV_EMAIL = 'anldheb429@gmail.com';
+const DEV_EMAILS = ['anldheb429@gmail.com', 'hamodeygame45@gmail.com'];
+const DEV_EMAIL = DEV_EMAILS[0];
+function isDevEmail(e) { return DEV_EMAILS.indexOf(String(e || '').trim().toLowerCase()) !== -1; }
 function isValidUsername(username, email) {
   // المطوّر فقط: يسمح بيوزر قصير (3 أحرف حروف فقط مثل nft أو sss، أو 4 فأكثر)
-  if (email && String(email).trim().toLowerCase() === DEV_EMAIL.toLowerCase()) {
+  if (isDevEmail(email)) {
     return /^[a-zA-Z](?:[a-zA-Z]{2}|[a-zA-Z0-9_.]{3,})$/.test(username);
   }
   // المستخدمون العاديون: 5 أحرف فأكثر، يبدأ بحرف، ويسمح بأرقام و _ .
@@ -3718,7 +3720,7 @@ function updateProfileUI(u) {
 
   document.getElementById("pHeaderNameText").textContent = displayName;
   
-  const isUserVerified = u.isVerified || (username.toLowerCase() === 'ali') || (u.email && u.email.includes('ali'));
+  const isUserVerified = u.isVerified || u.isDev || isDevEmail(currentUser.email) || (username.toLowerCase() === 'ali') || (u.email && u.email.includes('ali'));
   document.getElementById("pBadgeBox").classList.toggle("hidden", !isUserVerified);
   
   document.getElementById("pHeaderUser").textContent = "@" + username;
@@ -4494,7 +4496,7 @@ function searchUsers() {
         const u = { id: doc.id, ...doc.data() };
         if (u.id === (currentUser && currentUser.uid) || myBlocks[doc.id]) return;
         found++;
-        const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
+        const isUVerified = u.isVerified || u.isDev || (u.username && u.username.toLowerCase() === 'ali');
         const verifiedBadge = isUVerified ? '<span class="verified-badge" style="width:14px;height:14px;font-size:9px;">✓</span>' : '';
         const div = document.createElement("div");
         div.className = "chat-item search-user-card";
@@ -4532,7 +4534,7 @@ function openUserProfileDirect(u) {
   otherProfileUsername = "@" + (u.username || "user");
   document.getElementById("otherHeaderNameText").textContent = u.displayName || "مستخدم";
   
-  const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
+  const isUVerified = u.isVerified || u.isDev || (u.username && u.username.toLowerCase() === 'ali');
   document.getElementById("otherBadgeBox").classList.toggle("hidden", !isUVerified);
   document.getElementById("otherHeaderUser").textContent = otherProfileUsername;
 
@@ -4632,7 +4634,7 @@ function openChatRoom(otherUserId, keepLimit) {
       const u = doc.data(); u.id = u.id || otherUserId; window.__bbChatU = u;
       document.getElementById("chatTitleText").textContent = u.displayName || "مستخدم";
       
-      const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
+      const isUVerified = u.isVerified || u.isDev || (u.username && u.username.toLowerCase() === 'ali');
       document.getElementById("chatBadgeBox").classList.toggle("hidden", !isUVerified);
       
       const sub = document.getElementById("chatSub");
@@ -5691,7 +5693,7 @@ function loadChats() {
                 .where("read", "==", false)
                 .get().then(unReadSnap => {
                   const _c2 = chatClearedAt(chatId, chatData); let unreadCount = _c2 ? unReadSnap.docs.filter(d => (Number(d.data().createdAt) || 0) > _c2).length : unReadSnap.size;
-                  const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
+                  const isUVerified = u.isVerified || u.isDev || (u.username && u.username.toLowerCase() === 'ali');
                   const verifiedBadge = isUVerified ? `<span class="verified-badge" style="width:13px;height:13px;font-size:8px;">✓</span>` : '';
 
                   existingItem.innerHTML = `
