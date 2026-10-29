@@ -9915,6 +9915,131 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
   document.addEventListener('visibilitychange',apply);
 })();
 </script>
+
+<style id="babylon-applink">
+.bbal-ov{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;background:rgba(8,12,20,.58);direction:rtl;font-family:inherit;animation:bbalFade .18s ease-out}
+.bbal-sheet{--b-bg:#fff;--b-tx:#17212b;--b-sub:#68798d;--b-line:#dce4ee;--b-card:#f4f7fb;
+  width:100%;max-width:480px;box-sizing:border-box;padding:22px 20px calc(18px + env(safe-area-inset-bottom,0px));border-radius:24px 24px 0 0;background:var(--b-bg);color:var(--b-tx);text-align:center;box-shadow:0 -12px 40px rgba(0,0,0,.35);animation:bbalUp .26s cubic-bezier(.2,.9,.3,1)}
+@media(prefers-color-scheme:dark){.bbal-sheet{--b-bg:#17212b;--b-tx:#f1f5f9;--b-sub:#a5b2c2;--b-line:#2c3a4a;--b-card:#0f1822}}
+.bbal-ic{width:68px;height:68px;margin:2px auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f4d870,#c99a1c);box-shadow:0 8px 22px rgba(201,154,28,.38)}
+.bbal-ic svg{width:34px;height:34px}
+.bbal-sheet h2{margin:0 0 6px;font-size:19px;font-weight:800;line-height:1.4}
+.bbal-sheet p{margin:0 0 16px;font-size:14px;line-height:1.7;color:var(--b-sub)}
+.bbal-un{display:inline-block;direction:ltr;unicode-bidi:isolate;font-weight:800;color:#c99a1c}
+.bbal-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:48px;margin:0 0 10px;border:0;border-radius:14px;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.bbal-btn:active{filter:brightness(.93)}
+.bbal-btn.gold{background:linear-gradient(135deg,#f4d870,#c99a1c);color:#fff;text-shadow:0 1px 2px rgba(120,80,0,.45);box-shadow:0 6px 16px rgba(201,154,28,.32)}
+.bbal-btn.line{background:transparent;color:var(--b-tx);border:1.5px solid var(--b-line)}
+.bbal-btn svg{width:20px;height:20px;flex:0 0 20px}
+.bbal-steps{display:none;margin:0 0 12px;padding:12px 14px;border-radius:14px;background:var(--b-card);text-align:right;font-size:13.5px;line-height:1.9;color:var(--b-tx)}
+.bbal-steps.on{display:block}
+.bbal-steps b{color:#c99a1c}
+.bbal-skip{display:block;width:100%;padding:10px;border:0;background:none;font:inherit;font-size:14px;font-weight:700;color:var(--b-sub);cursor:pointer}
+@keyframes bbalFade{from{opacity:0}to{opacity:1}}
+@keyframes bbalUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.bbal-ov,.bbal-sheet{animation:none}}
+</style>
+<script id="babylon-applink-js">
+/* فتح روابط/باركود الحسابات: داخل التطبيق إن كان مثبتاً، وإلا نافذة تحميل وتثبيت */
+(function(){
+  'use strict';
+  /* اسم حزمة تطبيق الأندرويد (غيّره هنا إذا اختلف) */
+  var APP_PKG = window.BB_APP_PACKAGE || 'com.babylon.iq.chat';
+  var UN_RE = /^[A-Za-z0-9_.]{3,32}$/;
+
+  function inApp(){
+    try {
+      if (window.BabylonAndroid || window.BabylonAndroidNative) return true;
+      var C = window.Capacitor; if (C && typeof C.isNativePlatform === 'function' && C.isNativePlatform()) return true;
+      if (/;\s*wv\)/.test(navigator.userAgent)) return true;
+      if (window.matchMedia && matchMedia('(display-mode: standalone)').matches) return true;
+    } catch (e) {}
+    return false;
+  }
+  function param(k){ try { return new URLSearchParams(location.search).get(k); } catch (e) { return null; } }
+
+  /* ---- 1) داخل التطبيق: استقبال الرابط أثناء تشغيله (Capacitor أو استدعاء من الجافا) ---- */
+  function openUserFromUrl(raw){
+    var name = null;
+    try { name = new URL(String(raw)).searchParams.get('u'); } catch (e) {}
+    if (!name || !UN_RE.test(name)) return;
+    var tries = 0, t = setInterval(function(){
+      tries++;
+      var ready = false;
+      try { ready = !!(currentUser && currentUserData && typeof openUserProfileDirect === 'function'); } catch (e) {}
+      if (ready) {
+        clearInterval(t);
+        db.collection('users').where('username', '==', name.toLowerCase()).limit(1).get().then(function(sn){
+          if (sn.empty) { showToast('لم يتم العثور على المستخدم'); return; }
+          var d = sn.docs[0], u = Object.assign({ id: d.id }, d.data());
+          try { if (myBlocks && myBlocks[u.id]) { showToast('أنت حاظر هذا المستخدم'); return; } } catch (e) {}
+          if (currentUser && u.id === currentUser.uid) openProfile(); else openUserProfileDirect(u);
+        }).catch(function(){});
+      } else if (tries > 80) clearInterval(t);
+    }, 500);
+  }
+  window.bbOpenDeepLink = openUserFromUrl;
+  try {
+    var AP = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (AP && AP.addListener) AP.addListener('appUrlOpen', function(e){ openUserFromUrl(e && e.url); });
+  } catch (e) {}
+
+  /* ---- 2) المتصفح على أندرويد: نافذة فتح/تحميل ---- */
+  if (inApp() || !/Android/i.test(navigator.userAgent)) return;
+  var name = param('u');
+  if (!name || !UN_RE.test(name)) return;
+  try { if (sessionStorage.getItem('bb_applink_skip') === '1') return; } catch (e) {}
+  var noapp = param('noapp') === '1';
+
+  var apk = location.origin + '/api/apk';
+  var fallback = location.origin + '/?u=' + encodeURIComponent(name) + '&noapp=1';
+  var intentUrl = 'intent://' + location.host + '/?u=' + encodeURIComponent(name) +
+    '#Intent;scheme=' + location.protocol.replace(':', '') + ';package=' + APP_PKG +
+    ';S.browser_fallback_url=' + encodeURIComponent(fallback) + ';end';
+
+  var ICON_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/></svg>';
+  var ICON_DL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></svg>';
+
+  function mount(){
+    if (document.getElementById('bbalOv')) return;
+    var ov = document.createElement('div'); ov.id = 'bbalOv'; ov.className = 'bbal-ov';
+    ov.innerHTML =
+      '<div class="bbal-sheet" role="dialog" aria-modal="true">' +
+        '<div class="bbal-ic">' + ICON_CHAT + '</div>' +
+        '<h2>' + (noapp ? 'التطبيق غير مثبّت عندك' : 'افتح الحساب في التطبيق') + '</h2>' +
+        '<p>' + (noapp
+          ? 'حمّل بابيلون شات وثبّته، ثم افتح الرابط مرة ثانية لتصل إلى <span class="bbal-un"></span> مباشرة.'
+          : 'الحساب <span class="bbal-un"></span> على بابيلون شات. افتحه في التطبيق للمراسلة بشكل أسرع.') + '</p>' +
+        '<div class="bbal-steps' + (noapp ? ' on' : '') + '" id="bbalSteps">' +
+          '<b>١.</b> اضغط «تحميل التطبيق» وانتظر انتهاء التنزيل<br>' +
+          '<b>٢.</b> افتح الملف، وإذا طلب الأندرويد اسمح بالتثبيت من هذا المصدر<br>' +
+          '<b>٣.</b> اضغط «تثبيت» ثم ارجع وافتح الرابط من جديد' +
+        '</div>' +
+        '<button type="button" class="bbal-btn gold" id="bbalOpen">' + ICON_CHAT + '<span>فتح في التطبيق</span></button>' +
+        '<button type="button" class="bbal-btn line" id="bbalDl">' + ICON_DL + '<span>تحميل التطبيق</span></button>' +
+        '<button type="button" class="bbal-skip" id="bbalSkip">المتابعة في المتصفح</button>' +
+      '</div>';
+    ov.querySelector('.bbal-un').textContent = '@' + name;
+    document.body.appendChild(ov);
+    ov.querySelector('#bbalOpen').onclick = function(){ location.href = intentUrl; };
+    ov.querySelector('#bbalDl').onclick = function(){
+      ov.querySelector('#bbalSteps').classList.add('on');
+      var a = document.createElement('a'); a.href = apk; a.setAttribute('download', ''); a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); a.remove();
+    };
+    ov.querySelector('#bbalSkip').onclick = function(){
+      try { sessionStorage.setItem('bb_applink_skip', '1'); } catch (e) {}
+      ov.remove();
+    };
+    /* محاولة فتح التطبيق تلقائياً مرة واحدة (بعض المتصفحات تمنعها بدون لمسة، فالزر يبقى متاحاً) */
+    if (!noapp) {
+      var tried = false; try { tried = sessionStorage.getItem('bb_applink_try') === '1'; sessionStorage.setItem('bb_applink_try', '1'); } catch (e) {}
+      if (!tried) setTimeout(function(){ try { location.href = intentUrl; } catch (e) {} }, 350);
+    }
+  }
+  if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount);
+})();
+</script>
 </body>
 </html>
 
