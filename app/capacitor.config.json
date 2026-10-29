@@ -5,15 +5,22 @@
   "server": {
     "url": "https://telegram-pi-rouge.vercel.app",
     "cleartext": false,
-    "errorPath": "offline.html",
-    "allowNavigation": ["telegram-pi-rouge.vercel.app", "*.firebaseapp.com", "*.googleapis.com"]
+    "allowNavigation": [
+      "telegram-pi-rouge.vercel.app",
+      "*.firebaseapp.com",
+      "*.googleapis.com"
+    ]
   },
   "android": {
     "allowMixedContent": false
   },
   "plugins": {
     "PushNotifications": {
-      "presentationOptions": ["badge", "sound", "alert"]
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
     }
   }
 }
