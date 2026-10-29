@@ -27,7 +27,7 @@ function fmtN(n){return Number(n).toLocaleString('en-US');}
 
 /* ---------- الرصيد ---------- */
 let myStars=0,walletUnsub=null,walletFor=null,walletReady=false;
-function isDevUser(){return !!(currentUser&&String(currentUser.email||'').toLowerCase()===DEV_EMAIL);}
+function isDevUser(){return !!(currentUser&&isDevEmail(currentUser.email));}
 function starsLabel(){return isDevUser()?'∞':fmtN(myStars);}
 function paintStars(){document.querySelectorAll('[data-stars]').forEach(e=>{e.textContent=starsLabel();});}
 function startWallet(uid){
