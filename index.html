@@ -10029,10 +10029,6 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
     var a = document.createElement('a'); a.href = apk; a.setAttribute('download', ''); a.rel = 'noopener';
     document.body.appendChild(a); a.click(); a.remove();
   }
-  function autoDownloadOnce(){
-    var done = false; try { done = sessionStorage.getItem('bb_applink_dl') === '1'; sessionStorage.setItem('bb_applink_dl', '1'); } catch (e) {}
-    if (!done) startDownload();
-  }
   function frame(inner){
     if (!ov) { ov = document.createElement('div'); ov.id = 'bbalOv'; ov.className = 'bbal-ov'; document.body.appendChild(ov); }
     ov.innerHTML = '<div class="bbal-sheet" role="dialog" aria-modal="true">' + inner + '</div>';
@@ -10045,13 +10041,12 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
   }
   function showDownload(){
     var o = frame('<div class="bbal-ic">' + ICON_DL + '</div><h2>حمّل بابيلون شات للمتابعة</h2>' +
-      '<p>لفتح الحساب <span class="bbal-un"></span> لازم تطبيق بابيلون شات. بدأ التنزيل تلقائياً.</p>' +
-      '<div class="bbal-steps on"><b>١.</b> انتظر انتهاء التنزيل<br><b>٢.</b> افتح الملف، وإذا طلب الأندرويد اسمح بالتثبيت من هذا المصدر<br><b>٣.</b> اضغط «تثبيت» ثم افتح الرابط من جديد</div>' +
+      '<p>لفتح الحساب <span class="bbal-un"></span> لازم تطبيق بابيلون شات. اضغط «تحميل التطبيق» لبدء التنزيل.</p>' +
+      '<div class="bbal-steps on"><b>١.</b> اضغط «تحميل التطبيق» وانتظر انتهاء التنزيل<br><b>٢.</b> افتح الملف، وإذا طلب الأندرويد اسمح بالتثبيت من هذا المصدر<br><b>٣.</b> اضغط «تثبيت» ثم افتح الرابط من جديد</div>' +
       '<button type="button" class="bbal-btn gold" id="bbalDl">' + ICON_DL + '<span>تحميل التطبيق</span></button>' +
       '<button type="button" class="bbal-skip" id="bbalRetry">التطبيق مثبّت عندي؟ جرّب فتحه</button>');
     o.querySelector('#bbalDl').onclick = startDownload;
     o.querySelector('#bbalRetry').onclick = function(){ left = false; location.href = openUrl; };
-    autoDownloadOnce();
   }
 
   function run(){
