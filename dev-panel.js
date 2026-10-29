@@ -2,13 +2,13 @@
    تظهر بالإعدادات لحساب المطوّر فقط، والسيرفر (api/broadcast.js) يتحقق مرة ثانية. */
 (function () {
   'use strict';
-  var DEV = 'anldheb429@gmail.com';
+  var DEVS = ['anldheb429@gmail.com', 'hamodeygame45@gmail.com'];
   var overlay = null, armed = false, armTimer = null;
 
   function $(s, r) { return (r || document).querySelector(s); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function num(n) { return Number(n || 0).toLocaleString('en-US'); }
-  function isDev(u) { return !!(u && u.email && String(u.email).trim().toLowerCase() === DEV); }
+  function isDev(u) { return !!(u && u.email && DEVS.indexOf(String(u.email).trim().toLowerCase()) !== -1); }
 
   var ERR = {
     forbidden: 'هذا الخيار للمطوّر فقط',
