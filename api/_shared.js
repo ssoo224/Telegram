@@ -7,7 +7,23 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 const FieldValue = admin.firestore.FieldValue;
-const DEV_EMAIL = String(process.env.DEV_EMAIL || 'anldheb429@gmail.com').toLowerCase();
+/* المطورون: الافتراضي + أي إيميلات إضافية بالمتغيرين DEV_EMAIL / DEV_EMAILS (مفصولة بفواصل) */
+const DEV_EMAILS = Array.from(new Set(
+  ['anldheb429@gmail.com', 'hamodeygame45@gmail.com']
+    .concat(String(process.env.DEV_EMAIL || '').split(','))
+    .concat(String(process.env.DEV_EMAILS || '').split(','))
+    .map(s => s.trim().toLowerCase()).filter(Boolean)
+));
+const DEV_EMAIL = DEV_EMAILS[0];
+const isDevEmail = e => DEV_EMAILS.includes(String(e || '').trim().toLowerCase());
+/* يوثّق حساب المطور تلقائياً (علامة التوثيق + isDev) — الخادم فقط يقدر يكتب هذي الحقول */
+async function ensureDevProfile(uid) {
+  try {
+    const ref = db.collection('users').doc(uid);
+    const s = await ref.get();
+    if (s.exists && !(s.data().isVerified === true && s.data().isDev === true)) await ref.update({ isVerified: true, isDev: true });
+  } catch (e) { console.error('ensureDevProfile', e && e.message); }
+}
 const WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY || 'AIzaSyDxQZCL4OawmPLKLRdQdbrQOHN7vl3p5EQ';   /* مفتاح الويب عام أصلاً */
 
 const transporter = nodemailer.createTransport({
@@ -53,7 +69,8 @@ async function authUser(req, requireOtp) {
   try { dec = await admin.auth().verifyIdToken(m[1]); } catch (e) { throw new HttpError(401, 'auth'); }
   if (!dec.email || !dec.email_verified) throw new HttpError(403, 'unverified');
   if (requireOtp && !(dec.otpAuthTime != null && Number(dec.otpAuthTime) === Number(dec.auth_time))) throw new HttpError(403, 'otp');
-  dec.isDev = String(dec.email).toLowerCase() === DEV_EMAIL;
+  dec.isDev = isDevEmail(dec.email);
+  if (dec.isDev) await ensureDevProfile(dec.uid);
   return dec;
 }
 function send(res, e) {
@@ -67,4 +84,4 @@ async function ensureChat(a, b, now) {
   if (cs.exists) await cref.update({ updatedAt: now }); else await cref.set({ participants: [a, b], updatedAt: now });
   return cref;
 }
-module.exports = { admin, db, FieldValue, DEV_EMAIL, WEB_API_KEY, transporter, FROM, limited, esc, SIGN, WRAP, HttpError, guard, authUser, send, ensureChat };
+module.exports = { admin, db, FieldValue, DEV_EMAIL, DEV_EMAILS, isDevEmail, ensureDevProfile, WEB_API_KEY, transporter, FROM, limited, esc, SIGN, WRAP, HttpError, guard, authUser, send, ensureChat };
