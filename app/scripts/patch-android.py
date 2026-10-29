@@ -40,6 +40,25 @@ meta += '        <meta-data android:name="com.google.firebase.messaging.default_
 if "default_notification_channel_id" not in m:
     if "</application>" not in m: die("ما لقيت application", mf)
     m = m.replace("</application>", meta + "    </application>")
+# 2.2) روابط الحسابات/الباركود (https://<الموقع>/?u=name) تفتح التطبيق مباشرة
+if "babylon-applink" not in m:
+    _host = "telegram-pi-rouge.vercel.app"
+    try:
+        import json as _json
+        _u = _json.loads(rd(root / "capacitor.config.json")).get("server", {}).get("url", "")
+        _h = re.sub(r"^https?://", "", _u).split("/")[0]
+        if _h: _host = _h
+    except Exception: pass
+    _flt = ('        <intent-filter android:autoVerify="true">  <!-- babylon-applink -->\n'
+            '            <action android:name="android.intent.action.VIEW" />\n'
+            '            <category android:name="android.intent.category.DEFAULT" />\n'
+            '            <category android:name="android.intent.category.BROWSABLE" />\n'
+            '            <data android:scheme="https" android:host="%s" />\n'
+            '        </intent-filter>\n') % _host
+    m, _n = re.subn(r"</activity>", _flt + "        </activity>", m, count=1)
+    if _n != 1: die("ما لقيت نهاية activity لإضافة intent-filter", mf)
+    if "android:launchMode" not in m:
+        m = re.sub(r"<activity\b", '<activity android:launchMode="singleTask"', m, count=1)
 wr(mf, m)
 
 # 2.5) أيقونة الإشعار الصغيرة (أبيض على شفاف) + لون الإشعار
@@ -125,6 +144,7 @@ public class MainActivity extends BridgeActivity {
         // تسجيل واجهة الحفظ فوراً (قبل تحميل الصفحة) ليعمل التنزيل إلى المعرض.
         registerNativeBridge();
         BabylonCall.onIntent(this, getIntent());
+        captureLink(getIntent());
 
         // طلب صلاحيات الوسائط/الإشعارات مرة واحدة عند أول تشغيل فقط.
         android.content.SharedPreferences prefs =
@@ -192,6 +212,30 @@ public class MainActivity extends BridgeActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         BabylonCall.onIntent(this, intent);
+        captureLink(intent);
+    }
+
+    // رابط حساب (https://الموقع/?u=name) وصل من تطبيق آخر: نحفظه والصفحة تأخذه وتفتح الحساب.
+    static volatile String pendingLink = null;
+
+    private void captureLink(Intent intent) {
+        try {
+            if (intent == null || !Intent.ACTION_VIEW.equals(intent.getAction())) return;
+            Uri d = intent.getData();
+            if (d == null) return;
+            String s = d.toString();
+            if (!s.startsWith("https://")) return;
+            pendingLink = s;
+            dispatchLink();
+        } catch (Throwable ignored) { }
+    }
+
+    private void dispatchLink() {
+        try {
+            if (getBridge() == null || getBridge().getWebView() == null) return;
+            final WebView w = getBridge().getWebView();
+            w.post(() -> w.evaluateJavascript("try{window.bbCheckPendingLink&&window.bbCheckPendingLink()}catch(e){}", null));
+        } catch (Throwable ignored) { }
     }
 
     @Override
@@ -252,6 +296,14 @@ public class MainActivity extends BridgeActivity {
     }
 
     private class BabylonAndroidBridge {
+        /** يعيد رابط الحساب المعلّق (إن وُجد) ثم يمسحه. */
+        @JavascriptInterface
+        public String takePendingLink() {
+            String s = pendingLink;
+            pendingLink = null;
+            return s == null ? "" : s;
+        }
+
         @JavascriptInterface
         public void showMessageNotificationEx(String title, String body, String avatar, String otherId, String chatId) {
             BabylonNotifications.show(getApplicationContext(), title, body, avatar, otherId, chatId);
