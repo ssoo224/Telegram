@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """يعدّل مشروع أندرويد المولَّد بـ Capacitor: الصلاحيات، الإشعارات، رقم النسخة، والتوقيع."""
 import os, re, sys, shutil, pathlib
- 
+
 root = pathlib.Path(__file__).resolve().parent.parent      # app/
 app = root / "android" / "app"
 run = os.environ.get("RUN_NUMBER", "1")
@@ -23,7 +23,7 @@ else:
 # 2) AndroidManifest
 mf = app / "src" / "main" / "AndroidManifest.xml"
 m = rd(mf)
-perms = ["POST_NOTIFICATIONS", "RECORD_AUDIO", "CAMERA", "MODIFY_AUDIO_SETTINGS", "VIBRATE", "READ_MEDIA_IMAGES", "READ_MEDIA_VIDEO", "READ_EXTERNAL_STORAGE", "REQUEST_INSTALL_PACKAGES"]
+perms = ["POST_NOTIFICATIONS", "RECORD_AUDIO", "CAMERA", "MODIFY_AUDIO_SETTINGS", "VIBRATE", "READ_MEDIA_IMAGES", "READ_MEDIA_VIDEO", "READ_EXTERNAL_STORAGE", "REQUEST_INSTALL_PACKAGES", "ACCESS_NETWORK_STATE"]
 add = "".join('    <uses-permission android:name="android.permission.%s" />\n' % p
               for p in perms if 'android.permission.%s"' % p not in m)
 add += '    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />\n'
@@ -40,31 +40,6 @@ meta += '        <meta-data android:name="com.google.firebase.messaging.default_
 if "default_notification_channel_id" not in m:
     if "</application>" not in m: die("ما لقيت application", mf)
     m = m.replace("</application>", meta + "    </application>")
-# 2.2) روابط الحسابات/الباركود (https://<الموقع>/?u=name) تفتح التطبيق مباشرة
-if "babylon-applink" not in m:
-    _host = "telegram-pi-rouge.vercel.app"
-    try:
-        import json as _json
-        _u = _json.loads(rd(root / "capacitor.config.json")).get("server", {}).get("url", "")
-        _h = re.sub(r"^https?://", "", _u).split("/")[0]
-        if _h: _host = _h
-    except Exception: pass
-    _flt = ('        <intent-filter android:autoVerify="true">  <!-- babylon-applink -->\n'
-            '            <action android:name="android.intent.action.VIEW" />\n'
-            '            <category android:name="android.intent.category.DEFAULT" />\n'
-            '            <category android:name="android.intent.category.BROWSABLE" />\n'
-            '            <data android:scheme="https" android:host="%s" />\n'
-            '        </intent-filter>\n'
-            '        <intent-filter>  <!-- babylon-applink-scheme: لباقي المتصفحات -->\n'
-            '            <action android:name="android.intent.action.VIEW" />\n'
-            '            <category android:name="android.intent.category.DEFAULT" />\n'
-            '            <category android:name="android.intent.category.BROWSABLE" />\n'
-            '            <data android:scheme="babylonchat" android:host="open" />\n'
-            '        </intent-filter>\n') % _host
-    m, _n = re.subn(r"</activity>", _flt + "        </activity>", m, count=1)
-    if _n != 1: die("ما لقيت نهاية activity لإضافة intent-filter", mf)
-    if "android:launchMode" not in m:
-        m = re.sub(r"<activity\b", '<activity android:launchMode="singleTask"', m, count=1)
 wr(mf, m)
 
 # 2.5) أيقونة الإشعار الصغيرة (أبيض على شفاف) + لون الإشعار
@@ -107,6 +82,7 @@ wr(ma, r"""package %s;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -149,8 +125,8 @@ public class MainActivity extends BridgeActivity {
 
         // تسجيل واجهة الحفظ فوراً (قبل تحميل الصفحة) ليعمل التنزيل إلى المعرض.
         registerNativeBridge();
+        applyOfflineCacheMode();
         BabylonCall.onIntent(this, getIntent());
-        captureLink(getIntent());
 
         // طلب صلاحيات الوسائط/الإشعارات مرة واحدة عند أول تشغيل فقط.
         android.content.SharedPreferences prefs =
@@ -218,30 +194,6 @@ public class MainActivity extends BridgeActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         BabylonCall.onIntent(this, intent);
-        captureLink(intent);
-    }
-
-    // رابط حساب (https://الموقع/?u=name) وصل من تطبيق آخر: نحفظه والصفحة تأخذه وتفتح الحساب.
-    static volatile String pendingLink = null;
-
-    private void captureLink(Intent intent) {
-        try {
-            if (intent == null || !Intent.ACTION_VIEW.equals(intent.getAction())) return;
-            Uri d = intent.getData();
-            if (d == null) return;
-            String s = d.toString();
-            if (!s.startsWith("https://") && !s.startsWith("babylonchat://")) return;
-            pendingLink = s;
-            dispatchLink();
-        } catch (Throwable ignored) { }
-    }
-
-    private void dispatchLink() {
-        try {
-            if (getBridge() == null || getBridge().getWebView() == null) return;
-            final WebView w = getBridge().getWebView();
-            w.post(() -> w.evaluateJavascript("try{window.bbCheckPendingLink&&window.bbCheckPendingLink()}catch(e){}", null));
-        } catch (Throwable ignored) { }
     }
 
     @Override
@@ -276,10 +228,30 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
-        resumePendingUpdate();
         registerNativeBridge();
+        applyOfflineCacheMode();
         applyTransparentBars();
         BabylonNotifications.dispatchPending(getApplicationContext(), liveWebView);
+    }
+
+    /** بدون إنترنت: يفتح التطبيق من الكاش مباشرة (بدون شاشة خطأ). مع الإنترنت: تحميل عادي حتى تصل التحديثات. */
+    private void applyOfflineCacheMode() {
+        try {
+            android.net.ConnectivityManager cm =
+                (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            boolean online = false;
+            if (cm != null) {
+                android.net.Network n = cm.getActiveNetwork();
+                android.net.NetworkCapabilities c = n == null ? null : cm.getNetworkCapabilities(n);
+                online = c != null && c.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET);
+            }
+            WebView w = getBridge().getWebView();
+            w.getSettings().setCacheMode(online
+                ? android.webkit.WebSettings.LOAD_DEFAULT
+                : android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK);
+        } catch (Throwable t) {
+            android.util.Log.e("BabylonChat", "applyOfflineCacheMode failed", t);
+        }
     }
 
     private void requestInitialPermissions() {
@@ -302,14 +274,6 @@ public class MainActivity extends BridgeActivity {
     }
 
     private class BabylonAndroidBridge {
-        /** يعيد رابط الحساب المعلّق (إن وُجد) ثم يمسحه. */
-        @JavascriptInterface
-        public String takePendingLink() {
-            String s = pendingLink;
-            pendingLink = null;
-            return s == null ? "" : s;
-        }
-
         @JavascriptInterface
         public void showMessageNotificationEx(String title, String body, String avatar, String otherId, String chatId) {
             BabylonNotifications.show(getApplicationContext(), title, body, avatar, otherId, chatId);
@@ -359,15 +323,6 @@ public class MainActivity extends BridgeActivity {
 
     // BABYLON-UPD-BEGIN
     private volatile boolean updating = false;
-    private volatile String pendingUpdateUrl = null;
-
-    private void resumePendingUpdate() {
-        final String u = pendingUpdateUrl;
-        if (u == null) return;
-        if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) return;
-        pendingUpdateUrl = null;
-        try { runUpdateOnUi(u); } catch (Throwable t) { updating = false; updJs("error", 0, updReason(t)); }
-    }
 
     private void updJs(String state, int pct) { updJs(state, pct, ""); }
 
@@ -395,15 +350,13 @@ public class MainActivity extends BridgeActivity {
     private boolean updUrlAllowed(String url) {
         try {
             if (url == null || !url.startsWith("https://")) return false;
+            WebView w = liveWebView;
+            String cur = (w == null) ? null : w.getUrl();
+            if (cur == null) return false;
             Uri u = Uri.parse(url);
             String host = u.getHost();
             String path = u.getPath();
-            if (host == null || path == null || !path.equals("/api/apk")) return false;
-            WebView w = liveWebView;
-            String cur = (w == null) ? null : w.getUrl();
-            if (cur != null && host.equals(Uri.parse(cur).getHost())) return true;
-            // احتياط: الموقع المضبوط في إعدادات التطبيق (server.url)
-            return host.equals("telegram-pi-rouge.vercel.app");
+            return host != null && host.equals(Uri.parse(cur).getHost()) && "/api/apk".equals(path);
         } catch (Throwable t) {
             return false;
         }
@@ -421,7 +374,6 @@ public class MainActivity extends BridgeActivity {
         if (!updUrlAllowed(url)) { updJs("error", 0, "url not allowed"); return; }
         if (updating) { updJs("dl", 0); return; }
         if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
-            pendingUpdateUrl = url;
             runOnUiThread(() -> {
                 try {
                     Intent i = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()));
@@ -489,9 +441,6 @@ public class MainActivity extends BridgeActivity {
         if (apk.exists()) apk.delete();
         HttpURLConnection c = updOpen(source);
         long total = c.getContentLengthLong();
-        if (total <= 0) {
-            try { total = Long.parseLong(c.getHeaderField("X-Apk-Size")); } catch (Throwable ignored) { }
-        }
         long done = 0;
         int last = -1;
         updJs("dl", 0);
@@ -605,9 +554,9 @@ public class MainActivity extends BridgeActivity {
                 try (FileOutputStream out = new FileOutputStream(file)) { out.write(bytes); }
                 android.media.MediaScannerConnection.scanFile(this, new String[]{file.getAbsolutePath()}, new String[]{mime}, null);
             }
-            runOnUiThread(() -> Toast.makeText(this, "تم التحميل في المعرض", Toast.LENGTH_LONG).show());
+            runOnUiThread(() -> Toast.makeText(this, "تم تحميل الصورة او الفيديو في المعرض", Toast.LENGTH_LONG).show());
         } catch (Exception e) {
-            runOnUiThread(() -> Toast.makeText(this, "تعذر التحميل", Toast.LENGTH_LONG).show());
+            runOnUiThread(() -> Toast.makeText(this, "تعذر تنزيل الصورة أو الفيديو", Toast.LENGTH_LONG).show());
         }
     }
 }
