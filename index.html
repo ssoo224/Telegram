@@ -2577,16 +2577,16 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
     <div id="formRegister" class="hidden" style="width:100%;">
       <div class="input-group">
         <label>اسم العرض (الاسم الشخصي)</label>
-        <input id="regName" class="babylon-input rtl" type="text" placeholder="اسمك الكريم">
+        <input id="regName" class="babylon-input rtl" type="text" placeholder="Your Name">
       </div>
       <div class="input-group">
-        <label>اسم المستخدم (5 أحرف فأكثر)</label>
-        <input id="regUsername" class="babylon-input" type="text" placeholder="ali" oninput="validateUsernameInput(this)">
+        <label>اسم المستخدم (3 أحرف فأكثر)</label>
+        <input id="regUsername" class="babylon-input" type="text" placeholder="Username" oninput="validateUsernameInput(this)">
         <span id="regUserError" class="field-error hidden"></span>
       </div>
       <div class="input-group">
         <label>البريد الإلكتروني</label>
-        <input id="regEmail" class="babylon-input" type="email" placeholder="name@domain.com">
+        <input id="regEmail" class="babylon-input" type="email" placeholder="example@gmail.com">
         <span id="regEmailError" class="field-error hidden"></span>
       </div>
       <div class="input-group">
@@ -3101,7 +3101,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
         <div class="edit-profile-card">
           <div class="input-group">
             <label for="modalNameInput">اسم العرض</label>
-            <input id="modalNameInput" class="babylon-input rtl" placeholder="اسمك الكريم" autocomplete="name">
+            <input id="modalNameInput" class="babylon-input rtl" placeholder="الإسم" autocomplete="name">
           </div>
           <div class="input-group">
             <label for="modalUsernameInput">اسم المستخدم (@)</label>
@@ -3776,7 +3776,7 @@ function saveProfileChanges() {
   if (!newName) return showToast("الرجاء أدخل اسم العرض");
 
   if (!isValidUsername(newUsername, currentUser && currentUser.email)) {
-    showFieldError("modalUserError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 5 أحرف فأكثر");
+    showFieldError("modalUserError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 3 أحرف فأكثر");
     return;
   }
   if (window.__savingProfile) return;
@@ -3846,7 +3846,7 @@ function registerUser() {
   const password = document.getElementById("regPassword").value.trim();
 
   if (!name) return showToast("الرجاء إدخال اسم العرض");
-  if (!isValidUsername(username, email)) return showFieldError("regUserError", "اليوزر لازم يبدأ بحرف ويكون 5 أحرف أو أكثر (حروف إنجليزية وأرقام و _ .)");
+  if (!isValidUsername(username, email)) return showFieldError("regUserError", "اليوزر لازم يبدأ بحرف ويكون 3 أحرف أو أكثر (حروف إنجليزية وأرقام و _ .)");
   if (!email) return showFieldError("regEmailError", "الرجاء إدخال البريد الإلكتروني");
   if (isDisposableEmail(email)) return showFieldError("regEmailError", "هذا النوع من البريد غير مسموح، استخدم بريداً حقيقياً");
   if (!password || password.length < 6) return showFieldError("regPassError", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
