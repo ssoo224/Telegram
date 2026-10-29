@@ -2549,7 +2549,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
     <div id="formLogin" style="width:100%;">
       <div class="input-group">
         <label>البريد الإلكتروني أو اسم المستخدم (@)</label>
-        <input id="loginEmail" class="babylon-input rtl" type="text" placeholder="example@gmail.com أو Username">
+        <input id="loginEmail" class="babylon-input rtl" type="text" placeholder="name@domain.com أو ali">
         <span id="loginEmailError" class="field-error hidden"></span>
       </div>
       <div class="input-group">
@@ -2566,7 +2566,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
       <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px;text-align:right;">اكتب بريدك الإلكتروني وراح نرسل لك رابط لتعيين كلمة مرور جديدة.</p>
       <div class="input-group">
         <label>البريد الإلكتروني</label>
-        <input id="forgotEmail" class="babylon-input" type="text" inputmode="email" autocapitalize="off" placeholder="example@gmail.com أو اسم المستخدم">
+        <input id="forgotEmail" class="babylon-input" type="text" inputmode="email" autocapitalize="off" placeholder="name@domain.com أو اسم المستخدم">
         <span id="forgotEmailError" class="field-error hidden"></span>
       </div>
       <button type="button" class="babylon-btn" onclick="sendReset()">إرسال رابط الاستعادة</button>
@@ -3427,9 +3427,9 @@ function playNotificationSound() {
 
 const DEV_EMAIL = 'anldheb429@gmail.com';
 function isValidUsername(username, email) {
-  const isDev = !!email && String(email).trim().toLowerCase() === DEV_EMAIL;
-  const min = isDev ? 3 : 5;
-  return new RegExp('^[a-zA-Z][a-zA-Z0-9_\\.]{' + (min - 1) + ',}$').test(username);
+  // 3 أحرف: حروف فقط (مثل nft أو sss) — 4 فأكثر: يبدأ بحرف ويسمح بأرقام و _ .
+  // ممنوع البدء برقم أو رمز دائماً
+  return /^[a-zA-Z](?:[a-zA-Z]{2}|[a-zA-Z0-9_.]{3,})$/.test(username);
 }
 
 function validateUsernameInput(inputElement) {
@@ -3776,7 +3776,7 @@ function saveProfileChanges() {
   if (!newName) return showToast("الرجاء أدخل اسم العرض");
 
   if (!isValidUsername(newUsername, currentUser && currentUser.email)) {
-    showFieldError("modalUserError", "يجب أن يبدأ اليوزر بحرف ويحتوي على 3 أحرف فأكثر");
+    showFieldError("modalUserError", "اليوزر 3 أحرف فأكثر، يبدأ بحرف، والثلاثي حروف فقط بدون أرقام");
     return;
   }
   if (window.__savingProfile) return;
@@ -3846,7 +3846,7 @@ function registerUser() {
   const password = document.getElementById("regPassword").value.trim();
 
   if (!name) return showToast("الرجاء إدخال اسم العرض");
-  if (!isValidUsername(username, email)) return showFieldError("regUserError", "اليوزر لازم يبدأ بحرف ويكون 3 أحرف أو أكثر (حروف إنجليزية وأرقام و _ .)");
+  if (!isValidUsername(username, email)) return showFieldError("regUserError", "اليوزر لازم يبدأ بحرف ويكون 3 أحرف أو أكثر (الثلاثي حروف فقط بدون أرقام)");
   if (!email) return showFieldError("regEmailError", "الرجاء إدخال البريد الإلكتروني");
   if (isDisposableEmail(email)) return showFieldError("regEmailError", "هذا النوع من البريد غير مسموح، استخدم بريداً حقيقياً");
   if (!password || password.length < 6) return showFieldError("regPassError", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
