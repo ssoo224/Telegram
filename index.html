@@ -9935,6 +9935,12 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 .bbal-steps.on{display:block}
 .bbal-steps b{color:#c99a1c}
 .bbal-skip{display:block;width:100%;padding:10px;border:0;background:none;font:inherit;font-size:14px;font-weight:700;color:var(--b-sub);cursor:pointer}
+.bbal-ov{align-items:center;background:#f4f7fb}
+@media(prefers-color-scheme:dark){.bbal-ov{background:#0e1621}}
+.bbal-sheet{border-radius:24px;max-width:420px;width:calc(100% - 32px);margin:0 16px;box-shadow:0 14px 40px rgba(0,0,0,.22)}
+.bbal-spin{width:34px;height:34px;margin:10px auto 6px;border:3.5px solid rgba(201,154,28,.25);border-top-color:#c99a1c;border-radius:50%;animation:bbalSpin .9s linear infinite}
+@keyframes bbalSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.bbal-spin{animation:none}}
 @keyframes bbalFade{from{opacity:0}to{opacity:1}}
 @keyframes bbalUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.bbal-ov,.bbal-sheet{animation:none}}
@@ -9989,7 +9995,7 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
   window.bbCheckPendingLink = checkPending;
   checkPending(); setTimeout(checkPending, 1500);
 
-  /* ---- 2) المتصفح على أندرويد: نافذة فتح/تحميل ---- */
+  /* ---- 2) المتصفح على أندرويد: فتح التطبيق مباشرة، وإلا صفحة تحميل إجبارية ---- */
   if (inApp() || !/Android/i.test(navigator.userAgent)) return;
   var name = param('u');
   if (!name || !UN_RE.test(name)) return;
@@ -9998,18 +10004,26 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
 
   var apk = location.origin + '/api/apk';
   var fallback = location.origin + '/?u=' + encodeURIComponent(name) + '&noapp=1';
+  var proto = location.protocol.replace(':', '');
   var intentUrl = 'intent://' + location.host + '/?u=' + encodeURIComponent(name) +
-    '#Intent;scheme=' + location.protocol.replace(':', '') + ';package=' + APP_PKG +
+    '#Intent;scheme=' + proto + ';package=' + APP_PKG +
     ';S.browser_fallback_url=' + encodeURIComponent(fallback) + ';end';
+  var schemeUrl = 'babylonchat://open?u=' + encodeURIComponent(name);   /* لباقي المتصفحات (فايرفوكس...) */
+  var ua = navigator.userAgent;
+  var chromeFamily = /(Chrome|CriOS|SamsungBrowser|EdgA|OPR|Brave|Vivaldi|UCBrowser|MiuiBrowser)/i.test(ua) && !/Firefox/i.test(ua);
+  var openUrl = chromeFamily ? intentUrl : schemeUrl;
 
   var ICON_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/></svg>';
-  var ICON_DL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></svg>';
+  var ICON_DL = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></svg>';
 
   var left = false;   /* صار المتصفح بالخلفية = انفتح التطبيق */
-  function markLeft(){ left = true; }
-  document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'hidden') markLeft(); });
+  var ov = null, timer = 0;
+  function markLeft(){ left = true; clearTimeout(timer); }
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'hidden') markLeft();
+    else if (left && ov) { ov.remove(); ov = null; try { sessionStorage.setItem('bb_applink_skip', '1'); } catch (e) {} }   /* رجع للمتصفح بعد فتح التطبيق */
+  });
   window.addEventListener('pagehide', markLeft);
-  window.addEventListener('blur', markLeft);
 
   function startDownload(){
     var a = document.createElement('a'); a.href = apk; a.setAttribute('download', ''); a.rel = 'noopener';
@@ -10019,58 +10033,38 @@ html.kb-open #chatView .chat-input-container{padding-bottom:4px!important}
     var done = false; try { done = sessionStorage.getItem('bb_applink_dl') === '1'; sessionStorage.setItem('bb_applink_dl', '1'); } catch (e) {}
     if (!done) startDownload();
   }
+  function frame(inner){
+    if (!ov) { ov = document.createElement('div'); ov.id = 'bbalOv'; ov.className = 'bbal-ov'; document.body.appendChild(ov); }
+    ov.innerHTML = '<div class="bbal-sheet" role="dialog" aria-modal="true">' + inner + '</div>';
+    var un = ov.querySelector('.bbal-un'); if (un) un.textContent = '@' + name;
+    return ov;
+  }
+  function showOpening(){
+    frame('<div class="bbal-ic">' + ICON_CHAT + '</div><h2>جارٍ فتح التطبيق…</h2>' +
+          '<p>الحساب <span class="bbal-un"></span> على بابيلون شات</p><div class="bbal-spin"></div>');
+  }
+  function showDownload(){
+    var o = frame('<div class="bbal-ic">' + ICON_DL + '</div><h2>حمّل بابيلون شات للمتابعة</h2>' +
+      '<p>لفتح الحساب <span class="bbal-un"></span> لازم تطبيق بابيلون شات. بدأ التنزيل تلقائياً.</p>' +
+      '<div class="bbal-steps on"><b>١.</b> انتظر انتهاء التنزيل<br><b>٢.</b> افتح الملف، وإذا طلب الأندرويد اسمح بالتثبيت من هذا المصدر<br><b>٣.</b> اضغط «تثبيت» ثم افتح الرابط من جديد</div>' +
+      '<button type="button" class="bbal-btn gold" id="bbalDl">' + ICON_DL + '<span>تحميل التطبيق</span></button>' +
+      '<button type="button" class="bbal-skip" id="bbalRetry">التطبيق مثبّت عندي؟ جرّب فتحه</button>');
+    o.querySelector('#bbalDl').onclick = startDownload;
+    o.querySelector('#bbalRetry').onclick = function(){ left = false; location.href = openUrl; };
+    autoDownloadOnce();
+  }
 
-  function mount(){
-    if (document.getElementById('bbalOv')) return;
-    var ov = document.createElement('div'); ov.id = 'bbalOv'; ov.className = 'bbal-ov';
-    ov.innerHTML =
-      '<div class="bbal-sheet" role="dialog" aria-modal="true">' +
-        '<div class="bbal-ic">' + ICON_CHAT + '</div>' +
-        '<h2 id="bbalH"></h2><p id="bbalP"></p>' +
-        '<div class="bbal-steps" id="bbalSteps">' +
-          '<b>١.</b> انتظر انتهاء التنزيل (أو اضغط «تحميل التطبيق»)<br>' +
-          '<b>٢.</b> افتح الملف، وإذا طلب الأندرويد اسمح بالتثبيت من هذا المصدر<br>' +
-          '<b>٣.</b> اضغط «تثبيت» ثم ارجع وافتح الرابط من جديد' +
-        '</div>' +
-        '<button type="button" class="bbal-btn gold" id="bbalOpen">' + ICON_CHAT + '<span>فتح في التطبيق</span></button>' +
-        '<button type="button" class="bbal-btn line" id="bbalDl">' + ICON_DL + '<span>تحميل التطبيق</span></button>' +
-        '<button type="button" class="bbal-skip" id="bbalSkip">المتابعة في المتصفح</button>' +
-      '</div>';
-    document.body.appendChild(ov);
-    var H = ov.querySelector('#bbalH'), P = ov.querySelector('#bbalP'), ST = ov.querySelector('#bbalSteps');
-    function setOpening(){
-      H.textContent = 'جارٍ فتح التطبيق…';
-      P.innerHTML = 'الحساب <span class="bbal-un"></span> على بابيلون شات.';
-      P.querySelector('.bbal-un').textContent = '@' + name;
-      ST.classList.remove('on');
-    }
-    function setNoApp(){
-      H.textContent = 'التطبيق غير مثبّت عندك';
-      P.innerHTML = 'جارٍ تنزيل بابيلون شات. بعد انتهاء التنزيل ثبّته ثم افتح الرابط من جديد لتصل إلى <span class="bbal-un"></span> مباشرة.';
-      P.querySelector('.bbal-un').textContent = '@' + name;
-      ST.classList.add('on');
-    }
-    ov.querySelector('#bbalOpen').onclick = function(){ location.href = intentUrl; };
-    ov.querySelector('#bbalDl').onclick = function(){ setNoApp(); startDownload(); };
-    ov.querySelector('#bbalSkip').onclick = function(){
-      try { sessionStorage.setItem('bb_applink_skip', '1'); } catch (e) {}
-      ov.remove();
-    };
-
-    if (noapp) {                       /* رجّعنا المتصفح لأن التطبيق غير موجود: نحمّله فوراً */
-      setNoApp(); autoDownloadOnce(); return;
-    }
-    setOpening();
-    var tried = false; try { tried = sessionStorage.getItem('bb_applink_try') === '1'; sessionStorage.setItem('bb_applink_try', '1'); } catch (e) {}
-    if (tried) return;
-    setTimeout(function(){ try { location.href = intentUrl; } catch (e) {} }, 300);
-    /* إذا بقيت الصفحة ظاهرة بعد ثانيتين فالتطبيق غير مثبّت: نحمّله */
-    setTimeout(function(){
-      if (left || document.visibilityState !== 'visible' || !document.getElementById('bbalOv')) return;
-      setNoApp(); autoDownloadOnce();
+  function run(){
+    if (noapp) { showDownload(); return; }           /* كروم رجّعنا لأن التطبيق غير موجود */
+    showOpening();
+    setTimeout(function(){ try { location.href = openUrl; } catch (e) {} }, 250);
+    /* إذا بقيت الصفحة ظاهرة بعد فتح الرابط فالتطبيق غير مثبّت: صفحة التحميل */
+    timer = setTimeout(function(){
+      if (left || document.visibilityState !== 'visible') return;
+      showDownload();
     }, 2600);
   }
-  if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount);
+  if (document.body) run(); else document.addEventListener('DOMContentLoaded', run);
 })();
 </script>
 </body>
