@@ -62,7 +62,7 @@ function page(title, text, btn, link, foot, hello) {
     + '<p style="color:#6b7280;font-size:13px;line-height:1.7;margin:0 0 14px">' + esc(foot) + '</p>' + SIGN);
 }
 function codePage(code) {
-  return WRAP(TITLE('رمز الدخول إلى Babylon Chat')
+  return WRAP(TITLE('رمز الدخول')
     + '<p style="line-height:1.9;margin:0 0 6px;font-weight:bold;font-size:15px">هلا بيك! 👋</p>'
     + '<p style="line-height:1.9;margin:0 0 16px;font-size:14px;color:#374151">هذا رمز التحقق حتى تكمل تسجيل الدخول. صالح لمدة 10 دقائق:</p>'
     + '<p dir="ltr" style="text-align:center;font-size:32px;letter-spacing:9px;font-weight:bold;color:#5a3d06;background-color:#f4dc8f;background-image:linear-gradient(135deg,#fbefc4 0%,#f0d27a 100%);border:1px solid #d3a93b;border-radius:14px;padding:14px 0 14px 9px;margin:0 0 16px">' + code + '</p>'
