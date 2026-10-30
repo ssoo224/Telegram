@@ -16960,4 +16960,83 @@ return R("index");})();
 
   console.log('[Babylon Perf v2] ✅ Race condition and chat list fixes applied');
 })();
+
+<!-- Babylon Performance Patch v3 -->
+<style id="babylon-perf-css-v3">
+  /* إخفاء المستطيل الفاضي نهائياً لحد ما يجهز */
+  #chatList .chat-item.loading-skeleton,
+  #chatList .chat-item:empty { 
+    display: none !important; 
+  }
+</style>
+<script id="babylon-perf-patch-v3">
+(function(){
+  'use strict';
+
+  // 1. إخفاء المستطيلات الفاضية بذكاء
+  var chatList = document.getElementById('chatList');
+  if (chatList) {
+    var ob = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        // إذا انضاف عنصر جديد للقائمة
+        if (m.addedNodes.length) {
+          m.addedNodes.forEach(function(node) {
+            if (node.nodeType === 1 && node.classList.contains('chat-item')) {
+              if (!node.querySelector('.chat-item-info')) {
+                node.classList.add('loading-skeleton');
+              }
+            }
+          });
+        }
+        // إذا امتلأ العنصر بالبيانات
+        if (m.type === 'childList' && m.target.classList && m.target.classList.contains('chat-item')) {
+          if (m.target.querySelector('.chat-item-info')) {
+            m.target.classList.remove('loading-skeleton');
+          }
+        }
+      });
+    });
+    ob.observe(chatList, { childList: true, subtree: true });
+  }
+
+  // 2. مسح الرسائل القديمة فوراً بمجرد اللمس (قبل حتى ما يفتح)
+  document.body.addEventListener('click', function(e) {
+    var item = e.target.closest('.chat-item, .search-user-card, .gx-row');
+    if (item) {
+      var msgBox = document.getElementById('messagesArea');
+      var chatView = document.getElementById('chatView');
+      // إذا كنا في القائمة ونريد فتح محادثة
+      if (msgBox && chatView && chatView.classList.contains('hidden')) {
+        msgBox.innerHTML = ''; // مسح فوري
+      }
+    }
+  }, true);
+
+  // 3. تأكيد المسح لدوال المحادثات (فردية وجماعية)
+  var _ocr = window.openChatRoom;
+  if (_ocr && !_ocr.__v3) {
+    window.openChatRoom = function(other, keep) {
+      if (!keep) {
+        var b = document.getElementById('messagesArea');
+        if (b) b.innerHTML = '';
+      }
+      return _ocr.apply(this, arguments);
+    };
+    window.openChatRoom.__v3 = true;
+  }
+
+  var _ogr = window.openGroupRoom;
+  if (_ogr && !_ogr.__v3) {
+    window.openGroupRoom = function(chatId, keep) {
+      if (!keep) {
+        var b = document.getElementById('messagesArea');
+        if (b) b.innerHTML = '';
+      }
+      return _ogr.apply(this, arguments);
+    };
+    window.openGroupRoom.__v3 = true;
+  }
+
+  console.log('[Babylon Perf v3] ✅ Skeleton and instant clearing applied');
+})();
 </script>
