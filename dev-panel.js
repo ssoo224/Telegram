@@ -69,6 +69,7 @@
       '#dvpOverlay textarea{min-height:96px;resize:vertical}' +
       '#dvpOverlay input:focus,#dvpOverlay textarea:focus{border-color:var(--dv-focus)}' +
       '#dvpOverlay .dvp-cnt{font-size:11px;color:var(--dv-sub);text-align:left;margin:-4px 4px 8px}' +
+      '#dvpOverlay[data-dvp-theme="dark"] .dvp-x{color:#e8c85d;-webkit-text-fill-color:#e8c85d}' +
       '#dvpOverlay[data-dvp-theme="light"] .dvp-x{color:#000;-webkit-text-fill-color:#000}' +
       '#dvpOverlay .dvp-send{width:100%;border:0;border-radius:14px;min-height:50px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,#e8c85d,#cba843);color:#fff;-webkit-text-fill-color:#fff}' +
       '#dvpOverlay .dvp-send.armed{background:#ef4444;color:#fff;-webkit-text-fill-color:#fff}' +
