@@ -4855,7 +4855,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         let htmlContent = "";
         if (grp && !isMine) htmlContent += groupSenderHtml(m.senderId);
         if (m.forwarded) htmlContent += `<div class="fwd-label"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 6 6-6 6"/><path d="M21 11H9a6 6 0 0 0-6 6v1"/></svg>معاد توجيهها</div>`;
-        if (m.replyTo) { const _rsid = m.replyToSenderId || (m.replyToId ? ((document.getElementById('message_'+m.replyToId)||{dataset:{}}).dataset.senderId||'') : ''); const _rn = _rsid ? replyOwnerName(_rsid) : ''; htmlContent += `<div class="reply-quote" data-reply-id="${esc(m.replyToId||'')}" role="button">${_rn ? `<span class="reply-quote-name">${esc(_rn)}</span>` : ''}${esc(m.replyTo)}</div>`; }
+        if (m.replyTo) { const _rsid = m.replyToSenderId || (m.replyToId ? ((document.getElementById('message_'+m.replyToId)||{dataset:{}}).dataset.senderId||'') : ''); const _rn = _rsid ? replyOwnerName(_rsid) : ''; const _rmd = m.replyToMedia || (m.replyToId ? replyMediaFromEl(document.getElementById('message_'+m.replyToId)) : null); htmlContent += `<div class="reply-quote${_rmd ? ' has-media' : ''}" data-reply-id="${esc(m.replyToId||'')}" role="button">${_rmd ? `<span class="reply-quote-body">${_rn ? `<span class="reply-quote-name">${esc(_rn)}</span>` : ''}${esc(m.replyTo)}</span>${replyThumbHtml(_rmd)}` : `${_rn ? `<span class="reply-quote-name">${esc(_rn)}</span>` : ''}${esc(m.replyTo)}`}</div>`; }
         if (m.storyReply) {
           const sr = m.storyReplyData || {};
           const previewText = sr.caption || (sr.videoUrl ? 'قصة فيديو' : 'قصة');
@@ -5247,6 +5247,26 @@ function replyOwnerName(uid) {
   return (t && t.textContent.trim()) || '';
 }
 let replyingToSenderId = null;
+let replyingToMedia = null;
+/* معاينة مصغّرة (صورة/فيديو) داخل شعار الرد */
+function replyMediaFromEl(el) {
+  if (!el) return null;
+  const im = el.querySelector('.msg-image img');
+  if (im && im.getAttribute('src')) return { t: 'image', u: im.getAttribute('src') };
+  const vd = el.querySelector('.msg-video video');
+  if (vd) {
+    const u = (vd.getAttribute('src') || '').split('#')[0];
+    if (u) return { t: 'video', u: u, p: vd.getAttribute('poster') || '' };
+  }
+  return null;
+}
+function replyThumbHtml(md) {
+  if (!md || !md.u) return '';
+  if (md.t === 'video') {
+    return '<span class="reply-thumb reply-thumb-video"><video src="' + esc(md.u) + '#t=0.1"' + (md.p ? ' poster="' + esc(md.p) + '"' : '') + ' preload="metadata" muted playsinline></video><i class="reply-thumb-play"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></i></span>';
+  }
+  return '<span class="reply-thumb"><img src="' + esc(md.u) + '" alt="" loading="lazy" draggable="false"></span>';
+}
 function triggerSwipeReply(text, id, senderId) {
   replyingToText = text;
   replyingToId = id || null;
@@ -5257,6 +5277,13 @@ function triggerSwipeReply(text, id, senderId) {
   if (_lbl) _lbl.textContent = _nm ? 'الرد على ' + _nm : 'الرد على الرسالة';
   const previewText = document.getElementById("replyPreviewText");
   if (previewText) previewText.textContent = replyingToText || "رسالة";
+  replyingToMedia = replyMediaFromEl(_el);
+  const _bar = document.getElementById("replyPreviewBar");
+  _bar.querySelectorAll(':scope > .reply-thumb').forEach(x => x.remove());
+  if (replyingToMedia) {
+    const _c = _bar.querySelector('.reply-preview-content');
+    if (_c) _c.insertAdjacentHTML('beforebegin', replyThumbHtml(replyingToMedia));
+  }
   document.getElementById("replyPreviewBar").classList.remove("hidden");
   document.getElementById("messageInput").focus();
 }
@@ -5384,6 +5411,8 @@ function cancelReply() {
   replyingToText = null;
   replyingToId = null;
   replyingToSenderId = null;
+  replyingToMedia = null;
+  document.querySelectorAll('#replyPreviewBar > .reply-thumb').forEach(x => x.remove());
   document.getElementById("replyPreviewBar").classList.add("hidden");
 }
 
@@ -5563,7 +5592,7 @@ function sendMessage(e) {
       createdAt: Date.now()
     };
 
-    if (replyingToText) { msgData.replyTo = replyingToText; if (replyingToId) msgData.replyToId = replyingToId; if (replyingToSenderId) msgData.replyToSenderId = replyingToSenderId; }
+    if (replyingToText) { msgData.replyTo = replyingToText; if (replyingToId) msgData.replyToId = replyingToId; if (replyingToSenderId) msgData.replyToSenderId = replyingToSenderId; if (replyingToMedia) msgData.replyToMedia = replyingToMedia; }
     if (isGroupChat(activeChatId)) { const _mn = extractMentionUids(text); if (_mn.length) msgData.mentions = _mn; }
 
     db.collection("chats").doc(activeChatId).collection("messages").add(msgData).then(() => {
@@ -12344,6 +12373,17 @@ function bbMsgUser(u){
 }
 </style>
 
+<style id="babylon-reply-thumb">
+/* معاينة الصورة/الفيديو داخل شعار الرد */
+.reply-thumb{position:relative;display:inline-flex;flex:0 0 auto;width:40px;height:40px;border-radius:9px;overflow:hidden;background:rgba(127,140,160,.25);align-items:center;justify-content:center}
+.reply-thumb img,.reply-thumb video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.reply-thumb-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(0,0,0,.28);pointer-events:none}
+#replyPreviewBar > .reply-thumb{width:44px;height:44px;border-radius:10px}
+#chatView .reply-quote.has-media{display:flex!important;align-items:center;gap:8px;white-space:normal;overflow:hidden}
+#chatView .reply-quote.has-media .reply-quote-body{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#chatView .reply-quote.has-media .reply-quote-name{display:block}
+#chatView .reply-quote.has-media .reply-thumb{width:38px;height:38px;border-radius:8px}
+</style>
 <style id="babylon-cancel-no-shadow">
 /* زر «إلغاء» في نافذتي الخروج والحذف: بدون ظل للكلمة أو للزر */
 body .app-container .cl-dlg.cl-del .cl-btns button#clDelNo,
