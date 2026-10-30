@@ -6103,6 +6103,17 @@ function glyphHtml(sym, size) {
   try { return svgIcon(sym.slice(3), size || 24); } catch (e) { return ''; }
 }
 
+function imageHasAlpha(img) {
+  try {
+    const w = Math.max(1, Math.min(96, img.width)), h = Math.max(1, Math.min(96, img.height));
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.drawImage(img, 0, 0, w, h);
+    const d = x.getImageData(0, 0, w, h).data;
+    for (let i = 3; i < d.length; i += 4) { if (d[i] < 250) return true; }
+  } catch (e) {}
+  return false;
+}
 function compressImage(file, cb) {
   if ((file.type === 'image/gif' || file.type === 'image/webp') && file.size <= 650000) {
     const fr = new FileReader();
@@ -6115,14 +6126,21 @@ function compressImage(file, cb) {
   const url = URL.createObjectURL(file);
   img.onload = () => {
     URL.revokeObjectURL(url);
+    /* الصور الشفافة (PNG/WebP...) تُحفظ بصيغة تدعم الشفافية بدل JPEG الذي يحوّلها إلى أسود */
+    const alpha = /^image\/(png|webp|gif|avif|svg\+xml)$/.test(file.type) && imageHasAlpha(img);
     let dim = 1024, q = 0.72, out = '';
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 8; i++) {
       const sc = Math.min(1, dim / Math.max(img.width, img.height));
       const c = document.createElement('canvas');
       c.width = Math.round(img.width * sc);
       c.height = Math.round(img.height * sc);
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      out = c.toDataURL('image/jpeg', q);
+      if (alpha) {
+        out = c.toDataURL('image/webp', Math.max(0.6, q + 0.1));
+        if (out.indexOf('data:image/webp') !== 0) out = c.toDataURL('image/png');
+      } else {
+        out = c.toDataURL('image/jpeg', q);
+      }
       if (out.length < 850000) break;
       dim *= 0.8; q = Math.max(0.5, q - 0.08);
     }
@@ -12405,6 +12423,11 @@ function bbMsgUser(u){
 <style id="babylon-chat-item-slim">
 /* تنحيف بطاقات المحادثات في قسم المحادثات بمقدار 2 بكسل */
 body .app-container #homeView#homeView#homeView#homeView #chatList .chat-item{min-height:66px!important;padding-top:8px!important;padding-bottom:8px!important}
+</style>
+<style id="babylon-transparent-images">
+/* الصور الشفافة تظهر شفافة وليست سوداء */
+#chatView #messagesArea .msg-bubble.image-msg .msg-image,
+#chatView #messagesArea .msg-bubble.image-msg .msg-image img{background:transparent!important}
 </style>
 <style id="babylon-reply-thumb">
 /* معاينة الصورة/الفيديو داخل شعار الرد */
