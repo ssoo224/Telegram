@@ -16932,4 +16932,32 @@ return R("index");})();
 
   console.log('[Babylon Perf] ✅ Patches applied');
 })();
+
+<!-- Babylon Performance Patch v2 -->
+<style id="babylon-perf-css-v2">
+  /* إخفاء المستطيلات الفاضية للمحادثات لحد ما تتحمل بياناتها */
+  #chatList .chat-item:empty { display: none !important; }
+</style>
+<script id="babylon-perf-patch-v2">
+(function(){
+  'use strict';
+
+  // إصلاح مشكلة تداخل الرسائل عند التنقل السريع بين المحادثات
+  var _origOCR2 = window.openChatRoom;
+  if (typeof _origOCR2 === 'function' && !_origOCR2.__patchedV2) {
+    window.openChatRoom = function (otherUserId, keepLimit) {
+      // إذا كانت فتح محادثة جديدة (وليس تحميل رسائل أقدم)
+      if (!keepLimit) {
+        var msgBox = document.getElementById('messagesArea');
+        if (msgBox) {
+          msgBox.innerHTML = ''; // مسح رسائل المحادثة السابقة فوراً
+        }
+      }
+      return _origOCR2.apply(this, arguments);
+    };
+    window.openChatRoom.__patchedV2 = true;
+  }
+
+  console.log('[Babylon Perf v2] ✅ Race condition and chat list fixes applied');
+})();
 </script>
