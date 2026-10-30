@@ -12344,6 +12344,13 @@ function bbMsgUser(u){
 }
 </style>
 
+<style id="babylon-cancel-no-shadow">
+/* زر «إلغاء» في نافذتي الخروج والحذف: بدون ظل للكلمة أو للزر */
+body .app-container .cl-dlg.cl-del .cl-btns button#clDelNo,
+body .app-container .cl-dlg.cl-del .cl-btns button#clLogoutNo{
+  text-shadow:none!important;box-shadow:none!important;filter:none!important;
+}
+</style>
 <style id="babylon-voice-minibar-inchat">
 /* شريط تشغيل الصوتية داخل المحادثة: تحت الاسم والصورة، وتحت الرسالة المثبتة إن وُجدت */
 #chatView#chatView #vpBar.inchat{
