@@ -1,6 +1,5 @@
 /* api/send-mail.js — رسائل بابل + رمز التحقق عند تسجيل الدخول
    المتغيرات بـ Vercel: FIREBASE_SERVICE_ACCOUNT, GMAIL_USER, GMAIL_APP_PASSWORD
-   اختياري: MAIL_ASSETS_URL (افتراضي https://babyllon.vercel.app) — مكان صور الرسائل بمجلد public/mail
    الأنواع: verify | reset | login-send | login-verify | email-change */
 const crypto = require('crypto');
 const admin = require('firebase-admin');
@@ -28,48 +27,22 @@ function limited(key, ms, max) {
 }
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-/* ================= تصميم الرسائل ================= */
-const ASSETS = (process.env.MAIL_ASSETS_URL || 'https://babyllon.vercel.app').replace(/\/$/, '') + '/mail/';
-const GOLD = '#a77a1c';
-const SIGN = '<p style="line-height:1.9;margin:0;border-top:1px solid #ecd9a0;padding-top:12px;font-size:13px;color:#374151">تحياتنا،<br><b style="color:' + GOLD + '">فريق Babylon Chat</b></p>';
-
-/* الإطار العام: إطار ذهبي + زوايا + قلاع باهتة + شعار */
-const WRAP = inner =>
-  '<div dir="rtl" style="background-color:#f7f3e8;padding:22px 10px;font-family:Tahoma,Arial,sans-serif">'
-  + '<table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;margin:auto;background-color:#fffdf7;border:1px solid #e3c36a;border-radius:20px;border-collapse:separate;overflow:hidden">'
-  /* الصف العلوي: زاوية ذهبية + قلعة باهتة */
-  + '<tr><td align="left" dir="ltr" style="line-height:0;font-size:0;background-color:#fffdf7;background-image:url(' + ASSETS + 'castle-faded.png);background-repeat:no-repeat;background-position:right 14px;background-size:96px auto">'
-  + '<img src="' + ASSETS + 'corner-tl.png" width="60" height="60" alt="" style="display:block;border:0"></td></tr>'
-  /* الشعار */
-  + '<tr><td align="center" style="padding:0 26px;line-height:1">'
-  + '<img src="' + ASSETS + 'logo.png" width="76" height="68" alt="Babylon Chat" style="display:block;margin:0 auto;border:0">'
-  + '<div dir="ltr" style="font-size:22px;font-weight:bold;color:#c9a043;margin-top:6px;font-family:Tahoma,Arial,sans-serif">Babylon Chat</div></td></tr>'
-  /* المحتوى */
-  + '<tr><td style="padding:18px 26px 10px;text-align:right;color:#17212b">' + inner + '</td></tr>'
-  /* الصف السفلي: زاوية ذهبية + قلعة باهتة */
-  + '<tr><td align="right" dir="ltr" style="line-height:0;font-size:0;background-color:#fffdf7;background-image:url(' + ASSETS + 'castle-faded.png);background-repeat:no-repeat;background-position:left bottom;background-size:96px auto">'
-  + '<img src="' + ASSETS + 'corner-br.png" width="60" height="60" alt="" style="display:block;border:0"></td></tr>'
-  + '</table></div>';
-
-const TITLE = t => '<h2 style="color:' + GOLD + ';margin:0 0 18px;font-size:20px;text-align:center">' + t + '</h2>';
-
+const SIGN = '<p style="line-height:1.8;margin:0;border-top:1px solid #eee;padding-top:12px">تحياتنا،<br><b style="color:#b8860b">فريق Babylon Chat</b> 💛</p>';
+const WRAP = inner => '<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;max-width:480px;margin:auto;padding:26px;border:1px solid #e5e7eb;border-radius:16px;text-align:right;background:#fff;color:#17212b">' + inner + '</div>';
 function page(title, text, btn, link, foot, hello) {
-  return WRAP(TITLE(esc(title))
-    + '<p style="line-height:1.9;margin:0 0 6px;font-weight:bold;font-size:15px">' + hello + '</p>'
-    + '<p style="line-height:1.9;margin:0 0 18px;font-size:14px;color:#374151">' + text + '</p>'
+  return WRAP('<h2 style="color:#b8860b;margin:0 0 14px">' + esc(title) + '</h2>'
+    + '<p style="line-height:1.9;margin:0 0 6px;font-weight:bold">' + hello + '</p>'
+    + '<p style="line-height:1.9;margin:0 0 18px">' + text + '</p>'
     + '<p style="text-align:center;margin:26px 0"><a href="' + esc(link) + '" style="background-color:#d3a93b;background-image:linear-gradient(135deg,#e6c566 0%,#d3a93b 45%,#bc8e24 100%);color:#ffffff;padding:13px 30px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block;text-shadow:0 1px 2px rgba(110,72,0,.45);box-shadow:0 6px 16px rgba(190,150,40,.35)">' + esc(btn) + '</a></p>'
     + '<p style="color:#6b7280;font-size:13px;line-height:1.7;margin:0 0 14px">' + esc(foot) + '</p>' + SIGN);
 }
 function codePage(code) {
-  return WRAP(TITLE('رمز الدخول')
-    + '<p style="line-height:1.9;margin:0 0 6px;font-weight:bold;font-size:15px">هلا بيك! 👋</p>'
-    + '<p style="line-height:1.9;margin:0 0 16px;font-size:14px;color:#374151">هذا رمز التحقق حتى تكمل تسجيل الدخول. صالح لمدة 10 دقائق:</p>'
-    + '<p dir="ltr" style="text-align:center;font-size:32px;letter-spacing:9px;font-weight:bold;color:#5a3d06;background-color:#f4dc8f;background-image:linear-gradient(135deg,#fbefc4 0%,#f0d27a 100%);border:1px solid #d3a93b;border-radius:14px;padding:14px 0 14px 9px;margin:0 0 16px">' + code + '</p>'
-    + '<p style="color:#b91c1c;font-size:13px;line-height:1.9;margin:0 0 14px">لا تعطي هذا الرمز لأي أحد، حتى لو ادّعى إنه من فريق Babylon Chat. إذا لم تكن انت من اردت تسجيل الدخول فقم بتغيير الباسوورد فورًا.</p>' + SIGN);
+  return WRAP('<h2 style="color:#b8860b;margin:0 0 14px">رمز الدخول إلى Babylon Chat 🔐</h2>'
+    + '<p style="line-height:1.9;margin:0 0 6px;font-weight:bold">هلا بيك! 👋</p>'
+    + '<p style="line-height:1.9;margin:0 0 18px">هذا رمز التحقق حتى تكمل تسجيل الدخول. صالح لمدة 10 دقائق:</p>'
+    + '<p dir="ltr" style="text-align:center;font-size:34px;letter-spacing:10px;font-weight:bold;background:#faf5e4;border-radius:12px;padding:14px 0;margin:0 0 18px;color:#17212b">' + code + '</p>'
+    + '<p style="color:#b91c1c;font-size:13px;line-height:1.7;margin:0 0 14px">لا تعطي هذا الرمز لأي أحد، حتى لو ادّعى إنه من فريق Babylon Chat. إذا لم تكن انت من اردت تسجيل الدخول فقم بتغيير الباسوورد فورًا.</p>' + SIGN);
 }
-/* ================================================== */
-
 const sha = (salt, uid, code) => crypto.createHash('sha256').update(salt + ':' + uid + ':' + code).digest('hex');
 const otpOk = d => d.otpAuthTime != null && Number(d.otpAuthTime) === Number(d.auth_time);
 
@@ -191,7 +164,7 @@ module.exports = async (req, res) => {
       /* تنبيه للبريد القديم */
       transporter.sendMail({
         from: FROM(), to: dec.email, subject: 'طلب تغيير بريد حسابك - Babylon Chat',
-        html: WRAP(TITLE('طلب تغيير البريد ⚠️') + '<p style="line-height:1.9;margin:0 0 14px;font-size:14px;color:#374151">وصلنا طلب لتغيير بريد حسابك إلى <b dir="ltr">' + esc(ne) + '</b>. إذا ما أنت اللي طلبت، غيّر كلمة المرور فوراً.</p>' + SIGN)
+        html: WRAP('<h2 style="color:#b8860b;margin:0 0 14px">طلب تغيير البريد ⚠️</h2><p style="line-height:1.9;margin:0 0 14px">وصلنا طلب لتغيير بريد حسابك إلى <b dir="ltr">' + esc(ne) + '</b>. إذا ما أنت اللي طلبت، غيّر كلمة المرور فوراً.</p>' + SIGN)
       }).catch(() => {});
       return res.status(200).json({ ok: true });
     }
