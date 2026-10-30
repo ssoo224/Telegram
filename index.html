@@ -16749,4 +16749,187 @@ return R("index");})();
   window.__bbQr = { drawCard: drawCard, parseUser: parseUser, open: openQr, scan: openScan };
 })();
 
+<script id="babylon-perf-patch">
+(function(){
+  'use strict';
+  // باتش 1: Debounce typing
+  try {
+    if (!window.__typingDebounced) {
+      window.__typingDebounced = true;
+      var probeRef = db.collection('_probe').doc('_probe');
+      var proto = Object.getPrototypeOf(probeRef);
+      var origSet = proto.set;
+      var lastTyping = Object.create(null);
+      proto.set = function (data, options) {
+        try {
+          if (data && options && options.merge) {
+            var hasTyping = false;
+            for (var k in data) { if (k.indexOf('typing_') === 0 && data[k] === true) { hasTyping = true; break; } }
+            if (hasTyping) {
+              var p = (this._key && this._key.path && this._key.path.canonicalString) || '';
+              var now = Date.now();
+              if (now - (lastTyping[p] || 0) < 2500) return Promise.resolve();
+              lastTyping[p] = now;
+            }
+          }
+        } catch(e){}
+        return origSet.apply(this, arguments);
+      };
+    }
+  } catch(e) { console.warn('[perf] typing patch failed:', e); }
+
+  // باتش 2: openChatRoom ذكي (docChanges بدل إعادة البناء)
+  var _origOCR = window.openChatRoom;
+  if (typeof _origOCR === 'function' && !_origOCR.__patched) {
+    window.openChatRoom = function (otherUserId, keepLimit) {
+      reorderChatListItems();
+      try { document.getElementById('chatGroupInfoAction')?.classList.add('hidden'); } catch(e){}
+      try { var _av = document.getElementById('chatAvatar'); if (_av) _av.style.background = ''; } catch(e){}
+      try { hideMentionPop(); resetGroupUI(); } catch(e){}
+      if (!keepLimit) msgLimit = 50;
+      currentChatOtherUserId = otherUserId;
+      if (messagesUnsubscribe) { try{messagesUnsubscribe();}catch(e){} messagesUnsubscribe = null; }
+      if (userUnsubscribe) { try{userUnsubscribe();}catch(e){} userUnsubscribe = null; }
+      if (chatDocUnsubscribe) { try{chatDocUnsubscribe();}catch(e){} chatDocUnsubscribe = null; }
+      showView('chatView');
+      try { applyChatBlockState(); } catch(e){}
+      userUnsubscribe = db.collection('users').doc(otherUserId).onSnapshot(function (doc) {
+        if (!doc.exists) return;
+        var u = doc.data(); u.id = u.id || otherUserId; window.__bbChatU = u;
+        var tEl = document.getElementById('chatTitleText');
+        if (tEl) tEl.textContent = u.displayName || 'مستخدم';
+        var badge = document.getElementById('chatBadgeBox');
+        if (badge) badge.classList.toggle('hidden', u.isVerified !== true);
+        var sub = document.getElementById('chatSub');
+        var avBox = document.getElementById('chatAvatar');
+        if (avBox) {
+          avBox.className = 'telegram-avatar ' + toneCls({id: otherUserId, avatarTone: u.avatarTone});
+          var avUrl = pvUrl(u);
+          if (avUrl) avBox.innerHTML = '<img src="' + esc(avUrl) + '">';
+          else avBox.textContent = (u.displayName || '?').charAt(0).toUpperCase();
+        }
+        if (sub) {
+          if (lsHidden(u)) { sub.textContent = 'آخر ظهور منذ فترة'; sub.style.color = 'var(--text-muted)'; }
+          else if (u.online && (Date.now() - (u.lastSeen||0) < 45000)) { sub.textContent = 'متصل الآن'; sub.style.color = '#4ade80'; }
+          else { sub.textContent = 'آخر ظهور كان قريباً'; sub.style.color = 'var(--text-muted)'; }
+          sub.dataset.real = sub.textContent; sub.dataset.realColor = sub.style.color;
+        }
+        try { blockedByThem(otherUserId).then(function(b){ if (b && !myBlocks[otherUserId] && currentChatOtherUserId === otherUserId && sub) { sub.textContent='آخر ظهور كان منذ زمن طويل'; sub.style.color='var(--text-muted)'; } }); } catch(e){}
+      });
+      chatDocUnsubscribe = db.collection('chats').doc(activeChatId).onSnapshot(function (doc) {
+        if (!doc.exists) return;
+        var data = doc.data();
+        var isPeerTyping = data && data['typing_' + otherUserId];
+        var box = document.getElementById('messagesArea'); if (!box) return;
+        var tb = document.getElementById('typingIndicatorBubble');
+        if (isPeerTyping) {
+          if (!tb) { tb = document.createElement('div'); tb.id='typingIndicatorBubble'; tb.className='typing-bubble'; tb.innerHTML='<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>'; box.appendChild(tb); box.scrollTop = box.scrollHeight; }
+        } else if (tb) { tb.remove(); }
+      });
+      db.collection('chats').doc(activeChatId).collection('messages')
+        .where('senderId','==',otherUserId).where('read','==',false).get()
+        .then(function(snap){ if (snap.empty) return; var b = db.batch(); snap.forEach(function(d){ b.update(d.ref,{read:true}); }); b.commit().catch(function(){}); }).catch(function(){});
+      var isFirst = true, lastLimit = msgLimit, renderedIds = new Set();
+      messagesUnsubscribe = db.collection('chats').doc(activeChatId).collection('messages')
+        .orderBy('createdAt','desc').limit(msgLimit)
+        .onSnapshot({ includeMetadataChanges: true }, function (snap) {
+          var box = document.getElementById('messagesArea'); if (!box) return;
+          var prevH = box.scrollHeight, prevTop = box.scrollTop;
+          var wasNearBottom = (prevH - prevTop - box.clientHeight) < 90;
+          var existingTyping = document.getElementById('typingIndicatorBubble');
+          var needsRebuild = isFirst || lastLimit !== msgLimit;
+          if (needsRebuild) {
+            isFirst = false; lastLimit = msgLimit; renderedIds.clear();
+            Array.from(box.children).forEach(function(c){ if (c.id !== 'typingIndicatorBubble' && !c.classList.contains('load-older-btn')) c.remove(); });
+            var oldBtn = box.querySelector('.load-older-btn'); if (oldBtn) oldBtn.remove();
+            if (snap.size >= msgLimit) {
+              var more = document.createElement('button'); more.type='button'; more.className='load-older-btn'; more.textContent='تحميل رسائل أقدم';
+              more.onclick = function(){ msgLimit += 50; loadingOlder = true; openChatRoom(currentChatOtherUserId, true); };
+              box.insertBefore(more, box.firstChild);
+            }
+            snap.docs.slice().reverse().forEach(function(d){ renderMsgDoc(d, box, existingTyping); renderedIds.add(d.id); });
+          } else {
+            snap.docChanges().forEach(function(ch){
+              var did = ch.doc.id;
+              if (ch.type === 'added') { if (!renderedIds.has(did)) { renderMsgDoc(ch.doc, box, existingTyping); renderedIds.add(did); } }
+              else if (ch.type === 'removed') { var er = document.getElementById('message_'+did); if (er) er.remove(); renderedIds.delete(did); }
+              else if (ch.type === 'modified') {
+                var el = document.getElementById('message_'+did);
+                if (el) {
+                  var m = ch.doc.data();
+                  if (m.senderId === currentUser.uid) {
+                    var isPend = ch.doc.metadata.hasPendingWrites;
+                    var mark = el.querySelector('.check-mark');
+                    if (mark) {
+                      var wantCls = isPend ? 'check-mark pending' : (m.read ? 'check-mark read' : 'check-mark');
+                      var wantHtml = isPend ? TICK_SVG.wait : (m.read ? TICK_SVG.read : TICK_SVG.sent);
+                      if (mark.className !== wantCls) { mark.className = wantCls; mark.innerHTML = wantHtml; }
+                    }
+                  }
+                } else { renderMsgDoc(ch.doc, box, existingTyping); renderedIds.add(did); }
+              }
+            });
+          }
+          snap.docs.forEach(function(d){ var dm = d.data(); if (dm.senderId !== currentUser.uid && dm.read === false) d.ref.update({read:true}).catch(function(){}); });
+          if (messageSelectionMode) refreshMessageSelectionUI();
+          if (window.__pendingJump) setTimeout(runPendingJump, 30);
+          if (loadingOlder) { box.scrollTop = Math.max(0, box.scrollHeight - prevH); loadingOlder = false; }
+          else if (wasNearBottom) box.scrollTop = box.scrollHeight;
+          else box.scrollTop = prevTop;
+        });
+    };
+    window.openChatRoom.__patched = true;
+  }
+
+  // باتش 3: Optimistic UI للإرسال
+  var _origSend = window.sendMessage;
+  if (typeof _origSend === 'function' && !_origSend.__patched) {
+    window.sendMessage = function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var input = document.getElementById('messageInput');
+      if (!input) return _origSend.call(this, e);
+      var text = input.value.trim();
+      if (!text || !activeChatId) return _origSend.call(this, e);
+      if (typeof chatBlockedNow !== 'undefined' && chatBlockedNow) return _origSend.call(this, e);
+      if (typeof editingMsgId !== 'undefined' && editingMsgId) return _origSend.call(this, e);
+      var box = document.getElementById('messagesArea');
+      if (box) {
+        var now = Date.now();
+        var tStr = new Date(now).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+        if (tStr.startsWith('0')) tStr = tStr.substring(1);
+        var temp = document.createElement('div');
+        temp.className = 'msg-bubble mine pending';
+        temp.id = 'message_temp_' + now;
+        temp.dataset.created = String(now);
+        temp.dataset.tempText = text;
+        temp.innerHTML = '<div class="msg-text">' + esc(text) + '</div><div class="msg-meta"><span>' + tStr + '</span> <span class="check-mark pending">' + TICK_SVG.wait + '</span></div>';
+        box.appendChild(temp);
+        box.scrollTop = box.scrollHeight;
+        setTimeout(function(){ var el = document.getElementById('message_temp_'+now); if (el) el.remove(); }, 8000);
+      }
+      return _origSend.call(this, e);
+    };
+    window.sendMessage.__patched = true;
+  }
+
+  // ازالة المؤقت عند وصول الرسالة الحقيقية
+  var _origRMD = window.renderMsgDoc;
+  if (typeof _origRMD === 'function' && !_origRMD.__patched) {
+    window.renderMsgDoc = function (doc, box, existingTyping) {
+      try {
+        var m = doc.data();
+        if (m && m.senderId === currentUser.uid && m.text && box) {
+          var temps = box.querySelectorAll('.msg-bubble.pending[data-temp-text]');
+          for (var i = 0; i < temps.length; i++) {
+            if (temps[i].dataset.tempText === m.text) { temps[i].remove(); break; }
+          }
+        }
+      } catch(e){}
+      return _origRMD.apply(this, arguments);
+    };
+    window.renderMsgDoc.__patched = true;
+  }
+
+  console.log('[Babylon Perf] ✅ Patches applied');
+})();
 </script>
