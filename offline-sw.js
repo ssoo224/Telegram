@@ -2,7 +2,7 @@
    - لا يعترض طلبات Firestore / Auth / Storage / الـ API، فلا إرسال ولا استلام بدون اتصال.
    - يحفظ الصفحة الرئيسية وملفاتها وسكربتات Firebase عند أول فتح مع الإنترنت.
    ضعه بجانب index.html (نفس المجلد الجذر) وارفعه مع الموقع. */
-var VERSION = 'v1';
+var VERSION = 'v2';
 var SHELL = 'babylon-shell-' + VERSION;
 var RUNTIME = 'babylon-rt-' + VERSION;
 

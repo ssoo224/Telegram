@@ -1,0 +1,71 @@
+// ======================================================================
+//  إضافات قواعد Firestore للملصقات — 5 تعديلات صغيرة على ملف القواعد الحالي
+//  (انسخها بالترتيب داخل Firebase Console ← Firestore ← Rules ثم Publish)
+// ======================================================================
+
+// ─── (1) أضف هذه الدوال مباشرة بعد دالة okStr ─────────────────────────
+    function stkDoc(s, i) { return /databases/$(database)/documents/stickerSets/$(s)/stickers/$(i); }
+    // رسالة الملصق: الحقول محددة، والرابط لازم يطابق وثيقة الملصق الحقيقية (يمنع حقن أي رابط خارجي)
+    function stickerOk(r) {
+      let s = r.sticker;
+      return r.get('type', '') == 'sticker'
+          && s is map
+          && s.keys().hasOnly(['set', 'id', 'url', 'kind', 'emoji', 'w', 'h'])
+          && s['set'] is string && s['id'] is string && s['url'] is string
+          && s['kind'] in ['static', 'animated', 'video']
+          && s['emoji'] is string && s['emoji'].size() <= 24
+          && s['w'] is number && s['h'] is number
+          && exists(stkDoc(s['set'], s['id']))
+          && get(stkDoc(s['set'], s['id'])).data.url == s['url']
+          && get(stkDoc(s['set'], s['id'])).data.kind == s['kind'];
+    }
+    function stickerFieldsOk(r) { return !('sticker' in r) ? r.get('type', '') != 'sticker' : stickerOk(r); }
+
+// ─── (2) استبدل دالة groupMsgAllowed كاملة بهذه (صلاحية "الملصقات" بالمجموعات) ──
+    function groupMsgAllowed(chatId) {
+      let d = cdata(chatId);
+      let r = request.resource.data;
+      return r.get('system', false) == true
+          || (!(request.auth.uid in d.get('muted', {}))
+              && (gStaff(d)
+                  || (r.keys().hasAny(['sticker'])
+                        ? d.get('perms', {}).get('stickers', true) == true
+                        : (r.keys().hasAny(['imageUrl'])
+                            ? d.get('perms', {}).get('media', true) == true
+                            : (r.keys().hasAny(['audioUrl'])
+                                ? d.get('perms', {}).get('voice', true) == true
+                                : d.get('perms', {}).get('text', true) == true)))));
+    }
+
+// ─── (3) داخل match /chats/{chatId}/messages/{msgId} ─────────────────
+//  في allow create: أضف هذا السطر بعد سطر okStr(request.resource.data, 'text', 4000)
+//      && stickerFieldsOk(request.resource.data);
+//  (انتبه: شيل الفاصلة المنقوطة من سطر okStr وحطها بعد السطر الجديد)
+//
+//  في allow update، داخل فرع صاحب الرسالة: أضف قبل okStr(...) هذا السطر
+//      && request.resource.data.get('sticker', null) == resource.data.get('sticker', null)
+
+// ─── (4) داخل match /users/{uid} { ... } أضف (بجانب match /blocks) ────
+      match /stickerData/{d} {
+        allow read: if verified() && request.auth.uid == uid;
+        allow write: if verified() && request.auth.uid == uid && d == 'main'
+                      && request.resource.data.keys().hasOnly(['installed', 'recent', 'faves', 'updatedAt'])
+                      && request.resource.data.installed is list && request.resource.data.installed.size() <= 100
+                      && request.resource.data.recent is list && request.resource.data.recent.size() <= 30
+                      && request.resource.data.faves is list && request.resource.data.faves.size() <= 5;
+      }
+
+// ─── (5) على مستوى match /databases/{database}/documents أضف (مثلاً قبل match /posts) ──
+    // حزم الملصقات: القراءة للجميع (الموثّقين)، والكتابة من الخادم فقط (api/stickers)
+    match /stickerSets/{name} {
+      allow read: if verified();
+      allow write: if false;
+      match /stickers/{id} {
+        allow read: if verified()
+                    && (get(/databases/$(database)/documents/stickerSets/$(name)).data.get('hidden', false) == false
+                        || get(/databases/$(database)/documents/stickerSets/$(name)).data.ownerId == request.auth.uid
+                        || isDev());
+        allow write: if false;
+      }
+      match /reports/{u} { allow read, write: if false; }
+    }

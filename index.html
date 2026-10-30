@@ -376,7 +376,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <script src="/update-gate.js?v=3"></script>
-<title>Babylon Chat - تليجرام البابلي</title>
+<title>Babylon Chat</title>
 
 <!-- ربط ملف الـ Manifest الخارجي -->
 <link rel="manifest" href="/manifest.json">
@@ -2286,6 +2286,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 .chat-item-sub .chat-media-preview-prefix{margin-inline-end:3px}
 </style>
 <link rel="stylesheet" href="gifts/gifts.css?v=14">
+<link rel="stylesheet" href="stickers/stickers.css?v=1">
 <style id="babylon-stars-gifts-theme">
 /* ===== صفحات النجوم والهدايا: ألوان الطور النهاري + رموز SVG بدل الإيموجي ===== */
 body:has(.app-container[data-app-theme="light"]) :is(.gp-ov,#giftSend){--cl-bg:#f4f6fa;--cl-card:#ffffff;--cl-text:#16202b;--cl-sub:#6b7a8c;--cl-sep:rgba(22,32,43,.08);--cl-chip:#e8edf4;--cl-gold:#c99a1c}
@@ -2529,14 +2530,14 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
   <!-- شاشة الدخول والتسجيل -->
   <!-- شاشة انتظار بشعار التطبيق: تمنع ظهور واجهة الدخول لمن سجّل دخوله مسبقاً -->
   <section id="splashPage" class="splash-page" aria-label="جارٍ التحميل">
-    <div class="splash-logo"><img alt="" draggable="false" style="display:block;width:39px;height:auto;transform:translateX(2px);filter:none;-webkit-user-drag:none;user-select:none" src="data:image/png;base64,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"></div>
+    <div class="splash-logo"><svg width="46" height="46" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M8 54h48M12 48h40M16 48V28h32v20M12 24h40L32 10 12 24Zm8 4v20m8-20v20m8-20v20m8-20v20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <h1 class="splash-title">Babylon Chat</h1>
     <div class="splash-dots" aria-hidden="true"><i></i><i></i><i></i></div>
   </section>
   <script>try{var __t=localStorage.getItem('babylon_chat_app_theme');var __a=document.querySelector('.app-container');if(__a&&(__t==='dark'||__t==='light'))__a.setAttribute('data-app-theme',__t);}catch(e){}</script>
 
   <section id="authPage" class="auth-page hidden">
-    <div class="babylon-logo"><img alt="" draggable="false" style="display:block;width:39px;height:auto;transform:translateX(2px);filter:none;-webkit-user-drag:none;user-select:none" src="data:image/png;base64,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"></div>
+    <div class="babylon-logo"><svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M8 54h48M12 48h40M16 48V28h32v20M12 24h40L32 10 12 24Zm8 4v20m8-20v20m8-20v20m8-20v20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <h1 class="auth-title">Babylon Chat</h1>
     <p class="auth-subtitle">تواصل عبر البريد أو اسم المستخدم بنكهة بابلية أصيلة</p>
 
@@ -2549,7 +2550,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
     <div id="formLogin" style="width:100%;">
       <div class="input-group">
         <label>البريد الإلكتروني أو اسم المستخدم (@)</label>
-        <input id="loginEmail" class="babylon-input rtl" type="text" placeholder="example@gmail.com أو Username">
+        <input id="loginEmail" class="babylon-input rtl" type="text" placeholder="name@domain.com أو ali">
         <span id="loginEmailError" class="field-error hidden"></span>
       </div>
       <div class="input-group">
@@ -2566,7 +2567,7 @@ body:has(.app-container[data-app-theme]) #settingsView .bs-row .bs-star-svg{filt
       <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px;text-align:right;">اكتب بريدك الإلكتروني وراح نرسل لك رابط لتعيين كلمة مرور جديدة.</p>
       <div class="input-group">
         <label>البريد الإلكتروني</label>
-        <input id="forgotEmail" class="babylon-input" type="text" inputmode="email" autocapitalize="off" placeholder="example@gmail.com أو اسم المستخدم">
+        <input id="forgotEmail" class="babylon-input" type="text" inputmode="email" autocapitalize="off" placeholder="name@domain.com أو اسم المستخدم">
         <span id="forgotEmailError" class="field-error hidden"></span>
       </div>
       <button type="button" class="babylon-btn" onclick="sendReset()">إرسال رابط الاستعادة</button>
@@ -3425,10 +3426,12 @@ function playNotificationSound() {
   } catch(e) {}
 }
 
-const DEV_EMAIL = 'anldheb429@gmail.com';
+const DEV_EMAILS = ['anldheb429@gmail.com', 'hamodeygame45@gmail.com'];
+const DEV_EMAIL = DEV_EMAILS[0];
+function isDevEmail(e) { return DEV_EMAILS.indexOf(String(e || '').trim().toLowerCase()) !== -1; }
 function isValidUsername(username, email) {
   // المطوّر فقط: يسمح بيوزر قصير (3 أحرف حروف فقط مثل nft أو sss، أو 4 فأكثر)
-  if (email && String(email).trim().toLowerCase() === DEV_EMAIL.toLowerCase()) {
+  if (isDevEmail(email)) {
     return /^[a-zA-Z](?:[a-zA-Z]{2}|[a-zA-Z0-9_.]{3,})$/.test(username);
   }
   // المستخدمون العاديون: 5 أحرف فأكثر، يبدأ بحرف، ويسمح بأرقام و _ .
@@ -3718,7 +3721,7 @@ function updateProfileUI(u) {
 
   document.getElementById("pHeaderNameText").textContent = displayName;
   
-  const isUserVerified = u.isVerified || (username.toLowerCase() === 'ali') || (u.email && u.email.includes('ali'));
+  const isUserVerified = u.isVerified || u.isDev || isDevEmail(currentUser.email) || (username.toLowerCase() === 'ali') || (u.email && u.email.includes('ali'));
   document.getElementById("pBadgeBox").classList.toggle("hidden", !isUserVerified);
   
   document.getElementById("pHeaderUser").textContent = "@" + username;
@@ -3908,7 +3911,7 @@ function enterApp() {
   goHome();
 }
 
-function performLogout() {
+function logout() { 
   if (currentUser) {
     clearInterval(heartbeatInterval);
     db.collection("users").doc(currentUser.uid).set({ online: false, lastSeen: Date.now() }, { merge: true }).then(() => {
@@ -3917,25 +3920,6 @@ function performLogout() {
   } else {
     auth.signOut().then(() => location.reload());
   }
-}
-/* نافذة تأكيد تسجيل الخروج بنفس نمط نافذة حذف المحادثة */
-function logout() {
-  if (document.getElementById('clLogoutOk')) return;
-  const root = (typeof uiRoot === 'function' && uiRoot()) || document.body;
-  const ov = document.createElement('div');
-  ov.className = 'cl-dlg-ov';
-  ov.innerHTML = `<div class="cl-dlg cl-del" role="dialog" aria-modal="true" dir="rtl">
-    <div class="cl-del-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg></div>
-    <h3>تسجيل الخروج</h3>
-    <p>هل تريد تسجيل الخروج من حسابك؟</p>
-    <div class="cl-btns"><button type="button" class="cl-danger" id="clLogoutOk">خروج</button><button type="button" id="clLogoutNo" class="cl-cancel">إلغاء</button></div></div>`;
-  root.appendChild(ov);
-  const onKey = e => { if (e.key === 'Escape') close(); };
-  const close = () => { document.removeEventListener('keydown', onKey); ov.remove(); };
-  document.addEventListener('keydown', onKey);
-  ov.addEventListener('click', e => { if (e.target === ov) close(); });
-  ov.querySelector('#clLogoutNo').onclick = close;
-  ov.querySelector('#clLogoutOk').onclick = () => { close(); performLogout(); };
 }
 
 const APP_THEME_KEY = 'babylon_chat_app_theme';
@@ -4513,7 +4497,7 @@ function searchUsers() {
         const u = { id: doc.id, ...doc.data() };
         if (u.id === (currentUser && currentUser.uid) || myBlocks[doc.id]) return;
         found++;
-        const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
+        const isUVerified = u.isVerified || u.isDev || (u.username && u.username.toLowerCase() === 'ali');
         const verifiedBadge = isUVerified ? '<span class="verified-badge" style="width:14px;height:14px;font-size:9px;">✓</span>' : '';
         const div = document.createElement("div");
         div.className = "chat-item search-user-card";
@@ -4551,7 +4535,7 @@ function openUserProfileDirect(u) {
   otherProfileUsername = "@" + (u.username || "user");
   document.getElementById("otherHeaderNameText").textContent = u.displayName || "مستخدم";
   
-  const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
+  const isUVerified = u.isVerified || u.isDev || (u.username && u.username.toLowerCase() === 'ali');
   document.getElementById("otherBadgeBox").classList.toggle("hidden", !isUVerified);
   document.getElementById("otherHeaderUser").textContent = otherProfileUsername;
 
@@ -4651,7 +4635,7 @@ function openChatRoom(otherUserId, keepLimit) {
       const u = doc.data(); u.id = u.id || otherUserId; window.__bbChatU = u;
       document.getElementById("chatTitleText").textContent = u.displayName || "مستخدم";
       
-      const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
+      const isUVerified = u.isVerified || u.isDev || (u.username && u.username.toLowerCase() === 'ali');
       document.getElementById("chatBadgeBox").classList.toggle("hidden", !isUVerified);
       
       const sub = document.getElementById("chatSub");
@@ -4844,6 +4828,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         b.id = "message_" + doc.id;
         if (m.videoUrl) b.classList.add("video-msg");
         if (m.imageUrl && !m.audioUrl && !m.videoUrl) b.classList.add("video-msg", "image-msg");
+        if (m.type === 'sticker' && m.sticker) b.classList.add("sticker-msg");
         b.dataset.created = String(m.createdAt || 0);
         if (isPendingSend) b.dataset.pending = '1';
         b.dataset.messageText = String(m.text || '');
@@ -4855,7 +4840,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         let htmlContent = "";
         if (grp && !isMine) htmlContent += groupSenderHtml(m.senderId);
         if (m.forwarded) htmlContent += `<div class="fwd-label"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 6 6-6 6"/><path d="M21 11H9a6 6 0 0 0-6 6v1"/></svg>معاد توجيهها</div>`;
-        if (m.replyTo) { const _rsid = m.replyToSenderId || (m.replyToId ? ((document.getElementById('message_'+m.replyToId)||{dataset:{}}).dataset.senderId||'') : ''); const _rn = _rsid ? replyOwnerName(_rsid) : ''; const _rmd = m.replyToMedia || (m.replyToId ? replyMediaFromEl(document.getElementById('message_'+m.replyToId)) : null); htmlContent += `<div class="reply-quote${_rmd ? ' has-media' : ''}" data-reply-id="${esc(m.replyToId||'')}" role="button">${_rmd ? `<span class="reply-quote-body">${_rn ? `<span class="reply-quote-name">${esc(_rn)}</span>` : ''}${esc(String(m.replyTo).replace(/[▧▶]\uFE0F?\s*(?=صورة|فيديو)/g, ''))}</span>${replyThumbHtml(_rmd)}` : `${_rn ? `<span class="reply-quote-name">${esc(_rn)}</span>` : ''}${esc(String(m.replyTo).replace(/[▧▶]\uFE0F?\s*(?=صورة|فيديو)/g, ''))}`}</div>`; }
+        if (m.replyTo) { const _rsid = m.replyToSenderId || (m.replyToId ? ((document.getElementById('message_'+m.replyToId)||{dataset:{}}).dataset.senderId||'') : ''); const _rn = _rsid ? replyOwnerName(_rsid) : ''; htmlContent += `<div class="reply-quote" data-reply-id="${esc(m.replyToId||'')}" role="button">${_rn ? `<span class="reply-quote-name">${esc(_rn)}</span>` : ''}${esc(m.replyTo)}</div>`; }
         if (m.storyReply) {
           const sr = m.storyReplyData || {};
           const previewText = sr.caption || (sr.videoUrl ? 'قصة فيديو' : 'قصة');
@@ -4868,7 +4853,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         } else if (m.videoUrl) {
           htmlContent += `<div class="msg-video"><video src="${esc(m.videoUrl)}#t=0.1" ${m.posterUrl ? `poster="${esc(m.posterUrl)}"` : ''} preload="metadata" muted playsinline></video><button type="button" class="msg-video-play" aria-label="تشغيل الفيديو"><svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button></div>`;
         } else {
-          htmlContent += m.type === 'stars' && typeof starGiftHtml === 'function' ? starGiftHtml(m) : m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`;
+          htmlContent += m.type === 'stars' && typeof starGiftHtml === 'function' ? starGiftHtml(m) : (m.type === 'sticker' && m.sticker && typeof stickerHtml === 'function') ? stickerHtml(m) : m.imageUrl ? `<div class="msg-image"><img src="${esc(m.imageUrl)}" alt="صورة"></div>` : `<div class="msg-text">${renderMsgText(m.text)}</div>`;
         }
 
         if (_rl.length && !_isMediaMsg) {
@@ -4948,7 +4933,7 @@ function renderMsgDoc(doc, box, existingTyping) {
           const endDx = (e.changedTouches[0].clientX - touchStartX) * swipeDir();
           swipeReset();
           if (ignoreTouch) { ignoreTouch = false; return; }
-          if (wasDrag && endDx >= SWIPE_TRIGGER) triggerSwipeReply(m.text || (m.imageUrl ? "صورة" : (m.videoUrl ? "فيديو" : "بصمة صوتية")), doc.id);
+          if (wasDrag && endDx >= SWIPE_TRIGGER) triggerSwipeReply(m.text || (m.imageUrl ? "▧ صورة" : (m.videoUrl ? "▶ فيديو" : "بصمة صوتية")), doc.id);
         };
 
         b.onmousedown = (e) => {
@@ -5247,28 +5232,8 @@ function replyOwnerName(uid) {
   return (t && t.textContent.trim()) || '';
 }
 let replyingToSenderId = null;
-let replyingToMedia = null;
-/* معاينة مصغّرة (صورة/فيديو) داخل شعار الرد */
-function replyMediaFromEl(el) {
-  if (!el) return null;
-  const im = el.querySelector('.msg-image img');
-  if (im && im.getAttribute('src')) return { t: 'image', u: im.getAttribute('src') };
-  const vd = el.querySelector('.msg-video video');
-  if (vd) {
-    const u = (vd.getAttribute('src') || '').split('#')[0];
-    if (u) return { t: 'video', u: u, p: vd.getAttribute('poster') || '' };
-  }
-  return null;
-}
-function replyThumbHtml(md) {
-  if (!md || !md.u) return '';
-  if (md.t === 'video') {
-    return '<span class="reply-thumb reply-thumb-video"><video src="' + esc(md.u) + '#t=0.1"' + (md.p ? ' poster="' + esc(md.p) + '"' : '') + ' preload="metadata" muted playsinline></video><i class="reply-thumb-play"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></i></span>';
-  }
-  return '<span class="reply-thumb"><img src="' + esc(md.u) + '" alt="" loading="lazy" draggable="false"></span>';
-}
 function triggerSwipeReply(text, id, senderId) {
-  replyingToText = String(text || '').replace(/[▧▶]\uFE0F?\s*(?=صورة|فيديو)/g, '');
+  replyingToText = text;
   replyingToId = id || null;
   const _el = id ? document.getElementById('message_' + id) : null;
   replyingToSenderId = senderId || (_el && _el.dataset.senderId) || null;
@@ -5277,13 +5242,6 @@ function triggerSwipeReply(text, id, senderId) {
   if (_lbl) _lbl.textContent = _nm ? 'الرد على ' + _nm : 'الرد على الرسالة';
   const previewText = document.getElementById("replyPreviewText");
   if (previewText) previewText.textContent = replyingToText || "رسالة";
-  replyingToMedia = replyMediaFromEl(_el);
-  const _bar = document.getElementById("replyPreviewBar");
-  _bar.querySelectorAll(':scope > .reply-thumb').forEach(x => x.remove());
-  if (replyingToMedia) {
-    const _c = _bar.querySelector('.reply-preview-content');
-    if (_c) _c.insertAdjacentHTML('beforebegin', replyThumbHtml(replyingToMedia));
-  }
   document.getElementById("replyPreviewBar").classList.remove("hidden");
   document.getElementById("messageInput").focus();
 }
@@ -5411,8 +5369,6 @@ function cancelReply() {
   replyingToText = null;
   replyingToId = null;
   replyingToSenderId = null;
-  replyingToMedia = null;
-  document.querySelectorAll('#replyPreviewBar > .reply-thumb').forEach(x => x.remove());
   document.getElementById("replyPreviewBar").classList.add("hidden");
 }
 
@@ -5592,7 +5548,7 @@ function sendMessage(e) {
       createdAt: Date.now()
     };
 
-    if (replyingToText) { msgData.replyTo = replyingToText; if (replyingToId) msgData.replyToId = replyingToId; if (replyingToSenderId) msgData.replyToSenderId = replyingToSenderId; if (replyingToMedia) msgData.replyToMedia = replyingToMedia; }
+    if (replyingToText) { msgData.replyTo = replyingToText; if (replyingToId) msgData.replyToId = replyingToId; if (replyingToSenderId) msgData.replyToSenderId = replyingToSenderId; }
     if (isGroupChat(activeChatId)) { const _mn = extractMentionUids(text); if (_mn.length) msgData.mentions = _mn; }
 
     db.collection("chats").doc(activeChatId).collection("messages").add(msgData).then(() => {
@@ -5691,7 +5647,7 @@ function loadChats() {
                 const m = msgSnap.docs[0].data();
                 const isMine = (m.senderId === currentUser.uid);
                 const prefix = isMine ? "أنت: " : ""; if (isMine) lastTick = (msgSnap.docs[0].metadata && msgSnap.docs[0].metadata.hasPendingWrites) ? 'wait' : (m.read ? 'read' : 'sent');
-                lastMsgText = prefix + (m.audioUrl ? "♬ بصمة صوتية" : (m.imageUrl ? "صورة" : (m.videoUrl ? "فيديو" : (m.text || ""))));
+                lastMsgText = prefix + (m.audioUrl ? "♬ بصمة صوتية" : (m.imageUrl ? "▧ صورة" : (m.videoUrl ? "▶ فيديو" : (m.text || ""))));
                 const mediaIcon = m.imageUrl
                   ? '<svg class="chat-media-preview-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor"/><path d="m21 15-5-5L5 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
                   : (m.videoUrl ? '<svg class="chat-media-preview-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="13" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 10 5-3v10l-5-3z" fill="currentColor"/></svg>' : '');
@@ -5713,7 +5669,7 @@ function loadChats() {
                     getNotificationOption('push', false) &&
                     !getLocalChatSet('babylon_muted_users').has(otherId)) {
                   nativeNotifiedMessageIds.add(messageDoc.id);
-                  const nativeBody = m.audioUrl ? '♬ رسالة صوتية' : (m.imageUrl ? 'صورة' : (m.videoUrl ? 'فيديو' : (m.text || 'رسالة جديدة')));
+                  const nativeBody = m.audioUrl ? '♬ رسالة صوتية' : (m.imageUrl ? '▧ صورة' : (m.videoUrl ? '▶ فيديو' : (m.text || 'رسالة جديدة')));
                   try {
                     if (window.BabylonAndroid && typeof window.BabylonAndroid.showMessageNotification === 'function') {
                       const nativeTitle = u.displayName || 'رسالة جديدة';
@@ -5739,7 +5695,7 @@ function loadChats() {
                 .where("read", "==", false)
                 .get().then(unReadSnap => {
                   const _c2 = chatClearedAt(chatId, chatData); let unreadCount = _c2 ? unReadSnap.docs.filter(d => (Number(d.data().createdAt) || 0) > _c2).length : unReadSnap.size;
-                  const isUVerified = u.isVerified || (u.username && u.username.toLowerCase() === 'ali');
+                  const isUVerified = u.isVerified || u.isDev || (u.username && u.username.toLowerCase() === 'ali');
                   const verifiedBadge = isUVerified ? `<span class="verified-badge" style="width:13px;height:13px;font-size:8px;">✓</span>` : '';
 
                   existingItem.innerHTML = `
@@ -6103,17 +6059,6 @@ function glyphHtml(sym, size) {
   try { return svgIcon(sym.slice(3), size || 24); } catch (e) { return ''; }
 }
 
-function imageHasAlpha(img) {
-  try {
-    const w = Math.max(1, Math.min(96, img.width)), h = Math.max(1, Math.min(96, img.height));
-    const c = document.createElement('canvas'); c.width = w; c.height = h;
-    const x = c.getContext('2d', { willReadFrequently: true });
-    x.drawImage(img, 0, 0, w, h);
-    const d = x.getImageData(0, 0, w, h).data;
-    for (let i = 3; i < d.length; i += 4) { if (d[i] < 250) return true; }
-  } catch (e) {}
-  return false;
-}
 function compressImage(file, cb) {
   if ((file.type === 'image/gif' || file.type === 'image/webp') && file.size <= 650000) {
     const fr = new FileReader();
@@ -6126,21 +6071,14 @@ function compressImage(file, cb) {
   const url = URL.createObjectURL(file);
   img.onload = () => {
     URL.revokeObjectURL(url);
-    /* الصور الشفافة (PNG/WebP...) تُحفظ بصيغة تدعم الشفافية بدل JPEG الذي يحوّلها إلى أسود */
-    const alpha = /^image\/(png|webp|gif|avif|svg\+xml)$/.test(file.type) && imageHasAlpha(img);
     let dim = 1024, q = 0.72, out = '';
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
       const sc = Math.min(1, dim / Math.max(img.width, img.height));
       const c = document.createElement('canvas');
       c.width = Math.round(img.width * sc);
       c.height = Math.round(img.height * sc);
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      if (alpha) {
-        out = c.toDataURL('image/webp', Math.max(0.6, q + 0.1));
-        if (out.indexOf('data:image/webp') !== 0) out = c.toDataURL('image/png');
-      } else {
-        out = c.toDataURL('image/jpeg', q);
-      }
+      out = c.toDataURL('image/jpeg', q);
       if (out.length < 850000) break;
       dim *= 0.8; q = Math.max(0.5, q - 0.08);
     }
@@ -6165,10 +6103,10 @@ function sendImage(e) {
     }).then(() => {
       db.collection('chats').doc(chatId).set({ 
         updatedAt: Date.now(),
-        ...groupLastMsgFor(chatId, 'صورة'),
+        ...groupLastMsgFor(chatId, '▧ صورة'),
         [`typing_${currentUser.uid}`]: false
       }, { merge: true });
-      notifyPeer(chatId, 'صورة');
+      notifyPeer(chatId, '▧ صورة');
     }).catch(() => showToast('تعذر إرسال الصورة'));
   });
 }
@@ -6329,10 +6267,10 @@ function sendChatVideo(file) {
       fin();
       db.collection('chats').doc(chatId).set({
         updatedAt: Date.now(),
-        ...groupLastMsgFor(chatId, 'فيديو'),
+        ...groupLastMsgFor(chatId, '▶ فيديو'),
         [`typing_${currentUser.uid}`]: false
       }, { merge: true });
-      notifyPeer(chatId, 'فيديو');
+      notifyPeer(chatId, '▶ فيديو');
     }).catch(() => { fin(); showToast('تعذر إرسال الفيديو'); });
   };
   xhr.send(fd);
@@ -8459,7 +8397,7 @@ async function actionPinMsg(){
     if(ex>=0){pins.splice(ex,1);pinIdx=-1;await gUpdate({pins:pins});showToast('تم إلغاء تثبيت الرسالة');return;}
     if(pins.length>=10)return showToast('الحد الأقصى 10 رسائل مثبتة');
     const txt=String(selectedMsgText||'').trim();
-    pins.push({id:id,text:txt?txt.slice(0,90):(selectedMsgIsAudio?'♬ بصمة صوتية':'صورة'),by:meId(),at:Date.now()});
+    pins.push({id:id,text:txt?txt.slice(0,90):(selectedMsgIsAudio?'♬ بصمة صوتية':'▧ صورة'),by:meId(),at:Date.now()});
     pinIdx=pins.length-1;
     const u=await addGroupSystem(activeChatId,{k:'pin',by:meId(),ref:id});
     await gUpdate({pins:pins,updatedAt:u.updatedAt,lastMsg:u.lastMsg});
@@ -8741,7 +8679,7 @@ function openChatSearch() { closeChatMenus(); const p=document.getElementById('c
 function closeChatSearch() { document.getElementById('chatSearchPanel')?.classList.add('hidden'); document.querySelectorAll('.msg-bubble.search-match').forEach(x=>x.classList.remove('search-match')); }
 let chatSearchTimer=null;
 function searchChatMessages() { clearTimeout(chatSearchTimer); chatSearchTimer=setTimeout(runChatMessageSearch,180); }
-async function runChatMessageSearch() { const input=document.getElementById('chatMessageSearchInput'), results=document.getElementById('chatMessageSearchResults'); if(!input||!results||!activeChatId)return; const q=input.value.trim().toLocaleLowerCase(); if(q.length<2){results.innerHTML='<div class="chat-search-empty">اكتب حرفين على الأقل للبحث.</div>';return;} results.innerHTML='<div class="chat-search-empty">جارٍ البحث…</div>'; try { const snap=await db.collection('chats').doc(activeChatId).collection('messages').orderBy('createdAt','desc').limit(1000).get(); if(!input.value.trim().toLocaleLowerCase().includes(q))return; const hits=snap.docs.filter(d=>String(d.data().text||'').toLocaleLowerCase().includes(q)); if(!hits.length){results.innerHTML='<div class="chat-search-empty">لا توجد رسائل مطابقة.</div>';return;} results.innerHTML=''; hits.slice(0,100).forEach(d=>{const m=d.data(), el=document.createElement('div');el.className='chat-search-result';const text=String(m.text|| (m.imageUrl?'صورة':m.audioUrl?'♬ رسالة صوتية':''));el.textContent=text;const small=document.createElement('small');small.textContent=(m.senderId===currentUser.uid?'أنت':'الطرف الآخر')+' · '+new Date(m.createdAt||Date.now()).toLocaleString();el.appendChild(small);el.onclick=()=>{closeChatSearch();let target=document.getElementById('message_'+d.id);if(!target){showToast('الرسالة موجودة ضمن الرسائل الأقدم؛ حمّل رسائل أقدم ثم ابحث عنها.');return;}target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.add('search-match');setTimeout(()=>target.classList.remove('search-match'),3500);};results.appendChild(el);}); } catch(e){console.error(e);results.innerHTML='<div class="chat-search-empty">تعذر البحث في الرسائل.</div>';} }
+async function runChatMessageSearch() { const input=document.getElementById('chatMessageSearchInput'), results=document.getElementById('chatMessageSearchResults'); if(!input||!results||!activeChatId)return; const q=input.value.trim().toLocaleLowerCase(); if(q.length<2){results.innerHTML='<div class="chat-search-empty">اكتب حرفين على الأقل للبحث.</div>';return;} results.innerHTML='<div class="chat-search-empty">جارٍ البحث…</div>'; try { const snap=await db.collection('chats').doc(activeChatId).collection('messages').orderBy('createdAt','desc').limit(1000).get(); if(!input.value.trim().toLocaleLowerCase().includes(q))return; const hits=snap.docs.filter(d=>String(d.data().text||'').toLocaleLowerCase().includes(q)); if(!hits.length){results.innerHTML='<div class="chat-search-empty">لا توجد رسائل مطابقة.</div>';return;} results.innerHTML=''; hits.slice(0,100).forEach(d=>{const m=d.data(), el=document.createElement('div');el.className='chat-search-result';const text=String(m.text|| (m.imageUrl?'▧ صورة':m.audioUrl?'♬ رسالة صوتية':''));el.textContent=text;const small=document.createElement('small');small.textContent=(m.senderId===currentUser.uid?'أنت':'الطرف الآخر')+' · '+new Date(m.createdAt||Date.now()).toLocaleString();el.appendChild(small);el.onclick=()=>{closeChatSearch();let target=document.getElementById('message_'+d.id);if(!target){showToast('الرسالة موجودة ضمن الرسائل الأقدم؛ حمّل رسائل أقدم ثم ابحث عنها.');return;}target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.add('search-match');setTimeout(()=>target.classList.remove('search-match'),3500);};results.appendChild(el);}); } catch(e){console.error(e);results.innerHTML='<div class="chat-search-empty">تعذر البحث في الرسائل.</div>';} }
 document.addEventListener('click',function(e){const menu=document.getElementById('chatMoreMenu'), del=document.getElementById('chatDeletePanel');if(menu&&!menu.contains(e.target)&&!e.target.closest('.chat-more-btn'))menu.classList.add('hidden');if(del&&!del.contains(e.target)&&!e.target.closest('.chat-more-btn'))del.classList.add('hidden');});
 </script>
 
@@ -8806,6 +8744,7 @@ document.addEventListener('click',function(e){const menu=document.getElementById
 <script src="gifts/gifts.js?v=19"></script>
 <script src="gifts/star-gift.js?v=5"></script>
 <script src="gifts/gift-link.js?v=2"></script>
+<script src="stickers/stickers.js?v=1"></script>
 <script id="babylon-remove-visited-badge-fix-v2">
 (function(){
   const cleanVisitedBadge = () => {
@@ -9077,7 +9016,7 @@ html,body{overscroll-behavior-y:none}
 .pf-hero .pf-hero-letter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--babylon-gold);font-weight:800;font-size:clamp(48px,26vw,140px)}
 .pf-hero .pf-hero-letter svg{width:38%;height:38%}
 .pf-hero .pf-hero-shade{position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.72));pointer-events:none}
-.pf-hero .pf-hero-info{position:absolute;left:18px;right:18px;bottom:12px;color:#fff;opacity:0;direction:ltr;text-align:left}
+.pf-hero .pf-hero-info{position:absolute;left:18px;right:18px;bottom:16px;color:#fff;opacity:0;direction:ltr;text-align:left}
 .pf-hero .pf-hero-name{font-size:24px;font-weight:800;line-height:1.25;text-shadow:0 1px 6px rgba(0,0,0,.55);overflow-wrap:anywhere}
 .pf-hero .pf-hero-status{font-size:13.5px;margin-top:3px;color:rgba(255,255,255,.82);text-shadow:0 1px 4px rgba(0,0,0,.5)}
 .pf-hero .pf-hero-status,.pf-hero .pf-hero-status.online{color:#fff!important;font-weight:800!important}
@@ -9294,7 +9233,7 @@ html,body{overscroll-behavior-y:none}
         quick.style.setProperty('margin-bottom',(12+((heroBottom+10-nat)-12)*v)+'px','important');
         var pvq=v>0.001?Math.max(0.125,Math.round(clamp(v*2)*8)/8):0;
         if(g.pvq!==pvq){ g.pvq=pvq; view.style.setProperty('--pv',pvq); }
-        hInfo.style.bottom=(12+e)+'px';
+        hInfo.style.bottom=(16+e)+'px';
       }
     }
     function reset(keepRingOff){
@@ -12012,7 +11951,7 @@ function bbMsgUser(u){
     for(var i=idx-1;i>=0;i--){
       var b=list[i],tx=b.dataset.messageText||'';
       if(text&&tx&&text.indexOf(tx)===0||tx===text)return b;
-      if(!tx&&((text==='▧ صورة'||text==='صورة')&&b.querySelector('.msg-image')||(text==='▶ فيديو'||text==='فيديو')&&b.querySelector('.msg-video')||text==='بصمة صوتية'&&b.querySelector('.custom-voice-card')))return b;
+      if(!tx&&(text==='▧ صورة'&&b.querySelector('.msg-image')||text==='▶ فيديو'&&b.querySelector('.msg-video')||text==='بصمة صوتية'&&b.querySelector('.custom-voice-card')))return b;
     }
     return null;
   }
@@ -12239,8 +12178,8 @@ function bbMsgUser(u){
       var tcol=db.collection('chats').doc(targetId).collection('messages'),now=Date.now(),last='';
       for(var i=0;i<msgs.length;i++){
         var m=msgs[i],n={senderId:currentUser.uid,forwarded:true,read:false,createdAt:now+i};
-        if(m.text)n.text=m.text;if(m.imageUrl)n.imageUrl=m.imageUrl;if(m.videoUrl){n.videoUrl=m.videoUrl;if(m.posterUrl)n.posterUrl=m.posterUrl;if(m.duration)n.duration=m.duration;}if(m.audioUrl){n.audioUrl=m.audioUrl;if(m.duration)n.duration=m.duration;}
-        await tcol.add(n);last=m.text||(m.imageUrl?'صورة':(m.videoUrl?'فيديو':'بصمة صوتية'));
+        if(m.text)n.text=m.text;if(m.type==='sticker'&&m.sticker){n.type='sticker';n.sticker=m.sticker;}if(m.imageUrl)n.imageUrl=m.imageUrl;if(m.videoUrl){n.videoUrl=m.videoUrl;if(m.posterUrl)n.posterUrl=m.posterUrl;if(m.duration)n.duration=m.duration;}if(m.audioUrl){n.audioUrl=m.audioUrl;if(m.duration)n.duration=m.duration;}
+        await tcol.add(n);last=m.text||(m.imageUrl?'▧ صورة':(m.videoUrl?'▶ فيديو':'بصمة صوتية'));
       }
       var upd={updatedAt:Date.now()};
       var meta=chatMetaCache[targetId];
@@ -12390,84 +12329,6 @@ function bbMsgUser(u){
   #storyViewer.story-opening, #storyViewer.story-opening .sv-stage { animation-duration:.01ms!important; }
 }
 </style>
-
-<script id="babylon-strip-media-symbols">
-/* إزالة الرموز ▧ و ▶ بجانب كلمتي «صورة» و«فيديو» من أي نص يظهر (بما فيها البيانات القديمة) */
-(function(){
-  var RX=/[\u25A7\u25B6]\uFE0F?\s*(?=صورة|فيديو)/g;
-  function fix(root){
-    try{
-      if(!root)return;
-      if(root.nodeType===3){if(RX.test(root.nodeValue)){RX.lastIndex=0;root.nodeValue=root.nodeValue.replace(RX,'');}RX.lastIndex=0;return;}
-      if(root.nodeType!==1)return;
-      var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,list=[];
-      while((n=w.nextNode())){if(n.nodeValue&&(n.nodeValue.indexOf('\u25A7')>-1||n.nodeValue.indexOf('\u25B6')>-1))list.push(n);}
-      list.forEach(function(t){t.nodeValue=t.nodeValue.replace(RX,'');});
-    }catch(e){}
-  }
-  var q=[],sched=false;
-  function flush(){sched=false;var a=q;q=[];a.forEach(fix);}
-  function push(n){q.push(n);if(!sched){sched=true;(window.requestAnimationFrame||setTimeout)(flush);}}
-  function start(){
-    fix(document.body);
-    new MutationObserver(function(ms){
-      ms.forEach(function(m){
-        if(m.type==='characterData')push(m.target);
-        else m.addedNodes.forEach(function(n){push(n);});
-      });
-    }).observe(document.body,{childList:true,subtree:true,characterData:true});
-  }
-  if(document.body)start();else document.addEventListener('DOMContentLoaded',start);
-})();
-</script>
-<style id="babylon-chat-item-slim">
-/* تنحيف بطاقات المحادثات في قسم المحادثات بمقدار 2 بكسل */
-body .app-container #homeView#homeView#homeView#homeView #chatList .chat-item{min-height:66px!important;padding-top:8px!important;padding-bottom:8px!important}
-</style>
-<style id="babylon-transparent-images">
-/* الصور الشفافة تظهر شفافة وليست سوداء */
-#chatView #messagesArea .msg-bubble.image-msg .msg-image,
-#chatView #messagesArea .msg-bubble.image-msg .msg-image img{background:transparent!important}
-</style>
-<style id="babylon-reply-thumb">
-/* معاينة الصورة/الفيديو داخل شعار الرد */
-.reply-thumb{position:relative;display:inline-flex;flex:0 0 auto;width:40px;height:40px;border-radius:9px;overflow:hidden;background:rgba(127,140,160,.25);align-items:center;justify-content:center}
-.reply-thumb img,.reply-thumb video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
-.reply-thumb-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(0,0,0,.28);pointer-events:none}
-#replyPreviewBar > .reply-thumb{width:40px;height:40px;border-radius:9px}
-#chatView .reply-quote.has-media{display:flex!important;align-items:center;gap:8px;white-space:normal;overflow:hidden}
-#chatView .reply-quote.has-media .reply-quote-body{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#chatView .reply-quote.has-media .reply-quote-name{display:block}
-#chatView .reply-quote.has-media .reply-thumb{width:34px;height:34px;border-radius:7px}
-</style>
-<style id="babylon-cancel-no-shadow">
-/* زر «إلغاء» في نافذتي الخروج والحذف: بدون ظل للكلمة أو للزر */
-body .app-container .cl-dlg.cl-del .cl-btns button#clDelNo,
-body .app-container .cl-dlg.cl-del .cl-btns button#clLogoutNo{
-  text-shadow:none!important;box-shadow:none!important;filter:none!important;
-}
-</style>
-<style id="babylon-voice-minibar-inchat">
-/* شريط تشغيل الصوتية داخل المحادثة: تحت الاسم والصورة، وتحت الرسالة المثبتة إن وُجدت */
-#chatView#chatView #vpBar.inchat{
-  position:absolute!important;top:calc(var(--cr-head-h,110px) + 6px)!important;left:10px!important;right:10px!important;
-  height:38px!important;margin:0!important;z-index:14!important;animation:none!important;
-  border:1px solid var(--cr-line,rgba(228,196,91,.3))!important;border-radius:19px!important;
-  background:var(--cr-card,#1e2a38)!important;color:var(--cr-ink,inherit);box-shadow:var(--cr-shadow,0 2px 8px rgba(0,0,0,.18))!important;
-  padding:0 14px!important;
-}
-#chatView#chatView:has(#pinnedBar:not(.hidden)) #vpBar.inchat{
-  top:calc(var(--cr-head-h,110px) + var(--cr-pin-h,52px) + 14px)!important;
-}
-#chatView#chatView.vp-chat #messagesArea.messages-area{
-  padding-top:calc(var(--cr-head-h,110px) + 52px)!important;
-}
-#chatView#chatView.vp-chat:has(#pinnedBar:not(.hidden)) #messagesArea.messages-area,
-#chatView#chatView.vp-chat #pinnedBar:not(.hidden) ~ #messagesArea.messages-area{
-  padding-top:calc(var(--cr-head-h,110px) + var(--cr-pin-h,52px) + 66px)!important;
-}
-.app-container[data-app-theme="light"] #chatView#chatView #vpBar.inchat{color:#17212b}
-</style>
 <script id="babylon-voice-minibar-js">
 (function(){
   var PLAY='<svg viewBox="0 0 24 24" width="23" height="23" fill="currentColor" aria-hidden="true"><path d="M8 5.8c0-.8.9-1.3 1.6-.8l9.2 6.2a1 1 0 0 1 0 1.6l-9.2 6.2c-.7.5-1.6 0-1.6-.8z"/></svg>';
@@ -12487,25 +12348,16 @@ body .app-container .cl-dlg.cl-del .cl-btns button#clLogoutNo{
   }
   function vis(id){var e=document.getElementById(id);return e&&!e.classList.contains('hidden')?e:null;}
   function place(b,playing){
-    var a=app(),anchor=null,nav=null,cv=vis('chatView'),inChat=!!cv;
-    if(!inChat){
-      if(vis('homeView'))anchor=vis('selBar')||vis('mainHeader');
-      else if(['profileView','otherUserProfileView','editProfileView','settingsView','chatSettingsView','notificationSettingsView','privacySettingsView'].some(vis))nav=vis('bottomNav');
-    }
-    b.classList.toggle('inchat',inChat);
+    var a=app(),anchor=null,nav=null,cv=vis('chatView');
+    if(cv)anchor=cv.querySelector('.telegram-chat-header');
+    else if(vis('homeView'))anchor=vis('selBar')||vis('mainHeader');
+    else if(['profileView','otherUserProfileView','editProfileView','settingsView','chatSettingsView','notificationSettingsView','privacySettingsView'].some(vis))nav=vis('bottomNav');
     b.classList.toggle('inflow',!!(anchor||nav));
     b.classList.toggle('bottom',!!nav);
-    if(inChat){
-      /* داخل المحادثة: تحت الاسم والصورة، وتحت الرسالة المثبتة إن وُجدت */
-      var ma=document.getElementById('messagesArea');
-      if(ma&&b.nextElementSibling!==ma)ma.before(b);
-    }
-    else if(nav){anchor=nav;if(b.nextElementSibling!==nav)nav.before(b);}
+    if(nav){anchor=nav;if(b.nextElementSibling!==nav)nav.before(b);}
     else if(anchor){if(b.previousElementSibling!==anchor)anchor.after(b);}
     else if(a&&a.lastElementChild!==b)a.appendChild(b);
-    var chatV=document.getElementById('chatView');
-    if(chatV)chatV.classList.toggle('vp-chat',!!playing&&inChat);
-    if(a){a.classList.toggle('vp-on',!!playing&&!anchor&&!inChat);a.classList.toggle('vp-bottom',!!playing&&!!nav);}
+    if(a){a.classList.toggle('vp-on',!!playing&&!anchor);a.classList.toggle('vp-bottom',!!playing&&!!nav);}
   }
   function sync(){
     if(cur&&(typeof currentUser==='undefined'||!currentUser)){stop();return;}
@@ -14754,7 +14606,7 @@ html{overflow:hidden!important;overscroll-behavior:none}
       }
       if(pins.length>=10)return showToast('الحد الأقصى 10 رسائل مثبتة');
       var txt=String(selectedMsgText||'').trim();
-      pins.push({id:id,text:txt?txt.slice(0,90):(selectedMsgIsAudio?'♬ بصمة صوتية':'صورة'),by:meId(),at:Date.now()});
+      pins.push({id:id,text:txt?txt.slice(0,90):(selectedMsgIsAudio?'♬ بصمة صوتية':'▧ صورة'),by:meId(),at:Date.now()});
       pinIdx=pins.length-1;
       if(isGrp()){
         var u=await addGroupSystem(cid,{k:'pin',by:meId(),ref:id});
