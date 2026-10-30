@@ -3908,7 +3908,7 @@ function enterApp() {
   goHome();
 }
 
-function logout() { 
+function performLogout() {
   if (currentUser) {
     clearInterval(heartbeatInterval);
     db.collection("users").doc(currentUser.uid).set({ online: false, lastSeen: Date.now() }, { merge: true }).then(() => {
@@ -3917,6 +3917,25 @@ function logout() {
   } else {
     auth.signOut().then(() => location.reload());
   }
+}
+/* نافذة تأكيد تسجيل الخروج بنفس نمط نافذة حذف المحادثة */
+function logout() {
+  if (document.getElementById('clLogoutOk')) return;
+  const root = (typeof uiRoot === 'function' && uiRoot()) || document.body;
+  const ov = document.createElement('div');
+  ov.className = 'cl-dlg-ov';
+  ov.innerHTML = `<div class="cl-dlg cl-del" role="dialog" aria-modal="true" dir="rtl">
+    <div class="cl-del-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg></div>
+    <h3>تسجيل الخروج</h3>
+    <p>هل تريد تسجيل الخروج من حسابك؟</p>
+    <div class="cl-btns"><button type="button" class="cl-danger" id="clLogoutOk">خروج</button><button type="button" id="clLogoutNo" class="cl-cancel">إلغاء</button></div></div>`;
+  root.appendChild(ov);
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  const close = () => { document.removeEventListener('keydown', onKey); ov.remove(); };
+  document.addEventListener('keydown', onKey);
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  ov.querySelector('#clLogoutNo').onclick = close;
+  ov.querySelector('#clLogoutOk').onclick = () => { close(); performLogout(); };
 }
 
 const APP_THEME_KEY = 'babylon_chat_app_theme';
