@@ -4855,7 +4855,7 @@ function renderMsgDoc(doc, box, existingTyping) {
         let htmlContent = "";
         if (grp && !isMine) htmlContent += groupSenderHtml(m.senderId);
         if (m.forwarded) htmlContent += `<div class="fwd-label"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 6 6-6 6"/><path d="M21 11H9a6 6 0 0 0-6 6v1"/></svg>معاد توجيهها</div>`;
-        if (m.replyTo) { const _rsid = m.replyToSenderId || (m.replyToId ? ((document.getElementById('message_'+m.replyToId)||{dataset:{}}).dataset.senderId||'') : ''); const _rn = _rsid ? replyOwnerName(_rsid) : ''; const _rmd = m.replyToMedia || (m.replyToId ? replyMediaFromEl(document.getElementById('message_'+m.replyToId)) : null); htmlContent += `<div class="reply-quote${_rmd ? ' has-media' : ''}" data-reply-id="${esc(m.replyToId||'')}" role="button">${_rmd ? `<span class="reply-quote-body">${_rn ? `<span class="reply-quote-name">${esc(_rn)}</span>` : ''}${esc(m.replyTo)}</span>${replyThumbHtml(_rmd)}` : `${_rn ? `<span class="reply-quote-name">${esc(_rn)}</span>` : ''}${esc(m.replyTo)}`}</div>`; }
+        if (m.replyTo) { const _rsid = m.replyToSenderId || (m.replyToId ? ((document.getElementById('message_'+m.replyToId)||{dataset:{}}).dataset.senderId||'') : ''); const _rn = _rsid ? replyOwnerName(_rsid) : ''; const _rmd = m.replyToMedia || (m.replyToId ? replyMediaFromEl(document.getElementById('message_'+m.replyToId)) : null); htmlContent += `<div class="reply-quote${_rmd ? ' has-media' : ''}" data-reply-id="${esc(m.replyToId||'')}" role="button">${_rmd ? `<span class="reply-quote-body">${_rn ? `<span class="reply-quote-name">${esc(_rn)}</span>` : ''}${esc(String(m.replyTo).replace(/[▧▶]\uFE0F?\s*(?=صورة|فيديو)/g, ''))}</span>${replyThumbHtml(_rmd)}` : `${_rn ? `<span class="reply-quote-name">${esc(_rn)}</span>` : ''}${esc(String(m.replyTo).replace(/[▧▶]\uFE0F?\s*(?=صورة|فيديو)/g, ''))}`}</div>`; }
         if (m.storyReply) {
           const sr = m.storyReplyData || {};
           const previewText = sr.caption || (sr.videoUrl ? 'قصة فيديو' : 'قصة');
@@ -4948,7 +4948,7 @@ function renderMsgDoc(doc, box, existingTyping) {
           const endDx = (e.changedTouches[0].clientX - touchStartX) * swipeDir();
           swipeReset();
           if (ignoreTouch) { ignoreTouch = false; return; }
-          if (wasDrag && endDx >= SWIPE_TRIGGER) triggerSwipeReply(m.text || (m.imageUrl ? "▧ صورة" : (m.videoUrl ? "▶ فيديو" : "بصمة صوتية")), doc.id);
+          if (wasDrag && endDx >= SWIPE_TRIGGER) triggerSwipeReply(m.text || (m.imageUrl ? "صورة" : (m.videoUrl ? "فيديو" : "بصمة صوتية")), doc.id);
         };
 
         b.onmousedown = (e) => {
@@ -5268,7 +5268,7 @@ function replyThumbHtml(md) {
   return '<span class="reply-thumb"><img src="' + esc(md.u) + '" alt="" loading="lazy" draggable="false"></span>';
 }
 function triggerSwipeReply(text, id, senderId) {
-  replyingToText = text;
+  replyingToText = String(text || '').replace(/[▧▶]\uFE0F?\s*(?=صورة|فيديو)/g, '');
   replyingToId = id || null;
   const _el = id ? document.getElementById('message_' + id) : null;
   replyingToSenderId = senderId || (_el && _el.dataset.senderId) || null;
@@ -5691,7 +5691,7 @@ function loadChats() {
                 const m = msgSnap.docs[0].data();
                 const isMine = (m.senderId === currentUser.uid);
                 const prefix = isMine ? "أنت: " : ""; if (isMine) lastTick = (msgSnap.docs[0].metadata && msgSnap.docs[0].metadata.hasPendingWrites) ? 'wait' : (m.read ? 'read' : 'sent');
-                lastMsgText = prefix + (m.audioUrl ? "♬ بصمة صوتية" : (m.imageUrl ? "▧ صورة" : (m.videoUrl ? "▶ فيديو" : (m.text || ""))));
+                lastMsgText = prefix + (m.audioUrl ? "♬ بصمة صوتية" : (m.imageUrl ? "صورة" : (m.videoUrl ? "فيديو" : (m.text || ""))));
                 const mediaIcon = m.imageUrl
                   ? '<svg class="chat-media-preview-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor"/><path d="m21 15-5-5L5 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
                   : (m.videoUrl ? '<svg class="chat-media-preview-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="13" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 10 5-3v10l-5-3z" fill="currentColor"/></svg>' : '');
@@ -5713,7 +5713,7 @@ function loadChats() {
                     getNotificationOption('push', false) &&
                     !getLocalChatSet('babylon_muted_users').has(otherId)) {
                   nativeNotifiedMessageIds.add(messageDoc.id);
-                  const nativeBody = m.audioUrl ? '♬ رسالة صوتية' : (m.imageUrl ? '▧ صورة' : (m.videoUrl ? '▶ فيديو' : (m.text || 'رسالة جديدة')));
+                  const nativeBody = m.audioUrl ? '♬ رسالة صوتية' : (m.imageUrl ? 'صورة' : (m.videoUrl ? 'فيديو' : (m.text || 'رسالة جديدة')));
                   try {
                     if (window.BabylonAndroid && typeof window.BabylonAndroid.showMessageNotification === 'function') {
                       const nativeTitle = u.displayName || 'رسالة جديدة';
@@ -6147,10 +6147,10 @@ function sendImage(e) {
     }).then(() => {
       db.collection('chats').doc(chatId).set({ 
         updatedAt: Date.now(),
-        ...groupLastMsgFor(chatId, '▧ صورة'),
+        ...groupLastMsgFor(chatId, 'صورة'),
         [`typing_${currentUser.uid}`]: false
       }, { merge: true });
-      notifyPeer(chatId, '▧ صورة');
+      notifyPeer(chatId, 'صورة');
     }).catch(() => showToast('تعذر إرسال الصورة'));
   });
 }
@@ -6311,10 +6311,10 @@ function sendChatVideo(file) {
       fin();
       db.collection('chats').doc(chatId).set({
         updatedAt: Date.now(),
-        ...groupLastMsgFor(chatId, '▶ فيديو'),
+        ...groupLastMsgFor(chatId, 'فيديو'),
         [`typing_${currentUser.uid}`]: false
       }, { merge: true });
-      notifyPeer(chatId, '▶ فيديو');
+      notifyPeer(chatId, 'فيديو');
     }).catch(() => { fin(); showToast('تعذر إرسال الفيديو'); });
   };
   xhr.send(fd);
@@ -8441,7 +8441,7 @@ async function actionPinMsg(){
     if(ex>=0){pins.splice(ex,1);pinIdx=-1;await gUpdate({pins:pins});showToast('تم إلغاء تثبيت الرسالة');return;}
     if(pins.length>=10)return showToast('الحد الأقصى 10 رسائل مثبتة');
     const txt=String(selectedMsgText||'').trim();
-    pins.push({id:id,text:txt?txt.slice(0,90):(selectedMsgIsAudio?'♬ بصمة صوتية':'▧ صورة'),by:meId(),at:Date.now()});
+    pins.push({id:id,text:txt?txt.slice(0,90):(selectedMsgIsAudio?'♬ بصمة صوتية':'صورة'),by:meId(),at:Date.now()});
     pinIdx=pins.length-1;
     const u=await addGroupSystem(activeChatId,{k:'pin',by:meId(),ref:id});
     await gUpdate({pins:pins,updatedAt:u.updatedAt,lastMsg:u.lastMsg});
@@ -8723,7 +8723,7 @@ function openChatSearch() { closeChatMenus(); const p=document.getElementById('c
 function closeChatSearch() { document.getElementById('chatSearchPanel')?.classList.add('hidden'); document.querySelectorAll('.msg-bubble.search-match').forEach(x=>x.classList.remove('search-match')); }
 let chatSearchTimer=null;
 function searchChatMessages() { clearTimeout(chatSearchTimer); chatSearchTimer=setTimeout(runChatMessageSearch,180); }
-async function runChatMessageSearch() { const input=document.getElementById('chatMessageSearchInput'), results=document.getElementById('chatMessageSearchResults'); if(!input||!results||!activeChatId)return; const q=input.value.trim().toLocaleLowerCase(); if(q.length<2){results.innerHTML='<div class="chat-search-empty">اكتب حرفين على الأقل للبحث.</div>';return;} results.innerHTML='<div class="chat-search-empty">جارٍ البحث…</div>'; try { const snap=await db.collection('chats').doc(activeChatId).collection('messages').orderBy('createdAt','desc').limit(1000).get(); if(!input.value.trim().toLocaleLowerCase().includes(q))return; const hits=snap.docs.filter(d=>String(d.data().text||'').toLocaleLowerCase().includes(q)); if(!hits.length){results.innerHTML='<div class="chat-search-empty">لا توجد رسائل مطابقة.</div>';return;} results.innerHTML=''; hits.slice(0,100).forEach(d=>{const m=d.data(), el=document.createElement('div');el.className='chat-search-result';const text=String(m.text|| (m.imageUrl?'▧ صورة':m.audioUrl?'♬ رسالة صوتية':''));el.textContent=text;const small=document.createElement('small');small.textContent=(m.senderId===currentUser.uid?'أنت':'الطرف الآخر')+' · '+new Date(m.createdAt||Date.now()).toLocaleString();el.appendChild(small);el.onclick=()=>{closeChatSearch();let target=document.getElementById('message_'+d.id);if(!target){showToast('الرسالة موجودة ضمن الرسائل الأقدم؛ حمّل رسائل أقدم ثم ابحث عنها.');return;}target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.add('search-match');setTimeout(()=>target.classList.remove('search-match'),3500);};results.appendChild(el);}); } catch(e){console.error(e);results.innerHTML='<div class="chat-search-empty">تعذر البحث في الرسائل.</div>';} }
+async function runChatMessageSearch() { const input=document.getElementById('chatMessageSearchInput'), results=document.getElementById('chatMessageSearchResults'); if(!input||!results||!activeChatId)return; const q=input.value.trim().toLocaleLowerCase(); if(q.length<2){results.innerHTML='<div class="chat-search-empty">اكتب حرفين على الأقل للبحث.</div>';return;} results.innerHTML='<div class="chat-search-empty">جارٍ البحث…</div>'; try { const snap=await db.collection('chats').doc(activeChatId).collection('messages').orderBy('createdAt','desc').limit(1000).get(); if(!input.value.trim().toLocaleLowerCase().includes(q))return; const hits=snap.docs.filter(d=>String(d.data().text||'').toLocaleLowerCase().includes(q)); if(!hits.length){results.innerHTML='<div class="chat-search-empty">لا توجد رسائل مطابقة.</div>';return;} results.innerHTML=''; hits.slice(0,100).forEach(d=>{const m=d.data(), el=document.createElement('div');el.className='chat-search-result';const text=String(m.text|| (m.imageUrl?'صورة':m.audioUrl?'♬ رسالة صوتية':''));el.textContent=text;const small=document.createElement('small');small.textContent=(m.senderId===currentUser.uid?'أنت':'الطرف الآخر')+' · '+new Date(m.createdAt||Date.now()).toLocaleString();el.appendChild(small);el.onclick=()=>{closeChatSearch();let target=document.getElementById('message_'+d.id);if(!target){showToast('الرسالة موجودة ضمن الرسائل الأقدم؛ حمّل رسائل أقدم ثم ابحث عنها.');return;}target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.add('search-match');setTimeout(()=>target.classList.remove('search-match'),3500);};results.appendChild(el);}); } catch(e){console.error(e);results.innerHTML='<div class="chat-search-empty">تعذر البحث في الرسائل.</div>';} }
 document.addEventListener('click',function(e){const menu=document.getElementById('chatMoreMenu'), del=document.getElementById('chatDeletePanel');if(menu&&!menu.contains(e.target)&&!e.target.closest('.chat-more-btn'))menu.classList.add('hidden');if(del&&!del.contains(e.target)&&!e.target.closest('.chat-more-btn'))del.classList.add('hidden');});
 </script>
 
@@ -11994,7 +11994,7 @@ function bbMsgUser(u){
     for(var i=idx-1;i>=0;i--){
       var b=list[i],tx=b.dataset.messageText||'';
       if(text&&tx&&text.indexOf(tx)===0||tx===text)return b;
-      if(!tx&&(text==='▧ صورة'&&b.querySelector('.msg-image')||text==='▶ فيديو'&&b.querySelector('.msg-video')||text==='بصمة صوتية'&&b.querySelector('.custom-voice-card')))return b;
+      if(!tx&&((text==='▧ صورة'||text==='صورة')&&b.querySelector('.msg-image')||(text==='▶ فيديو'||text==='فيديو')&&b.querySelector('.msg-video')||text==='بصمة صوتية'&&b.querySelector('.custom-voice-card')))return b;
     }
     return null;
   }
@@ -12222,7 +12222,7 @@ function bbMsgUser(u){
       for(var i=0;i<msgs.length;i++){
         var m=msgs[i],n={senderId:currentUser.uid,forwarded:true,read:false,createdAt:now+i};
         if(m.text)n.text=m.text;if(m.imageUrl)n.imageUrl=m.imageUrl;if(m.videoUrl){n.videoUrl=m.videoUrl;if(m.posterUrl)n.posterUrl=m.posterUrl;if(m.duration)n.duration=m.duration;}if(m.audioUrl){n.audioUrl=m.audioUrl;if(m.duration)n.duration=m.duration;}
-        await tcol.add(n);last=m.text||(m.imageUrl?'▧ صورة':(m.videoUrl?'▶ فيديو':'بصمة صوتية'));
+        await tcol.add(n);last=m.text||(m.imageUrl?'صورة':(m.videoUrl?'فيديو':'بصمة صوتية'));
       }
       var upd={updatedAt:Date.now()};
       var meta=chatMetaCache[targetId];
@@ -12373,16 +12373,45 @@ function bbMsgUser(u){
 }
 </style>
 
+<script id="babylon-strip-media-symbols">
+/* إزالة الرموز ▧ و ▶ بجانب كلمتي «صورة» و«فيديو» من أي نص يظهر (بما فيها البيانات القديمة) */
+(function(){
+  var RX=/[\u25A7\u25B6]\uFE0F?\s*(?=صورة|فيديو)/g;
+  function fix(root){
+    try{
+      if(!root)return;
+      if(root.nodeType===3){if(RX.test(root.nodeValue)){RX.lastIndex=0;root.nodeValue=root.nodeValue.replace(RX,'');}RX.lastIndex=0;return;}
+      if(root.nodeType!==1)return;
+      var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,list=[];
+      while((n=w.nextNode())){if(n.nodeValue&&(n.nodeValue.indexOf('\u25A7')>-1||n.nodeValue.indexOf('\u25B6')>-1))list.push(n);}
+      list.forEach(function(t){t.nodeValue=t.nodeValue.replace(RX,'');});
+    }catch(e){}
+  }
+  var q=[],sched=false;
+  function flush(){sched=false;var a=q;q=[];a.forEach(fix);}
+  function push(n){q.push(n);if(!sched){sched=true;(window.requestAnimationFrame||setTimeout)(flush);}}
+  function start(){
+    fix(document.body);
+    new MutationObserver(function(ms){
+      ms.forEach(function(m){
+        if(m.type==='characterData')push(m.target);
+        else m.addedNodes.forEach(function(n){push(n);});
+      });
+    }).observe(document.body,{childList:true,subtree:true,characterData:true});
+  }
+  if(document.body)start();else document.addEventListener('DOMContentLoaded',start);
+})();
+</script>
 <style id="babylon-reply-thumb">
 /* معاينة الصورة/الفيديو داخل شعار الرد */
 .reply-thumb{position:relative;display:inline-flex;flex:0 0 auto;width:40px;height:40px;border-radius:9px;overflow:hidden;background:rgba(127,140,160,.25);align-items:center;justify-content:center}
 .reply-thumb img,.reply-thumb video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .reply-thumb-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(0,0,0,.28);pointer-events:none}
-#replyPreviewBar > .reply-thumb{width:44px;height:44px;border-radius:10px}
+#replyPreviewBar > .reply-thumb{width:40px;height:40px;border-radius:9px}
 #chatView .reply-quote.has-media{display:flex!important;align-items:center;gap:8px;white-space:normal;overflow:hidden}
 #chatView .reply-quote.has-media .reply-quote-body{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #chatView .reply-quote.has-media .reply-quote-name{display:block}
-#chatView .reply-quote.has-media .reply-thumb{width:38px;height:38px;border-radius:8px}
+#chatView .reply-quote.has-media .reply-thumb{width:34px;height:34px;border-radius:7px}
 </style>
 <style id="babylon-cancel-no-shadow">
 /* زر «إلغاء» في نافذتي الخروج والحذف: بدون ظل للكلمة أو للزر */
@@ -14698,7 +14727,7 @@ html{overflow:hidden!important;overscroll-behavior:none}
       }
       if(pins.length>=10)return showToast('الحد الأقصى 10 رسائل مثبتة');
       var txt=String(selectedMsgText||'').trim();
-      pins.push({id:id,text:txt?txt.slice(0,90):(selectedMsgIsAudio?'♬ بصمة صوتية':'▧ صورة'),by:meId(),at:Date.now()});
+      pins.push({id:id,text:txt?txt.slice(0,90):(selectedMsgIsAudio?'♬ بصمة صوتية':'صورة'),by:meId(),at:Date.now()});
       pinIdx=pins.length-1;
       if(isGrp()){
         var u=await addGroupSystem(cid,{k:'pin',by:meId(),ref:id});
