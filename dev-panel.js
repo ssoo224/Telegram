@@ -54,7 +54,7 @@
       '#dvpOverlay{position:fixed;inset:0;z-index:100000;background:var(--dv-bg);color:var(--dv-text);display:flex;flex-direction:column;font-family:inherit;direction:rtl}' +
       '#dvpOverlay .dvp-head{display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;border-bottom:1px solid var(--dv-head-line)}' +
       '#dvpOverlay .dvp-head h2{margin:0;font-size:18px;font-weight:800;flex:1;color:var(--dv-title)}' +
-      '#dvpOverlay .dvp-x{width:40px;height:40px;border-radius:12px;border:0;background:var(--dv-x);color:var(--dv-text);font-size:20px;cursor:pointer}' +
+      '#dvpOverlay .dvp-x{width:40px;height:40px;border-radius:12px;border:0;background:var(--dv-x);color:var(--dv-text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}' +
       '#dvpOverlay .dvp-body{flex:1;overflow-y:auto;padding:16px 16px 40px}' +
       '#dvpOverlay .dvp-label{font-size:12px;font-weight:700;color:var(--dv-sub);margin:18px 4px 10px}' +
       '#dvpOverlay .dvp-top{background:var(--dv-card);border:1px solid var(--dv-line);border-radius:18px;padding:14px 14px 12px}' +
@@ -69,7 +69,8 @@
       '#dvpOverlay textarea{min-height:96px;resize:vertical}' +
       '#dvpOverlay input:focus,#dvpOverlay textarea:focus{border-color:var(--dv-focus)}' +
       '#dvpOverlay .dvp-cnt{font-size:11px;color:var(--dv-sub);text-align:left;margin:-4px 4px 8px}' +
-      '#dvpOverlay .dvp-send{width:100%;border:0;border-radius:14px;min-height:50px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,#e8c85d,#cba843);color:#292216;-webkit-text-fill-color:#292216}' +
+      '#dvpOverlay[data-dvp-theme="light"] .dvp-x{color:#000;-webkit-text-fill-color:#000}' +
+      '#dvpOverlay .dvp-send{width:100%;border:0;border-radius:14px;min-height:50px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,#e8c85d,#cba843);color:#fff;-webkit-text-fill-color:#fff}' +
       '#dvpOverlay .dvp-send.armed{background:#ef4444;color:#fff;-webkit-text-fill-color:#fff}' +
       '#dvpOverlay .dvp-send:disabled{opacity:.55}' +
       '#dvpOverlay .dvp-row{display:flex;justify-content:space-between;gap:10px;padding:11px 14px;border-radius:12px;background:var(--dv-row);border:1px solid var(--dv-line);margin-bottom:8px;font-size:13px;color:var(--dv-text)}' +
@@ -151,7 +152,7 @@
     overlay = document.createElement('div');
     overlay.id = 'dvpOverlay';
     overlay.innerHTML =
-      '<div class="dvp-head"><button class="dvp-x" id="dvpClose" aria-label="إغلاق">✕</button><h2>لوحة المطوّر</h2></div>' +
+      '<div class="dvp-head"><button class="dvp-x" id="dvpClose" aria-label="رجوع"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><h2>لوحة المطوّر</h2></div>' +
       '<div class="dvp-body">' +
         '<div class="dvp-top">' +
           '<div class="dvp-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span>إشعار للهاتف لكل المستخدمين</span></div>' +
