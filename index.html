@@ -406,7 +406,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 
 <style>
 :root {
@@ -2299,6 +2298,7 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 .verified-badge::after{animation:none!important}
 </style>
 <script src="debug/errors.js?v=1"></script>
+<script src="perf/perf.js?v=1"></script>
 <link rel="stylesheet" href="stickers/stickers.css?v=1">
 <style id="babylon-stars-gifts-theme">
 /* ===== صفحات النجوم والهدايا: ألوان الطور النهاري + رموز SVG بدل الإيموجي ===== */
@@ -3295,7 +3295,7 @@ const auth = firebase.auth();
 try { auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => console.warn("Auth persistence preference:", err)); } catch (e) {}
 const db = firebase.firestore();
 /* العمل بدون إنترنت: تخزين محلي لبيانات Firestore كي تظهر المحادثات والملف عند انقطاع الاتصال */
-try { db.enablePersistence({ synchronizeTabs: true }).catch(function (e) { console.warn('Firestore persistence:', e && e.code); }); } catch (e) {}
+try { db.enablePersistence({ synchronizeTabs: true }).then(function () { window.__bbPersist = 'on'; }).catch(function (e) { window.__bbPersist = (e && e.code) || 'fail'; console.warn('Firestore persistence:', e && e.code); }); } catch (e) {}
 
 let messaging = null;
 if (firebase.messaging.isSupported()) {
@@ -3658,9 +3658,10 @@ function babylonStartSession(user) {
     }}
 
 auth.onAuthStateChanged(user => {
+  window.__bbMark && __bbMark('auth');
   if (user && !user.emailVerified) { showVerifyPage(user); return; }
   if (user) {
-    babylonOtpGate(user).then(ok => { if (ok) babylonStartSession(user); });
+    babylonOtpGate(user).then(ok => { window.__bbMark && __bbMark('otp'); if (ok) babylonStartSession(user); });
   } else {
     isAppInitialized = false;
     currentUser = null;
@@ -3919,6 +3920,7 @@ function registerUser() {
 }
 
 function enterApp() {
+  window.__bbMark && __bbMark('enter-app');
   document.getElementById("authPage").classList.add("hidden");
   document.getElementById("mainPage").classList.remove("hidden");
   goHome();
@@ -4643,7 +4645,7 @@ function bbSnapSig(snap) {
   return out + '#' + msgLimit + '#' + activeChatId;
 }
 function openChatRoom(otherUserId, keepLimit) {
-  window.__bbMsgSig = null;
+  window.__bbMsgSig = null; window.__bbMark && __bbMark('chat-open', 1);
   reorderChatListItems();
   document.getElementById('chatGroupInfoAction')?.classList.add('hidden'); { const _av = document.getElementById('chatAvatar'); if (_av) _av.style.background = ''; } try { hideMentionPop(); resetGroupUI(); } catch (e) {}
   if (!keepLimit) msgLimit = 50;
@@ -4734,6 +4736,7 @@ function openChatRoom(otherUserId, keepLimit) {
     .orderBy("createdAt", "desc").limit(msgLimit)
     .onSnapshot({ includeMetadataChanges: true }, snap => {
       try { const __sg = bbSnapSig(snap); if (__sg === window.__bbMsgSig && !window.__pendingJump && !loadingOlder) return; window.__bbMsgSig = __sg; } catch (e) {}
+      try { if (window.__bbMark) { __bbMark('msgs-' + (snap.metadata.fromCache ? 'cache' : 'server'), 1); requestAnimationFrame(() => __bbMark('painted', 1)); } } catch (e) {}
       const box = document.getElementById("messagesArea");
       const prevH = box.scrollHeight;
       const prevTop = box.scrollTop;
@@ -5738,7 +5741,7 @@ function loadChats() {
                         ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
                       </div>
                     </div>`;
-                  existingItem.classList.toggle('has-unread', unreadCount > 0); existingItem.dataset.rendered = '1';
+                  existingItem.classList.toggle('has-unread', unreadCount > 0); existingItem.dataset.rendered = '1'; window.__bbMark && __bbMark('list-item');
                   updateUnreadChip();
                   reorderChatListItems();
                 });
