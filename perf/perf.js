@@ -2,7 +2,7 @@
    اضغط الشارة لفتح/إغلاق التفاصيل، واضغط مطوّلاً لمسح القياسات. احذف سطر تحميله من index.html بعد التشخيص. */
 (function () {
   var t0 = (window.performance && performance.timeOrigin) ? 0 : 0;
-  var marks = [], chatOpenAt = 0, srv = null, box, chip, open = false, pend = 0;
+  var marks = [], chatOpenAt = 0, srv = null, pinged = false, box, chip, open = false, pend = 0;
   function now() { return Math.round(performance.now()); }
   function fmt(ms) { return ms >= 1000 ? (ms / 1000).toFixed(2) + 's' : ms + 'ms'; }
   window.__bbMark = function (name, perChat) {
@@ -10,12 +10,13 @@
     if (name === 'chat-open') { chatOpenAt = t; marks = marks.filter(function (m) { return !m.chat; }); }
     if (!perChat && marks.some(function (m) { return m.name === name && !m.chat; })) return;   /* أول مرة فقط للإقلاع */
     marks.push({ name: name, t: t, chat: !!perChat, rel: perChat ? t - chatOpenAt : t });
-    if (name === 'list-item' && srv === null) { srv = 0; setTimeout(pingServer, 2500); }
+    if (name === 'list-item' && !pinged) { pinged = true; setTimeout(pingServer, 2500); }
     schedule();
   };
   function pingServer() {
     try {
-      var u = window.currentUser; if (!u || !window.db) return;
+      var u = (typeof currentUser !== 'undefined') ? currentUser : null;
+      if (!u || typeof db === 'undefined') { srv = null; setTimeout(pingServer, 1500); return; }
       var a = now();
       db.collection('users').doc(u.uid).get({ source: 'server' }).then(function () { srv = now() - a; schedule(); }).catch(function () { srv = -1; schedule(); });
     } catch (e) {}
@@ -37,7 +38,7 @@
       chip.style.cssText = 'position:fixed;left:8px;bottom:84px;z-index:2147483000;width:30px;height:30px;border-radius:15px;background:rgba(0,0,0,.55);color:#ffd96a;font:15px/30px sans-serif;text-align:center;opacity:.75';
       var lp = 0;
       chip.addEventListener('click', function () { open = !open; paint(); });
-      chip.addEventListener('touchstart', function () { lp = setTimeout(function () { marks = []; srv = null; open = false; paint(); }, 900); }, { passive: true });
+      chip.addEventListener('touchstart', function () { lp = setTimeout(function () { marks = []; srv = null; pinged = false; open = false; paint(); }, 900); }, { passive: true });
       ['touchend', 'touchmove', 'touchcancel'].forEach(function (ev) { chip.addEventListener(ev, function () { clearTimeout(lp); }, { passive: true }); });
       document.body.appendChild(chip);
       box = document.createElement('div');

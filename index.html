@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="referrer" content="no-referrer">
+<script src="perf/perf.js?v=2"></script>
 <noscript><style>body{display:none!important}html{background:#07090f}</style></noscript>
 <script id="babylon-app-only-guard">
 /* حارس «التطبيق فقط»: الموقع لا يعمل إطلاقاً خارج تطبيق الأندرويد (متصفح، PWA مثبّت، تبويب عادي).
@@ -2298,7 +2299,6 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 .verified-badge::after{animation:none!important}
 </style>
 <script src="debug/errors.js?v=1"></script>
-<script src="perf/perf.js?v=1"></script>
 <link rel="stylesheet" href="stickers/stickers.css?v=1">
 <style id="babylon-stars-gifts-theme">
 /* ===== صفحات النجوم والهدايا: ألوان الطور النهاري + رموز SVG بدل الإيموجي ===== */
@@ -3283,6 +3283,7 @@ const firebaseConfig = {
   appId: "1:1022301130899:web:171184929244a979b6bd66"
 };
 
+window.__bbMark && __bbMark('sdk-ready');
 firebase.initializeApp(firebaseConfig);
 
 const APP_CHECK_SITE_KEY = "";
@@ -3294,6 +3295,7 @@ window.__acOn = !!(APP_CHECK_SITE_KEY && firebase.appCheck);
 const auth = firebase.auth();
 try { auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => console.warn("Auth persistence preference:", err)); } catch (e) {}
 const db = firebase.firestore();
+window.__bbMark && __bbMark('db-created');
 /* العمل بدون إنترنت: تخزين محلي لبيانات Firestore كي تظهر المحادثات والملف عند انقطاع الاتصال */
 try { db.enablePersistence({ synchronizeTabs: true }).then(function () { window.__bbPersist = 'on'; }).catch(function (e) { window.__bbPersist = (e && e.code) || 'fail'; console.warn('Firestore persistence:', e && e.code); }); } catch (e) {}
 
@@ -4644,6 +4646,18 @@ function bbSnapSig(snap) {
   });
   return out + '#' + msgLimit + '#' + activeChatId;
 }
+/* فتح فوري: إذا فتحنا هذي المحادثة قبل بنفس الجلسة، نرسم آخر لقطة محفوظة بالذاكرة فوراً بدل انتظار قراءة الكاش (300-600ms).
+   اللقطة الحقيقية تجي بعدها؛ إذا ما تغيّر شي يظهر ما تنعاد الرسم (bbSnapSig). */
+function __bbInstantOpen() {
+  const mem = window.__bbSnapMem && window.__bbSnapMem[activeChatId];
+  if (!mem || mem.limit !== msgLimit || typeof window.__bbMsgH !== 'function') return;
+  const first = mem.snap.docs[0]; if (!first) return;
+  const newest = Number(first.data().createdAt) || 0;
+  const meta = (typeof chatMetaCache !== 'undefined' && chatMetaCache[activeChatId]) || null;
+  if (meta && Number(meta.updatedAt) && newest < Number(meta.updatedAt) - 3000) return;   /* قديمة: ننتظر الحقيقية */
+  window.__bbMark && __bbMark('instant', 1);
+  window.__bbMsgH(mem.snap);
+}
 function openChatRoom(otherUserId, keepLimit) {
   window.__bbMsgSig = null; window.__bbMark && __bbMark('chat-open', 1);
   reorderChatListItems();
@@ -4734,9 +4748,10 @@ function openChatRoom(otherUserId, keepLimit) {
 
   messagesUnsubscribe = db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "desc").limit(msgLimit)
-    .onSnapshot({ includeMetadataChanges: true }, snap => {
+    .onSnapshot({ includeMetadataChanges: true }, window.__bbMsgH = snap => {
       try { const __sg = bbSnapSig(snap); if (__sg === window.__bbMsgSig && !window.__pendingJump && !loadingOlder) return; window.__bbMsgSig = __sg; } catch (e) {}
       try { if (window.__bbMark) { __bbMark('msgs-' + (snap.metadata.fromCache ? 'cache' : 'server'), 1); requestAnimationFrame(() => __bbMark('painted', 1)); } } catch (e) {}
+      try { const __m = (window.__bbSnapMem = window.__bbSnapMem || {}); __m[activeChatId] = { snap: snap, limit: msgLimit }; const __k = Object.keys(__m); if (__k.length > 8) delete __m[__k[0]]; } catch (e) {}
       const box = document.getElementById("messagesArea");
       const prevH = box.scrollHeight;
       const prevTop = box.scrollTop;
@@ -4773,6 +4788,7 @@ function openChatRoom(otherUserId, keepLimit) {
       else if (hasAdded || wasNearBottom) box.scrollTop = box.scrollHeight;   // رسالة جديدة أو كنت أسفل المحادثة
       else box.scrollTop = prevTop;                                            // تفاعل/تعديل: ابقَ في مكانك
     });
+  try { __bbInstantOpen(); } catch (e) {}
 }
 
 /* ===== التفاعلات: لكل مستخدم تفاعله الخاص (reactions.<uid> = إيموجي) ولا يتأثر بتفاعل غيره ===== */
