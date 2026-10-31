@@ -2286,6 +2286,18 @@ html[data-chat-theme]:not([data-chat-theme="babylon"]) .app-container #chatView 
 .chat-item-sub .chat-media-preview-prefix{margin-inline-end:3px}
 </style>
 <link rel="stylesheet" href="gifts/gifts.css?v=14">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+<style id="bbPerf">
+/* أداء: تمويه الخلفية فوق الرسائل أثناء التمرير يكلّف كل إطار؛ نستبدله بطبقة أكثر كثافة بنفس اللون */
+#chatView .chat-input-container::before,
+#chatView#chatView header.telegram-chat-header::before{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:color-mix(in srgb,var(--cr-surface,#17212b) 72%,transparent)!important}
+/* أداء: حركات لا تنتهي داخل قوائم تتحدّث باستمرار */
+#chatList .avatar-story-ring.has-story{animation:none!important}
+#chatView #messagesArea .msg-bubble.emoji-only.emoji-only.emoji-only.emoji-only.emoji-only{animation:none!important}
+.verified-badge::after{animation:none!important}
+</style>
 <script src="debug/errors.js?v=1"></script>
 <link rel="stylesheet" href="stickers/stickers.css?v=1">
 <style id="babylon-stars-gifts-theme">
@@ -4619,7 +4631,19 @@ function startChatFromProfile() {
 let msgLimit = 50;
 let loadingOlder = false;
 
+/* توقيع لقطة الرسائل: يتجاهل تغيّر حالة "مقروء" للرسائل الواردة (ما تأثر على الشاشة) ويلتقط أي تغيير ظاهر */
+function bbSnapSig(snap) {
+  const me = currentUser && currentUser.uid;
+  let out = '';
+  snap.docs.forEach(d => {
+    const x = d.data(); let y = x;
+    if (x.senderId !== me && 'read' in x) { y = Object.assign({}, x); delete y.read; }
+    out += d.id + ':' + (d.metadata && d.metadata.hasPendingWrites ? 1 : 0) + ':' + JSON.stringify(y) + '|';
+  });
+  return out + '#' + msgLimit + '#' + activeChatId;
+}
 function openChatRoom(otherUserId, keepLimit) {
+  window.__bbMsgSig = null;
   reorderChatListItems();
   document.getElementById('chatGroupInfoAction')?.classList.add('hidden'); { const _av = document.getElementById('chatAvatar'); if (_av) _av.style.background = ''; } try { hideMentionPop(); resetGroupUI(); } catch (e) {}
   if (!keepLimit) msgLimit = 50;
@@ -4709,6 +4733,7 @@ function openChatRoom(otherUserId, keepLimit) {
   messagesUnsubscribe = db.collection("chats").doc(activeChatId).collection("messages")
     .orderBy("createdAt", "desc").limit(msgLimit)
     .onSnapshot({ includeMetadataChanges: true }, snap => {
+      try { const __sg = bbSnapSig(snap); if (__sg === window.__bbMsgSig && !window.__pendingJump && !loadingOlder) return; window.__bbMsgSig = __sg; } catch (e) {}
       const box = document.getElementById("messagesArea");
       const prevH = box.scrollHeight;
       const prevTop = box.scrollTop;
@@ -5633,14 +5658,18 @@ function loadChats() {
         existingItem.dataset.updatedat = String(chatData.updatedAt || 0);
         existingItem.style.display = ''; existingItem.classList.toggle('is-blocked', !!myBlocks[otherId]);
 
-        const __lastP = db.collection("chats").doc(chatId).collection("messages").orderBy("createdAt", "desc").limit(1).get();
-        const __unrP = db.collection("chats").doc(chatId).collection("messages").where("senderId", "==", otherId).where("read", "==", false).get();
+        const __run = (__fromCache) => {
+        const __o = __fromCache ? { source: 'cache' } : undefined;
+        const __lastP = db.collection("chats").doc(chatId).collection("messages").orderBy("createdAt", "desc").limit(1).get(__o);
+        const __unrP = db.collection("chats").doc(chatId).collection("messages").where("senderId", "==", otherId).where("read", "==", false).get(__o);
         __lastP.catch(() => {}); __unrP.catch(() => {});
-        Promise.all([db.collection("users").doc(otherId).get(), blockedByThem(otherId)]).then(([userDoc]) => {
+        Promise.all([db.collection("users").doc(otherId).get(__o), __fromCache ? Promise.resolve(false) : blockedByThem(otherId)]).then(([userDoc]) => {
           if (!userDoc.exists) return;
+          if (__fromCache && existingItem.dataset.rendered === '1') return;
           const u = userDoc.data(); u.id = u.id || otherId;
 
           __lastP.then(msgSnap => {
+              if (__fromCache && (msgSnap.empty || existingItem.dataset.rendered === '1' || (Number(msgSnap.docs[0].data().createdAt) || 0) < (Number(chatData.updatedAt) || 0) - 3000)) return;
               let lastMsgText = "لا توجد رسائل بعد";
               let lastMsgHtml = "لا توجد رسائل بعد";
               let lastMsgTime = ""; let lastTick = "";
@@ -5689,7 +5718,7 @@ function loadChats() {
                     }
                   } catch (nativeNotifError) { console.warn('Native notification failed', nativeNotifError); }
                 }
-                if (!isMine && m.createdAt > sessionStartTime && !getLocalChatSet('babylon_muted_users').has(otherId)) playNotificationSound();
+                if (!__fromCache && !isMine && m.createdAt > sessionStartTime && !getLocalChatSet('babylon_muted_users').has(otherId)) playNotificationSound();
               }
 
               __unrP.then(unReadSnap => {
@@ -5714,7 +5743,10 @@ function loadChats() {
                   reorderChatListItems();
                 });
             });
-        });
+        }).catch(() => {});
+        };
+        if (existingItem.dataset.rendered !== '1') __run(true);
+        __run(false);
       });
     });
 }
@@ -7970,6 +8002,7 @@ function markGroupRead(chatId,newest){
   db.collection('chats').doc(chatId).set({readAt:{[me]:Math.max(Date.now(),t)}},{merge:true}).catch(()=>{});
 }
 function openGroupRoom(chatId,keepLimit){
+  window.__bbMsgSig=null;
   const meta=chatMetaCache[chatId];
   if(!meta){db.collection('chats').doc(chatId).get().then(d=>{if(d.exists){chatMetaCache[chatId]=d.data();openGroupRoom(chatId,keepLimit);}});return;}
   activeChatId=chatId;currentChatOtherUserId=null;
@@ -8001,6 +8034,7 @@ function openGroupRoom(chatId,keepLimit){
     });
     messagesUnsubscribe=db.collection('chats').doc(chatId).collection('messages').orderBy('createdAt','desc').limit(msgLimit).onSnapshot({includeMetadataChanges:true},snap=>{
       if(activeChatId!==chatId)return;
+      try{const __sg=bbSnapSig(snap);if(__sg===window.__bbMsgSig&&!window.__pendingJump&&!loadingOlder){markGroupRead(chatId,snap.docs[0]&&snap.docs[0].data());return;}window.__bbMsgSig=__sg;}catch(e){}
       const prevH=box.scrollHeight;
       Array.from(box.children).forEach(c=>c.remove());
       if(snap.size>=msgLimit){

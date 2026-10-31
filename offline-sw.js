@@ -2,7 +2,7 @@
    - لا يعترض طلبات Firestore / Auth / Storage / الـ API، فلا إرسال ولا استلام بدون اتصال.
    - يحفظ الصفحة الرئيسية وملفاتها وسكربتات Firebase عند أول فتح مع الإنترنت.
    ضعه بجانب index.html (نفس المجلد الجذر) وارفعه مع الموقع. */
-var VERSION = 'v2';
+var VERSION = 'v3';
 var SHELL = 'babylon-shell-' + VERSION;
 var RUNTIME = 'babylon-rt-' + VERSION;
 
@@ -68,17 +68,22 @@ self.addEventListener('activate', function (event) {
   })());
 });
 
-async function navigationHandler(request) {
+async function navigationHandler(event) {
+  var request = event.request;
   var cache = await caches.open(SHELL);
   var key = normalizeNav(request.url);
+  var cached = key ? await cache.match(key) : null;
+  /* عندنا نسخة محفوظة: ننتظر الشبكة 1.2 ثانية فقط. إذا تأخرت نفتح فوراً من النسخة المحفوظة
+     وتكمل الشبكة بالخلفية وتحدّث النسخة للفتحة الجاية (بدل ما نبقى لـ 4 ثواني على الشاشة). */
+  var netP = fetch(request).then(function (r) { if (r && r.ok && key) cache.put(key, r.clone()); return r; });
   try {
     var net = await Promise.race([
-      fetch(request),
-      new Promise(function (_, rej) { setTimeout(function () { rej(new Error('timeout')); }, 4000); })
+      netP,
+      new Promise(function (_, rej) { setTimeout(function () { rej(new Error('timeout')); }, cached ? 1200 : 4000); })
     ]);
-    if (net && net.ok && key) cache.put(key, net.clone());
     return net;
   } catch (e) {
+    if (cached) { try { event.waitUntil(netP.catch(function () {})); } catch (x) {} return cached; }
     var hit = (key && await cache.match(key)) || await cache.match('/') || await cache.match(request, { ignoreSearch: true });
     if (hit) return hit;
     return new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:sans-serif;text-align:center;padding:40px;direction:rtl">عذرا الهاتف غير متصل بالانترنت</body>',
@@ -117,7 +122,7 @@ self.addEventListener('fetch', function (event) {
   if (url.origin === self.location.origin && url.pathname.indexOf('/api/') === 0) return;   /* لا نعترض الـ API */
   if (req.headers.has('range')) return;
 
-  if (req.mode === 'navigate') { event.respondWith(navigationHandler(req)); return; }
+  if (req.mode === 'navigate') { event.respondWith(navigationHandler(event)); return; }
 
   if (url.origin === self.location.origin) {
     if (url.pathname === '/firebase-messaging-sw.js' || url.pathname === '/offline-sw.js') return;
